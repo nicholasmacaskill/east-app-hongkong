@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
     Home, User as UserIcon, QrCode, Activity, MessageSquare, 
@@ -970,80 +970,163 @@ const ParentProfile = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
 // ==========================================
 // SCHEDULE SCREEN
 // ==========================================
-const ScheduleScreen = ({ onPreviewClick }: { onPreviewClick: (s: Session) => void }) => {
+// SCHEDULE SCREEN (Dynamic Data with Restored UI & Robust Refresh)
+// ==========================================
+const ScheduleScreen = ({ onPreviewClick, refreshKey, currentUserId }: { onPreviewClick: (s: Session) => void, refreshKey: number, currentUserId: number | null }) => {
   const [mySchedule, setMySchedule] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Fetch registrations for the logged-in user (Mock ID: 12)
+  // --- UI/LOGIC RESTORED ---
+  const [filter, setFilter] = useState<'parent' | 'player' | 'combined'>('player');
+  const [selectedDay, setSelectedDay] = useState(new Date().getDate()); 
+  
+  // Map Category to a visual theme for the list card
+  const getTheme = (category: string) => {
+    switch (category) {
+      case 'YOUTH': return { color: '#D1F2D9', border: 'border-green-500', icon: '🏃' };
+      case 'ADULT': return { color: '#F8F9FF', border: 'border-blue-500', icon: '💪' };
+      case 'COACH': return { color: '#D8B4FE', border: 'border-purple-400', icon: '🎯' };
+      case 'EVENT': return { color: '#FCA5A5', border: 'border-red-400', icon: '🎉' };
+      case 'FACILITY': return { color: '#D1D5DB', border: 'border-gray-500', icon: '🏠' };
+      default: return { color: '#FFFFFF', border: 'border-gray-300', icon: '🗓️' };
+    }
+  };
+
+  // --- CRITICAL REFRESH LOGIC ---
+  // Memoizes the function so it doesn't create a new one every render
+  const fetchSchedule = useCallback(() => {
+    if (!currentUserId) return;
+    setLoading(true);
+
+    fetch(`/api/my-schedule?userId=${currentUserId}`)
+        .then(res => res.json())
+        .then(data => {
+            if(Array.isArray(data)) setMySchedule(data); 
+        })
+        .catch(console.error)
+        .finally(() => setLoading(false));
+  }, [currentUserId]); // Function only changes if the currentUserId changes
+
+
   useEffect(() => {
-    fetch('/api/my-schedule?userId=12')
-      .then(res => res.json())
-      .then(data => {
-          if(Array.isArray(data)) setMySchedule(data);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+      // This hook calls the fetch function whenever the user ID or the refresh key changes.
+      fetchSchedule();
+  }, [fetchSchedule, refreshKey]); // Dependencies ensure re-fetch after cancel/register
+
+  // --- FILTER LOGIC ---
+  const eventsForSelectedDay = mySchedule.filter(event => {
+    const eventDate = new Date(event.start_time).getDate();
+    return eventDate === selectedDay;
+  });
 
   return (
     <div className="min-h-screen bg-black pb-24 animate-fadeIn relative">
-       {/* Background */}
+       {/* ... (UI elements remain the same) ... */}
        <div className="fixed inset-0 z-0">
           <img src="https://images.unsplash.com/photo-1580748141549-71748dbe0bdc?q=80&w=1000&auto=format&fit=crop" className="w-full h-full object-cover opacity-20" />
           <div className="absolute inset-0 bg-black/80" />
        </div>
 
-       <div className="relative z-10 px-4 pt-20 space-y-6 min-h-[300px]">
-          <SectionHeader title="My Upcoming Sessions" />
-          
-          {loading ? (
-            <p className="text-center text-gray-500 text-xs">Loading schedule...</p>
-          ) : mySchedule.length > 0 ? (
-            <div className="space-y-4">
-              {mySchedule.map((event, idx) => (
-                <div 
-                    key={idx} 
-                    className="flex gap-4 animate-fadeIn cursor-pointer group" 
-                    onClick={() => onPreviewClick(event)}
-                >
-                    {/* Date Column */}
-                    <div className="w-14 flex flex-col items-center justify-start pt-1 bg-gray-900/80 rounded-lg p-2 border border-gray-700 h-fit">
-                        <span className="text-xl font-black text-east-light italic">
-                          {new Date(event.start_time).getDate()}
-                        </span>
-                        <span className="text-[10px] font-bold text-gray-400 uppercase">
-                          {new Date(event.start_time).toLocaleDateString('en-US', { month: 'short' })}
-                        </span>
-                    </div>
-                    
-                    {/* Card */}
-                    <div className="flex-1">
-                        <div className="bg-white rounded-xl overflow-hidden text-black shadow-lg p-4 border-l-4 border-east-light transition-transform group-hover:scale-[1.02]">
-                            <h3 className="font-montserrat font-black italic text-sm uppercase mb-1">{event.title}</h3>
-                            <div className="flex justify-between items-end">
-                                <div>
-                                    <p className="text-xs font-bold text-gray-600">
-                                      {new Date(event.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                    </p>
-                                    <p className="text-[9px] font-bold uppercase mt-1 text-east-dark tracking-wider">
-                                        {event.category === 'COACH' ? 'PRIVATE COACH' : `INSTRUCTOR: ${event.instructor}`}
-                                    </p>
-                                </div>
-                                <div className="bg-black text-white text-[8px] font-bold px-2 py-1 rounded uppercase tracking-widest">
-                                    {event.category}
+       <div className="relative z-10">
+         {/* Filter Tabs (Parent/Player/Combined) */}
+         <div className="flex pt-4 px-4 mb-4">
+            {['PARENT', 'PLAYER', 'COMBINED'].map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f.toLowerCase() as any)}
+                className={`flex-1 text-center font-montserrat font-black italic text-sm py-3 border-b-4 transition-colors ${filter === f.toLowerCase() ? 'text-white border-white' : 'text-gray-500 border-gray-800'}`}
+              >
+                {f}
+              </button>
+            ))}
+         </div>
+
+         {/* Calendar Header (Restored Day Picker UI) */}
+         <div className="mx-4 mb-6 rounded-2xl overflow-hidden relative">
+            <div className="bg-gradient-to-r from-east-light to-east-dark h-12 flex items-center px-4">
+               <h2 className="text-white font-montserrat font-black italic text-xl">SCHEDULE</h2>
+            </div>
+            <div className="bg-white p-4 rounded-b-2xl -mt-2 relative z-10">
+                <div className="mb-3 font-montserrat font-black italic text-black text-sm">
+                    {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()}
+                </div>
+                
+                <div className="flex justify-between items-center">
+                   <ChevronLeft size={24} className="text-black/50" />
+                   {/* Dynamically render next 6 days */}
+                   {Array.from({ length: 6 }, (_, i) => {
+                       const realDate = new Date();
+                       // Set the date to tomorrow, + i days
+                       realDate.setDate(realDate.getDate() + (i + 1));
+                       const dayNumber = realDate.getDate();
+                       const dayOfWeek = realDate.toLocaleDateString('en-US', { weekday: 'narrow' }).toUpperCase();
+                       const isSelected = dayNumber === selectedDay;
+                       const isToday = dayNumber === new Date().getDate();
+
+                       return (
+                           <div 
+                              key={i} 
+                              onClick={() => setSelectedDay(dayNumber)}
+                              className={`flex flex-col items-center justify-center w-10 h-16 rounded-full transition-all cursor-pointer ${isSelected ? 'bg-black text-white scale-110 shadow-lg' : (isToday ? 'bg-gray-200 text-black' : 'text-black')}`}
+                           >
+                              <span className="text-[9px] font-bold mb-0.5">{dayOfWeek}</span>
+                              <span className="text-lg font-black italic">{dayNumber}</span>
+                           </div>
+                       );
+                   })}
+                   <ChevronRight size={24} className="text-black/50" />
+                </div>
+            </div>
+         </div>
+
+         {/* Events List (Dynamic, Filtered by Day) */}
+         <div className="px-4 space-y-6 min-h-[300px]">
+            {loading ? (
+                <p className="text-center text-gray-500 text-xs py-10">Loading schedule...</p>
+            ) : eventsForSelectedDay.length > 0 ? (
+                eventsForSelectedDay.map((event, idx) => {
+                    const theme = getTheme(event.category);
+                    return (
+                        <div 
+                            key={idx} 
+                            className="flex gap-4 animate-fadeIn cursor-pointer group" 
+                            onClick={() => onPreviewClick(event)}
+                        >
+                            {/* Card */}
+                            <div className="flex-1">
+                                <div style={{ backgroundColor: theme.color }} className={`rounded-xl overflow-hidden text-black shadow-lg border-l-4 ${theme.border} transition-transform group-hover:scale-[1.01]`}>
+                                    <div className="p-3 pb-2">
+                                        <h3 className="font-montserrat font-black italic text-sm uppercase">{event.title}</h3>
+                                        <p className="text-xs font-bold mt-0.5 text-gray-600">
+                                            {new Date(event.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(event.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                        </p>
+                                    </div>
+                                    
+                                    {/* Footer (Simplified) */}
+                                    <div className="bg-gray-100 p-2 px-3 flex justify-between items-center border-t border-gray-300">
+                                        <span className="text-[10px] font-black italic text-gray-700">HOST: {event.instructor}</span>
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onPreviewClick(event);
+                                            }}
+                                            className="bg-black text-white text-[8px] font-bold italic px-3 py-1.5 rounded-md hover:bg-gray-800 transition-colors"
+                                        >
+                                            PREVIEW
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    );
+                })
+            ) : (
+                <div className="text-center py-12 border border-dashed border-gray-800 rounded-2xl bg-gray-900/50">
+                    <p className="font-montserrat font-bold italic text-gray-500 mb-2">NO SESSIONS SCHEDULED</p>
+                    <p className="text-xs text-gray-600">Go to Home to register for a session.</p>
                 </div>
-              ))}
-            </div>
-          ) : (
-              <div className="text-center py-12 border border-dashed border-gray-800 rounded-2xl bg-gray-900/50">
-                  <p className="font-montserrat font-bold italic text-gray-500 mb-2">NO CLASSES BOOKED</p>
-                  <p className="text-xs text-gray-600">Go to Home to register for a session.</p>
-              </div>
-          )}
+            )}
+         </div>
        </div>
     </div>
   );
@@ -1301,59 +1384,81 @@ const CommunityScreen = () => {
 
 // ==========================================
 // CLASS MODAL (Restored UI + DB Connection)
+
+// ==========================================
+// CLASS MODAL (Handles Multi-Slot Registration & CANCELLATION FIX)
 // ==========================================
 // ==========================================
-// CLASS MODAL (Restored UI + DB Connection)
+// CLASS MODAL (CRITICAL CANCELLATION FIX)
 // ==========================================
-// ==========================================
-// CLASS MODAL (Restored UI + DB Connection)
-// ==========================================
-// ==========================================
-// CLASS MODAL (Handles Multi-Slot Registration)
-// ==========================================
-const ClassModal = ({ sessions, onClose }: { sessions: Session[], onClose: () => void }) => {
-  const [isRegistering, setIsRegistering] = useState(false);
+const ClassModal = ({ sessions, onClose, onScheduleChange, onCancelSuccess, currentUserId }: { 
+    sessions: Session[], 
+    onClose: () => void, 
+    onScheduleChange: () => void, 
+    onCancelSuccess: () => void, // Changed type to simple void
+    currentUserId: number | null 
+}) => {
+  const [isProcessing, setIsProcessing] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
 
-  if (!sessions || sessions.length === 0) return null;
+  if (!sessions || sessions.length === 0 || !currentUserId) return null;
 
-  // Use the first session to populate the visual info (Image, Title, Desc)
   const displaySession = sessions[0];
   const isNews = displaySession.category === 'NEWS';
+  
+  const isViewingScheduledItem = sessions.length === 1 && displaySession.category !== 'NEWS';
 
-  const handleRegister = async () => {
-    if (!selectedSessionId) {
-        alert("Please select a time.");
-        return;
-    }
+  useEffect(() => {
+      if (isViewingScheduledItem) {
+          setSelectedSessionId(sessions[0].id);
+      }
+  }, [isViewingScheduledItem, sessions]);
+
+
+  const handleAction = async (method: 'POST' | 'DELETE') => {
+    // CRITICAL CHECK: Must have a session ID selected (which happens automatically for scheduled items)
+    if (!selectedSessionId || isNews) return;
     
-    if (isNews) return; // Guard clause
-
-    setIsRegistering(true);
-    const userId = 12; // Mock ID
+    setIsProcessing(true);
+    const userId = currentUserId; 
 
     try {
       const res = await fetch('/api/register', {
-        method: 'POST',
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, sessionId: selectedSessionId }),
       });
 
       if (res.ok) {
-        alert('Successfully Registered! Check your schedule.');
-        onClose();
+        alert(method === 'POST' ? 'Successfully Registered!' : 'Successfully Canceled!');
+        
+        // 🚨 CRITICAL FIX: After deletion, call the immediate success handler
+        if (method === 'DELETE') {
+            onCancelSuccess(); // This triggers the ScheduleScreen to re-fetch and list immediately
+        } else {
+            onScheduleChange(); 
+        }
       } else if (res.status === 409) {
         alert('You are already registered for this slot.');
       } else {
-        alert('Registration failed.');
+        alert(`${method === 'POST' ? 'Registration' : 'Cancellation'} failed. Check API.`);
       }
     } catch (error) {
       console.error(error);
       alert('Error connecting to server.');
     } finally {
-      setIsRegistering(false);
+      setIsProcessing(false);
     }
   };
+
+  const handleRegister = () => handleAction('POST');
+  const handleCancel = () => {
+    if (window.confirm("Are you sure you want to cancel this booking?")) {
+        handleAction('DELETE');
+    }
+  };
+
+  const buttonText = isProcessing ? (isViewingScheduledItem ? 'CANCELLING...' : 'REGISTERING...') : 'REGISTER NOW';
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
@@ -1361,7 +1466,7 @@ const ClassModal = ({ sessions, onClose }: { sessions: Session[], onClose: () =>
          {/* Header */}
          <div className="bg-gradient-to-r from-east-light to-east-dark p-4 flex justify-between items-center shrink-0">
             <h2 className="font-montserrat font-black italic text-xl text-white uppercase truncate pr-2">
-                {displaySession.category === 'COACH' ? displaySession.instructor : displaySession.title}
+                {isViewingScheduledItem ? 'MY BOOKING' : (displaySession.category === 'COACH' ? displaySession.instructor : displaySession.title)}
             </h2>
             <button onClick={onClose}><X className="text-white" /></button>
          </div>
@@ -1380,8 +1485,8 @@ const ClassModal = ({ sessions, onClose }: { sessions: Session[], onClose: () =>
                 </div>
             )}
 
-            {/* Time Selection (Hidden for News) */}
-            {!isNews && (
+            {/* Time Selection (Only for Home Screen) */}
+            {!isNews && !isViewingScheduledItem && (
                 <div className="mb-6">
                     <p className="font-montserrat font-bold text-[10px] mb-2 uppercase">SELECT TIME:</p>
                     <div className="flex gap-2 flex-wrap">
@@ -1397,6 +1502,17 @@ const ClassModal = ({ sessions, onClose }: { sessions: Session[], onClose: () =>
                     </div>
                 </div>
             )}
+            
+            {/* Show Booking Details for Scheduled Item */}
+            {isViewingScheduledItem && (
+                <div className="mb-6 p-4 border border-red-500/50 rounded-xl bg-red-500/10">
+                    <p className="font-montserrat font-bold text-[10px] text-red-500 uppercase mb-2">SCHEDULED TIME:</p>
+                    <p className="font-montserrat font-black text-lg text-black">
+                        {new Date(displaySession.start_time).toLocaleString([], { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'})}
+                    </p>
+                </div>
+            )}
+
          </div>
 
          {/* Footer Action */}
@@ -1406,13 +1522,27 @@ const ClassModal = ({ sessions, onClose }: { sessions: Session[], onClose: () =>
                    <Send className="text-white" size={20} />
                    <Share2 className="text-white" size={20} />
                 </div>
-                <button 
-                  onClick={handleRegister} 
-                  disabled={isRegistering || !selectedSessionId}
-                  className="text-white text-sm font-bold italic underline disabled:opacity-50 hover:text-east-light transition-colors"
-                >
-                  {isRegistering ? 'REGISTERING...' : 'REGISTER NOW'}
-                </button>
+                
+                {/* Cancel Button (Schedule Screen) */}
+                {isViewingScheduledItem ? (
+                     <button 
+                        onClick={handleCancel} 
+                        disabled={isProcessing}
+                        className="text-red-500 text-sm font-bold italic underline disabled:opacity-50 hover:text-red-400 transition-colors"
+                     >
+                       {isProcessing ? 'CANCELLING...' : 'CANCEL BOOKING'}
+                     </button>
+                ) : (
+                    /* Register Button (Home Screen) */
+                    <button 
+                      onClick={handleRegister} 
+                      disabled={isProcessing || !selectedSessionId}
+                      className="text-white text-sm font-bold italic underline disabled:opacity-50 hover:text-east-light transition-colors"
+                    >
+                      {buttonText}
+                    </button>
+                )}
+
              </div>
          )}
       </div>
@@ -1421,21 +1551,53 @@ const ClassModal = ({ sessions, onClose }: { sessions: Session[], onClose: () =>
 };
 
 
+// ... (All other components above remain the same) ...
+
 // --- Main App Layout ---
 
-// ... App Component Updates (Modify the State for Modal) ...
+// ... (All other components above remain the same) ...
+
+// ... (All other components above remain the same) ...
+
+// --- Main App Layout ---
+
+// ... (All other components above remain the same) ...
+
+// --- Main App Layout ---
+
 export default function App() {
   const router = useRouter(); 
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [showClassModal, setShowClassModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   
-  // CHANGED: session is now an Array (to support multiple times)
   const [selectedSessions, setSelectedSessions] = useState<Session[]>([]); 
   
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfileData>(initialProfileData);
+
+  // State to trigger a refresh of the schedule page when a booking changes
+  const [scheduleRefreshKey, setScheduleRefreshKey] = useState(0); 
+  
+  // Helper to trigger a full refresh of schedule and close modal
+  const handleScheduleChange = () => {
+      setScheduleRefreshKey(prev => prev + 1);
+      setShowClassModal(false);
+  }
+
+  // The modal cancellation handler just needs to trigger the refresh key
+  const removeSessionFromList = () => {
+      setScheduleRefreshKey(prev => prev + 1); // Trigger re-fetch
+      setShowClassModal(false);
+  }
+
+  // MOCK IDS: Player=12, Parent=13
+  const getCurrentUserId = () => {
+      if (userRole === 'player') return 12; // Mock Player ID
+      if (userRole === 'parent') return 13; // Mock Parent ID
+      return null;
+  }
 
   useEffect(() => {
     const storedRole = localStorage.getItem('userRole') as UserRole | null;
@@ -1455,6 +1617,17 @@ export default function App() {
   if (isLoading || !userRole) {
     return <div className="min-h-screen bg-black flex items-center justify-center text-east-light">LOADING...</div>;
   }
+
+  const currentUserId = getCurrentUserId();
+  
+  const classModalProps = {
+      sessions: selectedSessions, 
+      onClose: () => setShowClassModal(false),
+      onScheduleChange: handleScheduleChange,
+      onCancelSuccess: removeSessionFromList, 
+      currentUserId: currentUserId, // CRITICAL: Pass the determined ID
+  };
+  
 
   return (
     <div className="min-h-screen bg-black text-white font-opensans select-none">
@@ -1477,10 +1650,12 @@ export default function App() {
           {activeTab === 'qr' && <QRScreen />}
           {activeTab === 'schedule' && (
             <ScheduleScreen 
-                onPreviewClick={() => {
-                    // Just open the modal for the first available session as a preview if needed
-                    // Or keep the old logic if you prefer
+                onPreviewClick={(session) => {
+                    setSelectedSessions([session]);
+                    setShowClassModal(true);
                 }}
+                refreshKey={scheduleRefreshKey} 
+                currentUserId={currentUserId} // CRITICAL: Pass the ID here too
             />
           )}
           {activeTab === 'community' && <CommunityScreen />}
@@ -1488,12 +1663,12 @@ export default function App() {
 
         <BottomNav activeTab={activeTab} setTab={setActiveTab} />
         
-        {showClassModal && (
-            <ClassModal sessions={selectedSessions} onClose={() => setShowClassModal(false)} />
+        {showClassModal && currentUserId && (
+            <ClassModal {...classModalProps} /> 
         )}
         
         {showSettingsModal && (
-            <SettingsModal onClose={() => setShowSettingsModal(false)} onLogout={handleLogout} profileData={userProfile} setProfileData={setUserProfile} />
+            <SettingsModal onClose={() => setShowSettingsModal(false)} onLogout={handleLogout} profileData={userProfile} setProfileData={setProfileData} />
         )}
       </div>
     </div>
