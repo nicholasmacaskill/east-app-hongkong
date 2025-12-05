@@ -360,38 +360,67 @@ const BottomNav = ({ activeTab, setTab }: { activeTab: Tab; setTab: (t: Tab) => 
 
 // --- Home Screen ---
 // ==========================================
-// HOME SCREEN (Restored Content + Working Modal)
+// HOME SCREEN (Fully Dynamic: Classes + Events + Facilities)
 // ==========================================
-const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (s: Session) => void, onOpenSettings: () => void }) => {
-  // Helper to make static content clickable for the Modal
-  const handleStaticClick = (title: string, subtitle: string, image: string, instructor = 'EAST STAFF') => {
-    onClassClick({
-        id: -1, // Mock ID for static content
-        title,
-        category: 'EVENT',
-        instructor: instructor,
-        start_time: new Date().toISOString(),
-        end_time: new Date().toISOString(),
-        image_url: image,
-        description: subtitle
-    });
+// ==========================================
+// HOME SCREEN (Dynamic Data + Original Animations)
+// ==========================================
+// ==========================================
+// HOME SCREEN (With Grouping Logic)
+// ==========================================
+// ==========================================
+// HOME SCREEN (Fixed: Grouping + Animations)
+// ==========================================
+const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (sessions: Session[]) => void, onOpenSettings: () => void }) => {
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/sessions')
+      .then(res => res.json())
+      .then(data => {
+        if(Array.isArray(data)) setSessions(data);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  // --- Helper: Group Sessions by a Unique Key ---
+  const getUniqueItems = (items: Session[], key: 'title' | 'instructor') => {
+      const seen = new Set();
+      return items.filter(item => {
+          const val = item[key];
+          if (seen.has(val)) return false;
+          seen.add(val);
+          return true;
+      });
   };
 
-  const news: NewsItem[] = [
-    { id: '1', title: 'WOLVES WIN U-15 CHAMPIONSHIP', subtitle: 'Zen set a record for goals scored in a playoff game.', image: 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?auto=format&fit=crop&q=80&w=600' },
-    { id: '2', title: 'EAST ANNOUNCES NEW FACILITY', subtitle: 'Opening date will include events for prospective members.', image: 'https://images.unsplash.com/photo-1552667466-07770ae110d0?auto=format&fit=crop&q=80&w=600' },
-  ];
+  // 1. Filter Raw Lists
+  const adultRaw = sessions.filter(s => s.category === 'ADULT');
+  const youthRaw = sessions.filter(s => s.category === 'YOUTH');
+  const coachesRaw = sessions.filter(s => s.category === 'COACH');
+  const facilitiesRaw = sessions.filter(s => s.category === 'FACILITY');
+  const eventsRaw = sessions.filter(s => s.category === 'EVENT');
+  const newsRaw = sessions.filter(s => s.category === 'NEWS');
 
-  const coaches = [
-    { name: 'Ben', img: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100' },
-    { name: 'Rhett', img: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=100' },
-    { name: 'Whitney', img: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100' },
-    { name: 'Jeff', img: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=100' },
-  ];
+  // 2. Get Unique Items for Display
+  const adultUnique = getUniqueItems(adultRaw, 'title');
+  const youthUnique = getUniqueItems(youthRaw, 'title');
+  const coachesUnique = getUniqueItems(coachesRaw, 'instructor');
+  const facilitiesUnique = getUniqueItems(facilitiesRaw, 'title');
+  const eventsUnique = getUniqueItems(eventsRaw, 'title'); 
+
+  // 3. Click Handler: Finds ALL slots for the clicked item
+  const handleItemClick = (item: Session, groupByKey: 'title' | 'instructor') => {
+      const allSlots = sessions.filter(s => s[groupByKey] === item[groupByKey] && s.category === item.category);
+      // Sort slots by time so they appear in order
+      allSlots.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+      onClassClick(allSlots);
+  };
 
   return (
     <div className="pb-22 pt-4 px-4 space-y-8 animate-fadeIn relative">
-      {/* Header with Settings Button */}
       <div className="flex justify-between items-center mb-6 px-2 relative z-10">
          <div className="w-8"></div>
          <h1 className="font-montserrat font-black italic text-5xl text-white tracking-tighter drop-shadow-lg">
@@ -405,18 +434,15 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (s: Sessio
       {/* Breaking News */}
       <div>
         <SectionHeader title="Breaking News" />
+        {loading ? <p className="text-xs text-gray-500">Loading...</p> : (
         <div className="flex overflow-x-auto no-scrollbar gap-4 snap-x">
-          {news.map((item) => (
-            <div 
-                key={item.id} 
-                onClick={() => handleStaticClick(item.title, item.subtitle, item.image)} 
-                className="snap-center min-w-[90%] relative rounded-2xl overflow-hidden aspect-[2/1] border border-gray-800 cursor-pointer group"
-            >
-              <img src={item.image} alt={item.title} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
+          {newsRaw.map((item) => (
+            <div key={item.id} onClick={() => onClassClick([item])} className="snap-center min-w-[90%] relative rounded-2xl overflow-hidden aspect-[2/1] border border-gray-800 cursor-pointer group">
+              <img src={item.image_url} alt={item.title} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
               <div className="absolute bottom-0 left-0 p-4 w-3/4">
                 <h3 className="font-montserrat font-black italic text-lg leading-tight mb-1 uppercase">{item.title}</h3>
-                <p className="font-opensans text-xs text-gray-300 line-clamp-2">{item.subtitle}</p>
+                <p className="font-opensans text-xs text-gray-300 line-clamp-2">{item.description}</p>
               </div>
               <div className="absolute bottom-4 right-4">
                 <button className="bg-white text-black text-[10px] font-bold px-2 py-1 rounded">READ MORE</button>
@@ -424,133 +450,93 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (s: Sessio
             </div>
           ))}
         </div>
+        )}
       </div>
 
       {/* Facility Booking */}
       <div>
         <SectionHeader title="Facility Booking" />
+        {loading ? <p className="text-xs text-gray-500">Loading...</p> : (
         <div className="grid grid-cols-3 gap-3">
-          {['Shooting Pad', 'Golf Simulator', 'Locker'].map((fac, i) => {
-             const img = `https://images.unsplash.com/photo-${i === 0 ? '1580748141549-71748dbe0bdc' : i === 1 ? '1587174486073-ae5e5cff23aa' : '1534438327276-14e5300c3a48'}?auto=format&fit=crop&q=80&w=300`;
-             return (
-                <div key={i} onClick={() => handleStaticClick(fac, `Book the ${fac}`, img)} className="flex flex-col gap-2 cursor-pointer group">
-                  <div className="aspect-square rounded-xl overflow-hidden border border-gray-700 bg-gray-900 relative">
-                     <img src={img} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={fac} />
-                  </div>
-                  <span className="font-montserrat font-bold italic text-[10px] uppercase">{fac}</span>
-                </div>
-             );
-          })}
+          {facilitiesUnique.map((fac) => (
+            <div key={fac.id} onClick={() => handleItemClick(fac, 'title')} className="flex flex-col gap-2 cursor-pointer group">
+              <div className="aspect-square rounded-xl overflow-hidden border border-gray-700 bg-gray-900 relative">
+                 <img src={fac.image_url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={fac.title} />
+                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors duration-300" />
+              </div>
+              <span className="font-montserrat font-bold italic text-[10px] uppercase truncate">{fac.title}</span>
+            </div>
+          ))}
         </div>
+        )}
       </div>
 
-      {/* Adult Classes (Restored Static List + Modal Click) */}
+      {/* Adult Classes */}
       <div>
         <SectionHeader title="Adult Classes" />
+        {loading ? <p className="text-xs text-gray-500">Loading...</p> : (
         <div className="grid grid-cols-3 gap-3">
-          {[
-            { id: 'hyrox', label: 'HYROX', img: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=200' },
-            { id: 'strength', label: 'STRENGTH', img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=200' },
-            { id: 'speed', label: 'SPEED', img: 'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?auto=format&fit=crop&q=80&w=200' },
-            { id: 'stamina', label: 'STAMINA', img: 'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?auto=format&fit=crop&q=80&w=200' },
-            { id: 'core', label: 'CORE', img: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&q=80&w=200' },
-            { id: 'upper', label: 'UPPER', img: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&q=80&w=200' },
-          ].map((cls) => (
-            <div 
-                key={cls.id} 
-                onClick={() => handleStaticClick(cls.label, `${cls.label} Training Class`, cls.img)} 
-                className="flex flex-col gap-2 cursor-pointer group"
-            >
+          {adultUnique.map((cls) => (
+            <div key={cls.id} onClick={() => handleItemClick(cls, 'title')} className="flex flex-col gap-2 cursor-pointer group">
               <div className="aspect-square rounded-xl overflow-hidden border border-gray-700 relative">
-                <img src={cls.img} alt={cls.label} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
+                <img src={cls.image_url} alt={cls.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors duration-300" />
               </div>
-              <span className="font-montserrat font-bold italic text-[10px] uppercase">{cls.label}</span>
+              <span className="font-montserrat font-bold italic text-[10px] uppercase truncate">{cls.title}</span>
             </div>
           ))}
         </div>
+        )}
       </div>
 
-      {/* Youth Classes (Restored Static List + Modal Click) */}
+      {/* Youth Classes */}
       <div>
         <SectionHeader title="Youth Classes" />
+        {loading ? <p className="text-xs text-gray-500">Loading...</p> : (
         <div className="grid grid-cols-3 gap-3">
-          {[
-            { id: 'hyrox-y', label: 'HYROX', img: 'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?auto=format&fit=crop&q=80&w=200' },
-            { id: 'strength-y', label: 'STRENGTH', img: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&q=80&w=200' },
-            { id: 'speed-y', label: 'SPEED', img: 'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?auto=format&fit=crop&q=80&w=200' },
-            { id: 'upper-y', label: 'UPPER', img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=200' },
-            { id: 'legs-y', label: 'LEGS', img: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&q=80&w=200' },
-            { id: 'fiting6-y', label: 'FITING6', img: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&q=80&w=200' },
-          ].map((cls) => (
-            <div 
-                key={cls.id} 
-                onClick={() => handleStaticClick(cls.label, `${cls.label} Youth Training`, cls.img)} 
-                className="flex flex-col gap-2 cursor-pointer group"
-            >
+          {youthUnique.map((cls) => (
+            <div key={cls.id} onClick={() => handleItemClick(cls, 'title')} className="flex flex-col gap-2 cursor-pointer group">
               <div className="aspect-square rounded-xl overflow-hidden border border-gray-700 relative">
-                <img src={cls.img} alt={cls.label} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
+                <img src={cls.image_url} alt={cls.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors duration-300" />
               </div>
-              <span className="font-montserrat font-bold italic text-[10px] uppercase">{cls.label}</span>
+              <span className="font-montserrat font-bold italic text-[10px] uppercase truncate">{cls.title}</span>
             </div>
           ))}
         </div>
+        )}
       </div>
 
       {/* Private Coach */}
       <div>
         <SectionHeader title="Private Coach" />
+        {loading ? <p className="text-xs text-gray-500">Loading...</p> : (
         <div className="grid grid-cols-4 gap-3">
-          {coaches.map((c, i) => (
-             <div 
-                key={i} 
-                onClick={() => handleStaticClick(c.name, `Private coaching session with ${c.name}.`, c.img, c.name)}
-                className="flex flex-col items-center gap-2 cursor-pointer group"
-             >
+          {coachesUnique.map((c) => (
+             <div key={c.id} onClick={() => handleItemClick(c, 'instructor')} className="flex flex-col items-center gap-2 cursor-pointer group">
               <div className="w-full aspect-square rounded-xl overflow-hidden border border-white relative">
-                <img src={c.img} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                <img src={c.image_url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={c.instructor} />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
               </div>
-              <span className="font-montserrat font-bold italic text-[10px] uppercase">{c.name}</span>
+              <span className="font-montserrat font-bold italic text-[10px] uppercase">{c.instructor}</span>
              </div>
           ))}
         </div>
+        )}
       </div>
-      
+
       {/* Events List */}
       <div>
         <SectionHeader title="Events" />
         <div className="space-y-6">
-            <div 
-                className="cursor-pointer group"
-                onClick={() => handleStaticClick("Bolt Sports Leaderboard", "Check the latest standings.", "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.cbc.ca%2Fdragonsden%2Fcontent%2Fimages%2F_image_620%2FBolt_Sports_13.jpg&f=1&nofb=1&ipt=0b3df48fa1e1229f03f0375d7c2e6070fa8dde8f171fefa9129af87e2098c599")}
-            >
-               <h4 className="font-montserrat font-bold italic text-[10px] text-white mb-2 uppercase tracking-widest">Bolt Sports Leaderboard</h4>
-               <div className="relative rounded-2xl overflow-hidden h-32 border border-yellow-600/50 group-hover:border-yellow-500 transition-colors">
-                  <img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.cbc.ca%2Fdragonsden%2Fcontent%2Fimages%2F_image_620%2FBolt_Sports_13.jpg&f=1&nofb=1&ipt=0b3df48fa1e1229f03f0375d7c2e6070fa8dde8f171fefa9129af87e2098c599" className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" alt="Dragons Den"/>
-               </div>
-            </div>
-
-            <div 
-                className="cursor-pointer group"
-                onClick={() => handleStaticClick("EAST GOLF CLASSIC", "Annual East Golf Classic.", "https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?auto=format&fit=crop&q=80&w=600")}
-            >
-                <h4 className="font-montserrat font-bold italic text-[10px] text-white mb-2 uppercase tracking-widest">EAST GOLF CLASSIC</h4>
-                <div className="relative rounded-2xl overflow-hidden h-32 border border-green-600/50 group-hover:border-green-500 transition-colors">
-                   <img src="https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?auto=format&fit=crop&q=80&w=600" className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" alt="Golf Course" />
+            {loading ? <p className="text-xs text-gray-500">Loading...</p> : eventsUnique.map((event) => (
+                <div key={event.id} className="cursor-pointer group" onClick={() => handleItemClick(event, 'title')}>
+                   <h4 className="font-montserrat font-bold italic text-[10px] text-white mb-2 uppercase tracking-widest">{event.title}</h4>
+                   <div className="relative rounded-2xl overflow-hidden h-32 border border-gray-700 group-hover:border-east-light transition-colors duration-300">
+                      <img src={event.image_url || ''} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" alt={event.title}/>
+                   </div>
                 </div>
-            </div>
-
-             <div 
-                className="cursor-pointer group"
-                onClick={() => handleStaticClick("RYDER CUP WATCH PARTY", "Live screening at East HQ.", "https://images.unsplash.com/photo-1508858627235-801debd2be27?q=80&w=2069&auto=format&fit=crop")}
-             >
-                <h4 className="font-montserrat font-bold italic text-[10px] text-white mb-2 uppercase tracking-widest">RYDER CUP WATCH PARTY</h4>
-                <div className="relative rounded-2xl overflow-hidden h-32 border border-gray-700 group-hover:border-gray-500 transition-colors">
-                   <img src="https://images.unsplash.com/photo-1508858627235-801debd2be27?q=80&w=2069&auto=format&fit=crop" className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity" alt="Watch Party" />
-                </div>
-            </div>
+            ))}
         </div>
       </div>
 
@@ -981,149 +967,83 @@ const ParentProfile = ({ onOpenSettings }: { onOpenSettings: () => void }) => {
   )
 }
 
-const ScheduleScreen = ({ onPreviewClick }: { onPreviewClick: () => void }) => {
-  const [filter, setFilter] = useState<'parent' | 'player' | 'combined'>('player');
-  const [selectedDay, setSelectedDay] = useState(8); // Default to Oct 8 (Wed)
-
-  const days = [
-    { d: 'MON', n: 6 }, { d: 'TUE', n: 7 }, 
-    { d: 'WED', n: 8 }, { d: 'THU', n: 9 }, 
-    { d: 'FRI', n: 10 }, { d: 'SAT', n: 11 }
-  ];
-
-  // Define schedule data for each day
-  const scheduleData: Record<number, any[]> = {
-    8: [
-        { type: 'class', title: 'YOUTH CLASS', time: '10 - 12 AM', host: 'BEN', color: '#D1F2D9', vol: 'X', p1: 'LEE', p2: 'ZEN' },
-        { type: 'game', title: 'GAME VS TROJANS', time: '10 - 12 AM', host: 'BEN', color: '#FEF9C3', vol: 'X', p1: 'LEE', p2: 'ZEN' }
-    ],
-    9: [ 
-        { type: 'facility', title: 'FACILITY BOOKING', time: '10 - 12 AM', host: 'PHIL', color: '#D1D5DB', vol: 'SHARON', p1: 'LEE', p2: 'ZEN' },
-        { type: 'practice', title: 'PRACTICE', time: '1 - 3 PM', host: 'PHIL', color: '#D8B4FE', vol: 'SHARON', p1: 'LEE', p2: 'ZEN' } 
-    ],
-    10: [ 
-        { type: 'event', title: 'EVENT', time: '10 - 12 AM', host: 'PHIL', color: '#FCA5A5', vol: 'SHARON', p1: 'LEE', p2: 'ZEN' }, 
-        { type: 'coach', title: 'PRIVATE COACH', time: '1 - 3 PM', host: 'RHETT', color: '#F9A8D4', vol: 'SHARON', p1: 'LEE', p2: 'ZEN' } 
-    ],
-    // Default/Empty for other days
-    6: [], 7: [], 11: []
-  };
-
-  const events = scheduleData[selectedDay] || [];
+// ==========================================
+// SCHEDULE SCREEN
+// ==========================================
+const ScheduleScreen = ({ onPreviewClick }: { onPreviewClick: (s: Session) => void }) => {
+  const [mySchedule, setMySchedule] = useState<Session[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Fetch registrations for the logged-in user (Mock ID: 12)
+  useEffect(() => {
+    fetch('/api/my-schedule?userId=12')
+      .then(res => res.json())
+      .then(data => {
+          if(Array.isArray(data)) setMySchedule(data);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="min-h-screen bg-black pb-24 animate-fadeIn relative">
-       {/* Background overlay */}
+       {/* Background */}
        <div className="fixed inset-0 z-0">
           <img src="https://images.unsplash.com/photo-1580748141549-71748dbe0bdc?q=80&w=1000&auto=format&fit=crop" className="w-full h-full object-cover opacity-20" />
           <div className="absolute inset-0 bg-black/80" />
        </div>
 
-       <div className="relative z-10">
-         {/* Filter Tabs */}
-         <div className="flex pt-4 px-4 mb-4">
-            {['PARENT', 'PLAYER', 'COMBINED'].map(f => (
-              <button
-                key={f}
-                onClick={() => setFilter(f.toLowerCase() as any)}
-                className={`flex-1 text-center font-montserrat font-black italic text-sm py-3 border-b-4 transition-colors ${filter === f.toLowerCase() ? 'text-white border-white' : 'text-gray-500 border-gray-800'}`}
-              >
-                {f}
-              </button>
-            ))}
-         </div>
-
-         {/* Calendar Header */}
-         <div className="mx-4 mb-6 rounded-2xl overflow-hidden relative">
-            <div className="bg-gradient-to-r from-east-light to-east-dark h-12 flex items-center px-4">
-               <h2 className="text-white font-montserrat font-black italic text-xl">SCHEDULE</h2>
-            </div>
-            <div className="bg-white p-4 rounded-b-2xl -mt-2 relative z-10">
-                <div className="mb-3 font-montserrat font-black italic text-black text-sm">OCT.</div>
-                <div className="flex justify-between items-center">
-                   <ChevronLeft size={24} className="text-black" />
-                   {days.map((day, i) => (
-                     <div 
-                        key={i} 
-                        onClick={() => setSelectedDay(day.n)}
-                        className={`flex flex-col items-center justify-center w-10 h-16 rounded-full transition-all cursor-pointer ${selectedDay === day.n ? 'bg-black text-white scale-110 shadow-lg' : 'text-black'}`}
-                     >
-                       <span className="text-[9px] font-bold mb-0.5">{day.d}</span>
-                       <span className="text-lg font-black italic">{day.n}</span>
-                     </div>
-                   ))}
-                   <ChevronRight size={24} className="text-black" />
-                </div>
-            </div>
-         </div>
-
-         {/* Events List */}
-         <div className="px-4 space-y-6 min-h-[300px]">
-            {events.length > 0 ? events.map((event, idx) => (
-                <div key={idx} className="flex gap-4 animate-fadeIn">
-                    {/* Timeline Dot/Line */}
-                    <div className="w-6 border-r border-gray-600 relative">
-                        {idx === 0 && <span className="text-xs font-bold text-white absolute top-0 right-2">8</span>}
-                        {idx === 1 && <span className="text-xs font-bold text-white absolute top-0 right-2">9</span>}
+       <div className="relative z-10 px-4 pt-20 space-y-6 min-h-[300px]">
+          <SectionHeader title="My Upcoming Sessions" />
+          
+          {loading ? (
+            <p className="text-center text-gray-500 text-xs">Loading schedule...</p>
+          ) : mySchedule.length > 0 ? (
+            <div className="space-y-4">
+              {mySchedule.map((event, idx) => (
+                <div 
+                    key={idx} 
+                    className="flex gap-4 animate-fadeIn cursor-pointer group" 
+                    onClick={() => onPreviewClick(event)}
+                >
+                    {/* Date Column */}
+                    <div className="w-14 flex flex-col items-center justify-start pt-1 bg-gray-900/80 rounded-lg p-2 border border-gray-700 h-fit">
+                        <span className="text-xl font-black text-east-light italic">
+                          {new Date(event.start_time).getDate()}
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase">
+                          {new Date(event.start_time).toLocaleDateString('en-US', { month: 'short' })}
+                        </span>
                     </div>
                     
+                    {/* Card */}
                     <div className="flex-1">
-                        <div style={{ backgroundColor: event.color }} className="rounded-xl overflow-hidden text-black shadow-lg transition-all hover:scale-[1.01]">
-                            <div className="p-3 pb-2">
-                                <h3 className="font-montserrat font-black italic text-sm uppercase">{event.title}</h3>
-                                <p className="text-xs font-bold mt-0.5">{event.time}</p>
-                            </div>
-                            
-                            {/* Participants Grid */}
-                            <div className="grid grid-cols-3 divide-x divide-gray-600 border-y border-gray-600 bg-[#2A2A2A] text-white h-16">
-                                <div className="p-1 flex flex-col items-center justify-center text-center">
-                                    <span className="text-[6px] font-bold opacity-70 uppercase mb-1">PARENT VOLUNTEER</span>
-                                    {event.vol === 'X' ? (
-                                        <X size={14} className="text-white" />
-                                    ) : (
-                                        <div className="flex items-center gap-1">
-                                            <span className="text-[9px] font-bold">{event.vol}</span>
-                                            <CheckCircle2 size={10} className="text-white" fill="white" color="#2A2A2A" />
-                                        </div>
-                                    )}
+                        <div className="bg-white rounded-xl overflow-hidden text-black shadow-lg p-4 border-l-4 border-east-light transition-transform group-hover:scale-[1.02]">
+                            <h3 className="font-montserrat font-black italic text-sm uppercase mb-1">{event.title}</h3>
+                            <div className="flex justify-between items-end">
+                                <div>
+                                    <p className="text-xs font-bold text-gray-600">
+                                      {new Date(event.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    </p>
+                                    <p className="text-[9px] font-bold uppercase mt-1 text-east-dark tracking-wider">
+                                        {event.category === 'COACH' ? 'PRIVATE COACH' : `INSTRUCTOR: ${event.instructor}`}
+                                    </p>
                                 </div>
-                                <div className="p-1 flex flex-col items-center justify-center text-center">
-                                    <span className="text-[6px] font-bold opacity-70 uppercase mb-1">PLAYER PARTICIPANT</span>
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-[9px] font-bold">{event.p1}</span>
-                                        <CheckCircle2 size={10} className="text-white" fill="white" color="#2A2A2A" />
-                                    </div>
+                                <div className="bg-black text-white text-[8px] font-bold px-2 py-1 rounded uppercase tracking-widest">
+                                    {event.category}
                                 </div>
-                                <div className="p-1 flex flex-col items-center justify-center text-center">
-                                    <span className="text-[6px] font-bold opacity-70 uppercase mb-1">PLAYER PARTICIPANT</span>
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-[9px] font-bold">{event.p2}</span>
-                                        <CheckCircle2 size={10} className="text-white" fill="white" color="#2A2A2A" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={{ backgroundColor: event.color }} className="p-2 px-3 flex justify-between items-center">
-                                <span className="text-[10px] font-black italic">HOST: {event.host}</span>
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onPreviewClick();
-                                  }}
-                                  className="bg-black text-white text-[8px] font-bold italic px-3 py-1.5 rounded-md hover:bg-gray-800 transition-colors"
-                                >
-                                  PREVIEW
-                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            )) : (
-                <div className="text-center text-gray-500 py-10 font-montserrat font-bold italic text-sm">
-                    NO EVENTS SCHEDULED
-                </div>
-            )}
-         </div>
+              ))}
+            </div>
+          ) : (
+              <div className="text-center py-12 border border-dashed border-gray-800 rounded-2xl bg-gray-900/50">
+                  <p className="font-montserrat font-bold italic text-gray-500 mb-2">NO CLASSES BOOKED</p>
+                  <p className="text-xs text-gray-600">Go to Home to register for a session.</p>
+              </div>
+          )}
        </div>
     </div>
   );
@@ -1388,61 +1308,44 @@ const CommunityScreen = () => {
 // ==========================================
 // CLASS MODAL (Restored UI + DB Connection)
 // ==========================================
-const ClassModal = ({ session, onClose }: { session: Session | null, onClose: () => void }) => {
+// ==========================================
+// CLASS MODAL (Handles Multi-Slot Registration)
+// ==========================================
+const ClassModal = ({ sessions, onClose }: { sessions: Session[], onClose: () => void }) => {
   const [isRegistering, setIsRegistering] = useState(false);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null); // Added state for time selection
+  const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
 
-  // If no session is passed, don't render anything
-  if (!session) return null;
+  if (!sessions || sessions.length === 0) return null;
 
-  // Generate mock times for static content or use the real time for DB content
-  // In a real app, you might fetch available slots from the DB here.
-  const isStatic = session.id < 0; 
-  const sessionTime = new Date(session.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-  const availableTimes = isStatic 
-    ? ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'] // Mock times for static demo
-    : [sessionTime]; // Real time for DB event
+  // Use the first session to populate the visual info (Image, Title, Desc)
+  const displaySession = sessions[0];
+  const isNews = displaySession.category === 'NEWS';
 
   const handleRegister = async () => {
-    // 1. Validation: Ensure a time is selected
-    if (!selectedTime) { 
-        alert("Please select a time slot.");
+    if (!selectedSessionId) {
+        alert("Please select a time.");
         return;
     }
+    
+    if (isNews) return; // Guard clause
 
     setIsRegistering(true);
-    
-    // 2. User ID: Using hardcoded mock ID '12' for now
-    const userId = 12; 
-
-    // 3. Static Content Check: Prevent API call for static items
-    if (session.id < 0) {
-       alert(`This is a preview event. You selected ${selectedTime}. Registration is not available.`);
-       setIsRegistering(false);
-       onClose();
-       return;
-    }
+    const userId = 12; // Mock ID
 
     try {
-      // 4. The API Call
       const res = await fetch('/api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            userId: userId, 
-            sessionId: session.id 
-        }),
+        body: JSON.stringify({ userId, sessionId: selectedSessionId }),
       });
 
-      // 5. Handling the Response
       if (res.ok) {
         alert('Successfully Registered! Check your schedule.');
         onClose();
       } else if (res.status === 409) {
-        alert('You are already registered.');
+        alert('You are already registered for this slot.');
       } else {
-        const data = await res.json();
-        alert(`Failed: ${data.error}`);
+        alert('Registration failed.');
       }
     } catch (error) {
       console.error(error);
@@ -1455,53 +1358,63 @@ const ClassModal = ({ session, onClose }: { session: Session | null, onClose: ()
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
       <div className="w-full max-w-sm bg-white rounded-3xl overflow-hidden flex flex-col max-h-[90vh]">
+         {/* Header */}
          <div className="bg-gradient-to-r from-east-light to-east-dark p-4 flex justify-between items-center shrink-0">
-            <h2 className="font-montserrat font-black italic text-xl text-white uppercase truncate pr-2">{session.title}</h2>
+            <h2 className="font-montserrat font-black italic text-xl text-white uppercase truncate pr-2">
+                {displaySession.category === 'COACH' ? displaySession.instructor : displaySession.title}
+            </h2>
             <button onClick={onClose}><X className="text-white" /></button>
          </div>
 
+         {/* Content */}
          <div className="overflow-y-auto p-6 text-black">
-            <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase">{session.title} TRAINING</h2>
-            <p className="font-montserrat font-bold text-[10px] mb-4 uppercase">INSTRUCTOR: {session.instructor}</p>
-            <p className="font-opensans text-xs font-bold leading-relaxed mb-6">{session.description}</p>
+            <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase">{displaySession.title}</h2>
+            <p className="font-montserrat font-bold text-[10px] mb-4 uppercase">
+                {displaySession.category === 'COACH' ? 'PRIVATE COACH' : `INSTRUCTOR: ${displaySession.instructor}`}
+            </p>
+            <p className="font-opensans text-xs font-bold leading-relaxed mb-6">{displaySession.description}</p>
             
-            {session.image_url && (
+            {displaySession.image_url && (
                 <div className="w-full aspect-video rounded-xl overflow-hidden bg-black mb-6">
-                     <img src={session.image_url} className="w-full h-full object-cover" alt={session.title} />
+                    <img src={displaySession.image_url} className="w-full h-full object-cover" alt={displaySession.title} />
                 </div>
             )}
 
-            {/* Time Selection UI */}
-            <div className="mb-6">
-                <p className="font-montserrat font-bold text-[10px] mb-2 uppercase">SELECT TIME:</p>
-                <div className="flex gap-2 flex-wrap">
-                    {availableTimes.map((time, index) => (
-                        <button
-                            key={index}
-                            onClick={() => setSelectedTime(time)}
-                            className={`px-4 py-2 rounded-lg text-xs font-bold border transition-colors ${selectedTime === time ? 'bg-east-light text-white border-east-light' : 'bg-white text-black border-gray-300 hover:border-east-light'}`}
-                        >
-                            {time}
-                        </button>
-                    ))}
+            {/* Time Selection (Hidden for News) */}
+            {!isNews && (
+                <div className="mb-6">
+                    <p className="font-montserrat font-bold text-[10px] mb-2 uppercase">SELECT TIME:</p>
+                    <div className="flex gap-2 flex-wrap">
+                        {sessions.map((sess) => (
+                            <button
+                                key={sess.id}
+                                onClick={() => setSelectedSessionId(sess.id)}
+                                className={`px-4 py-2 rounded-lg text-xs font-bold border transition-colors ${selectedSessionId === sess.id ? 'bg-east-light text-white border-east-light' : 'bg-white text-black border-gray-300 hover:border-east-light'}`}
+                            >
+                                {new Date(sess.start_time).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'})}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
          </div>
 
-         <div className="bg-black p-4 flex justify-between items-center shrink-0">
-            <div className="flex gap-4">
-               <Send className="text-white" size={20} />
-               <Share2 className="text-white" size={20} />
-               <Target className="text-white" size={20} />
-            </div>
-            <button 
-              onClick={handleRegister} 
-              disabled={isRegistering}
-              className="text-white text-sm font-bold italic underline disabled:opacity-50 hover:text-east-light transition-colors"
-            >
-              {isRegistering ? 'REGISTERING...' : 'REGISTER NOW'}
-            </button>
-         </div>
+         {/* Footer Action */}
+         {!isNews && (
+             <div className="bg-black p-4 flex justify-between items-center shrink-0">
+                <div className="flex gap-4">
+                   <Send className="text-white" size={20} />
+                   <Share2 className="text-white" size={20} />
+                </div>
+                <button 
+                  onClick={handleRegister} 
+                  disabled={isRegistering || !selectedSessionId}
+                  className="text-white text-sm font-bold italic underline disabled:opacity-50 hover:text-east-light transition-colors"
+                >
+                  {isRegistering ? 'REGISTERING...' : 'REGISTER NOW'}
+                </button>
+             </div>
+         )}
       </div>
     </div>
   );
@@ -1510,12 +1423,15 @@ const ClassModal = ({ session, onClose }: { session: Session | null, onClose: ()
 
 // --- Main App Layout ---
 
+// ... App Component Updates (Modify the State for Modal) ...
 export default function App() {
   const router = useRouter(); 
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [showClassModal, setShowClassModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  
+  // CHANGED: session is now an Array (to support multiple times)
+  const [selectedSessions, setSelectedSessions] = useState<Session[]>([]); 
   
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -1546,8 +1462,8 @@ export default function App() {
         <main>
           {activeTab === 'home' && (
             <HomeScreen 
-                onClassClick={(session) => {
-                    setSelectedSession(session);
+                onClassClick={(sessions) => {
+                    setSelectedSessions(sessions);
                     setShowClassModal(true);
                 }} 
                 onOpenSettings={() => setShowSettingsModal(true)} 
@@ -1561,9 +1477,9 @@ export default function App() {
           {activeTab === 'qr' && <QRScreen />}
           {activeTab === 'schedule' && (
             <ScheduleScreen 
-                onPreviewClick={(session) => {
-                    setSelectedSession(session);
-                    setShowClassModal(true);
+                onPreviewClick={() => {
+                    // Just open the modal for the first available session as a preview if needed
+                    // Or keep the old logic if you prefer
                 }}
             />
           )}
@@ -1573,7 +1489,7 @@ export default function App() {
         <BottomNav activeTab={activeTab} setTab={setActiveTab} />
         
         {showClassModal && (
-            <ClassModal session={selectedSession} onClose={() => setShowClassModal(false)} />
+            <ClassModal sessions={selectedSessions} onClose={() => setShowClassModal(false)} />
         )}
         
         {showSettingsModal && (
