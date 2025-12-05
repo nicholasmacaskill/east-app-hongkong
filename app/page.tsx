@@ -1,5 +1,7 @@
 'use client';
 
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
@@ -7,24 +9,24 @@ import {
     ChevronLeft, ChevronRight, ChevronDown, X, CheckCircle2, 
     Settings, LogOut, Bell, FileText, HelpCircle, Shield, 
     Edit2, ToggleLeft, ToggleRight, CreditCard, UserCog,
-    // ✅ Added missing icons for ClassModal
-    Send, Share2, Target
+    Send, Share2, Target 
 } from 'lucide-react'; 
 
-// ✅ Import shared types
+// Import Types
 import type { UserRole, Tab, NewsItem } from './types';
+import { Session } from './types/session'; 
 
-// --- Interfaces for Future Backend Integration ---
-
-// ✅ Updated Interface to include BIO
+// --- Interfaces ---
 interface UserProfileData {
     name: string;
     surname: string;
     username: string;
-    bio: string; // New field
+    bio: string;
     email: string;
     mobile: string;
 }
+
+// ... (Keep UserPreferences and PlayerStats interfaces below this line)
 
 // Interface for Preferences Screen data
 interface UserPreferences {
@@ -357,7 +359,24 @@ const BottomNav = ({ activeTab, setTab }: { activeTab: Tab; setTab: (t: Tab) => 
 };
 
 // --- Home Screen ---
-const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: () => void, onOpenSettings: () => void }) => {
+// ==========================================
+// HOME SCREEN (Restored Content + Working Modal)
+// ==========================================
+const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (s: Session) => void, onOpenSettings: () => void }) => {
+  // Helper to make static content clickable for the Modal
+  const handleStaticClick = (title: string, subtitle: string, image: string, instructor = 'EAST STAFF') => {
+    onClassClick({
+        id: -1, // Mock ID for static content
+        title,
+        category: 'EVENT',
+        instructor: instructor,
+        start_time: new Date().toISOString(),
+        end_time: new Date().toISOString(),
+        image_url: image,
+        description: subtitle
+    });
+  };
+
   const news: NewsItem[] = [
     { id: '1', title: 'WOLVES WIN U-15 CHAMPIONSHIP', subtitle: 'Zen set a record for goals scored in a playoff game.', image: 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?auto=format&fit=crop&q=80&w=600' },
     { id: '2', title: 'EAST ANNOUNCES NEW FACILITY', subtitle: 'Opening date will include events for prospective members.', image: 'https://images.unsplash.com/photo-1552667466-07770ae110d0?auto=format&fit=crop&q=80&w=600' },
@@ -374,7 +393,7 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: () => void
     <div className="pb-22 pt-4 px-4 space-y-8 animate-fadeIn relative">
       {/* Header with Settings Button */}
       <div className="flex justify-between items-center mb-6 px-2 relative z-10">
-         <div className="w-8"></div> {/* Spacer */}
+         <div className="w-8"></div>
          <h1 className="font-montserrat font-black italic text-5xl text-white tracking-tighter drop-shadow-lg">
            E<span className="text-east-light">A</span>ST
          </h1>
@@ -388,7 +407,11 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: () => void
         <SectionHeader title="Breaking News" />
         <div className="flex overflow-x-auto no-scrollbar gap-4 snap-x">
           {news.map((item) => (
-            <div key={item.id} onClick={onClassClick} className="snap-center min-w-[90%] relative rounded-2xl overflow-hidden aspect-[2/1] border border-gray-800 cursor-pointer group">
+            <div 
+                key={item.id} 
+                onClick={() => handleStaticClick(item.title, item.subtitle, item.image)} 
+                className="snap-center min-w-[90%] relative rounded-2xl overflow-hidden aspect-[2/1] border border-gray-800 cursor-pointer group"
+            >
               <img src={item.image} alt={item.title} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
               <div className="absolute bottom-0 left-0 p-4 w-3/4">
@@ -407,23 +430,21 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: () => void
       <div>
         <SectionHeader title="Facility Booking" />
         <div className="grid grid-cols-3 gap-3">
-          {['Shooting Pad', 'Golf Simulator', 'Locker'].map((fac, i) => (
-            <div key={i} onClick={onClassClick} className="flex flex-col gap-2 cursor-pointer group">
-              <div className="aspect-square rounded-xl overflow-hidden border border-gray-700 bg-gray-900 relative">
-                 <img 
-                    src={`https://images.unsplash.com/photo-${i === 0 ? '1580748141549-71748dbe0bdc' : i === 1 ? '1587174486073-ae5e5cff23aa' : '1534438327276-14e5300c3a48'}?auto=format&fit=crop&q=80&w=300`} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                    alt={fac}
-                 />
-                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-              </div>
-              <span className="font-montserrat font-bold italic text-[10px] uppercase">{fac}</span>
-            </div>
-          ))}
+          {['Shooting Pad', 'Golf Simulator', 'Locker'].map((fac, i) => {
+             const img = `https://images.unsplash.com/photo-${i === 0 ? '1580748141549-71748dbe0bdc' : i === 1 ? '1587174486073-ae5e5cff23aa' : '1534438327276-14e5300c3a48'}?auto=format&fit=crop&q=80&w=300`;
+             return (
+                <div key={i} onClick={() => handleStaticClick(fac, `Book the ${fac}`, img)} className="flex flex-col gap-2 cursor-pointer group">
+                  <div className="aspect-square rounded-xl overflow-hidden border border-gray-700 bg-gray-900 relative">
+                     <img src={img} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={fac} />
+                  </div>
+                  <span className="font-montserrat font-bold italic text-[10px] uppercase">{fac}</span>
+                </div>
+             );
+          })}
         </div>
       </div>
 
-      {/* Adult Classes */}
+      {/* Adult Classes (Restored Static List + Modal Click) */}
       <div>
         <SectionHeader title="Adult Classes" />
         <div className="grid grid-cols-3 gap-3">
@@ -435,7 +456,11 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: () => void
             { id: 'core', label: 'CORE', img: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&q=80&w=200' },
             { id: 'upper', label: 'UPPER', img: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&q=80&w=200' },
           ].map((cls) => (
-            <div key={cls.id} onClick={onClassClick} className="flex flex-col gap-2 cursor-pointer group">
+            <div 
+                key={cls.id} 
+                onClick={() => handleStaticClick(cls.label, `${cls.label} Training Class`, cls.img)} 
+                className="flex flex-col gap-2 cursor-pointer group"
+            >
               <div className="aspect-square rounded-xl overflow-hidden border border-gray-700 relative">
                 <img src={cls.img} alt={cls.label} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
@@ -446,7 +471,7 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: () => void
         </div>
       </div>
 
-      {/* Youth Classes */}
+      {/* Youth Classes (Restored Static List + Modal Click) */}
       <div>
         <SectionHeader title="Youth Classes" />
         <div className="grid grid-cols-3 gap-3">
@@ -458,7 +483,11 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: () => void
             { id: 'legs-y', label: 'LEGS', img: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&q=80&w=200' },
             { id: 'fiting6-y', label: 'FITING6', img: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&q=80&w=200' },
           ].map((cls) => (
-            <div key={cls.id} onClick={onClassClick} className="flex flex-col gap-2 cursor-pointer group">
+            <div 
+                key={cls.id} 
+                onClick={() => handleStaticClick(cls.label, `${cls.label} Youth Training`, cls.img)} 
+                className="flex flex-col gap-2 cursor-pointer group"
+            >
               <div className="aspect-square rounded-xl overflow-hidden border border-gray-700 relative">
                 <img src={cls.img} alt={cls.label} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
@@ -474,7 +503,11 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: () => void
         <SectionHeader title="Private Coach" />
         <div className="grid grid-cols-4 gap-3">
           {coaches.map((c, i) => (
-             <div key={i} onClick={onClassClick} className="flex flex-col items-center gap-2 cursor-pointer group">
+             <div 
+                key={i} 
+                onClick={() => handleStaticClick(c.name, `Private coaching session with ${c.name}.`, c.img, c.name)}
+                className="flex flex-col items-center gap-2 cursor-pointer group"
+             >
               <div className="w-full aspect-square rounded-xl overflow-hidden border border-white relative">
                 <img src={c.img} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
@@ -489,78 +522,38 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: () => void
       <div>
         <SectionHeader title="Events" />
         <div className="space-y-6">
-            
-            {/* 1. Dragons Den (Standard) */}
-            <div onClick={onClassClick} className="cursor-pointer group">
+            <div 
+                className="cursor-pointer group"
+                onClick={() => handleStaticClick("Bolt Sports Leaderboard", "Check the latest standings.", "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.cbc.ca%2Fdragonsden%2Fcontent%2Fimages%2F_image_620%2FBolt_Sports_13.jpg&f=1&nofb=1&ipt=0b3df48fa1e1229f03f0375d7c2e6070fa8dde8f171fefa9129af87e2098c599")}
+            >
                <h4 className="font-montserrat font-bold italic text-[10px] text-white mb-2 uppercase tracking-widest">Bolt Sports Leaderboard</h4>
                <div className="relative rounded-2xl overflow-hidden h-32 border border-yellow-600/50 group-hover:border-yellow-500 transition-colors">
-                  <img 
-                    src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.cbc.ca%2Fdragonsden%2Fcontent%2Fimages%2F_image_620%2FBolt_Sports_13.jpg&f=1&nofb=1&ipt=0b3df48fa1e1229f03f0375d7c2e6070fa8dde8f171fefa9129af87e2098c599" 
-                    className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" 
-                    alt="Dragons Den"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/30 transition-colors">
-                     <h3 className="font-montserrat font-black text-3xl text-yellow-500 tracking-widest drop-shadow-md"></h3>
-                  </div>
+                  <img src="https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.cbc.ca%2Fdragonsden%2Fcontent%2Fimages%2F_image_620%2FBolt_Sports_13.jpg&f=1&nofb=1&ipt=0b3df48fa1e1229f03f0375d7c2e6070fa8dde8f171fefa9129af87e2098c599" className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" alt="Dragons Den"/>
                </div>
             </div>
 
-            {/* 2. East Golf League */}
-            <div onClick={onClassClick} className="cursor-pointer group">
+            <div 
+                className="cursor-pointer group"
+                onClick={() => handleStaticClick("EAST GOLF CLASSIC", "Annual East Golf Classic.", "https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?auto=format&fit=crop&q=80&w=600")}
+            >
                 <h4 className="font-montserrat font-bold italic text-[10px] text-white mb-2 uppercase tracking-widest">EAST GOLF CLASSIC</h4>
                 <div className="relative rounded-2xl overflow-hidden h-32 border border-green-600/50 group-hover:border-green-500 transition-colors">
-                   <img 
-                      src="https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?auto=format&fit=crop&q=80&w=600" 
-                      className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" 
-                      alt="Golf Course" 
-                   />
-                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 group-hover:bg-black/30 transition-colors">
-                     <h3 className="font-montserrat font-black text-xl text-white italic drop-shadow-md">EAST CLASSIC 2025</h3>
-                     <div className="w-8 h-1 bg-white mt-1 rounded-full shadow-sm"></div>
-                   </div>
+                   <img src="https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?auto=format&fit=crop&q=80&w=600" className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" alt="Golf Course" />
                 </div>
             </div>
 
-            {/* 3. OPS CHARTS */}
-            <div onClick={onClassClick} className="cursor-pointer group">
-                <h4 className="font-montserrat font-bold italic text-[10px] text-white mb-2 uppercase tracking-widest">OPS CHARTS</h4>
-                <div className="relative rounded-2xl overflow-hidden h-32 border border-blue-500/50 group-hover:border-blue-500 transition-colors">
-                   <img 
-                      src="https://images.unsplash.com/photo-1762768767074-e491f1eebdfc?q=80&w=2832&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-                      className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity" 
-                      alt="Golf League" 
-                   />
-                   <div className="absolute inset-0 flex items-center justify-between px-6 bg-blue-900/40 group-hover:bg-blue-900/30 transition-colors">
-                      <div className="flex flex-col justify-center drop-shadow-md">
-                         <h3 className="font-montserrat font-black text-lg text-white italic">OPS CHARTS</h3>
-                         <p className="text-[8px] font-bold text-blue-200">PERFORMANCE TRACKING</p>
-                      </div>
-                      <div className="h-12 w-12 bg-black/40 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                         <Activity size={20} className="text-white" />
-                      </div>
-                   </div>
-                </div>
-            </div>
-
-            {/* 4. Ryder Cup */}
-            <div onClick={onClassClick} className="cursor-pointer group">
+             <div 
+                className="cursor-pointer group"
+                onClick={() => handleStaticClick("RYDER CUP WATCH PARTY", "Live screening at East HQ.", "https://images.unsplash.com/photo-1508858627235-801debd2be27?q=80&w=2069&auto=format&fit=crop")}
+             >
                 <h4 className="font-montserrat font-bold italic text-[10px] text-white mb-2 uppercase tracking-widest">RYDER CUP WATCH PARTY</h4>
                 <div className="relative rounded-2xl overflow-hidden h-32 border border-gray-700 group-hover:border-gray-500 transition-colors">
-                   <img 
-                      src="https://images.unsplash.com/photo-1508858627235-801debd2be27?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
-                      className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity" 
-                      alt="Pizza" 
-                   />
-                   <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                      <h3 className="font-montserrat font-black text-xl text-white italic uppercase drop-shadow-md">LIVE SCREENING</h3>
-                   </div>
+                   <img src="https://images.unsplash.com/photo-1508858627235-801debd2be27?q=80&w=2069&auto=format&fit=crop" className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity" alt="Watch Party" />
                 </div>
             </div>
-
         </div>
       </div>
-      
-      {/* Spacer for Bottom Nav */}
+
       <div className="h-24 w-full" />
     </div>
   );
@@ -1386,62 +1379,128 @@ const CommunityScreen = () => {
   );
 };
 
-const ClassModal = ({ onClose }: { onClose: () => void }) => {
+// ==========================================
+// CLASS MODAL (Restored UI + DB Connection)
+// ==========================================
+// ==========================================
+// CLASS MODAL (Restored UI + DB Connection)
+// ==========================================
+// ==========================================
+// CLASS MODAL (Restored UI + DB Connection)
+// ==========================================
+const ClassModal = ({ session, onClose }: { session: Session | null, onClose: () => void }) => {
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null); // Added state for time selection
+
+  // If no session is passed, don't render anything
+  if (!session) return null;
+
+  // Generate mock times for static content or use the real time for DB content
+  // In a real app, you might fetch available slots from the DB here.
+  const isStatic = session.id < 0; 
+  const sessionTime = new Date(session.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  const availableTimes = isStatic 
+    ? ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'] // Mock times for static demo
+    : [sessionTime]; // Real time for DB event
+
+  const handleRegister = async () => {
+    // 1. Validation: Ensure a time is selected
+    if (!selectedTime) { 
+        alert("Please select a time slot.");
+        return;
+    }
+
+    setIsRegistering(true);
+    
+    // 2. User ID: Using hardcoded mock ID '12' for now
+    const userId = 12; 
+
+    // 3. Static Content Check: Prevent API call for static items
+    if (session.id < 0) {
+       alert(`This is a preview event. You selected ${selectedTime}. Registration is not available.`);
+       setIsRegistering(false);
+       onClose();
+       return;
+    }
+
+    try {
+      // 4. The API Call
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            userId: userId, 
+            sessionId: session.id 
+        }),
+      });
+
+      // 5. Handling the Response
+      if (res.ok) {
+        alert('Successfully Registered! Check your schedule.');
+        onClose();
+      } else if (res.status === 409) {
+        alert('You are already registered.');
+      } else {
+        const data = await res.json();
+        alert(`Failed: ${data.error}`);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error connecting to server.');
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
       <div className="w-full max-w-sm bg-white rounded-3xl overflow-hidden flex flex-col max-h-[90vh]">
          <div className="bg-gradient-to-r from-east-light to-east-dark p-4 flex justify-between items-center shrink-0">
-            <h2 className="font-montserrat font-black italic text-xl text-white">STRENGTH CLASS</h2>
+            <h2 className="font-montserrat font-black italic text-xl text-white uppercase truncate pr-2">{session.title}</h2>
             <button onClick={onClose}><X className="text-white" /></button>
          </div>
 
          <div className="overflow-y-auto p-6 text-black">
-            <h2 className="font-montserrat font-black italic text-2xl mb-1">FITNESS STRENGTH TRAINING</h2>
-            <p className="font-montserrat font-bold text-[10px] mb-4">MULTI-SPORT FOCUS - HOCKEY, GOLF, BASEBALL</p>
+            <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase">{session.title} TRAINING</h2>
+            <p className="font-montserrat font-bold text-[10px] mb-4 uppercase">INSTRUCTOR: {session.instructor}</p>
+            <p className="font-opensans text-xs font-bold leading-relaxed mb-6">{session.description}</p>
             
-            <p className="font-opensans text-xs font-bold leading-relaxed mb-6">
-              THIS ROUTINE FOCUSES ON STRENGTHENING CORE MUSCLES FOR MULTI-SPORT ATHLETES - WITH A SPECIFIC FOCUS ON ROUTINES THAT TARGET MULTI-ACTIVATION EXERCISES.
-            </p>
+            {session.image_url && (
+                <div className="w-full aspect-video rounded-xl overflow-hidden bg-black mb-6">
+                     <img src={session.image_url} className="w-full h-full object-cover" alt={session.title} />
+                </div>
+            )}
 
-            <div className="flex gap-4 mb-6">
-               <div className="w-1/3 aspect-square rounded-xl overflow-hidden bg-black">
-                 <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&q=80&w=300" className="w-full h-full object-cover" />
-               </div>
-               <div className="w-2/3 text-[10px] font-bold font-montserrat space-y-1">
-                  <p>• LENGTH: 6 WEEKS.</p>
-                  <p>• INTENSITY LEVEL: HIGH.</p>
-                  <p>• UTILITY: ENDURANCE, STRENGTH.</p>
-                  <p>• INSTRUCTORS: COACH OPTIONS LISTED BELOW.</p>
-               </div>
-            </div>
-
-            <div className="grid grid-cols-4 gap-2 mb-6">
-               {[1,2,3,4].map(i => (
-                 <div key={i} className="aspect-square rounded-lg bg-gray-200 overflow-hidden">
-                    <img src={`https://images.unsplash.com/photo-${1500000000000 + i * 50000}?auto=format&fit=crop&q=80&w=100`} className="w-full h-full object-cover grayscale" />
-                 </div>
-               ))}
-            </div>
-
-            <div className="flex justify-around mb-2">
-               {['BEN', 'RHETT', 'WHITNEY'].map((name, i) => (
-                  <div key={i} className="flex flex-col items-center relative">
-                     <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-black p-1">
-                        <img src={`https://images.unsplash.com/photo-${1530000000000 + i * 20000}?auto=format&fit=crop&q=80&w=100`} className="w-full h-full rounded-full object-cover" />
-                     </div>
-                     <div className="absolute bottom-4 right-0 w-4 h-4 bg-east-light rounded-full border border-white"></div>
-                     <span className="font-montserrat font-bold italic text-[10px] mt-1 uppercase">{name}</span>
-                  </div>
-               ))}
+            {/* Time Selection UI */}
+            <div className="mb-6">
+                <p className="font-montserrat font-bold text-[10px] mb-2 uppercase">SELECT TIME:</p>
+                <div className="flex gap-2 flex-wrap">
+                    {availableTimes.map((time, index) => (
+                        <button
+                            key={index}
+                            onClick={() => setSelectedTime(time)}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold border transition-colors ${selectedTime === time ? 'bg-east-light text-white border-east-light' : 'bg-white text-black border-gray-300 hover:border-east-light'}`}
+                        >
+                            {time}
+                        </button>
+                    ))}
+                </div>
             </div>
          </div>
+
          <div className="bg-black p-4 flex justify-between items-center shrink-0">
             <div className="flex gap-4">
                <Send className="text-white" size={20} />
                <Share2 className="text-white" size={20} />
                <Target className="text-white" size={20} />
             </div>
-            <button className="text-white text-sm font-bold italic underline">REGISTER NOW</button>
+            <button 
+              onClick={handleRegister} 
+              disabled={isRegistering}
+              className="text-white text-sm font-bold italic underline disabled:opacity-50 hover:text-east-light transition-colors"
+            >
+              {isRegistering ? 'REGISTERING...' : 'REGISTER NOW'}
+            </button>
          </div>
       </div>
     </div>
@@ -1456,17 +1515,11 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [showClassModal, setShowClassModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+  
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  // ✅ Lifted State: Manage User Profile here so changes reflect instantly
   const [userProfile, setUserProfile] = useState<UserProfileData>(initialProfileData);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        window.scrollTo(0, 0);
-    }
-  }, [activeTab]);
 
   useEffect(() => {
     const storedRole = localStorage.getItem('userRole') as UserRole | null;
@@ -1484,37 +1537,48 @@ export default function App() {
   };
   
   if (isLoading || !userRole) {
-    return (
-        <div className="min-h-screen bg-black flex items-center justify-center">
-            <div className="animate-pulse text-east-light font-montserrat font-black italic text-xl">
-                LOADING EAST APP...
-            </div>
-        </div>
-    );
+    return <div className="min-h-screen bg-black flex items-center justify-center text-east-light">LOADING...</div>;
   }
 
   return (
     <div className="min-h-screen bg-black text-white font-opensans select-none">
       <div className="max-w-md mx-auto bg-black min-h-screen relative shadow-2xl border-x border-gray-900">
-        
-        {/* Main Content Area */}
-        <main className="">
-          {activeTab === 'home' && <HomeScreen onClassClick={() => setShowClassModal(true)} onOpenSettings={() => setShowSettingsModal(true)} />}
+        <main>
+          {activeTab === 'home' && (
+            <HomeScreen 
+                onClassClick={(session) => {
+                    setSelectedSession(session);
+                    setShowClassModal(true);
+                }} 
+                onOpenSettings={() => setShowSettingsModal(true)} 
+            />
+          )}
           {activeTab === 'profile' && (
-              // ✅ Pass profile data to PlayerProfile
-              userRole === 'player' ? <PlayerProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} /> : <ParentProfile onOpenSettings={() => setShowSettingsModal(true)} />
+              userRole === 'player' ? 
+              <PlayerProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} /> : 
+              <ParentProfile onOpenSettings={() => setShowSettingsModal(true)} />
           )}
           {activeTab === 'qr' && <QRScreen />}
-          {activeTab === 'schedule' && <ScheduleScreen onPreviewClick={() => setShowClassModal(true)} />}
+          {activeTab === 'schedule' && (
+            <ScheduleScreen 
+                onPreviewClick={(session) => {
+                    setSelectedSession(session);
+                    setShowClassModal(true);
+                }}
+            />
+          )}
           {activeTab === 'community' && <CommunityScreen />}
         </main>
 
         <BottomNav activeTab={activeTab} setTab={setActiveTab} />
         
-        {showClassModal && <ClassModal onClose={() => setShowClassModal(false)} />}
+        {showClassModal && (
+            <ClassModal session={selectedSession} onClose={() => setShowClassModal(false)} />
+        )}
         
-        {/* ✅ Pass profile data and setter to SettingsModal */}
-        {showSettingsModal && <SettingsModal onClose={() => setShowSettingsModal(false)} onLogout={handleLogout} profileData={userProfile} setProfileData={setUserProfile} />}
+        {showSettingsModal && (
+            <SettingsModal onClose={() => setShowSettingsModal(false)} onLogout={handleLogout} profileData={userProfile} setProfileData={setUserProfile} />
+        )}
       </div>
     </div>
   );
