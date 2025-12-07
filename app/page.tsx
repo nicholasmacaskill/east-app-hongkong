@@ -641,7 +641,6 @@ const PlayerProfile = ({ onOpenSettings, profileData }: { onOpenSettings: () => 
                         { l: 'TOP SCORER\n(TEAM)', url: 'https://www.citypng.com/public/uploads/preview/white-medal-ribbon-icon-png-img-701751695033073gjmv4za7ev.png' },
                         { l: 'TOP SCORER\n(LEAGUE)', url: 'https://www.citypng.com/public/uploads/preview/white-medal-ribbon-icon-png-img-701751695033073gjmv4za7ev.png'},
                         { l: 'MOST SHOTS\n(TEAM)', url: 'https://www.citypng.com/public/uploads/preview/white-medal-ribbon-icon-png-img-701751695033073gjmv4za7ev.png' },
-                        { l: 'LEAST PIM\n(TEAM)', url: 'https://www.citypng.com/public/uploads/preview/white-medal-ribbon-icon-png-img-701751695033073gjmv4za7ev.png' },
                     ].map((badge, i) => (
                       <div key={i} className="flex flex-col items-center group">
                         <img 
