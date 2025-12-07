@@ -371,10 +371,20 @@ const BottomNav = ({ activeTab, setTab }: { activeTab: Tab; setTab: (t: Tab) => 
 // ==========================================
 // HOME SCREEN (Fixed: Grouping + Animations)
 // ==========================================
-const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (sessions: Session[]) => void, onOpenSettings: () => void }) => {
+// ==========================================
+// HOME SCREEN (Updated: Visual "Booked" Status)
+// ==========================================
+// ==========================================
+// HOME SCREEN (Updated: Auto-Refreshes Badges)
+// ==========================================
+// ==========================================
+// HOME SCREEN (Cleaned up)
+// ==========================================
+const HomeScreen = ({ onClassClick, onOpenSettings, bookedSessionIds }: { onClassClick: (sessions: Session[]) => void, onOpenSettings: () => void, bookedSessionIds: number[] }) => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // 1. Fetch All Sessions
   useEffect(() => {
     fetch('/api/sessions')
       .then(res => res.json())
@@ -385,7 +395,7 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (sessions:
       .finally(() => setLoading(false));
   }, []);
 
-  // --- Helper: Group Sessions by a Unique Key ---
+  // --- Helper: Group Sessions ---
   const getUniqueItems = (items: Session[], key: 'title' | 'instructor') => {
       const seen = new Set();
       return items.filter(item => {
@@ -396,7 +406,13 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (sessions:
       });
   };
 
-  // 1. Filter Raw Lists
+  // Helper to check if ANY session in a group is booked (for the badge)
+  const isGroupBooked = (item: Session, groupByKey: 'title' | 'instructor') => {
+      const relatedSessions = sessions.filter(s => s[groupByKey] === item[groupByKey] && s.category === item.category);
+      return relatedSessions.some(s => bookedSessionIds.includes(s.id));
+  };
+
+  // Filter Lists
   const adultRaw = sessions.filter(s => s.category === 'ADULT');
   const youthRaw = sessions.filter(s => s.category === 'YOUTH');
   const coachesRaw = sessions.filter(s => s.category === 'COACH');
@@ -404,17 +420,15 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (sessions:
   const eventsRaw = sessions.filter(s => s.category === 'EVENT');
   const newsRaw = sessions.filter(s => s.category === 'NEWS');
 
-  // 2. Get Unique Items for Display
   const adultUnique = getUniqueItems(adultRaw, 'title');
   const youthUnique = getUniqueItems(youthRaw, 'title');
   const coachesUnique = getUniqueItems(coachesRaw, 'instructor');
   const facilitiesUnique = getUniqueItems(facilitiesRaw, 'title');
   const eventsUnique = getUniqueItems(eventsRaw, 'title'); 
 
-  // 3. Click Handler: Finds ALL slots for the clicked item
+  // Click Handler
   const handleItemClick = (item: Session, groupByKey: 'title' | 'instructor') => {
       const allSlots = sessions.filter(s => s[groupByKey] === item[groupByKey] && s.category === item.category);
-      // Sort slots by time so they appear in order
       allSlots.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
       onClassClick(allSlots);
   };
@@ -459,10 +473,13 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (sessions:
         {loading ? <p className="text-xs text-gray-500">Loading...</p> : (
         <div className="grid grid-cols-3 gap-3">
           {facilitiesUnique.map((fac) => (
-            <div key={fac.id} onClick={() => handleItemClick(fac, 'title')} className="flex flex-col gap-2 cursor-pointer group">
+            <div key={fac.id} onClick={() => handleItemClick(fac, 'title')} className="flex flex-col gap-2 cursor-pointer group relative">
               <div className="aspect-square rounded-xl overflow-hidden border border-gray-700 bg-gray-900 relative">
                  <img src={fac.image_url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={fac.title} />
                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors duration-300" />
+                 {isGroupBooked(fac, 'title') && (
+                    <div className="absolute top-2 right-2 bg-east-light text-black text-[8px] font-black px-1.5 py-0.5 rounded">BOOKED</div>
+                 )}
               </div>
               <span className="font-montserrat font-bold italic text-[10px] uppercase truncate">{fac.title}</span>
             </div>
@@ -477,10 +494,13 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (sessions:
         {loading ? <p className="text-xs text-gray-500">Loading...</p> : (
         <div className="grid grid-cols-3 gap-3">
           {adultUnique.map((cls) => (
-            <div key={cls.id} onClick={() => handleItemClick(cls, 'title')} className="flex flex-col gap-2 cursor-pointer group">
+            <div key={cls.id} onClick={() => handleItemClick(cls, 'title')} className="flex flex-col gap-2 cursor-pointer group relative">
               <div className="aspect-square rounded-xl overflow-hidden border border-gray-700 relative">
                 <img src={cls.image_url} alt={cls.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors duration-300" />
+                {isGroupBooked(cls, 'title') && (
+                    <div className="absolute top-2 right-2 bg-east-light text-black text-[8px] font-black px-1.5 py-0.5 rounded">BOOKED</div>
+                )}
               </div>
               <span className="font-montserrat font-bold italic text-[10px] uppercase truncate">{cls.title}</span>
             </div>
@@ -495,10 +515,13 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (sessions:
         {loading ? <p className="text-xs text-gray-500">Loading...</p> : (
         <div className="grid grid-cols-3 gap-3">
           {youthUnique.map((cls) => (
-            <div key={cls.id} onClick={() => handleItemClick(cls, 'title')} className="flex flex-col gap-2 cursor-pointer group">
+            <div key={cls.id} onClick={() => handleItemClick(cls, 'title')} className="flex flex-col gap-2 cursor-pointer group relative">
               <div className="aspect-square rounded-xl overflow-hidden border border-gray-700 relative">
                 <img src={cls.image_url} alt={cls.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                 <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors duration-300" />
+                {isGroupBooked(cls, 'title') && (
+                    <div className="absolute top-2 right-2 bg-east-light text-black text-[8px] font-black px-1.5 py-0.5 rounded">BOOKED</div>
+                )}
               </div>
               <span className="font-montserrat font-bold italic text-[10px] uppercase truncate">{cls.title}</span>
             </div>
@@ -513,10 +536,13 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (sessions:
         {loading ? <p className="text-xs text-gray-500">Loading...</p> : (
         <div className="grid grid-cols-4 gap-3">
           {coachesUnique.map((c) => (
-             <div key={c.id} onClick={() => handleItemClick(c, 'instructor')} className="flex flex-col items-center gap-2 cursor-pointer group">
+             <div key={c.id} onClick={() => handleItemClick(c, 'instructor')} className="flex flex-col items-center gap-2 cursor-pointer group relative">
               <div className="w-full aspect-square rounded-xl overflow-hidden border border-white relative">
                 <img src={c.image_url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" alt={c.instructor} />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
+                {isGroupBooked(c, 'instructor') && (
+                    <div className="absolute top-1 right-1 bg-east-light text-black text-[7px] font-black px-1 py-0.5 rounded-sm">✓</div>
+                )}
               </div>
               <span className="font-montserrat font-bold italic text-[10px] uppercase">{c.instructor}</span>
              </div>
@@ -530,8 +556,13 @@ const HomeScreen = ({ onClassClick, onOpenSettings }: { onClassClick: (sessions:
         <SectionHeader title="Events" />
         <div className="space-y-6">
             {loading ? <p className="text-xs text-gray-500">Loading...</p> : eventsUnique.map((event) => (
-                <div key={event.id} className="cursor-pointer group" onClick={() => handleItemClick(event, 'title')}>
-                   <h4 className="font-montserrat font-bold italic text-[10px] text-white mb-2 uppercase tracking-widest">{event.title}</h4>
+                <div key={event.id} className="cursor-pointer group relative" onClick={() => handleItemClick(event, 'title')}>
+                   <div className="flex justify-between items-center mb-2">
+                       <h4 className="font-montserrat font-bold italic text-[10px] text-white uppercase tracking-widest">{event.title}</h4>
+                       {isGroupBooked(event, 'title') && (
+                            <span className="bg-east-light text-black text-[8px] font-black px-2 py-0.5 rounded">REGISTERED</span>
+                       )}
+                   </div>
                    <div className="relative rounded-2xl overflow-hidden h-32 border border-gray-700 group-hover:border-east-light transition-colors duration-300">
                       <img src={event.image_url || ''} className="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity duration-300" alt={event.title}/>
                    </div>
@@ -1009,7 +1040,8 @@ const ScheduleScreen = ({ onPreviewClick, refreshKey, currentUserId }: { onPrevi
 
 
   useEffect(() => {
-      // This hook calls the fetch function whenever the user ID or the refresh key changes.
+      // This ensures the schedule re-fetches whenever the refreshKey increments
+      // OR when the user ID changes.
       fetchSchedule();
   }, [fetchSchedule, refreshKey]); // Dependencies ensure re-fetch after cancel/register
 
@@ -1391,12 +1423,24 @@ const CommunityScreen = () => {
 // ==========================================
 // CLASS MODAL (CRITICAL CANCELLATION FIX)
 // ==========================================
-const ClassModal = ({ sessions, onClose, onScheduleChange, onCancelSuccess, currentUserId }: { 
+// ==========================================
+// CLASS MODAL (Updated: Auto-Close on Success)
+// ==========================================
+// ==========================================
+// CLASS MODAL (Updated: Auto-Close on Success)
+// ==========================================
+// ==========================================
+// CLASS MODAL (Updated: Auto-Close on Success)
+// ==========================================
+// ==========================================
+// CLASS MODAL (Fixed Logic: Checks Booked IDs)
+// ==========================================
+const ClassModal = ({ sessions, onClose, onScheduleChange, currentUserId, bookedSessionIds }: { 
     sessions: Session[], 
     onClose: () => void, 
     onScheduleChange: () => void, 
-    onCancelSuccess: () => void, // Changed type to simple void
-    currentUserId: number | null 
+    currentUserId: number | null,
+    bookedSessionIds: number[] 
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
@@ -1406,17 +1450,16 @@ const ClassModal = ({ sessions, onClose, onScheduleChange, onCancelSuccess, curr
   const displaySession = sessions[0];
   const isNews = displaySession.category === 'NEWS';
   
-  const isViewingScheduledItem = sessions.length === 1 && displaySession.category !== 'NEWS';
-
   useEffect(() => {
-      if (isViewingScheduledItem) {
+      if (sessions.length === 1) {
           setSelectedSessionId(sessions[0].id);
       }
-  }, [isViewingScheduledItem, sessions]);
+  }, [sessions]);
 
+  // CORE FIX: Check if the *selected* session is actually booked
+  const isBooked = selectedSessionId ? bookedSessionIds.includes(selectedSessionId) : false;
 
   const handleAction = async (method: 'POST' | 'DELETE') => {
-    // CRITICAL CHECK: Must have a session ID selected (which happens automatically for scheduled items)
     if (!selectedSessionId || isNews) return;
     
     setIsProcessing(true);
@@ -1430,18 +1473,13 @@ const ClassModal = ({ sessions, onClose, onScheduleChange, onCancelSuccess, curr
       });
 
       if (res.ok) {
-        alert(method === 'POST' ? 'Successfully Registered!' : 'Successfully Canceled!');
-        
-        // 🚨 CRITICAL FIX: After deletion, call the immediate success handler
-        if (method === 'DELETE') {
-            onCancelSuccess(); // This triggers the ScheduleScreen to re-fetch and list immediately
-        } else {
-            onScheduleChange(); 
-        }
+        // Trigger parent refresh (this updates bookedSessionIds)
+        onScheduleChange();
+        // We DO NOT close here automatically anymore, so you can see the state flip from "Cancel" to "Register"
       } else if (res.status === 409) {
         alert('You are already registered for this slot.');
       } else {
-        alert(`${method === 'POST' ? 'Registration' : 'Cancellation'} failed. Check API.`);
+        alert(`${method === 'POST' ? 'Registration' : 'Cancellation'} failed.`);
       }
     } catch (error) {
       console.error(error);
@@ -1451,22 +1489,13 @@ const ClassModal = ({ sessions, onClose, onScheduleChange, onCancelSuccess, curr
     }
   };
 
-  const handleRegister = () => handleAction('POST');
-  const handleCancel = () => {
-    if (window.confirm("Are you sure you want to cancel this booking?")) {
-        handleAction('DELETE');
-    }
-  };
-
-  const buttonText = isProcessing ? (isViewingScheduledItem ? 'CANCELLING...' : 'REGISTERING...') : 'REGISTER NOW';
-
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
       <div className="w-full max-w-sm bg-white rounded-3xl overflow-hidden flex flex-col max-h-[90vh]">
          {/* Header */}
          <div className="bg-gradient-to-r from-east-light to-east-dark p-4 flex justify-between items-center shrink-0">
             <h2 className="font-montserrat font-black italic text-xl text-white uppercase truncate pr-2">
-                {isViewingScheduledItem ? 'MY BOOKING' : (displaySession.category === 'COACH' ? displaySession.instructor : displaySession.title)}
+                {isBooked ? 'MY BOOKING' : (displaySession.category === 'COACH' ? displaySession.instructor : displaySession.title)}
             </h2>
             <button onClick={onClose}><X className="text-white" /></button>
          </div>
@@ -1485,30 +1514,36 @@ const ClassModal = ({ sessions, onClose, onScheduleChange, onCancelSuccess, curr
                 </div>
             )}
 
-            {/* Time Selection (Only for Home Screen) */}
-            {!isNews && !isViewingScheduledItem && (
+            {/* Time Selection */}
+            {!isNews && (
                 <div className="mb-6">
                     <p className="font-montserrat font-bold text-[10px] mb-2 uppercase">SELECT TIME:</p>
                     <div className="flex gap-2 flex-wrap">
-                        {sessions.map((sess) => (
-                            <button
-                                key={sess.id}
-                                onClick={() => setSelectedSessionId(sess.id)}
-                                className={`px-4 py-2 rounded-lg text-xs font-bold border transition-colors ${selectedSessionId === sess.id ? 'bg-east-light text-white border-east-light' : 'bg-white text-black border-gray-300 hover:border-east-light'}`}
-                            >
-                                {new Date(sess.start_time).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'})}
-                            </button>
-                        ))}
+                        {sessions.map((sess) => {
+                            const isThisSessionBooked = bookedSessionIds.includes(sess.id);
+                            return (
+                                <button
+                                    key={sess.id}
+                                    onClick={() => setSelectedSessionId(sess.id)}
+                                    className={`px-4 py-2 rounded-lg text-xs font-bold border transition-colors relative 
+                                        ${selectedSessionId === sess.id ? 'bg-east-light text-white border-east-light' : 'bg-white text-black border-gray-300 hover:border-east-light'}
+                                    `}
+                                >
+                                    {new Date(sess.start_time).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'})}
+                                    {isThisSessionBooked && <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></span>}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             )}
             
             {/* Show Booking Details for Scheduled Item */}
-            {isViewingScheduledItem && (
+            {isBooked && selectedSessionId && (
                 <div className="mb-6 p-4 border border-red-500/50 rounded-xl bg-red-500/10">
                     <p className="font-montserrat font-bold text-[10px] text-red-500 uppercase mb-2">SCHEDULED TIME:</p>
                     <p className="font-montserrat font-black text-lg text-black">
-                        {new Date(displaySession.start_time).toLocaleString([], { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'})}
+                        {new Date(sessions.find(s => s.id === selectedSessionId)?.start_time || '').toLocaleString([], { weekday: 'long', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'})}
                     </p>
                 </div>
             )}
@@ -1523,23 +1558,25 @@ const ClassModal = ({ sessions, onClose, onScheduleChange, onCancelSuccess, curr
                    <Share2 className="text-white" size={20} />
                 </div>
                 
-                {/* Cancel Button (Schedule Screen) */}
-                {isViewingScheduledItem ? (
+                {isBooked ? (
                      <button 
-                        onClick={handleCancel} 
+                        onClick={() => {
+                            if (window.confirm("Are you sure you want to cancel?")) {
+                                handleAction('DELETE');
+                            }
+                        }}
                         disabled={isProcessing}
                         className="text-red-500 text-sm font-bold italic underline disabled:opacity-50 hover:text-red-400 transition-colors"
                      >
                        {isProcessing ? 'CANCELLING...' : 'CANCEL BOOKING'}
                      </button>
                 ) : (
-                    /* Register Button (Home Screen) */
                     <button 
-                      onClick={handleRegister} 
+                      onClick={() => handleAction('POST')}
                       disabled={isProcessing || !selectedSessionId}
                       className="text-white text-sm font-bold italic underline disabled:opacity-50 hover:text-east-light transition-colors"
                     >
-                      {buttonText}
+                      {isProcessing ? 'REGISTERING...' : 'REGISTER NOW'}
                     </button>
                 )}
 
@@ -1579,27 +1616,32 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfileData>(initialProfileData);
 
-  // State to trigger a refresh of the schedule page when a booking changes
+  // Global state for booked IDs
+  const [bookedSessionIds, setBookedSessionIds] = useState<number[]>([]);
   const [scheduleRefreshKey, setScheduleRefreshKey] = useState(0); 
-  
-  // Helper to trigger a full refresh of schedule and close modal
-  const handleScheduleChange = () => {
-      setScheduleRefreshKey(prev => prev + 1);
-      setShowClassModal(false);
-  }
-
-  // The modal cancellation handler just needs to trigger the refresh key
-  const removeSessionFromList = () => {
-      setScheduleRefreshKey(prev => prev + 1); // Trigger re-fetch
-      setShowClassModal(false);
-  }
 
   // MOCK IDS: Player=12, Parent=13
   const getCurrentUserId = () => {
-      if (userRole === 'player') return 12; // Mock Player ID
-      if (userRole === 'parent') return 13; // Mock Parent ID
+      if (userRole === 'player') return 12; 
+      if (userRole === 'parent') return 13; 
       return null;
   }
+  const currentUserId = getCurrentUserId();
+
+  // 1. Fetch Booked Sessions (Global Source of Truth)
+  useEffect(() => {
+    if (!currentUserId) return;
+    
+    fetch(`/api/my-schedule?userId=${currentUserId}`)
+      .then(res => res.json())
+      .then(data => {
+        if(Array.isArray(data)) {
+           // Store just the IDs so we can easily check "is this booked?" anywhere
+           setBookedSessionIds(data.map((s: Session) => s.id));
+        }
+      })
+      .catch(console.error);
+  }, [currentUserId, scheduleRefreshKey]); // Re-runs when user or refreshKey changes
 
   useEffect(() => {
     const storedRole = localStorage.getItem('userRole') as UserRole | null;
@@ -1616,20 +1658,19 @@ export default function App() {
       router.replace('/login');
   };
   
+  // Handlers for Modal Actions
+  const handleScheduleChange = () => {
+      setScheduleRefreshKey(prev => prev + 1); // Triggers re-fetch of bookedSessionIds
+      // We do NOT close the modal here to allow the user to see the state change
+  }
+
+  const handleCloseModal = () => {
+      setShowClassModal(false);
+  }
+  
   if (isLoading || !userRole) {
     return <div className="min-h-screen bg-black flex items-center justify-center text-east-light">LOADING...</div>;
   }
-
-  const currentUserId = getCurrentUserId();
-  
-  const classModalProps = {
-      sessions: selectedSessions, 
-      onClose: () => setShowClassModal(false),
-      onScheduleChange: handleScheduleChange,
-      onCancelSuccess: removeSessionFromList, 
-      currentUserId: currentUserId, 
-  };
-  
 
   return (
     <div className="min-h-screen bg-black text-white font-opensans select-none">
@@ -1641,7 +1682,8 @@ export default function App() {
                     setSelectedSessions(sessions);
                     setShowClassModal(true);
                 }} 
-                onOpenSettings={() => setShowSettingsModal(true)} 
+                onOpenSettings={() => setShowSettingsModal(true)}
+                bookedSessionIds={bookedSessionIds} // Pass down source of truth
             />
           )}
           {activeTab === 'profile' && (
@@ -1666,7 +1708,13 @@ export default function App() {
         <BottomNav activeTab={activeTab} setTab={setActiveTab} />
         
         {showClassModal && currentUserId && (
-            <ClassModal {...classModalProps} /> 
+            <ClassModal 
+                sessions={selectedSessions}
+                onClose={handleCloseModal}
+                onScheduleChange={handleScheduleChange} 
+                currentUserId={currentUserId}
+                bookedSessionIds={bookedSessionIds} // Modal now knows what is booked
+            /> 
         )}
         
         {showSettingsModal && (
