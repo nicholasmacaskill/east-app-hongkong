@@ -1565,6 +1565,8 @@ const ClassModal = ({ sessions, onClose, onScheduleChange, onCancelSuccess, curr
 
 // --- Main App Layout ---
 
+// ... (keep all your imports and other components above this)
+
 export default function App() {
   const router = useRouter(); 
   const [activeTab, setActiveTab] = useState<Tab>('home');
@@ -1625,7 +1627,7 @@ export default function App() {
       onClose: () => setShowClassModal(false),
       onScheduleChange: handleScheduleChange,
       onCancelSuccess: removeSessionFromList, 
-      currentUserId: currentUserId, // CRITICAL: Pass the determined ID
+      currentUserId: currentUserId, 
   };
   
 
@@ -1655,7 +1657,7 @@ export default function App() {
                     setShowClassModal(true);
                 }}
                 refreshKey={scheduleRefreshKey} 
-                currentUserId={currentUserId} // CRITICAL: Pass the ID here too
+                currentUserId={currentUserId} 
             />
           )}
           {activeTab === 'community' && <CommunityScreen />}
@@ -1668,7 +1670,12 @@ export default function App() {
         )}
         
         {showSettingsModal && (
-            <SettingsModal onClose={() => setShowSettingsModal(false)} onLogout={handleLogout} profileData={userProfile} setProfileData={setProfileData} />
+            <SettingsModal 
+                onClose={() => setShowSettingsModal(false)} 
+                onLogout={handleLogout} 
+                profileData={userProfile} 
+                setProfileData={setUserProfile} 
+            />
         )}
       </div>
     </div>
