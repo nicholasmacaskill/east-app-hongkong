@@ -10,7 +10,6 @@ const CURRENT_USER_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 // --- HELPER: Safely Format Post Data ---
 const formatPostData = (data: any[]) => {
   return data.map(post => {
-      // 1. Handle Shared Post Relation
       let rawShared = post.shared_post;
       if (Array.isArray(rawShared)) {
           rawShared = rawShared.length > 0 ? rawShared[0] : null;
@@ -18,7 +17,6 @@ const formatPostData = (data: any[]) => {
       
       const hasSharedPost = rawShared && rawShared.id;
       
-      // 2. Handle Profile Relation inside Shared Post
       let sharedProfile = null;
       if (hasSharedPost && rawShared.profiles) {
            if (Array.isArray(rawShared.profiles)) {
@@ -28,7 +26,6 @@ const formatPostData = (data: any[]) => {
            }
       }
 
-      // 3. Handle Main Author Profile
       let authorProfile = post.profiles;
       if (Array.isArray(authorProfile)) authorProfile = authorProfile[0];
 
@@ -37,7 +34,6 @@ const formatPostData = (data: any[]) => {
           username: authorProfile?.username || 'Unknown',
           avatar_url: authorProfile?.avatar_url,
           profiles: authorProfile, 
-
           likes_count: post.likes ? post.likes.length : 0,
           user_has_liked: post.likes ? post.likes.some((l: any) => l.user_id === CURRENT_USER_ID) : false,
           
@@ -54,7 +50,6 @@ const formatPostData = (data: any[]) => {
 // --- COMPONENT: Shared Post Card ---
 const SharedPostCard = ({ post }: { post: Post }) => {
   if (!post || !post.id) return null;
-  
   // @ts-ignore
   const authorName = post.username || post.profiles?.username || 'Unknown';
   // @ts-ignore
@@ -74,7 +69,8 @@ const SharedPostCard = ({ post }: { post: Post }) => {
            </div>
        </div>
        <div className="p-3">
-           <p className="font-montserrat font-bold italic text-xs text-gray-300 leading-relaxed uppercase line-clamp-3 mb-2">
+           {/* FIXED: Removed 'uppercase' class */}
+           <p className="font-montserrat font-bold italic text-xs text-gray-300 leading-relaxed line-clamp-3 mb-2">
                {post.caption}
            </p>
        </div>
@@ -108,33 +104,72 @@ export default function CommunityScreen() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const feedTopRef = useRef<HTMLDivElement>(null);
 
+  // --- FETCH SINGLE POST (For Manual Updates) ---
+  const fetchSinglePostRobust = async (id: number) => {
+      const { data: mainPost } = await supabase.from('posts')
+        .select(`*, profiles(username, avatar_url), likes(user_id)`)
+        .eq('id', id)
+        .single();
+      
+      if (!mainPost) return null;
+
+      let sharedPostData = null;
+      if (mainPost.shared_post_id) {
+          const { data: shared } = await supabase.from('posts')
+             .select(`*, profiles(username, avatar_url)`)
+             .eq('id', mainPost.shared_post_id)
+             .single();
+          sharedPostData = shared;
+      }
+
+      const combined = { ...mainPost, shared_post: sharedPostData };
+      return formatPostData([combined])[0];
+  };
+
   // --- FETCH FEED (Initial Load) ---
   useEffect(() => {
     const fetchPosts = async () => {
-        // We use the strict tag here for efficiency on the big list
-        const { data, error } = await supabase.from('posts')
-          .select(`
-            *, 
-            profiles(username, avatar_url), 
-            likes(user_id),
-            shared_post:posts!fk_shared_post(
-                *,
-                profiles(username, avatar_url)
-            )
-          `)
+        const { data: mainPosts, error } = await supabase.from('posts')
+          .select(`*, profiles(username, avatar_url), likes(user_id)`)
           .order('created_at', { ascending: false });
 
-        if (error) console.error("Error fetching posts:", error);
-        if (data) setPosts(formatPostData(data) as Post[]);
+        if (error) {
+            console.error("Error fetching main posts:", error);
+            return;
+        }
+        if (!mainPosts) return;
+
+        const sharedIds = mainPosts
+            .map(p => p.shared_post_id)
+            .filter(id => id !== null);
+
+        let sharedPostsMap: Record<number, any> = {};
+
+        if (sharedIds.length > 0) {
+            const { data: sharedData } = await supabase.from('posts')
+                .select(`*, profiles(username, avatar_url)`)
+                .in('id', sharedIds);
+            
+            if (sharedData) {
+                sharedData.forEach(p => {
+                    sharedPostsMap[p.id] = p;
+                });
+            }
+        }
+
+        const combinedPosts = mainPosts.map(post => ({
+            ...post,
+            shared_post: post.shared_post_id ? sharedPostsMap[post.shared_post_id] : null
+        }));
+
+        setPosts(formatPostData(combinedPosts) as Post[]);
     };
 
     fetchPosts();
 
-    // --- REALTIME LISTENER ---
     const channel = supabase.channel('feed_updates')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, 
         async (payload) => {
-            // Robust Manual Fetch for Realtime events
             const newPost = await fetchSinglePostRobust(payload.new.id);
             if (newPost) {
                 setPosts(prev => {
@@ -153,36 +188,6 @@ export default function CommunityScreen() {
 
     return () => { supabase.removeChannel(channel); };
   }, []);
-
-  // --- ROBUST SINGLE FETCH (Manual Join) ---
-  // This avoids complex query failures when inserting new items
-  const fetchSinglePostRobust = async (id: number) => {
-      // 1. Get the main post
-      const { data: mainPost, error } = await supabase.from('posts')
-        .select(`*, profiles(username, avatar_url), likes(user_id)`)
-        .eq('id', id)
-        .single();
-      
-      if (error || !mainPost) return null;
-
-      // 2. Manually fetch shared post if it exists
-      let sharedPostData = null;
-      if (mainPost.shared_post_id) {
-          const { data: shared } = await supabase.from('posts')
-             .select(`*, profiles(username, avatar_url)`)
-             .eq('id', mainPost.shared_post_id)
-             .single();
-          sharedPostData = shared;
-      }
-
-      // 3. Combine
-      const combined = {
-          ...mainPost,
-          shared_post: sharedPostData
-      };
-
-      return formatPostData([combined])[0];
-  };
 
   // --- FETCH MESSAGES ---
   useEffect(() => {
@@ -269,34 +274,26 @@ export default function CommunityScreen() {
     feedTopRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // --- SEND POST (Feed) - UPDATED ---
   const sendPost = async () => {
     if (!caption && !selectedFile && !postToShare) return;
     setIsUploading(true);
-    
     let url = null; 
     if (selectedFile) url = await uploadImage(selectedFile);
     const sharedId = (postToShare && postToShare.id) ? postToShare.id : null;
 
-    // 1. Insert into DB
     const { data, error } = await supabase.from('posts').insert({ 
         user_id: CURRENT_USER_ID, caption, image_url: url, shared_post_id: sharedId
     }).select().single();
     
-    if (error) {
-        alert("Could not post: " + error.message);
-    } else if (data) {
-        // 2. Fetch the new post manually (Robust Method)
+    if (error) alert("Could not post: " + error.message);
+    else if (data) {
         const newPost = await fetchSinglePostRobust(data.id);
-        if (newPost) {
-            setPosts(prev => [newPost as Post, ...prev]);
-        }
+        if (newPost) setPosts(prev => [newPost as Post, ...prev]);
         setCaption(''); setSelectedFile(null); setPostToShare(null);
     }
     setIsUploading(false);
   };
 
-  // --- SEND MESSAGE (Chat) - UPDATED ---
   const sendMessage = async () => {
     if ((!inputMsg && !selectedFile) || !activeChatUser) return;
 
@@ -304,7 +301,6 @@ export default function CommunityScreen() {
     const messageContent = inputMsg;
     const fileToSend = selectedFile;
     
-    // 1. Optimistic Update
     const optimisticMessage: Message = {
         id: tempId,
         sender_id: CURRENT_USER_ID,
@@ -318,7 +314,6 @@ export default function CommunityScreen() {
     setMessages(prev => [...prev, optimisticMessage]);
     setInputMsg(''); setSelectedFile(null);
 
-    // 2. Upload & Insert
     let url = null;
     if (fileToSend) url = await uploadImage(fileToSend);
     
@@ -333,19 +328,9 @@ export default function CommunityScreen() {
         setMessages(prev => prev.filter(m => m.id !== tempId));
         alert("Failed to send message");
     } else {
-        // 3. Update Optimistic Message
-        setMessages(prev => prev.map(m => {
-            if (m.id === tempId) {
-                return {
-                    ...m,
-                    id: data.id,
-                    content: data.content, // This updates "Sending..." to "Sent"
-                    image_url: data.image_url,
-                    is_me: true // Keep true so we can still delete it
-                };
-            }
-            return m;
-        }));
+        setMessages(prev => prev.map(m => m.id === tempId ? { 
+            ...m, id: data.id, content: data.content, image_url: data.image_url, is_me: true
+        } : m));
     }
   };
 
@@ -523,7 +508,8 @@ export default function CommunityScreen() {
                             <p className="font-bold text-[10px] text-gray-400 uppercase">HONG KONG WARRIORS</p>
                         </div>
                     </div>
-                    {post.caption && <div className="px-6 pb-2"><p className="font-montserrat font-bold italic text-xs text-white leading-relaxed uppercase">{post.caption}</p></div>}
+                    {/* FIXED: Removed 'uppercase' class */}
+                    {post.caption && <div className="px-6 pb-2"><p className="font-montserrat font-bold italic text-xs text-white leading-relaxed">{post.caption}</p></div>}
                     {post.image_url && <div className="aspect-video w-full relative bg-black/20 mt-2"><img src={post.image_url} className="w-full h-full object-cover" alt="content" /></div>}
                     {post.shared_post && post.shared_post.id && <div className="px-4 pb-2"><SharedPostCard post={post.shared_post} /></div>}
                     <div className="px-6 pb-4 bg-[#1a1a1a]">
