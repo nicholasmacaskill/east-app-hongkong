@@ -261,6 +261,7 @@ const SettingsModal = ({ onClose, onLogout, profileData, setProfileData }: {
     profileData: UserProfileData,
     setProfileData: (data: UserProfileData) => void
 }) => {
+    const router = useRouter();
     const [view, setView] = useState<'menu' | 'edit' | 'prefs'>('menu');
 
     if (view === 'edit') return <EditProfileScreen onBack={() => setView('menu')} profileData={profileData} setProfileData={setProfileData} />;
@@ -274,7 +275,7 @@ const SettingsModal = ({ onClose, onLogout, profileData, setProfileData }: {
                 <SettingsSectionTitle title="My Profile" />
                 <SettingsMenuItem icon={UserCog} label="Personal Details" onClick={() => setView('edit')} />
                 <SettingsMenuItem icon={Bell} label="My Preferences" onClick={() => setView('prefs')} />
-                <SettingsMenuItem icon={CreditCard} label="Billing" onClick={() => console.log("Billing clicked")} />
+                <SettingsMenuItem icon={CreditCard} label="Membership" onClick={() => router.push('/membership')} />
 
                 <SettingsSectionTitle title="Help" />
                 <SettingsMenuItem icon={FileText} label="FAQ's" onClick={() => console.log("FAQ clicked")} />
@@ -294,7 +295,6 @@ const SettingsModal = ({ onClose, onLogout, profileData, setProfileData }: {
         </SettingsContainer>
     );
 }
-
 
 // ==========================================
 // Existing App Code (Updated with Settings Triggers)
