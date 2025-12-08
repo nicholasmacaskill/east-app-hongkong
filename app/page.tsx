@@ -1,7 +1,9 @@
 'use client';
 
+'use client';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation'; // Ensure this line exists
+// ... rest of imports
 import { 
     Home, User as UserIcon, QrCode, Activity, MessageSquare, 
     ChevronLeft, ChevronRight, ChevronDown, X, CheckCircle2, 
@@ -1558,8 +1560,19 @@ const ClassModal = ({ sessions, onClose, onScheduleChange, currentUserId, booked
 // ... (keep all your imports and other components above this)
 
 export default function App() {
-  const router = useRouter(); 
+  const router = useRouter();
+  const searchParams = useSearchParams(); // Placed correctly at the top scope
   const [activeTab, setActiveTab] = useState<Tab>('home');
+
+  // --- NEW: Navigation listener to handle links from Membership page ---
+  useEffect(() => {
+    const targetTab = searchParams.get('tab') as Tab;
+    if (targetTab && ['home', 'profile', 'qr', 'schedule', 'community'].includes(targetTab)) {
+        setActiveTab(targetTab);
+    }
+  }, [searchParams]);
+  // ---------------------------------------------------------------------
+
   const [showClassModal, setShowClassModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   
@@ -1577,7 +1590,6 @@ export default function App() {
   const [sessionToShare, setSessionToShare] = useState<Session | null>(null);
 
   const handleShareEvent = async (targetUserId: string) => {
-      // Hardcode current user to Lee's UUID for testing (or use auth context)
       const senderId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'; 
       
       if(!sessionToShare) return;
@@ -1597,7 +1609,6 @@ export default function App() {
           alert('Failed to send');
       }
   };
-  // --------------------------------
 
   // MOCK IDS: Player=12, Parent=13
   const getCurrentUserId = () => {
@@ -1615,12 +1626,11 @@ export default function App() {
       .then(res => res.json())
       .then(data => {
         if(Array.isArray(data)) {
-           // Store just the IDs so we can easily check "is this booked?" anywhere
            setBookedSessionIds(data.map((s: Session) => s.id));
         }
       })
       .catch(console.error);
-  }, [currentUserId, scheduleRefreshKey]); // Re-runs when user or refreshKey changes
+  }, [currentUserId, scheduleRefreshKey]);
 
   useEffect(() => {
     const storedRole = localStorage.getItem('userRole') as UserRole | null;
@@ -1637,10 +1647,8 @@ export default function App() {
       router.replace('/login');
   };
   
-  // Handlers for Modal Actions
   const handleScheduleChange = () => {
-      setScheduleRefreshKey(prev => prev + 1); // Triggers re-fetch of bookedSessionIds
-      // We do NOT close the modal here to allow the user to see the state change
+      setScheduleRefreshKey(prev => prev + 1);
   }
 
   const handleCloseModal = () => {
@@ -1650,8 +1658,6 @@ export default function App() {
   if (isLoading || !userRole) {
     return <div className="min-h-screen bg-black flex items-center justify-center text-east-light">LOADING...</div>;
   }
-
-  // ... inside export default function App() { ...
 
   return (
     <div className="min-h-screen bg-black text-white font-opensans select-none">
@@ -1683,13 +1689,11 @@ export default function App() {
                 currentUserId={currentUserId} 
             />
           )}
-          {/* ✅ UPDATED: Renders the new imported component */}
           {activeTab === 'community' && <CommunityScreen />}
         </main>
 
         <BottomNav activeTab={activeTab} setTab={setActiveTab} />
         
-        {/* ✅ NEW: Share Modal Logic */}
         {showShareModal && sessionToShare && (
             <ShareModal 
                 event={sessionToShare} 
@@ -1698,7 +1702,6 @@ export default function App() {
             />
         )}
 
-        {/* ✅ UPDATED: Class Modal now handles onShare */}
         {showClassModal && currentUserId && (
             <ClassModal 
                 sessions={selectedSessions}
