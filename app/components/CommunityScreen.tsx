@@ -10,12 +10,15 @@ const CURRENT_USER_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 // --- HELPER: Safely Format Post Data ---
 const formatPostData = (data: any[]) => {
   return data.map(post => {
+      // 1. Handle Shared Post Relation
       let rawShared = post.shared_post;
       if (Array.isArray(rawShared)) {
           rawShared = rawShared.length > 0 ? rawShared[0] : null;
       }
+      
       const hasSharedPost = rawShared && rawShared.id;
       
+      // 2. Handle Profile Relation inside Shared Post
       let sharedProfile = null;
       if (hasSharedPost && rawShared.profiles) {
            if (Array.isArray(rawShared.profiles)) {
@@ -25,6 +28,7 @@ const formatPostData = (data: any[]) => {
            }
       }
 
+      // 3. Handle Main Author Profile
       let authorProfile = post.profiles;
       if (Array.isArray(authorProfile)) authorProfile = authorProfile[0];
 
@@ -33,8 +37,10 @@ const formatPostData = (data: any[]) => {
           username: authorProfile?.username || 'Unknown',
           avatar_url: authorProfile?.avatar_url,
           profiles: authorProfile, 
+
           likes_count: post.likes ? post.likes.length : 0,
           user_has_liked: post.likes ? post.likes.some((l: any) => l.user_id === CURRENT_USER_ID) : false,
+          
           shared_post: hasSharedPost ? {
               ...rawShared,
               username: sharedProfile?.username || 'Unknown', 
@@ -45,8 +51,10 @@ const formatPostData = (data: any[]) => {
   });
 };
 
+// --- COMPONENT: Shared Post Card ---
 const SharedPostCard = ({ post }: { post: Post }) => {
   if (!post || !post.id) return null;
+  
   // @ts-ignore
   const authorName = post.username || post.profiles?.username || 'Unknown';
   // @ts-ignore
@@ -100,31 +108,34 @@ export default function CommunityScreen() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const feedTopRef = useRef<HTMLDivElement>(null);
 
-  // --- FETCH SINGLE POST ---
-  const fetchSinglePost = async (id: number) => {
-      const { data } = await supabase.from('posts')
-        .select(`*, profiles(username, avatar_url), likes(user_id), shared_post:posts(*, profiles(username, avatar_url))`)
-        .eq('id', id)
-        .single();
-      return data ? formatPostData([data])[0] : null;
-  };
-
-  // --- FETCH FEED ---
+  // --- FETCH FEED (Initial Load) ---
   useEffect(() => {
     const fetchPosts = async () => {
+        // We use the strict tag here for efficiency on the big list
         const { data, error } = await supabase.from('posts')
-          .select(`*, profiles(username, avatar_url), likes(user_id), shared_post:posts(*, profiles(username, avatar_url))`)
+          .select(`
+            *, 
+            profiles(username, avatar_url), 
+            likes(user_id),
+            shared_post:posts!fk_shared_post(
+                *,
+                profiles(username, avatar_url)
+            )
+          `)
           .order('created_at', { ascending: false });
 
         if (error) console.error("Error fetching posts:", error);
         if (data) setPosts(formatPostData(data) as Post[]);
     };
+
     fetchPosts();
 
+    // --- REALTIME LISTENER ---
     const channel = supabase.channel('feed_updates')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, 
         async (payload) => {
-            const newPost = await fetchSinglePost(payload.new.id);
+            // Robust Manual Fetch for Realtime events
+            const newPost = await fetchSinglePostRobust(payload.new.id);
             if (newPost) {
                 setPosts(prev => {
                     if (prev.some(p => p.id === newPost.id)) return prev; 
@@ -134,12 +145,44 @@ export default function CommunityScreen() {
         }
       )
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, 
-        (payload) => setPosts(prev => prev.filter(p => p.id !== payload.old.id))
+        (payload) => {
+            setPosts(prev => prev.filter(p => p.id !== payload.old.id));
+        }
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, []);
+
+  // --- ROBUST SINGLE FETCH (Manual Join) ---
+  // This avoids complex query failures when inserting new items
+  const fetchSinglePostRobust = async (id: number) => {
+      // 1. Get the main post
+      const { data: mainPost, error } = await supabase.from('posts')
+        .select(`*, profiles(username, avatar_url), likes(user_id)`)
+        .eq('id', id)
+        .single();
+      
+      if (error || !mainPost) return null;
+
+      // 2. Manually fetch shared post if it exists
+      let sharedPostData = null;
+      if (mainPost.shared_post_id) {
+          const { data: shared } = await supabase.from('posts')
+             .select(`*, profiles(username, avatar_url)`)
+             .eq('id', mainPost.shared_post_id)
+             .single();
+          sharedPostData = shared;
+      }
+
+      // 3. Combine
+      const combined = {
+          ...mainPost,
+          shared_post: sharedPostData
+      };
+
+      return formatPostData([combined])[0];
+  };
 
   // --- FETCH MESSAGES ---
   useEffect(() => {
@@ -174,13 +217,13 @@ export default function CommunityScreen() {
   
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  // Fetch Users
   useEffect(() => {
     supabase.from('profiles').select('*').neq('id', CURRENT_USER_ID)
       .then(({ data }) => data && setUsers(data as Profile[]));
   }, []);
 
   // --- ACTIONS ---
+
   const uploadImage = async (file: File) => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
@@ -226,28 +269,34 @@ export default function CommunityScreen() {
     feedTopRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // --- SEND POST (Feed) ---
+  // --- SEND POST (Feed) - UPDATED ---
   const sendPost = async () => {
     if (!caption && !selectedFile && !postToShare) return;
     setIsUploading(true);
+    
     let url = null; 
     if (selectedFile) url = await uploadImage(selectedFile);
     const sharedId = (postToShare && postToShare.id) ? postToShare.id : null;
 
+    // 1. Insert into DB
     const { data, error } = await supabase.from('posts').insert({ 
         user_id: CURRENT_USER_ID, caption, image_url: url, shared_post_id: sharedId
     }).select().single();
     
-    if (error) alert("Could not post: " + error.message);
-    else if (data) {
-        const newPost = await fetchSinglePost(data.id);
-        if (newPost) setPosts(prev => [newPost as Post, ...prev]);
+    if (error) {
+        alert("Could not post: " + error.message);
+    } else if (data) {
+        // 2. Fetch the new post manually (Robust Method)
+        const newPost = await fetchSinglePostRobust(data.id);
+        if (newPost) {
+            setPosts(prev => [newPost as Post, ...prev]);
+        }
         setCaption(''); setSelectedFile(null); setPostToShare(null);
     }
     setIsUploading(false);
   };
 
-  // --- SEND MESSAGE (Chat) ---
+  // --- SEND MESSAGE (Chat) - UPDATED ---
   const sendMessage = async () => {
     if ((!inputMsg && !selectedFile) || !activeChatUser) return;
 
@@ -255,6 +304,7 @@ export default function CommunityScreen() {
     const messageContent = inputMsg;
     const fileToSend = selectedFile;
     
+    // 1. Optimistic Update
     const optimisticMessage: Message = {
         id: tempId,
         sender_id: CURRENT_USER_ID,
@@ -268,6 +318,7 @@ export default function CommunityScreen() {
     setMessages(prev => [...prev, optimisticMessage]);
     setInputMsg(''); setSelectedFile(null);
 
+    // 2. Upload & Insert
     let url = null;
     if (fileToSend) url = await uploadImage(fileToSend);
     
@@ -282,10 +333,19 @@ export default function CommunityScreen() {
         setMessages(prev => prev.filter(m => m.id !== tempId));
         alert("Failed to send message");
     } else {
-        // FIXED: Update content, URL, AND remove the 'is_me' flag (so it looks like a real DB message)
-        setMessages(prev => prev.map(m => m.id === tempId ? { 
-            ...m, id: data.id, content: data.content, image_url: data.image_url, is_me: false 
-        } : m));
+        // 3. Update Optimistic Message
+        setMessages(prev => prev.map(m => {
+            if (m.id === tempId) {
+                return {
+                    ...m,
+                    id: data.id,
+                    content: data.content, // This updates "Sending..." to "Sent"
+                    image_url: data.image_url,
+                    is_me: true // Keep true so we can still delete it
+                };
+            }
+            return m;
+        }));
     }
   };
 
@@ -360,7 +420,6 @@ export default function CommunityScreen() {
                             <img src={activeChatUser?.avatar_url} className="w-full h-full object-cover" alt="Avatar"/>
                         </div>
                     )}
-                    {/* FIXED: Removed !msg.is_me check so you can delete your own recent messages */}
                     {isMe && (
                         <button onClick={() => deleteMessage(msg.id)} className="mr-2 mb-3 text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={14} /></button>
                     )}
