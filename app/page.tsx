@@ -1165,8 +1165,10 @@ const ScheduleScreen = ({ onPreviewClick, refreshKey, currentUserId }: { onPrevi
   );
 };
 
-// --- 6. QR Screen ---
+// --- 6. QR Screen (Updated with Membership Link) ---
 const QRScreen = () => {
+  const router = useRouter(); // Initialize router for navigation
+
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 animate-fadeIn pb-24 relative">
        {/* Background */}
@@ -1196,15 +1198,25 @@ const QRScreen = () => {
              <div className="absolute -bottom-2 -right-2 w-6 h-6 border-b-[6px] border-r-[6px] border-east-light rounded-br-lg" />
            </div>
 
-           <div className="text-center w-full">
+           <div className="text-center w-full mb-6">
              <div className="font-montserrat font-black italic text-2xl uppercase">LEE</div>
-             <div className="font-bold text-[10px] text-east-dark uppercase tracking-wider mt-1 flex items-center justify-center gap-1">
+             
+             {/* Active Status */}
+             <div className="font-bold text-[10px] text-east-dark uppercase tracking-wider mt-1 flex items-center justify-center gap-1 mb-4">
                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                ACTIVE MEMBER
              </div>
+
+             {/* --- NEW: Membership Link Button --- */}
+             <button 
+                onClick={() => router.push('/membership')}
+                className="bg-black text-white font-montserrat font-bold italic text-[10px] px-6 py-2 rounded-full uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg border border-gray-800"
+             >
+                MANAGE MEMBERSHIP
+             </button>
            </div>
 
-           <div className="mt-8 pt-6 border-t-2 border-dashed border-gray-200 w-full flex justify-between items-center">
+           <div className="pt-6 border-t-2 border-dashed border-gray-200 w-full flex justify-between items-center">
              <div>
                  <div className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">MEMBER ID</div>
                  <div className="font-montserrat font-black text-lg tracking-widest">#8821-XJ</div>
