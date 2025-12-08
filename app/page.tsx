@@ -1264,13 +1264,13 @@ const QRScreen = () => {
 
   const renderFeed = () => (
     <div className="h-full flex flex-col relative animate-fadeIn">
-       {/* Background */}
+       {/* Background (Restored from your snippet) */}
        <div className="absolute inset-0 z-0">
           <img src="https://images.unsplash.com/photo-1555685812-8b9c85c7954c?auto=format&fit=crop&q=80&w=1000" className="w-full h-full object-cover opacity-30 grayscale" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/90 to-black" />
        </div>
 
-       <div className="relative z-10 px-4 pt-6 flex-1 overflow-y-auto pb-32">
+       <div className="relative z-10 px-4 pt-6 flex-1 overflow-y-auto pb-32 no-scrollbar">
          {/* Header */}
          <div className="flex items-center gap-2 mb-6 cursor-pointer" onClick={() => setViewMode('messenger-list')}>
              <h1 className="font-montserrat font-black italic text-3xl text-white">FEED</h1>
@@ -1282,40 +1282,75 @@ const QRScreen = () => {
              {['GENERAL', 'TEAM', 'LEAGUE'].map(tab => (
                 <button 
                   key={tab}
-                  className="bg-white text-black font-montserrat font-bold italic text-xs px-6 py-2 rounded-full uppercase hover:bg-east-light transition-colors"
+                  onClick={() => setActiveChannel(tab.toLowerCase())} // Added click handler
+                  className={`font-montserrat font-bold italic text-xs px-6 py-2 rounded-full uppercase transition-colors ${activeChannel === tab.toLowerCase() ? 'bg-white text-black' : 'bg-transparent border border-gray-600 text-gray-400'}`}
                 >
                    {tab}
                 </button>
              ))}
          </div>
 
-         {/* Post */}
-         <div className="mb-8">
-             <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white">
-                   <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100" className="w-full h-full object-cover" />
+         {/* Create Post Input (Added back so you can actually post) */}
+         <div className="mb-8 bg-[#1a1a1a] p-4 rounded-2xl border border-gray-800 relative z-20">
+            <textarea 
+              className="w-full bg-transparent text-sm font-bold text-white placeholder:text-gray-600 outline-none mb-3 resize-none"
+              placeholder="SHARE SOMETHING WITH THE COMMUNITY..."
+              rows={2}
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+            />
+            {/* Image Preview */}
+            {selectedFile && (
+                <div className="mb-3 relative w-fit">
+                    <img src={URL.createObjectURL(selectedFile)} className="h-20 rounded-lg border border-gray-700" alt="Preview" />
+                    <button onClick={() => setSelectedFile(null)} className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 text-white"><Trash2 size={10}/></button>
                 </div>
-                <div>
-                   <h3 className="font-montserrat font-black italic text-white text-lg uppercase leading-none">COACH RHETT</h3>
-                   <p className="font-bold text-[10px] text-gray-400 uppercase">HONG KONG WARRIORS</p>
+            )}
+            <div className="flex justify-between items-center border-t border-gray-800 pt-3">
+                <div className="flex gap-4">
+                    <button onClick={() => postFileRef.current?.click()} className="text-gray-400 hover:text-east-light transition-colors">
+                        <ImageIcon size={20} />
+                    </button>
+                    <input type="file" ref={postFileRef} onChange={handleFileSelect} className="hidden" accept="image/*" />
                 </div>
-             </div>
+                <button onClick={sendPost} disabled={isUploading} className="bg-east-light text-black font-black italic text-[10px] px-4 py-1.5 rounded uppercase hover:bg-white transition-colors disabled:opacity-50">
+                    {isUploading ? 'POSTING...' : 'POST'}
+                </button>
+            </div>
+         </div>
 
-             <div className="rounded-3xl overflow-hidden bg-[#1a1a1a] border border-gray-800 shadow-2xl">
-                <div className="aspect-video w-full relative">
-                   <img src="https://images.unsplash.com/photo-1517466787929-bc90951d0974?auto=format&fit=crop&q=80&w=800" className="w-full h-full object-cover" />
+         {/* Dynamic Posts List (Using your UI style) */}
+         <div className="space-y-8 pb-32">
+            {posts.map(post => (
+                <div key={post.id}>
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white">
+                           <img src={post.profiles?.avatar_url || "https://placehold.co/100"} className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                           <h3 className="font-montserrat font-black italic text-white text-lg uppercase leading-none">{post.profiles?.username || 'User'}</h3>
+                           <p className="font-bold text-[10px] text-gray-400 uppercase">HONG KONG WARRIORS</p>
+                        </div>
+                    </div>
+
+                    <div className="rounded-3xl overflow-hidden bg-[#1a1a1a] border border-gray-800 shadow-2xl">
+                        {post.image_url && (
+                            <div className="aspect-video w-full relative">
+                               <img src={post.image_url} className="w-full h-full object-cover" />
+                            </div>
+                        )}
+                        <div className="p-6 bg-[#1a1a1a]">
+                           <p className="font-montserrat font-bold italic text-xs text-gray-300 leading-relaxed uppercase">
+                              {post.caption}
+                           </p>
+                        </div>
+                    </div>
                 </div>
-                <div className="p-6 bg-[#1a1a1a]">
-                   <p className="font-montserrat font-bold italic text-xs text-gray-300 leading-relaxed uppercase">
-                      HOPING TO MEET OTHER MEMBERS OF THE LEAGUE AT TONIGHTS LEAGUE WIDE EVENT, IT'S BEEN GREAT PLAYING WITH AND AGAINST EVERYONE THIS YEAR!
-                   </p>
-                </div>
-             </div>
+            ))}
          </div>
        </div>
     </div>
   );
-
 // ==========================================
 // CLASS MODAL (Restored UI + DB Connection)
 

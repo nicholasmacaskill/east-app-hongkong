@@ -25,6 +25,7 @@ export interface Message {
   sender_id: string;
   receiver_id: string;
   content: string;
+  image_url?: string;
   shared_event_id?: number;
   shared_event_title?: string; // For display
   created_at: string;
