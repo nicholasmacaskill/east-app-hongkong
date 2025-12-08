@@ -1,7 +1,5 @@
 'use client';
 
-'use client';
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
@@ -11,6 +9,10 @@ import {
     Edit2, ToggleLeft, ToggleRight, CreditCard, UserCog,
     Send, Share2, Target 
 } from 'lucide-react'; 
+
+// app/page.tsx
+import { supabase } from '@/app/lib/supabase'; 
+import CommunityScreen from '@/app/components/CommunityScreen'; // Import the new component
 
 // Import Types
 import type { UserRole, Tab, NewsItem } from './types';
@@ -636,7 +638,7 @@ const PlayerProfile = ({ onOpenSettings, profileData }: { onOpenSettings: () => 
                 )}
 
                 {/* BADGES - Evenly spaced */}
-                <div className="grid grid-cols-4 w-full">
+                <div className="grid grid-cols-3 w-full">
                     {[
                         { l: 'TOP SCORER\n(TEAM)', url: 'https://www.citypng.com/public/uploads/preview/white-medal-ribbon-icon-png-img-701751695033073gjmv4za7ev.png' },
                         { l: 'TOP SCORER\n(LEAGUE)', url: 'https://www.citypng.com/public/uploads/preview/white-medal-ribbon-icon-png-img-701751695033073gjmv4za7ev.png'},
@@ -1217,96 +1219,6 @@ const QRScreen = () => {
   );
 };
 
-// --- 7. Community Screen ---
-const CommunityScreen = () => {
-  const [viewMode, setViewMode] = useState<'messenger-list' | 'chat-detail' | 'feed'>('feed');
-  
-  const [activeChannel, setActiveChannel] = useState('team'); // For Feed tabs
-
-  // Mock Data for Messenger List
-  const activeUsers = [
-    { name: 'LEE', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100' },
-    { name: 'BILL', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100' },
-    { name: 'ZEN', img: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=100' },
-    { name: 'XAVIER', img: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=100' }
-  ];
-
-  const recentChats = [
-    { id: '1', name: 'LEE', msg: 'SOUNDS GOOD! SEE YOU AT THE....', time: 'SUN. 9 PM', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100', active: true },
-    { id: '2', name: 'BILL', msg: "I'LL CHECK WITH ZEN. WE CAN CHAT AT...", time: 'SAT. 5 PM', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100', active: true },
-    { id: '3', name: 'ZEN', msg: "WHAT'S NEW WITH YOU? HOW WAS THE...", time: 'FRI. 3 PM', img: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=100', active: true },
-    { id: '4', name: 'CHOI', msg: "THAT WAS AWESOME! SO PROUD OF...", time: 'THURS. 1 PM', img: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?auto=format&fit=crop&q=80&w=100', active: true },
-    { id: '5', name: 'LEN', msg: "WHEN'S THE NEXT PRACTICE? ARE WE...", time: 'WEDS, 8 AM', img: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&q=80&w=100', active: true },
-    { id: '6', name: 'XAVIER', msg: "OK. SOUNDS GREAT!", time: 'TUES, 9 AM', img: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=100', active: true },
-  ];
-
-  // Chat Detail Messages
-  const messages = [
-    { id: '1', text: 'HEY!', isMe: true },
-    { id: '2', text: 'HOW ARE YOU FEELING TODAY?', isMe: true },
-    { id: '3', text: 'ZEN', isMe: false }, // Represents the user sending it
-    { id: '4', text: 'FEELING GREAT MY FRIEND', isMe: true },
-    { id: '5', text: 'YOU WERE FLYING YESTERDAY', isMe: true },
-  ];
-
-  // -- Render Functions --
-
-  const renderMessengerList = () => (
-    <div className="h-full flex flex-col relative animate-fadeIn">
-       {/* Background */}
-       <div className="absolute inset-0 z-0">
-          <img src="https://images.unsplash.com/photo-1555685812-8b9c85c7954c?auto=format&fit=crop&q=80&w=1000" className="w-full h-full object-cover opacity-30 grayscale" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/90 to-black" />
-       </div>
-
-       <div className="relative z-10 px-4 pt-6 flex-1 overflow-y-auto pb-32">
-         {/* Header */}
-         <div className="flex items-center gap-2 mb-8 cursor-pointer" onClick={() => setViewMode('feed')}>
-             <h1 className="font-montserrat font-black italic text-3xl text-white">MESSENGER</h1>
-             <ChevronDown className="text-white" />
-         </div>
-
-         {/* Active Now */}
-         <div className="mb-8">
-             <h3 className="font-montserrat font-black italic text-white text-lg mb-4">ACTIVE NOW</h3>
-             <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-                {activeUsers.map((u, i) => (
-                   <div key={i} className="flex flex-col items-center gap-2 shrink-0">
-                      <div className="w-16 h-16 rounded-full border-2 border-gray-600 relative">
-                         <img src={u.img} className="w-full h-full rounded-full object-cover" />
-                         <div className="absolute bottom-0 right-0 w-4 h-4 bg-east-light rounded-full border-2 border-black" />
-                      </div>
-                      <span className="font-montserrat font-bold italic text-[10px] text-white uppercase">{u.name}</span>
-                   </div>
-                ))}
-             </div>
-         </div>
-
-         {/* Recent Chat */}
-         <div>
-             <h3 className="font-montserrat font-black italic text-white text-lg mb-4">RECENT CHAT</h3>
-             <div className="space-y-4">
-                {recentChats.map(chat => (
-                   <div key={chat.id} onClick={() => setViewMode('chat-detail')} className="flex items-center gap-4 cursor-pointer group">
-                      <div className="w-14 h-14 rounded-full bg-gray-800 relative shrink-0">
-                         <img src={chat.img} className="w-full h-full rounded-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                         {chat.active && <div className="absolute bottom-0 right-0 w-3 h-3 bg-east-light rounded-full border border-black" />}
-                      </div>
-                      <div className="flex-1 min-w-0 border-b border-gray-800 pb-4">
-                         <div className="flex justify-between items-baseline mb-1">
-                            <h4 className="font-montserrat font-bold italic text-white text-lg uppercase">{chat.name}</h4>
-                            <span className="text-[9px] font-bold text-gray-400 uppercase">{chat.time}</span>
-                         </div>
-                         <p className="text-[10px] font-bold text-gray-500 truncate uppercase tracking-wide">{chat.msg}</p>
-                      </div>
-                   </div>
-                ))}
-             </div>
-         </div>
-       </div>
-    </div>
-  );
-
   const renderChatDetail = () => (
     <div className="h-full flex flex-col relative animate-fadeIn bg-black">
         {/* Header Image Area */}
@@ -1403,15 +1315,6 @@ const CommunityScreen = () => {
        </div>
     </div>
   );
-
-  return (
-    <div className="h-screen bg-black flex flex-col relative">
-       {viewMode === 'messenger-list' && renderMessengerList()}
-       {viewMode === 'chat-detail' && renderChatDetail()}
-       {viewMode === 'feed' && renderFeed()}
-    </div>
-  );
-};
 
 // ==========================================
 // CLASS MODAL (Restored UI + DB Connection)
@@ -1512,6 +1415,10 @@ const ClassModal = ({ sessions, onClose, onScheduleChange, currentUserId, booked
                     <img src={displaySession.image_url} className="w-full h-full object-cover" alt={displaySession.title} />
                 </div>
             )}
+
+<button onClick={() => onShare && onShare(displaySession)} className="hover:text-east-light transition-colors">
+    <Share2 className="text-white" size={20} />
+</button>
 
             {/* Time Selection */}
             {!isNews && (
@@ -1619,6 +1526,32 @@ export default function App() {
   const [bookedSessionIds, setBookedSessionIds] = useState<number[]>([]);
   const [scheduleRefreshKey, setScheduleRefreshKey] = useState(0); 
 
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sessionToShare, setSessionToShare] = useState<Session | null>(null);
+
+  const handleShareEvent = async (targetUserId: string) => {
+      // Hardcode current user to Lee's UUID for testing (or use auth context)
+      const senderId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'; 
+      
+      if(!sessionToShare) return;
+      
+      const { error } = await supabase.from('messages').insert({
+          sender_id: senderId,
+          receiver_id: targetUserId,
+          content: `Check out this event: ${sessionToShare.title}`,
+          shared_event_id: sessionToShare.id
+      });
+      
+      if(!error) {
+          alert('Event Sent!');
+          setShowShareModal(false);
+      } else {
+          console.error(error);
+          alert('Failed to send');
+      }
+  };
+  // --------------------------------
+
   // MOCK IDS: Player=12, Parent=13
   const getCurrentUserId = () => {
       if (userRole === 'player') return 12; 
@@ -1671,6 +1604,8 @@ export default function App() {
     return <div className="min-h-screen bg-black flex items-center justify-center text-east-light">LOADING...</div>;
   }
 
+  // ... inside export default function App() { ...
+
   return (
     <div className="min-h-screen bg-black text-white font-opensans select-none">
       <div className="max-w-md mx-auto bg-black min-h-screen relative shadow-2xl border-x border-gray-900">
@@ -1682,7 +1617,7 @@ export default function App() {
                     setShowClassModal(true);
                 }} 
                 onOpenSettings={() => setShowSettingsModal(true)}
-                bookedSessionIds={bookedSessionIds} // Pass down source of truth
+                bookedSessionIds={bookedSessionIds} 
             />
           )}
           {activeTab === 'profile' && (
@@ -1701,18 +1636,33 @@ export default function App() {
                 currentUserId={currentUserId} 
             />
           )}
+          {/* ✅ UPDATED: Renders the new imported component */}
           {activeTab === 'community' && <CommunityScreen />}
         </main>
 
         <BottomNav activeTab={activeTab} setTab={setActiveTab} />
         
+        {/* ✅ NEW: Share Modal Logic */}
+        {showShareModal && sessionToShare && (
+            <ShareModal 
+                event={sessionToShare} 
+                onClose={() => setShowShareModal(false)}
+                onSend={handleShareEvent}
+            />
+        )}
+
+        {/* ✅ UPDATED: Class Modal now handles onShare */}
         {showClassModal && currentUserId && (
             <ClassModal 
                 sessions={selectedSessions}
                 onClose={handleCloseModal}
                 onScheduleChange={handleScheduleChange} 
                 currentUserId={currentUserId}
-                bookedSessionIds={bookedSessionIds} // Modal now knows what is booked
+                bookedSessionIds={bookedSessionIds}
+                onShare={(session) => {
+                    setSessionToShare(session);
+                    setShowShareModal(true);
+                }}
             /> 
         )}
         
