@@ -117,11 +117,10 @@ export default function ScheduleScreen({ onPreviewClick, refreshKey, currentUser
        </div>
        <div className="relative z-10">
          <div className="flex pt-4 px-4 mb-4">
-            {/* --- MODIFIED: Swapped order to ['PLAYER', 'PARENT'] --- */}
+            {/* --- FILTER TABS: Player before Parent --- */}
             {['PLAYER', 'PARENT'].map(f => (
               <button key={f} onClick={() => setFilter(f.toLowerCase() as any)} className={`flex-1 text-center font-montserrat font-black italic text-sm py-3 border-b-4 transition-colors ${filter === f.toLowerCase() ? 'text-white border-white' : 'text-gray-500 border-gray-800'}`}>{f}</button>
             ))}
-            {/* ---------------------------------------------------- */}
          </div>
          <div className="mx-4 mb-6 rounded-2xl overflow-hidden relative">
             <div className="bg-gradient-to-r from-east-light to-east-dark h-12 flex items-center px-4"><h2 className="text-white font-montserrat font-black italic text-xl">SCHEDULE</h2></div>
@@ -184,7 +183,19 @@ export default function ScheduleScreen({ onPreviewClick, refreshKey, currentUser
                 const theme = getTheme(event.category);
                 return (
                     <div key={idx} className="flex gap-4 animate-fadeIn cursor-pointer group" onClick={() => onPreviewClick(event)}>
-                        <div className="flex-1"><div style={{ backgroundColor: theme.color }} className={`rounded-xl overflow-hidden text-black shadow-lg border-l-4 ${theme.border}`}><div className="p-3 pb-2"><h3 className="font-montserrat font-black italic text-sm uppercase">{event.title}</h3><p className="text-xs font-bold mt-0.5 text-gray-600">{new Date(event.start_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - {new Date(event.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p></div><div className="bg-gray-100 p-2 px-3 flex justify-between items-center border-t border-gray-300"><span className="text-[10px] font-black italic text-gray-700">HOST: {event.instructor}</span><button onClick={(e) => { e.stopPropagation(); onPreviewClick(event); }} className="bg-black text-white text-[8px] font-bold italic px-3 py-1.5 rounded-md">PREVIEW</button></div></div></div>
+                        {/* --- MODIFIED: Added hover scale and transition --- */}
+                        <div className="flex-1 transition-transform duration-300 hover:scale-[1.03]">
+                            <div style={{ backgroundColor: theme.color }} className={`rounded-xl overflow-hidden text-black shadow-lg border-l-4 ${theme.border}`}>
+                                <div className="p-3 pb-2">
+                                    <h3 className="font-montserrat font-black italic text-sm uppercase">{event.title}</h3>
+                                    <p className="text-xs font-bold mt-0.5 text-gray-600">{new Date(event.start_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - {new Date(event.end_time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</p>
+                                </div>
+                                <div className="bg-gray-100 p-2 px-3 flex justify-between items-center border-t border-gray-300">
+                                    <span className="text-[10px] font-black italic text-gray-700">HOST: {event.instructor}</span>
+                                    <button onClick={(e) => { e.stopPropagation(); onPreviewClick(event); }} className="bg-black text-white text-[8px] font-bold italic px-3 py-1.5 rounded-md">PREVIEW</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 );
             }) : <div className="text-center py-12 border border-dashed border-gray-800 rounded-2xl bg-gray-900/50"><p className="font-montserrat font-bold italic text-gray-500 mb-2">NO SESSIONS</p></div>}
