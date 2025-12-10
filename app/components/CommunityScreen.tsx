@@ -4,12 +4,11 @@ import { supabase } from '@/app/lib/supabase';
 import { ChevronDown, ChevronLeft, Trash2, Camera, Image as ImageIcon, Paperclip, Heart, Share2, X, Send } from 'lucide-react';
 import { Post, Message, Profile } from '@/app/types/community';
 
-// ⚠️ HARDCODED TEST ID
-const CURRENT_USER_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'; 
-
 // --- HELPER: Safely Format Post Data ---
-const formatPostData = (data: any[]) => {
+// ✅ UPDATED: Accepts currentUserId and now constructs full name from First/Last
+const formatPostData = (data: any[], currentUserId: string) => {
   return data.map(post => {
+      // Handle nested shared post structure
       let rawShared = post.shared_post;
       if (Array.isArray(rawShared)) {
           rawShared = rawShared.length > 0 ? rawShared[0] : null;
@@ -19,27 +18,35 @@ const formatPostData = (data: any[]) => {
       
       let sharedProfile = null;
       if (hasSharedPost && rawShared.profiles) {
-           if (Array.isArray(rawShared.profiles)) {
-               sharedProfile = rawShared.profiles[0];
-           } else {
-               sharedProfile = rawShared.profiles;
-           }
+           sharedProfile = Array.isArray(rawShared.profiles) ? rawShared.profiles[0] : rawShared.profiles;
       }
 
+      // Handle author profile
       let authorProfile = post.profiles;
       if (Array.isArray(authorProfile)) authorProfile = authorProfile[0];
 
+      // ✅ FIX: Construct full name from new DB columns (with space)
+      const firstName = authorProfile?.first_name || '';
+      const lastName = authorProfile?.last_name || '';
+      // Fallback to username if names are empty
+      const fullName = (firstName + ' ' + lastName).trim() || authorProfile?.username || 'Unknown';
+
+      // Same logic for shared post author
+      const sharedFirstName = sharedProfile?.first_name || '';
+      const sharedLastName = sharedProfile?.last_name || '';
+      const sharedFullName = (sharedFirstName + ' ' + sharedLastName).trim() || sharedProfile?.username || 'Unknown';
+
       return {
           ...post,
-          username: authorProfile?.username || 'Unknown',
+          username: fullName, // ✅ Displays "Nicholas Macaskill"
           avatar_url: authorProfile?.avatar_url,
           profiles: authorProfile, 
           likes_count: post.likes ? post.likes.length : 0,
-          user_has_liked: post.likes ? post.likes.some((l: any) => l.user_id === CURRENT_USER_ID) : false,
+          user_has_liked: post.likes ? post.likes.some((l: any) => l.user_id === currentUserId) : false,
           
           shared_post: hasSharedPost ? {
               ...rawShared,
-              username: sharedProfile?.username || 'Unknown', 
+              username: sharedFullName, 
               avatar_url: sharedProfile?.avatar_url,
               profiles: sharedProfile 
           } : null
@@ -69,7 +76,6 @@ const SharedPostCard = ({ post }: { post: Post }) => {
            </div>
        </div>
        <div className="p-3">
-           {/* FIXED: Removed 'uppercase' class */}
            <p className="font-montserrat font-bold italic text-xs text-gray-300 leading-relaxed line-clamp-3 mb-2">
                {post.caption}
            </p>
@@ -83,7 +89,8 @@ const SharedPostCard = ({ post }: { post: Post }) => {
   );
 };
 
-export default function CommunityScreen() {
+// ✅ UPDATED: Component now accepts currentUserId prop
+export default function CommunityScreen({ currentUserId }: { currentUserId: string }) {
   const [viewMode, setViewMode] = useState<'feed' | 'messenger-list' | 'chat-detail'>('feed');
   const [activeChannel, setActiveChannel] = useState('general');
   
@@ -106,8 +113,9 @@ export default function CommunityScreen() {
 
   // --- FETCH SINGLE POST (For Manual Updates) ---
   const fetchSinglePostRobust = async (id: number) => {
+      // ✅ UPDATED: Select first_name and last_name
       const { data: mainPost } = await supabase.from('posts')
-        .select(`*, profiles(username, avatar_url), likes(user_id)`)
+        .select(`*, profiles(username, first_name, last_name, avatar_url), likes(user_id)`)
         .eq('id', id)
         .single();
       
@@ -116,21 +124,22 @@ export default function CommunityScreen() {
       let sharedPostData = null;
       if (mainPost.shared_post_id) {
           const { data: shared } = await supabase.from('posts')
-             .select(`*, profiles(username, avatar_url)`)
+             .select(`*, profiles(username, first_name, last_name, avatar_url)`)
              .eq('id', mainPost.shared_post_id)
              .single();
           sharedPostData = shared;
       }
 
       const combined = { ...mainPost, shared_post: sharedPostData };
-      return formatPostData([combined])[0];
+      return formatPostData([combined], currentUserId)[0];
   };
 
   // --- FETCH FEED (Initial Load) ---
   useEffect(() => {
     const fetchPosts = async () => {
+        // ✅ UPDATED: Select first_name and last_name
         const { data: mainPosts, error } = await supabase.from('posts')
-          .select(`*, profiles(username, avatar_url), likes(user_id)`)
+          .select(`*, profiles(username, first_name, last_name, avatar_url), likes(user_id)`)
           .order('created_at', { ascending: false });
 
         if (error) {
@@ -147,7 +156,7 @@ export default function CommunityScreen() {
 
         if (sharedIds.length > 0) {
             const { data: sharedData } = await supabase.from('posts')
-                .select(`*, profiles(username, avatar_url)`)
+                .select(`*, profiles(username, first_name, last_name, avatar_url)`)
                 .in('id', sharedIds);
             
             if (sharedData) {
@@ -162,7 +171,7 @@ export default function CommunityScreen() {
             shared_post: post.shared_post_id ? sharedPostsMap[post.shared_post_id] : null
         }));
 
-        setPosts(formatPostData(combinedPosts) as Post[]);
+        setPosts(formatPostData(combinedPosts, currentUserId) as Post[]);
     };
 
     fetchPosts();
@@ -187,7 +196,7 @@ export default function CommunityScreen() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
+  }, [currentUserId]); 
 
   // --- FETCH MESSAGES ---
   useEffect(() => {
@@ -196,7 +205,7 @@ export default function CommunityScreen() {
     const fetchMessages = async () => {
         const { data } = await supabase.from('messages')
           .select('*')
-          .or(`and(sender_id.eq.${CURRENT_USER_ID},receiver_id.eq.${activeChatUser.id}),and(sender_id.eq.${activeChatUser.id},receiver_id.eq.${CURRENT_USER_ID})`)
+          .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${activeChatUser.id}),and(sender_id.eq.${activeChatUser.id},receiver_id.eq.${currentUserId})`)
           .order('created_at', { ascending: true });
         
         if (data) setMessages(data as Message[]);
@@ -206,7 +215,7 @@ export default function CommunityScreen() {
     const channel = supabase.channel(`chat:${activeChatUser.id}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, 
         (payload) => {
-           if (payload.new.sender_id !== CURRENT_USER_ID) {
+           if (payload.new.sender_id !== currentUserId) {
                setMessages(prev => [...prev, payload.new as Message]);
                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
            }
@@ -218,14 +227,14 @@ export default function CommunityScreen() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [viewMode, activeChatUser]);
+  }, [viewMode, activeChatUser, currentUserId]);
   
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
   useEffect(() => {
-    supabase.from('profiles').select('*').neq('id', CURRENT_USER_ID)
+    supabase.from('profiles').select('*').neq('id', currentUserId)
       .then(({ data }) => data && setUsers(data as Profile[]));
-  }, []);
+  }, [currentUserId]);
 
   // --- ACTIONS ---
 
@@ -262,8 +271,8 @@ export default function CommunityScreen() {
     const newCount = (post.likes_count || 0) + (isLiked ? -1 : 1);
     setPosts(prev => prev.map(p => p.id === post.id ? { ...p, user_has_liked: !isLiked, likes_count: newCount } : p));
 
-    if (isLiked) await supabase.from('likes').delete().match({ user_id: CURRENT_USER_ID, post_id: post.id });
-    else await supabase.from('likes').insert({ user_id: CURRENT_USER_ID, post_id: post.id });
+    if (isLiked) await supabase.from('likes').delete().match({ user_id: currentUserId, post_id: post.id });
+    else await supabase.from('likes').insert({ user_id: currentUserId, post_id: post.id });
   };
 
   const sharePost = (post: Post) => {
@@ -282,7 +291,7 @@ export default function CommunityScreen() {
     const sharedId = (postToShare && postToShare.id) ? postToShare.id : null;
 
     const { data, error } = await supabase.from('posts').insert({ 
-        user_id: CURRENT_USER_ID, caption, image_url: url, shared_post_id: sharedId
+        user_id: currentUserId, caption, image_url: url, shared_post_id: sharedId
     }).select().single();
     
     if (error) alert("Could not post: " + error.message);
@@ -303,7 +312,7 @@ export default function CommunityScreen() {
     
     const optimisticMessage: Message = {
         id: tempId,
-        sender_id: CURRENT_USER_ID,
+        sender_id: currentUserId, 
         receiver_id: activeChatUser.id,
         content: messageContent || (fileToSend ? 'Sending image...' : ''),
         image_url: fileToSend ? URL.createObjectURL(fileToSend) : undefined,
@@ -318,7 +327,7 @@ export default function CommunityScreen() {
     if (fileToSend) url = await uploadImage(fileToSend);
     
     const { data, error } = await supabase.from('messages').insert({
-      sender_id: CURRENT_USER_ID,
+      sender_id: currentUserId,
       receiver_id: activeChatUser.id,
       content: messageContent || (url ? 'Sent an image' : ''),
       image_url: url 
@@ -397,7 +406,7 @@ export default function CommunityScreen() {
         </div>
         <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-1">
            {messages.map((msg) => {
-              const isMe = msg.sender_id === CURRENT_USER_ID || msg.is_me;
+              const isMe = msg.sender_id === currentUserId || msg.is_me;
               return (
                 <div key={msg.id} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'} mb-4 group items-end`}>
                     {!isMe && (
@@ -494,7 +503,7 @@ export default function CommunityScreen() {
          <div className="space-y-8 pb-32">
             {posts.map(post => (
                 <div key={post.id} className="rounded-3xl overflow-hidden bg-[#1a1a1a] border border-gray-800 shadow-2xl relative group">
-                    {post.user_id === CURRENT_USER_ID && (
+                    {post.user_id === currentUserId && (
                         <button onClick={(e) => { e.stopPropagation(); deletePost(post.id); }} className="absolute top-4 right-4 z-50 bg-black/60 p-2 rounded-full text-white/70 hover:text-red-500 hover:bg-black transition-all cursor-pointer opacity-0 group-hover:opacity-100">
                             <Trash2 size={16} />
                         </button>
@@ -508,7 +517,6 @@ export default function CommunityScreen() {
                             <p className="font-bold text-[10px] text-gray-400 uppercase">HONG KONG WARRIORS</p>
                         </div>
                     </div>
-                    {/* FIXED: Removed 'uppercase' class */}
                     {post.caption && <div className="px-6 pb-2"><p className="font-montserrat font-bold italic text-xs text-white leading-relaxed">{post.caption}</p></div>}
                     {post.image_url && <div className="aspect-video w-full relative bg-black/20 mt-2"><img src={post.image_url} className="w-full h-full object-cover" alt="content" /></div>}
                     {post.shared_post && post.shared_post.id && <div className="px-4 pb-2"><SharedPostCard post={post.shared_post} /></div>}
