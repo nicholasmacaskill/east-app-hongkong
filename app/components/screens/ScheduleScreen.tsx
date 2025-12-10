@@ -123,7 +123,10 @@ export default function ScheduleScreen({ onPreviewClick, refreshKey, currentUser
             ))}
          </div>
          <div className="mx-4 mb-6 rounded-2xl overflow-hidden relative">
-            <div className="bg-gradient-to-r from-east-light to-east-dark h-12 flex items-center px-4"><h2 className="text-white font-montserrat font-black italic text-xl">SCHEDULE</h2></div>
+            <div className="bg-gradient-to-r from-east-light to-east-dark h-12 flex items-center px-4">
+                {/* --- COSMETIC FIX: Changed Schedule title to MY SCHEDULE --- */}
+                <h2 className="text-white font-montserrat font-black italic text-xl">MY SCHEDULE</h2>
+            </div>
             <div className="bg-white p-4 rounded-b-2xl -mt-2 relative z-10">
                 
                 {/* --- MONTH NAVIGATION/DISPLAY --- */}
@@ -183,7 +186,7 @@ export default function ScheduleScreen({ onPreviewClick, refreshKey, currentUser
                 const theme = getTheme(event.category);
                 return (
                     <div key={idx} className="flex gap-4 animate-fadeIn cursor-pointer group" onClick={() => onPreviewClick(event)}>
-                        {/* --- MODIFIED: Added hover scale and transition --- */}
+                        {/* --- Hover scale and transition --- */}
                         <div className="flex-1 transition-transform duration-300 hover:scale-[1.03]">
                             <div style={{ backgroundColor: theme.color }} className={`rounded-xl overflow-hidden text-black shadow-lg border-l-4 ${theme.border}`}>
                                 <div className="p-3 pb-2">
