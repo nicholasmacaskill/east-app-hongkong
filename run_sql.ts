@@ -4,6 +4,41 @@ import { Pool } from 'pg';
 // YOUR REAL SUPABASE USER ID
 const TEST_USER_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'; 
 
+// --- NEW TEST USER (Needed for Messenger Testing) ---
+const TEST_USER_ID_2 = 'a1b2c3d4-e5f6-7890-1234-567890abcdef'; 
+// --- -----------------
+
+const TRIGGER_SQL = [
+    // 1. Create a function that handles profile creation
+    `
+    CREATE OR REPLACE FUNCTION public.handle_new_user() 
+    RETURNS trigger AS $$
+    BEGIN
+      INSERT INTO public.profiles (id, contact_email, first_name, last_name, username, avatar_url)
+      VALUES (
+        NEW.id, 
+        NEW.email,
+        split_part(NEW.email, '@', 1), -- Use part of email as default first_name
+        '',
+        split_part(NEW.email, '@', 1), -- Use part of email as default username
+        'https://placehold.co/100'
+      );
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql SECURITY DEFINER;
+    `,
+    // 2. Drop the trigger if it already exists
+    `DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;`,
+    // 3. Create the trigger on the auth.users table
+    `
+    CREATE TRIGGER on_auth_user_created
+      AFTER INSERT ON auth.users
+      FOR EACH ROW
+      EXECUTE PROCEDURE public.handle_new_user();
+    `
+];
+
+
 const schemaCommands = [
     // 1. Reset Tables
     "DROP TABLE IF EXISTS registrations CASCADE;",
@@ -69,18 +104,30 @@ const schemaCommands = [
     `INSERT INTO storage.buckets (id, name, public) VALUES ('uploads', 'uploads', true) ON CONFLICT (id) DO NOTHING;`,
     `DROP POLICY IF EXISTS "Public Access" ON storage.objects;`,
     `CREATE POLICY "Public Access" ON storage.objects FOR ALL USING ( bucket_id = 'uploads' ) WITH CHECK ( bucket_id = 'uploads' );`,
+    
+    // --- INSERT DATABASE TRIGGER LOGIC HERE ---
+    ...TRIGGER_SQL,
 
-    // 5. Seed Data - Profiles
+    // 5. Seed Data - Profiles (User 1 - Primary Test User)
     `INSERT INTO profiles (id, username, first_name, last_name, mobile, contact_email, bio, avatar_url) 
      VALUES ('${TEST_USER_ID}', 'lee.wong12', 'Lee', 'Wong', '+1 234 567 8900', 'lee@east.com', 'Defenseman for the Rhinos.', 'https://placehold.co/100') 
      ON CONFLICT (id) DO NOTHING;`,
     
     `INSERT INTO players_stats (player_id, age, season, team, games_played_season, goals_season, points)
      VALUES ('${TEST_USER_ID}', 31, 3, 'RHINOS', 48, 110, 6);`,
+     
+    // 5. Seed Data - Profiles (User 2 - Messenger Test Contact)
+    `INSERT INTO profiles (id, username, first_name, last_name, mobile, contact_email, bio, avatar_url) 
+     VALUES ('${TEST_USER_ID_2}', 'coach.test', 'Coach', 'Test', '+1 987 654 3210', 'Coach', 'Test', 'https://images.unsplash.com/photo-1595856552273-97b77df797b5?w=400&q=80') 
+     ON CONFLICT (id) DO NOTHING;`,
+    
+    `INSERT INTO players_stats (player_id, age, season, team, games_played_season, goals_season, points)
+     VALUES ('${TEST_USER_ID_2}', 45, 10, 'SHARKS', 90, 10, 50);`,
+
 
     // 6. SEED DATA - EVENTS
     
-    // --- BREAKING NEWS (✅ FIX: End Time is 14 days in future so they stay visible) ---
+    // --- BREAKING NEWS (End Time is 14 days in future so they stay visible) ---
     `INSERT INTO sessions (title, category, instructor, start_time, end_time, image_url, description) VALUES 
      ('Championship Win', 'NEWS', 'League', NOW(), NOW() + interval '14 days', 'https://images.unsplash.com/photo-1515523110800-9415d13b84a8?w=800&q=80', 'The Rhinos take home the trophy in a stunning overtime victory against the Wolves. It was a hard-fought battle that came down to the final seconds, securing their place in league history as the 2025 champions.'),
      ('New Rink Opening', 'NEWS', 'Management', NOW(), NOW() + interval '14 days', 'https://images.unsplash.com/photo-1580748141549-71748dbe0bdc?w=800&q=80', 'East Sports expands with a brand new Olympic-sized ice surface opening this Friday. Features include upgraded locker rooms, a new pro shop, and state-of-the-art glass boards for better spectator viewing.');`,
@@ -150,6 +197,8 @@ async function runSql(pool: Pool, sqlQuery: string) {
 
 (async () => {
     const pool = getDbPool();
-    for (const cmd of schemaCommands) await runSql(pool, cmd);
+    // Execute all schema commands and the new trigger commands
+    const allCommands = [...schemaCommands, ...TRIGGER_SQL];
+    for (const cmd of allCommands) await runSql(pool, cmd);
     await pool.end();
 })();

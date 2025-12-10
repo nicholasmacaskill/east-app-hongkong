@@ -2,12 +2,33 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Session } from '@/app/types/session';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { 
+    addDays, 
+    subDays, 
+    addMonths, 
+    subMonths, 
+    format, 
+    isSameDay, 
+    startOfMonth, 
+    endOfMonth, 
+    endOfYear, 
+    addYears, 
+    isBefore, 
+    isAfter 
+} from 'date-fns';
 
 export default function ScheduleScreen({ onPreviewClick, refreshKey, currentUserId }: { onPreviewClick: (s: Session) => void, refreshKey: number, currentUserId: string | null }) {
   const [mySchedule, setMySchedule] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDay, setSelectedDay] = useState(new Date().getDate());
+  
+  // State for Navigation and Selection
+  const [viewStartDate, setViewStartDate] = useState(new Date()); // The first visible day in the strip
+  const [selectedDate, setSelectedDate] = useState(new Date());   // The currently selected date filter
   const [filter, setFilter] = useState<'parent' | 'player' | 'combined'>('player');
+
+  // Constraints: Current month start up to next December end
+  const minDate = startOfMonth(new Date());
+  const maxDate = endOfYear(addYears(new Date(), 1));
 
   const getTheme = (category: string) => {
     switch (category) {
@@ -20,12 +41,10 @@ export default function ScheduleScreen({ onPreviewClick, refreshKey, currentUser
     }
   };
 
-  // ✅ FIX: Logic extracted and renamed to avoid infinite loop
   const loadSchedule = useCallback(() => {
     if (!currentUserId) return;
     setLoading(true);
     
-    // Call the API directly with the Real UUID
     fetch(`/api/my-schedule?userId=${currentUserId}`)
         .then(res => res.json())
         .then(data => { if(Array.isArray(data)) setMySchedule(data); })
@@ -35,10 +54,60 @@ export default function ScheduleScreen({ onPreviewClick, refreshKey, currentUser
 
   useEffect(() => { loadSchedule(); }, [loadSchedule, refreshKey]);
 
+  // --- WEEKLY NAVIGATION (Moves the window by 7 days) ---
+  const handlePrevWeek = () => {
+    const newDate = subDays(viewStartDate, 7); 
+    // Prevent navigating before the minimum allowed date (start of current month)
+    if (!isBefore(newDate, minDate)) {
+        setViewStartDate(newDate);
+    }
+  };
+
+  const handleNextWeek = () => {
+    const newDate = addDays(viewStartDate, 7);
+    // Allow navigation as long as the 6th visible day is not past the maxDate
+    if (!isAfter(addDays(newDate, 5), maxDate)) {
+        setViewStartDate(newDate);
+    }
+  };
+
+  // --- MONTHLY NAVIGATION (Moves the view to the start of the next/previous month) ---
+  const handlePrevMonth = () => {
+    const targetMonthStart = startOfMonth(subMonths(viewStartDate, 1)); 
+
+    if (isBefore(targetMonthStart, minDate)) {
+        // If target is before minDate, snap to minDate (start of this month)
+        setViewStartDate(minDate);
+        setSelectedDate(minDate);
+    } else {
+        // Otherwise, move to the start of the target month
+        setViewStartDate(targetMonthStart);
+        setSelectedDate(targetMonthStart);
+    }
+  };
+
+  const handleNextMonth = () => {
+    // Get the start of the month 1 month ahead
+    const nextMonthStart = startOfMonth(addMonths(viewStartDate, 1));
+    
+    if (isAfter(nextMonthStart, maxDate)) {
+        // If the next month starts after the max date, do nothing
+        return;
+    } else {
+        // Move to the start of the next month
+        setViewStartDate(nextMonthStart);
+        setSelectedDate(nextMonthStart);
+    }
+  };
+
+
+  // Filter Events
   const eventsForSelectedDay = mySchedule.filter(event => {
-    const eventDate = new Date(event.start_time).getDate();
-    return eventDate === selectedDay;
+    return isSameDay(new Date(event.start_time), selectedDate);
   });
+  
+  // Calculate display month based on the currently selected date
+  const displayMonth = format(viewStartDate, 'MMM yyyy').toUpperCase();
 
   return (
     <div className="min-h-screen bg-black pb-24 animate-fadeIn relative">
@@ -48,26 +117,65 @@ export default function ScheduleScreen({ onPreviewClick, refreshKey, currentUser
        </div>
        <div className="relative z-10">
          <div className="flex pt-4 px-4 mb-4">
-            {['PARENT', 'PLAYER', 'COMBINED'].map(f => (
+            {/* --- MODIFIED: Swapped order to ['PLAYER', 'PARENT'] --- */}
+            {['PLAYER', 'PARENT'].map(f => (
               <button key={f} onClick={() => setFilter(f.toLowerCase() as any)} className={`flex-1 text-center font-montserrat font-black italic text-sm py-3 border-b-4 transition-colors ${filter === f.toLowerCase() ? 'text-white border-white' : 'text-gray-500 border-gray-800'}`}>{f}</button>
             ))}
+            {/* ---------------------------------------------------- */}
          </div>
          <div className="mx-4 mb-6 rounded-2xl overflow-hidden relative">
             <div className="bg-gradient-to-r from-east-light to-east-dark h-12 flex items-center px-4"><h2 className="text-white font-montserrat font-black italic text-xl">SCHEDULE</h2></div>
             <div className="bg-white p-4 rounded-b-2xl -mt-2 relative z-10">
-                <div className="mb-3 font-montserrat font-black italic text-black text-sm">{new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()}</div>
-                <div className="flex justify-between items-center">
-                   <ChevronLeft size={24} className="text-black/50" />
-                   {Array.from({ length: 6 }, (_, i) => {
-                       const d = new Date(); d.setDate(d.getDate() + (i + 1));
-                       return (
-                           <div key={i} onClick={() => setSelectedDay(d.getDate())} className={`flex flex-col items-center justify-center w-10 h-16 rounded-full cursor-pointer ${d.getDate() === selectedDay ? 'bg-black text-white scale-110 shadow-lg' : 'text-black'}`}>
-                              <span className="text-[9px] font-bold mb-0.5">{d.toLocaleDateString('en-US', { weekday: 'narrow' }).toUpperCase()}</span>
-                              <span className="text-lg font-black italic">{d.getDate()}</span>
-                           </div>
-                       );
-                   })}
-                   <ChevronRight size={24} className="text-black/50" />
+                
+                {/* --- MONTH NAVIGATION/DISPLAY --- */}
+                <div className="flex justify-between items-center mb-3">
+                   <button onClick={handlePrevMonth} className="p-1 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-30" disabled={isSameDay(startOfMonth(viewStartDate), minDate) || isBefore(viewStartDate, minDate)}>
+                        <ChevronLeft size={20} className="text-black" />
+                   </button>
+                   <div className="font-montserrat font-black italic text-black text-sm uppercase tracking-wider">
+                       {displayMonth}
+                   </div>
+                   <button onClick={handleNextMonth} className="p-1 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-30" disabled={isAfter(endOfMonth(viewStartDate), maxDate)}>
+                        <ChevronRight size={20} className="text-black" />
+                   </button>
+                </div>
+                
+                {/* --- WEEKLY VIEW (with Week Navigation Arrows) --- */}
+                <div className="flex justify-between items-center pt-2">
+                   {/* Previous Week Button (moves by 7 days) */}
+                   <button onClick={handlePrevWeek} className="p-1 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-30" disabled={isBefore(viewStartDate, addDays(minDate, 1))}>
+                        <ChevronLeft size={24} className="text-black" />
+                   </button>
+                   
+                   {/* Render 6 Days from viewStartDate */}
+                   <div className="flex gap-1.5 overflow-hidden">
+                       {Array.from({ length: 6 }, (_, i) => {
+                           const d = addDays(viewStartDate, i);
+                           const isSelected = isSameDay(d, selectedDate);
+                           
+                           // Hide dates outside the overall allowed range
+                           if (isBefore(d, minDate) || isAfter(d, maxDate)) {
+                               return <div key={i} className="w-10 h-16" />; 
+                           }
+
+                           return (
+                               <div 
+                                    key={i} 
+                                    onClick={() => setSelectedDate(d)} 
+                                    // Using rounded-xl for the oval shape
+                                    className={`flex flex-col items-center justify-center w-10 h-16 rounded-xl cursor-pointer transition-all duration-200 ${isSelected ? 'bg-black text-white scale-105 shadow-lg' : 'text-black hover:bg-gray-100'}`}
+                               >
+                                  <span className="text-[9px] font-bold mb-0.5">{format(d, 'EEE').toUpperCase()}</span>
+                                  <span className="text-lg font-black italic">{format(d, 'd')}</span>
+                               </div>
+                           );
+                       })}
+                   </div>
+
+                   {/* Next Week Button (moves by 7 days) */}
+                   <button onClick={handleNextWeek} className="p-1 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-30" disabled={isAfter(addDays(viewStartDate, 5), maxDate)}>
+                        <ChevronRight size={24} className="text-black" />
+                   </button>
                 </div>
             </div>
          </div>
