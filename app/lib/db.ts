@@ -1,4 +1,4 @@
-// File: east-app-recent/app/lib/db.ts (Updated for lazy initialization)
+// File: east-app-hongkong/app/lib/db.ts (Updated to use DB_PORT from environment)
 
 import { Pool } from 'pg';
 
@@ -11,13 +11,21 @@ export default function getDbPool(): Pool {
     return cachedPool;
   }
 
+  const dbPort = process.env.DB_PORT;
+  
+  if (!dbPort) {
+    // This is a safety check, though DB_PORT should be defined in .env.local
+    console.warn("DB_PORT environment variable is missing. Defaulting to 54322.");
+  }
+  
   // Pool is only created when this function is called (lazy)
   const pool = new Pool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: parseInt(process.env.DB_PORT || '5432', 10),
+    host: process.env.DB_HOST || '127.0.0.1',
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres',
+    database: process.env.DB_NAME || 'postgres',
+    // CRITICAL FIX: Ensure the port is read as a number, defaulting to 54322 for local setup
+    port: parseInt(dbPort || '54322', 10),
   });
 
   pool.on('error', (err) => {

@@ -2,7 +2,8 @@
 
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation'; // Ensure this line exists
+import { useRouter, useSearchParams } from 'next/navigation';
+import { fetchSessions } from '@/app/services/dataFetcher'; // Ensure this line exists
 // ... rest of imports
 import { 
     Home, User as UserIcon, QrCode, Activity, MessageSquare, 
@@ -384,14 +385,16 @@ const BottomNav = ({ activeTab, setTab }: { activeTab: Tab; setTab: (t: Tab) => 
 // ==========================================
 // HOME SCREEN (Cleaned up)
 // ==========================================
+// ==========================================
+// HOME SCREEN (Cleaned up and Mocking Integrated)
+// ==========================================
 const HomeScreen = ({ onClassClick, onOpenSettings, bookedSessionIds }: { onClassClick: (sessions: Session[]) => void, onOpenSettings: () => void, bookedSessionIds: number[] }) => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 1. Fetch All Sessions
+  // 1. Fetch All Sessions - NOW USES THE CONDITIONAL FETCHER
   useEffect(() => {
-    fetch('/api/sessions')
-      .then(res => res.json())
+    fetchSessions() // <-- This function handles the switch between mock data and real API
       .then(data => {
         if(Array.isArray(data)) setSessions(data);
       })

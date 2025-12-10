@@ -1,18 +1,14 @@
-// File: east-app-recent/app/db/seed.ts
+// File: east-app-hongkong/app/db/seed.ts
 
-// ⬅️ FIX: Import and call the new function
+// Imports the Pool configuration function from your local library.
 const getDbPool = require('../lib/db.ts').default;
 
 async function seedDatabase() {
-  // ⬅️ NEW: The pool is now retrieved by calling the function
+  // Get the database pool instance
   const pool = getDbPool(); 
   
   try {
-    // ... rest of the code remains the same ...
-
-async function seedDatabase() {
-  try {
-    // Create table if it doesn't exist
+    // 1. CREATE players_stats TABLE (as defined in database/schema.sql)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS players_stats (
         player_id SERIAL PRIMARY KEY,
@@ -42,7 +38,7 @@ async function seedDatabase() {
       );
     `);
 
-    // Insert sample player data
+    // 2. INSERT/UPDATE sample player data (critical for the app's 'Player Profile' screen)
     await pool.query(`
       INSERT INTO players_stats (
         player_id, age, season, team, games_played_season, games_played_total,
@@ -56,10 +52,11 @@ async function seedDatabase() {
       ON CONFLICT (player_id) DO UPDATE SET
         age = 31, season = 3, team = 'RHINOS'
     `);
-    console.log('✅ Database seeded successfully');
+    console.log('✅ Database seeded successfully (Player Stats table created and data added)');
   } catch (err) {
     console.error('❌ Seeding failed:', err);
   } finally {
+    // It's crucial to end the pool connection after seeding is complete
     await pool.end();
   }
 }
