@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/app/lib/supabase'; // ✅ Needed for upload
+import { supabase } from '@/app/lib/supabase';
 import { 
     X, ChevronLeft, ChevronRight, Edit2, ToggleLeft, ToggleRight, 
     User as UserIcon, Bell, CreditCard, FileText, HelpCircle, Shield, LogOut, UserCog,
@@ -72,11 +72,17 @@ const SettingsMenuItem = ({ icon: Icon, label, onClick, isDestructive = false }:
     </button>
 );
 
-const SettingsInput = ({ label, value, onChange, type = "text" }: { label: string, value: string, onChange: (val: string) => void, type?: string }) => (
+const SettingsInput = ({ label, value, onChange, type = "text", placeholder }: { label: string, value: string, onChange: (val: string) => void, type?: string, placeholder?: string }) => (
     <div className="mb-6 relative">
         <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">{label}</label>
         <div className="relative border-b border-gray-700 pb-2 transition-colors focus-within:border-east-light">
-            <input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="w-full bg-transparent text-white font-montserrat font-bold text-lg focus:outline-none pr-8 placeholder:text-gray-700" placeholder={"Enter " + label.toLowerCase()} />
+            <input 
+                type={type} 
+                value={value} 
+                onChange={(e) => onChange(e.target.value)} 
+                className="w-full bg-transparent text-white font-montserrat font-bold text-lg focus:outline-none pr-8 placeholder:text-gray-700" 
+                placeholder={placeholder || "Enter " + label.toLowerCase()} 
+            />
             <Edit2 size={16} className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
         </div>
     </div>
@@ -121,31 +127,43 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
 }) => {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(profileData.avatar_url || null);
+    
+    // ✅ NEW: State for Password Update
+    const [newPassword, setNewPassword] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleChange = (field: keyof UserProfileData, value: string) => setProfileData({ ...profileData, [field]: value });
 
-    // Handle File Selection
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             setSelectedFile(file);
-            setPreviewUrl(URL.createObjectURL(file)); // Show local preview immediately
+            setPreviewUrl(URL.createObjectURL(file)); 
         }
     };
 
-    // Wrapper for Save to handle Upload first
+    // Wrapper for Save to handle Upload AND Password
     const handleSaveWithUpload = async () => {
         setIsSaving(true);
-        let finalAvatarUrl = profileData.avatar_url;
+        
+        // 1. Handle Password Update (if user typed one)
+        if (newPassword.trim().length > 0) {
+            const { error: pwError } = await supabase.auth.updateUser({ password: newPassword });
+            if (pwError) {
+                alert("Error updating password: " + pwError.message);
+                setIsSaving(false);
+                return; // Stop if password fails
+            }
+        }
 
+        // 2. Handle Image Upload
+        let finalAvatarUrl = profileData.avatar_url;
         if (selectedFile) {
             const fileExt = selectedFile.name.split('.').pop();
             const fileName = `avatar-${Date.now()}.${fileExt}`;
             const filePath = `${fileName}`;
-            
-            // Upload to Supabase Storage
             const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, selectedFile);
             
             if (uploadError) {
@@ -157,8 +175,9 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
             }
         }
 
-        // Call the parent save function with new URL
+        // 3. Call Parent Save (Updates Database Profile)
         onSave({ ...profileData, avatar_url: finalAvatarUrl });
+        setNewPassword(''); // Clear password field for security
         setIsSaving(false);
     };
 
@@ -167,7 +186,7 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
             <SettingsHeader title="Edit Profile" onBack={onBack} />
             <div className="flex-1 overflow-y-auto no-scrollbar">
                 
-                {/* Profile Picture with Click Handler */}
+                {/* Profile Picture */}
                 <div className="flex flex-col items-center mb-10">
                     <div className="w-28 h-28 rounded-full relative mb-4 cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
                         <div className="w-full h-full rounded-full border-2 border-white flex items-center justify-center overflow-hidden bg-[#1a1a1a]">
@@ -177,19 +196,11 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
                                 <UserIcon size={48} className="text-white" />
                             )}
                         </div>
-                        {/* Edit Badge */}
                         <div className="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-lg border-2 border-black group-hover:bg-gray-200 transition-colors">
                             <Camera size={14} className="text-black" />
                         </div>
                     </div>
-                    {/* Hidden Input */}
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        onChange={handleFileSelect} 
-                        className="hidden" 
-                        accept="image/*"
-                    />
+                    <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" />
                     <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Tap image to change</span>
                 </div>
 
@@ -198,7 +209,16 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
                     <SettingsInput label="Name" value={profileData.name} onChange={(v) => handleChange('name', v)} />
                     <SettingsInput label="Surname" value={profileData.surname} onChange={(v) => handleChange('surname', v)} />
                     <SettingsInput label="Username" value={profileData.username} onChange={(v) => handleChange('username', v)} />
-                    <SettingsInput label="Password" value="••••••••" type="password" onChange={() => console.log("Password edit flow")} />
+                    
+                    {/* ✅ UPDATED: Password Input is now functional */}
+                    <SettingsInput 
+                        label="New Password" 
+                        value={newPassword} 
+                        type="password" 
+                        placeholder="••••••••" 
+                        onChange={(v) => setNewPassword(v)} 
+                    />
+                    
                     <SettingsInput label="Email Address" value={profileData.email} onChange={(v) => handleChange('email', v)} />
                     <SettingsInput label="Mobile Number" value={profileData.mobile} onChange={(v) => handleChange('mobile', v)} />
 
