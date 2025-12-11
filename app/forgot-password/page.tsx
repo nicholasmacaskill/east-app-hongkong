@@ -2,13 +2,14 @@
 
 import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, ChevronLeft, CheckCircle, KeyRound, Smartphone, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ChevronLeft, CheckCircle, Smartphone, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { supabase } from '@/app/lib/supabase'; // ✅ IMPORT SUPABASE
 
 // --- Types ---
 type ResetStep = 'request' | 'otp' | 'new_password' | 'success';
 
-// --- Reusable UI (Matches AuthScreen) ---
+// --- Reusable UI ---
 const AuthHeader = ({ title }: { title: string }) => (
     <div className="text-center mb-8">
         <h1 className="font-montserrat font-black italic text-5xl text-white tracking-tighter drop-shadow-md">
@@ -51,12 +52,22 @@ export default function ForgotPasswordPage() {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
     // --- Step 1: Request Reset ---
-    const handleRequestSubmit = (e: React.FormEvent) => {
+    const handleRequestSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // In a real app: await supabase.auth.resetPasswordForEmail(email)
-        setStep('otp');
+        setLoading(true);
+        
+        // ✅ SUPABASE LOGIC: Send OTP instead of Link
+        const { error } = await supabase.auth.signInWithOtp({ email });
+        
+        setLoading(false);
+        if (error) {
+            alert(error.message);
+        } else {
+            setStep('otp');
+        }
     };
 
     // --- Step 2: OTP Logic ---
@@ -71,21 +82,50 @@ export default function ForgotPasswordPage() {
     };
     const otpComplete = otp.every(d => d.length === 1);
 
+    const handleVerifyOtp = async () => {
+        setLoading(true);
+        const token = otp.join('');
+        
+        // ✅ SUPABASE LOGIC: Verify the 6-digit code
+        const { error } = await supabase.auth.verifyOtp({
+            email,
+            token,
+            type: 'email', // Verifies the OTP for email login
+        });
+
+        setLoading(false);
+        if (error) {
+            alert('Invalid Code: ' + error.message);
+        } else {
+            // Success! The user is now "Logged In" securely.
+            setStep('new_password');
+        }
+    };
+
     // --- Step 3: New Password Logic ---
     const isPasswordValid = useMemo(() => 
-        password.length >= 8 && password === confirmPassword,
+        password.length >= 6 && password === confirmPassword,
         [password, confirmPassword]
     );
 
-    const handlePasswordUpdate = (e: React.FormEvent) => {
+    const handlePasswordUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
-        // In a real app: await supabase.auth.updateUser({ password })
-        setStep('success');
+        setLoading(true);
+
+        // ✅ SUPABASE LOGIC: Update the user's password
+        const { error } = await supabase.auth.updateUser({ password });
+
+        setLoading(false);
+        if (error) {
+            alert('Error updating password: ' + error.message);
+        } else {
+            setStep('success');
+        }
     };
 
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-sm bg-east-card rounded-2xl p-6 shadow-2xl border border-gray-800 animate-fadeIn">
+            <div className="w-full max-w-sm bg-[#1e1e1e] rounded-2xl p-6 shadow-2xl border border-gray-800 animate-fadeIn">
                 
                 {/* Back Button (Only show if not success) */}
                 {step !== 'success' && (
@@ -112,8 +152,8 @@ export default function ForgotPasswordPage() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="Enter your email"
                             />
-                            <button type="submit" className="w-full bg-east-light text-black font-montserrat font-black italic text-lg py-3 rounded-full uppercase tracking-wider shadow-lg shadow-east-light/20 hover:bg-east-dark hover:text-white transition-all duration-200">
-                                SEND RESET CODE
+                            <button type="submit" disabled={loading} className="w-full bg-east-light text-black font-montserrat font-black italic text-lg py-3 rounded-full uppercase tracking-wider shadow-lg shadow-east-light/20 hover:bg-east-dark hover:text-white transition-all duration-200 disabled:opacity-50">
+                                {loading ? 'SENDING...' : 'SEND RESET CODE'}
                             </button>
                         </form>
                     </>
@@ -142,18 +182,18 @@ export default function ForgotPasswordPage() {
                         </div>
 
                         <button 
-                            onClick={() => setStep('new_password')}
-                            disabled={!otpComplete}
+                            onClick={handleVerifyOtp}
+                            disabled={!otpComplete || loading}
                             className="w-full bg-east-light text-black font-montserrat font-black italic text-lg py-3 rounded-full uppercase tracking-wider disabled:opacity-50 transition-all duration-200"
                         >
-                            VERIFY CODE
+                            {loading ? 'VERIFYING...' : 'VERIFY CODE'}
                         </button>
 
                         <button 
-                            onClick={() => setOtp(['1','2','3','4','5','6'])}
+                            onClick={() => setStep('request')}
                             className="text-[10px] text-gray-600 underline mt-6 hover:text-east-light transition-colors font-bold uppercase tracking-widest block mx-auto"
                         >
-                            [DEV: AUTO-FILL CODE]
+                            Resend Code
                         </button>
                     </div>
                 )}
@@ -164,7 +204,7 @@ export default function ForgotPasswordPage() {
                         <AuthHeader title="Set New Password" />
                         <form onSubmit={handlePasswordUpdate}>
                             <InputField 
-                                label="New Password (min 8 chars)"
+                                label="New Password (min 6 chars)"
                                 type="password"
                                 value={password}
                                 icon={Lock}
@@ -181,15 +221,15 @@ export default function ForgotPasswordPage() {
                             />
                             
                             {!isPasswordValid && password.length > 0 && (
-                                <p className="text-xs text-red-500 mb-4 ml-2">Passwords must match and be 8+ characters.</p>
+                                <p className="text-xs text-red-500 mb-4 ml-2">Passwords must match and be 6+ characters.</p>
                             )}
 
                             <button 
                                 type="submit" 
-                                disabled={!isPasswordValid}
+                                disabled={!isPasswordValid || loading}
                                 className="w-full bg-east-light text-black font-montserrat font-black italic text-lg py-3 rounded-full uppercase tracking-wider shadow-lg shadow-east-light/20 disabled:opacity-50 hover:bg-east-dark hover:text-white transition-all duration-200"
                             >
-                                UPDATE PASSWORD
+                                {loading ? 'UPDATING...' : 'UPDATE PASSWORD'}
                             </button>
                         </form>
                     </>
@@ -198,7 +238,7 @@ export default function ForgotPasswordPage() {
                 {/* --- VIEW: SUCCESS --- */}
                 {step === 'success' && (
                     <div className="text-center py-8">
-                        <CheckCircle size={80} className="text-east-light mx-auto mb-6" />
+                        <CheckCircle size={80} className="text-east-light mx-auto mb-6 animate-bounce" />
                         <h2 className="font-montserrat font-black italic text-2xl text-white tracking-tighter mb-4 uppercase">
                             PASSWORD UPDATED
                         </h2>
