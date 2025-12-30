@@ -1,28 +1,27 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/app/components/ui/Toast';
-import { Camera, Edit2, Play, Plus, ChevronRight, Award, Trophy, Users, Calendar, Video } from 'lucide-react';
+import { Camera, Edit2, Play, Plus, ChevronRight, Award, Trophy, Users, Calendar, Video, Upload } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
+import { useGallery } from '@/app/hooks/useGallery';
+import Lightbox from '@/app/components/ui/Lightbox';
+import ClassModal from '@/app/components/modals/ClassModal';
+import { Session } from '@/app/types/session';
 
-// Mock Data for redesign
+// Mock Data for redesign (Keep stats for now/remove later)
 const PROFILE_STATS = {
     win_rate: '85%',
     total_sessions: 412,
     experience: '12 YRS'
 };
 
-const UPCOMING_SESSIONS = [
-    { id: 1, title: 'Power Skating', image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=400' },
-    { id: 2, title: 'Shot Mechanics', image: 'https://images.unsplash.com/photo-1519766304807-5f2c90def053?auto=format&fit=crop&q=80&w=400' },
-    { id: 3, title: 'Team Defense', image: 'https://images.unsplash.com/photo-1508285296815-93184f8db7e5?auto=format&fit=crop&q=80&w=400' }
-];
 
 const DRILL_FILTERS = {
     age: ['U10', 'U12', 'U15', 'PRO'],
     type: ['SHOOTING', 'DEFENSE', 'PASSING']
 };
 
-export default function CoachProfile({ onOpenSettings, profileData, isPublic = false }: { onOpenSettings: () => void, profileData: any, isPublic?: boolean }) {
+export default function CoachProfile({ onOpenSettings, profileData, isPublic = false, currentUserId }: { onOpenSettings: () => void, profileData: any, isPublic?: boolean, currentUserId?: string | null }) {
     const { addToast } = useToast();
     const [activeTab, setActiveTab] = useState<'profile' | 'sessions' | 'drills' | 'roster'>('profile');
     const [uploading, setUploading] = useState(false);
@@ -31,8 +30,25 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
     const [bioText, setBioText] = useState(profileData.bio || '');
     const [rosterSessions, setRosterSessions] = useState<any[]>([]);
 
+    // New State for Real Sessions
+    const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
+    const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+    const [bookedSessionIds, setBookedSessionIds] = useState<number[]>([]);
+    const [refreshKey, setRefreshKey] = useState(0); // to trigger refetches
+
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const videoInputRef = useRef<HTMLInputElement>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
+
+    const displayGallery = profileData.gallery_images && profileData.gallery_images.length > 0
+        ? profileData.gallery_images
+        : [
+            "https://images.unsplash.com/photo-1518407613690-d9fc996e74bc?auto=format&fit=crop&q=80&w=400",
+            "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&q=80&w=400",
+            "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=400",
+        ];
+
+    const gallery = useGallery(displayGallery);
 
     // Fetch Availability
     const fetchAvailability = async () => {
@@ -48,8 +64,43 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
     };
 
     useEffect(() => {
-        if (profileData?.id) fetchAvailability();
-    }, [profileData]);
+        if (profileData?.id) {
+            fetchAvailability();
+            fetchUpcomingSessions();
+        }
+    }, [profileData, refreshKey]);
+
+    useEffect(() => {
+        if (currentUserId) {
+            fetchBookings();
+        }
+    }, [currentUserId, refreshKey]);
+
+    const fetchBookings = async () => {
+        if (!currentUserId) return;
+        const { data } = await supabase
+            .from('registrations')
+            .select('session_id')
+            .eq('user_id', currentUserId);
+        if (data) {
+            setBookedSessionIds(data.map(r => r.session_id));
+        }
+    };
+
+    const fetchUpcomingSessions = async () => {
+        const coachName = profileData.first_name || profileData.username;
+        if (!coachName) return;
+
+        // Fetch sessions where instructor name matches (simple text match for now)
+        const { data, error } = await supabase
+            .from('sessions')
+            .select('*')
+            .ilike('instructor', `%${coachName}%`)
+            .gte('start_time', new Date().toISOString())
+            .order('start_time', { ascending: true }); // Removed Limit to show all upcoming
+
+        if (data) setUpcomingSessions(data as Session[]);
+    };
 
     useEffect(() => {
         if (activeTab === 'roster') {
@@ -98,6 +149,35 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
 
         if (!dbError) {
             profileData.avatar_url = data.publicUrl;
+            window.location.reload();
+        }
+        setUploading(false);
+    };
+
+    // Video Upload
+    const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        setUploading(true);
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `video-${profileData.id}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
+
+        if (uploadError) {
+            addToast('Video upload failed: ' + uploadError.message, 'error');
+            setUploading(false);
+            return;
+        }
+
+        const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
+        const { error: dbError } = await supabase.from('profiles').update({ intro_video_url: data.publicUrl }).eq('id', profileData.id);
+
+        if (!dbError) {
+            profileData.intro_video_url = data.publicUrl;
+            addToast('Intro video uploaded!', 'success');
             window.location.reload();
         }
         setUploading(false);
@@ -155,13 +235,6 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
 
     if (!profileData) return <div className="min-h-screen bg-black flex items-center justify-center text-white font-montserrat font-bold animate-pulse uppercase tracking-widest">Loading Coach Profile...</div>;
 
-    const displayGallery = profileData.gallery_images && profileData.gallery_images.length > 0
-        ? profileData.gallery_images
-        : [
-            "https://images.unsplash.com/photo-1518407613690-d9fc996e74bc?auto=format&fit=crop&q=80&w=400",
-            "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&q=80&w=400",
-            "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=400",
-        ];
 
     return (
         <div className="animate-fadeIn bg-black min-h-screen pb-24 relative overflow-hidden font-montserrat">
@@ -277,8 +350,8 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                             <div className="font-black text-xl text-white mt-0.5 italic uppercase">HOCKEY IQ</div>
                         </div>
                         <div className="text-center">
-                            <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">RATING</div>
-                            <div className="font-black text-xl text-white mt-0.5 italic uppercase">4.9/5.0</div>
+                            <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">TEAM</div>
+                            <div className="font-black text-xl text-white mt-0.5 italic uppercase">{profileData.team || 'EAST ELITE'}</div>
                         </div>
                     </div>
                 </div>
@@ -302,17 +375,38 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                     {activeTab === 'profile' && (
                         <div className="flex flex-col gap-6 animate-fadeIn">
                             {/* Intro Video Card */}
-                            <div className="relative rounded-[2rem] overflow-hidden border border-white/10 group cursor-pointer shadow-2xl">
-                                <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=800" className="w-full h-48 object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" alt="intro" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="w-14 h-14 rounded-full bg-east-light flex items-center justify-center pl-1 shadow-2xl group-hover:scale-110 transition-transform">
-                                        <Play fill="black" size={24} className="text-black" />
+                            <div className="relative rounded-[2rem] overflow-hidden border border-white/10 group cursor-pointer shadow-2xl bg-black aspect-video">
+                                {profileData.intro_video_url ? (
+                                    <video
+                                        src={profileData.intro_video_url}
+                                        controls
+                                        className="w-full h-full object-cover"
+                                        poster="https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=800"
+                                    />
+                                ) : (
+                                    <>
+                                        <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=800" className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" alt="intro" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                            <div className="w-14 h-14 rounded-full bg-east-light flex items-center justify-center pl-1 shadow-2xl group-hover:scale-110 transition-transform">
+                                                <Play fill="black" size={24} className="text-black" />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {!isPublic && (
+                                    <div className="absolute top-4 right-4 z-20">
+                                        <button onClick={() => videoInputRef.current?.click()} className="p-2 bg-black/50 rounded-full hover:bg-east-light hover:text-black text-white transition-all backdrop-blur-sm border border-white/10">
+                                            <Upload size={16} />
+                                        </button>
+                                        <input type="file" ref={videoInputRef} onChange={handleVideoUpload} className="hidden" accept="video/*" />
                                     </div>
-                                </div>
-                                <div className="absolute bottom-4 left-6">
-                                    <h4 className="font-black italic text-lg text-white uppercase tracking-tighter">MEET COACH WHIT</h4>
-                                    <p className="text-[9px] font-bold text-east-light uppercase tracking-widest">WATCH INTRO VIDEO</p>
+                                )}
+
+                                <div className="absolute bottom-4 left-6 pointer-events-none">
+                                    <h4 className="font-black italic text-lg text-white uppercase tracking-tighter">MEET COACH {profileData.last_name || 'WHIT'}</h4>
+                                    <p className="text-[9px] font-bold text-east-light uppercase tracking-widest">{profileData.intro_video_url ? 'WATCH INTRO' : 'NO VIDEO UPLOADED'}</p>
                                 </div>
                             </div>
 
@@ -328,7 +422,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                 </div>
                                 <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
                                     {displayGallery.map((img: string, i: number) => (
-                                        <div key={i} className="w-32 h-20 shrink-0 rounded-xl overflow-hidden border border-white/10 shadow-lg group">
+                                        <div key={i} onClick={() => gallery.open(i)} className="w-32 h-20 shrink-0 rounded-xl overflow-hidden border border-white/10 shadow-lg group cursor-pointer active:scale-95 transition-transform">
                                             <img src={img} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" />
                                         </div>
                                     ))}
@@ -366,29 +460,42 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                     {activeTab === 'sessions' && (
                         <div className="flex flex-col gap-4 animate-fadeIn">
                             <h3 className="font-black italic text-sm text-white uppercase tracking-widest mb-2 px-2">Upcoming Classes</h3>
-                            {UPCOMING_SESSIONS.map((session) => (
-                                <div key={session.id} onClick={() => addToast("Viewing Session Details: " + session.title, 'info')} className="relative overflow-hidden rounded-2xl border border-white/10 group hover:border-east-light/50 transition-all cursor-pointer bg-white/5 shadow-xl">
-                                    <div className="p-4 flex items-center gap-4">
-                                        <div className="w-16 h-16 rounded-xl overflow-hidden border border-white/20">
-                                            <img src={session.image} className="w-full h-full object-cover" alt={session.title} />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h4 className="font-black italic text-lg text-white leading-none uppercase">{session.title}</h4>
-                                            <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">WED • 4:00 PM • EAST ARENA</p>
-                                            <div className="flex gap-3 mt-3">
-                                                <div className="flex items-center gap-1">
-                                                    <Users size={10} className="text-east-light" />
-                                                    <span className="text-[9px] font-black text-white/50 uppercase">12/15 JOINED</span>
+
+                            {upcomingSessions.length === 0 ? (
+                                <div className="p-8 text-center border border-dashed border-white/10 rounded-2xl">
+                                    <p className="text-gray-500 font-bold uppercase text-xs">No upcoming classes scheduled.</p>
+                                </div>
+                            ) : (
+                                upcomingSessions.map((session) => (
+                                    <div key={session.id} onClick={() => setSelectedSession(session)} className="relative overflow-hidden rounded-2xl border border-white/10 group hover:border-east-light/50 transition-all cursor-pointer bg-white/5 shadow-xl active:scale-95 duration-200">
+                                        <div className="p-4 flex items-center gap-4">
+                                            <div className="w-16 h-16 rounded-xl overflow-hidden border border-white/20">
+                                                <img
+                                                    src={session.image_url || "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=400"}
+                                                    className="w-full h-full object-cover"
+                                                    alt={session.title}
+                                                />
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="font-black italic text-lg text-white leading-none uppercase">{session.title}</h4>
+                                                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">
+                                                    {new Date(session.start_time).toLocaleDateString([], { weekday: 'short' })} • {new Date(session.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                                                </p>
+                                                <div className="flex gap-3 mt-3">
+                                                    <div className="flex items-center gap-1">
+                                                        <Users size={10} className="text-east-light" />
+                                                        <span className="text-[9px] font-black text-white/50 uppercase">JOIN SESSION</span>
+                                                    </div>
                                                 </div>
                                             </div>
+                                            <ChevronRight size={18} className="text-gray-600 group-hover:text-east-light transition-colors" />
                                         </div>
-                                        <ChevronRight size={18} className="text-gray-600 group-hover:text-east-light transition-colors" />
                                     </div>
-                                </div>
-                            ))}
+                                ))
+                            )}
                             {!isPublic && (
-                                <button onClick={() => addToast("Feature Coming Soon: Session Management", 'warning')} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-gray-500 font-black italic text-xs hover:border-east-light/50 hover:text-white transition-all uppercase tracking-widest bg-white/5 mt-2">
-                                    + Schedule New Group Session
+                                <button onClick={() => addToast("Feature Coming Soon", 'info')} className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-gray-400 font-black italic text-xs hover:bg-white/10 hover:text-white transition-all uppercase tracking-widest mt-2 shadow-lg active:scale-95 duration-200 group">
+                                    <span className="group-hover:text-east-light transition-colors">+ Schedule New Group Session</span>
                                 </button>
                             )}
                         </div>
@@ -407,7 +514,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
 
                             <div className="grid grid-cols-2 gap-3">
                                 {[1, 2, 3, 4].map(i => (
-                                    <div key={i} onClick={() => addToast("Viewing Drill Details...", 'info')} className="aspect-square bg-[#1e1e1e] border border-white/10 rounded-2xl p-4 flex flex-col justify-between group hover:border-east-light transition-all shadow-xl hover:-translate-y-1 cursor-pointer">
+                                    <div key={i} onClick={() => addToast("Viewing Drill Details...", 'info')} className="aspect-square bg-[#1e1e1e] border border-white/10 rounded-2xl p-4 flex flex-col justify-between group hover:border-east-light transition-all shadow-xl hover:-translate-y-1 active:scale-95 duration-200 cursor-pointer">
                                         <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-east-light/30 transition-colors">
                                             <Video size={20} className="text-gray-500 group-hover:text-east-light" />
                                         </div>
@@ -419,7 +526,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                 ))}
                             </div>
                             {!isPublic && (
-                                <button onClick={() => addToast("Feature Coming Soon: Drill Creator", 'warning')} className="w-full py-4 bg-east-light text-black font-black italic text-xs rounded-2xl uppercase tracking-widest shadow-xl hover:scale-[1.02] transition-transform">
+                                <button onClick={() => addToast("Feature Coming Soon", 'info')} className="w-full py-4 bg-east-light text-black font-black italic text-xs rounded-2xl uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
                                     CREATE NEW DRILL
                                 </button>
                             )}
@@ -464,11 +571,6 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                                 <p className="text-[10px] text-gray-600 font-bold italic text-center py-4 uppercase tracking-widest">Waitlist Only</p>
                                             )}
                                         </div>
-                                        {!isPublic && (
-                                            <div className="p-3 bg-black/40 text-center">
-                                                <button onClick={() => addToast("Feature Coming Soon: Team Analytics", 'warning')} className="text-[9px] font-black text-gray-400 hover:text-white uppercase tracking-widest transition-colors">Full Analytics & Messaging</button>
-                                            </div>
-                                        )}
                                     </div>
                                 ))
                             )}
@@ -476,6 +578,28 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                     )}
                 </div>
             </div>
+
+            {/* LIGHTBOX OVERLAY */}
+            <Lightbox
+                isOpen={gallery.isOpen}
+                imageSrc={gallery.currentImage}
+                onClose={gallery.close}
+                onNext={gallery.next}
+                onPrev={gallery.prev}
+                currentIndex={gallery.selectedIndex ?? 0}
+                totalImages={displayGallery.length}
+            />
+
+            {/* CLASS MODAL */}
+            {selectedSession && (
+                <ClassModal
+                    sessions={[selectedSession]}
+                    currentUserId={currentUserId || null}
+                    bookedSessionIds={bookedSessionIds}
+                    onClose={() => setSelectedSession(null)}
+                    onScheduleChange={() => setRefreshKey(prev => prev + 1)}
+                />
+            )}
         </div>
     );
 }

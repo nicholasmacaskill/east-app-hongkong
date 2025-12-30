@@ -29,7 +29,7 @@ export default function LeaderboardPage() {
 
             <div className="relative z-10 p-4">
                 <div className="relative mb-10 pt-10 px-4 text-center">
-                    <a href="/" className="absolute left-2 top-10 text-gray-500 hover:text-white transition-colors z-20">
+                    <a href="/" className="fixed left-6 top-6 z-50 text-gray-500 hover:text-white transition-colors">
                         <ChevronLeft size={28} />
                     </a>
                     <h1 className="text-[5rem] leading-none font-black italic text-stroke-thin text-transparent uppercase opacity-10 absolute top-2 left-1/2 -translate-x-1/2 select-none whitespace-nowrap tracking-tighter">LEAGUE</h1>

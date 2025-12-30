@@ -24,15 +24,14 @@ export default function LandingScreen({ onSelectRole }: LandingScreenProps) {
 
                 {/* LOGO REVEAL */}
                 <div className={`transition-all duration-[3000ms] ease-out-expo ${isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
-                    <img
-                        src="/eastedited.png"
-                        alt="EAST Logo"
-                        className="w-48 h-auto"
-                    />
+                    {/* Logo */}
+                    <div className="mb-2">
+                        <img src="/east-logo-transparent.png" className="w-64 h-auto object-contain mx-auto" alt="EAST Logo" />
+                    </div>
                 </div>
 
                 {/* CALL TO ACTION */}
-                <div className={`mt-16 w-full space-y-4 transition-all duration-[2000ms] delay-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                <div className={`mt-6 w-full space-y-4 transition-all duration-[2000ms] delay-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                     <h2 className="text-[10px] font-black tracking-[0.4em] text-white/40 uppercase text-center mb-10">
                         Select Your Portal
                     </h2>

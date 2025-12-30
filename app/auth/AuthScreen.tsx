@@ -31,18 +31,17 @@ interface AuthScreenProps {
 }
 
 const AuthHeader = ({ title }: { title: string }) => (
-    <div className="text-center mb-10">
-        <img
-            src="/eastedited.png"
-            alt="EAST Logo"
-            className="h-12 w-auto mx-auto drop-shadow-2xl"
-        />
+    <div className="text-center mb-6">
+        {/* Logo */}
+        <div className="mb-4">
+            <img src="/east-logo-transparent.png" alt="EAST" className="h-32 h-auto mx-auto" />
+        </div>
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-4">{title}</h2>
     </div>
 );
 
 const InputField: React.FC<{ label: string; name: keyof FormData; type: string; value: string; icon: React.ElementType; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder: string; }> = ({ label, name, type, value, icon: Icon, onChange, placeholder }) => (
-    <div className="relative mb-6">
+    <div className="relative mb-4">
         <label htmlFor={name} className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{label}</label>
         <div className="relative">
             <Icon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-east-light" />

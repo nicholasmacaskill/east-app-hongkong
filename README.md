@@ -238,3 +238,35 @@ This guide provides a structured approach to manually testing the East App Hongk
 | **Stripe Error** | Invalid keys or secrets. | Verify `.env.local` matches Stripe Dashboard (Test Mode). |
 | **White Screen / Crash** | React runtime error. | Check terminal running `npm run dev` for stack trace. |
 
+---
+
+## 5. Deployment QA Checklist (Pre-Live)
+
+Use this checklist to ensure a smooth transition from development to a live production environment.
+
+### 🔐 1. Environment & Auth
+- [ ] **NEXT_PUBLIC_BASE_URL**: Updated from `localhost:3000` to the actual production domain (e.g., `https://east-app-hongkong.vercel.app`).
+- [ ] **Supabase URL/Anon Key**: Switched from local containers to a hosted Supabase project.
+- [ ] **SUPABASE_SERVICE_ROLE_KEY**: Present in production environment but **NEVER** exposed in public-facing code or client-side logs.
+- [ ] **Redirect URLs**: Added production domain to Supabase Auth > URL Configuration > Redirect URLs.
+
+### 💳 2. Payment Integration (Stripe)
+- [ ] **Live Mode Toggle**: Switched from `pk_test_...` and `sk_test_...` to production `pk_live_...` and `sk_live_...`.
+- [ ] **Webhook Endpoint**: Created a new Webhook in Stripe Dashboard pointing to `https://your-domain.com/api/webhooks/stripe`.
+- [ ] **STRIPE_WEBHOOK_SECRET**: Updated to match the "Signing Secret" of the new live webhook endpoint.
+- [ ] **Price IDs**: Verified that `price_...` IDs in `.env` match the products created in the **Stripe Live Environment**.
+
+### 📧 3. Email Delivery (Resend)
+- [ ] **Domain Authentication**: Added and verified your sending domain in the Resend Dashboard.
+- [ ] **API Key**: Switched to a production Resend API Key.
+- [ ] **Onboarding Check**: Verified that emails can be sent to non-owner addresses.
+
+### 🗄️ 4. Data & Logic
+- [ ] **Database Migrations**: Ran `npx tsx run_sql.ts` against the production DB to ensure all tables, triggers, and the `preferences` column are present.
+- [ ] **Admin Account**: Manually promoted the head coach/owner to `admin` in the production `profiles` table.
+- [ ] **CORS/CSP**: Enabled restricted CORS settings in Supabase and Next.js to only allow requests from the production domain.
+
+### 🖼️ 5. Assets & UX
+- [ ] **Image Hosting**: Verified that gallery images/avatars are stored correctly in a public Supabase Storage bucket.
+- [ ] **Build Check**: Ran `npm run build` locally to ensure zero TypeScript or Linting errors exist.
+

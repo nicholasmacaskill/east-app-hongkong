@@ -34,6 +34,7 @@ export default function PublicCoachProfilePage() {
                     bio: data.bio,
                     avatar_url: data.avatar_url,
                     gallery_images: data.gallery_images || [],
+                    intro_video_url: data.intro_video_url,
                     role: data.role
                 });
             } catch (err: any) {

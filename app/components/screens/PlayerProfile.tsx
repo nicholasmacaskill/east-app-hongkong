@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Edit2, Trophy, Target, Shield, Users, Activity, Award, ChevronRight, Image as ImageIcon, Camera } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
+import { useGallery } from '@/app/hooks/useGallery';
+import Lightbox from '@/app/components/ui/Lightbox';
 
 // Simple Card Wrapper
 const Card = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
@@ -31,6 +33,19 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
   const [uploadingGallery, setUploadingGallery] = useState(false);
   const galleryInputRef = React.useRef<HTMLInputElement>(null);
   const avatarInputRef = React.useRef<HTMLInputElement>(null);
+
+  const displayGallery = profileData.gallery_images && profileData.gallery_images.length > 0
+    ? profileData.gallery_images
+    : [
+      "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=400",
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400",
+      "https://images.unsplash.com/photo-1518407613690-d9fc996e74bc?auto=format&fit=crop&q=80&w=400",
+      "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&q=80&w=400",
+      "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=400",
+      "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=400",
+    ];
+
+  const gallery = useGallery(displayGallery);
 
   // Safety Check
   if (!profileData) return <div className="min-h-screen bg-black flex items-center justify-center text-white font-montserrat font-bold animate-pulse uppercase tracking-widest">Loading Player Profile...</div>;
@@ -293,19 +308,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                 </div>
               </div>
 
-              {/* MATES ROW */}
-              <div className="flex flex-col gap-3">
-                <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">MATES</h3>
-                <div className="bg-gradient-to-r from-east-light to-east-dark rounded-2xl overflow-hidden p-6 shadow-2xl border border-white/10">
-                  <div className="flex justify-center items-center gap-6">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="w-16 h-16 rounded-full border-2 border-white/40 overflow-hidden bg-black shadow-lg hover:scale-110 hover:border-white transition-all cursor-pointer">
-                        <img src="https://eastsportsgroup.com/cdn/shop/files/WhatsApp_Image_2025-10-01_at_19.22.53.jpg?v=1759379442&width=1250" className="w-full h-full object-cover object-top" alt="Teammate" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+
             </div>
           )}
 
@@ -378,31 +381,32 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                 <input type="file" ref={galleryInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*" />
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {(profileData.gallery_images && profileData.gallery_images.length > 0
-                  ? profileData.gallery_images
-                  : [
-                    "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=400",
-                    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400",
-                    "https://images.unsplash.com/photo-1518407613690-d9fc996e74bc?auto=format&fit=crop&q=80&w=400",
-                    "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&q=80&w=400",
-                    "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=400",
-                    "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=400",
-                  ]).map((src: string, i: number) => (
-                    <div key={i} className="aspect-square relative overflow-hidden rounded-xl bg-white/5 group">
-                      <img
-                        src={src}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100"
-                        alt="Gallery"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <ImageIcon className="absolute bottom-2 right-2 text-white/50 opacity-0 group-hover:opacity-100" size={12} />
-                    </div>
-                  ))}
+                {displayGallery.map((src: string, i: number) => (
+                  <div key={i} onClick={() => gallery.open(i)} className="aspect-square relative overflow-hidden rounded-xl bg-white/5 group cursor-pointer">
+                    <img
+                      src={src}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100"
+                      alt="Gallery"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ImageIcon className="absolute bottom-2 right-2 text-white/50 opacity-0 group-hover:opacity-100" size={12} />
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
       </div>
+
+      <Lightbox
+        isOpen={gallery.isOpen}
+        imageSrc={gallery.currentImage}
+        onClose={gallery.close}
+        onNext={gallery.next}
+        onPrev={gallery.prev}
+        currentIndex={gallery.selectedIndex ?? 0}
+        totalImages={displayGallery.length}
+      />
     </div>
   )
 }

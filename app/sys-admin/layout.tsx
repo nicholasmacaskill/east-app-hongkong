@@ -1,5 +1,6 @@
 import React from 'react';
 import { Shield } from 'lucide-react';
+import AdminLogoutButton from '../components/AdminLogoutButton';
 
 export default function AdminLayout({
     children,
@@ -16,10 +17,12 @@ export default function AdminLayout({
                             Admin
                         </div>
                     </div>
+
                     <div className="flex items-center gap-4">
                         <div className="text-right hidden sm:block">
                             <p className="text-xs font-bold text-gray-400 uppercase">Management Console</p>
                         </div>
+                        <AdminLogoutButton />
                     </div>
                 </div>
             </header>

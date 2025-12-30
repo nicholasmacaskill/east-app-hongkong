@@ -24,7 +24,8 @@ export default function ScheduleScreen({
   parentMode = false,
   myChildren = [],
   activeChildId,
-  setActiveChildId
+  setActiveChildId,
+  availability = []
 }: {
   onPreviewClick: (s: Session) => void,
   refreshKey: number,
@@ -32,7 +33,8 @@ export default function ScheduleScreen({
   parentMode?: boolean,
   myChildren?: any[],
   activeChildId?: string | null,
-  setActiveChildId?: (id: string | null) => void
+  setActiveChildId?: (id: string | null) => void,
+  availability?: string[]
 }) {
   const [mySchedule, setMySchedule] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,18 +131,21 @@ export default function ScheduleScreen({
     <div className="min-h-screen bg-black pb-24 animate-fadeIn relative">
       <div className="relative z-10">
         <div className="mx-4 mb-4 flex flex-col gap-3">
+
           {/* --- FILTER TABS: High contrast dark theme --- */}
-          <div className="flex bg-[#1a1a1a] rounded-xl p-1">
-            {['PLAYER', 'PARENT'].map(f => (
-              <button
-                key={f}
-                onClick={() => setFilter(f.toLowerCase() as any)}
-                className={`flex-1 text-center font-montserrat font-black italic text-[10px] py-2 rounded-lg transition-all ${filter === f.toLowerCase() ? 'bg-east-light text-black shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
+          {parentMode && (
+            <div className="flex bg-[#1a1a1a] rounded-xl p-1">
+              {['PLAYER', 'PARENT'].map(f => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f.toLowerCase() as any)}
+                  className={`flex-1 text-center font-montserrat font-black italic text-[10px] py-2 rounded-lg transition-all ${filter === f.toLowerCase() ? 'bg-east-light text-black shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* --- CHILD SWITCHER (For Parents) --- */}
           {parentMode && (
@@ -200,6 +205,13 @@ export default function ScheduleScreen({
                   const d = addDays(viewStartDate, i);
                   const isSelected = isSameDay(d, selectedDate);
 
+                  const year = d.getFullYear();
+                  const month = String(d.getMonth() + 1).padStart(2, '0');
+                  const day = String(d.getDate()).padStart(2, '0');
+                  const dateStr = `${year}-${month}-${day}`;
+
+                  const isAvailable = availability.includes(dateStr);
+
                   if (isBefore(d, minDate) || isAfter(d, maxDate)) {
                     return <div key={i} className="w-10" />;
                   }
@@ -208,8 +220,13 @@ export default function ScheduleScreen({
                     <div
                       key={i}
                       onClick={() => setSelectedDate(d)}
-                      className={`flex flex-col items-center justify-center w-10 py-2 rounded-xl cursor-pointer transition-all duration-300 border ${isSelected ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(209,242,217,0.3)]' : 'bg-transparent text-gray-500 border-transparent hover:bg-white/5'}`}
+                      className={`flex flex-col items-center justify-center w-10 py-2 rounded-xl cursor-pointer transition-all duration-300 border relative ${isSelected ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(209,242,217,0.3)]' : 'bg-transparent text-gray-500 border-transparent hover:bg-white/5'}`}
                     >
+                      {/* Indicator for Volunteer Day */}
+                      {isAvailable && (
+                        <div className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-black shadow-[0_0_8px_#28D160] transition-colors ${isSelected ? 'bg-black' : 'bg-east-light animate-pulse'}`} />
+                      )}
+
                       <span className="text-[8px] font-black mb-1">{format(d, 'EEE').toUpperCase()}</span>
                       <span className="text-sm font-black italic">{format(d, 'd')}</span>
                     </div>
@@ -225,6 +242,21 @@ export default function ScheduleScreen({
         </div>
 
         <div className="px-5 space-y-4 min-h-[300px]">
+          {/* Volunteer Indicator Legend */}
+          {(() => {
+            const year = selectedDate.getFullYear();
+            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+            const day = String(selectedDate.getDate()).padStart(2, '0');
+            const selDateStr = `${year}-${month}-${day}`;
+
+            return availability.includes(selDateStr) && (
+              <div className="bg-east-light/10 border border-east-light/20 rounded-xl p-3 flex items-center gap-3 animate-fadeIn">
+                <div className="w-2 h-2 bg-east-light rounded-full animate-pulse shadow-[0_0_8px_#28D160]" />
+                <span className="text-[10px] font-black italic text-east-light uppercase tracking-widest">Possible Volunteer Day</span>
+              </div>
+            );
+          })()}
+
           {loading ? (
             <div className="flex flex-col items-center py-20 gap-3">
               <div className="w-6 h-6 border-2 border-east-light border-t-transparent rounded-full animate-spin" />

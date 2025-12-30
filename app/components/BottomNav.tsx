@@ -22,7 +22,7 @@ export default function BottomNav({ activeTab, setTab }: BottomNavProps) {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-800 pb-safe pt-2 px-4 z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/5 pb-safe pt-2 px-4 z-50">
       <div className="flex justify-between items-end max-w-md mx-auto">
         <NavItem tab="home" icon={Home} label="Home" />
         <NavItem tab="profile" icon={UserIcon} label="Profile" />

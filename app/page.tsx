@@ -40,13 +40,14 @@ export interface UserProfileData {
   gallery_images: string[];
   schedule_photo_url?: string;
   role?: UserRole;
+  intro_video_url?: string;
   id?: string;
   preferences?: any;
 }
 
 // 2. Updated Initial State
 const initialProfileData: UserProfileData = {
-  name: '', surname: '', first_name: '', last_name: '', username: '', bio: '', email: '', mobile: '', avatar_url: '', credits: 0, gallery_images: [], schedule_photo_url: '', role: undefined, preferences: {}
+  name: '', surname: '', first_name: '', last_name: '', username: '', bio: '', email: '', mobile: '', avatar_url: '', credits: 0, gallery_images: [], schedule_photo_url: '', intro_video_url: '', role: undefined, preferences: {}
 };
 
 function AppContent() {
@@ -65,6 +66,7 @@ function AppContent() {
   const [selectedNews, setSelectedNews] = useState<Session | null>(null);
   const [bookedSessionIds, setBookedSessionIds] = useState<number[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [myChildren, setMyChildren] = useState<any[]>([]);
 
   const [userProfile, setUserProfile] = useState<UserProfileData>(initialProfileData);
 
@@ -119,6 +121,7 @@ function AppContent() {
               credits: profileData.credits || 0,
               gallery_images: profileData.gallery_images || [],
               schedule_photo_url: profileData.schedule_photo_url || '',
+              intro_video_url: profileData.intro_video_url || '',
               role: profileData.role as UserRole,
               id: profileData.id,
               preferences: profileData.preferences || {}
@@ -140,6 +143,24 @@ function AppContent() {
             }
           } catch (fetchError) {
             console.error("Error fetching schedule:", fetchError);
+          }
+
+
+          // E. FETCH CHILDREN (IF PARENT)
+          if (profileData && profileData.role === 'parent') {
+            const { data: childrenData } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('parent_id', user.id);
+
+            if (childrenData) {
+              // Map sport from bio if needed, or just pass raw
+              const childrenWithTeams = childrenData.map(c => ({
+                ...c,
+                team: c.bio?.replace(' Player', '') || 'Athlete' // Simple extraction or default
+              }));
+              setMyChildren(childrenWithTeams);
+            }
           }
 
         }
@@ -182,7 +203,8 @@ function AppContent() {
         mobile: updatedData.mobile,
         contact_email: updatedData.email,
         avatar_url: updatedData.avatar_url,
-        gallery_images: updatedData.gallery_images
+        gallery_images: updatedData.gallery_images,
+        intro_video_url: updatedData.intro_video_url
       })
       .eq('id', currentUserId);
 
@@ -288,14 +310,22 @@ function AppContent() {
 
           {activeTab === 'profile' && (
             (userProfile.role as string) === 'coach' || (userProfile.role as string) === 'admin'
-              ? <CoachProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} />
+              ? <CoachProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} currentUserId={currentUserId} />
               : userProfile.role === 'parent'
-                ? <ParentProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} />
+                ? <ParentProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} myChildren={myChildren} onAddChild={() => setRefreshKey(prev => prev + 1)} />
                 : <PlayerProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} />
           )}
 
 
-          {activeTab === 'schedule' && <ScheduleScreen currentUserId={currentUserId} refreshKey={refreshKey} onPreviewClick={(s) => { setSelectedSessions([s]); setShowClassModal(true); }} />}
+
+          {activeTab === 'schedule' && (
+            <ScheduleScreen
+              currentUserId={currentUserId}
+              refreshKey={refreshKey}
+              availability={userProfile.preferences?.availability || []}
+              onPreviewClick={(s) => { setSelectedSessions([s]); setShowClassModal(true); }}
+            />
+          )}
 
           {activeTab === 'community' && <CommunityScreen key={refreshKey} currentUserId={currentUserId} />}
 

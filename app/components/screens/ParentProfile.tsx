@@ -1,7 +1,9 @@
 'use client';
 import React, { useState } from 'react';
-import { Edit2, CheckCircle2, X, ChevronRight, Users, Calendar, Heart, Image as ImageIcon, Award } from 'lucide-react';
+import { Edit2, CheckCircle2, ChevronRight, Users, Calendar, Heart, Image as ImageIcon, Award } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
+import { useGallery } from '@/app/hooks/useGallery';
+import Lightbox from '@/app/components/ui/Lightbox';
 
 // Simple Card Wrapper
 const Card = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
@@ -32,20 +34,78 @@ export default function ParentProfile({
    const [activeTab, setActiveTab] = useState('athletes');
    const [selectedChildId, setSelectedChildId] = useState<number | string>(activeChildId || 1);
    const [showAddChild, setShowAddChild] = useState(false);
-   const [newChildName, setNewChildName] = useState({ first: '', last: '' });
+   const [newChild, setNewChild] = useState({ first: '', last: '', email: '', sport: '' });
    const [uploadingGallery, setUploadingGallery] = useState(false);
    const galleryInputRef = React.useRef<HTMLInputElement>(null);
+   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
 
-   // Mock Data needed for tabs
+   const displayGallery = profileData.gallery_images && profileData.gallery_images.length > 0
+      ? profileData.gallery_images
+      : [
+         "https://cdn.hockeycanada.ca/hockey-canada/community-engagement/asian-heritage-month/2025/2025-ahm-chihiro-suzuki.jpg?w=620&h=350&fit=crop?q=60&w=620&format=auto",
+         "https://eastsportsgroup.com/cdn/shop/files/WhatsApp_Image_2025-10-01_at_19.22.53.jpg?v=1759379442&width=1250",
+         "https://i1.wp.com/media.globalnews.ca/videostatic/335/843/larry_kwong_848x480_1190060611624.jpg?w=1040&quality=70&strip=all",
+         "https://eastsportsgroup.com/cdn/shop/files/esh.webp?v=1756778710&width=1500",
+         "https://st.focusedcollection.com/9163412/i/650/focused_517122206-stock-photo-focused-asian-male-athlete-doing.jpg",
+         "https://eastsportsgroup.com/cdn/shop/files/WhatsAppImage2024-11-21at14.04.48.jpg?v=1732169191&width=720",
+      ];
+
+   const gallery = useGallery(displayGallery);
+
+   // Availability Logic
+   const [prefObj, setPrefObj] = useState(profileData.preferences || {});
+   const [availability, setAvailability] = useState<string[]>(prefObj.availability || []);
+   const [savingAvailability, setSavingAvailability] = useState(false);
+
+   // Sync with props if they change
+   React.useEffect(() => {
+      setPrefObj(profileData.preferences || {});
+      setAvailability(profileData.preferences?.availability || []);
+   }, [profileData.preferences]);
+
+   // Generate next 14 days
    const next14Days = Array.from({ length: 14 }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() + i);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
       return {
          day: d.toLocaleDateString('en-US', { weekday: 'narrow' }),
          date: d.getDate(),
-         isAvailable: [true, true, false, true, false, true, true][i % 7]
+         fullDate: dateStr, // YYYY-MM-DD local
       };
    });
+
+   const toggleAvailability = async (dateStr: string) => {
+      const newAvailability = availability.includes(dateStr)
+         ? availability.filter(d => d !== dateStr)
+         : [...availability, dateStr];
+
+      const newPref = { ...prefObj, availability: newAvailability };
+
+      setAvailability(newAvailability);
+      setPrefObj(newPref);
+      setSavingAvailability(true);
+
+      // Save to DB
+      const { error } = await supabase.from('profiles').update({
+         preferences: newPref
+      }).eq('id', profileData.id);
+
+      setSavingAvailability(false);
+
+      if (error) {
+         alert("Failed to save availability: " + error.message);
+         // Revert on error
+         setAvailability(availability);
+         setPrefObj(prefObj);
+      } else {
+         // Trigger refresh in parent component to update global state
+         if (onAddChild) onAddChild();
+      }
+   };
 
    const contributions = [
       { label: 'Event Host', count: 12 },
@@ -63,31 +123,36 @@ export default function ParentProfile({
    const myAthletes = myChildren;
 
    const handleAddChild = async () => {
-      if (!newChildName.first || !newChildName.last) return;
-      const childId = crypto.randomUUID();
+      if (!newChild.first || !newChild.last || !newChild.email) {
+         alert("Please fill in Name and Email");
+         return;
+      }
 
-      const { error } = await supabase.from('profiles').insert({
-         id: childId,
-         first_name: newChildName.first,
-         last_name: newChildName.last,
-         parent_id: profileData.id,
-         role: 'player',
-         is_managed: true,
-         credits: 0 // Children share parent credits usually, or start with 0
-      });
-
-      if (error) {
-         alert('Error creating profile: ' + error.message);
-      } else {
-         // Also link in relationships table for good measure
-         await supabase.from('player_relationships').insert({
-            parent_id: profileData.id,
-            child_id: childId
+      try {
+         const res = await fetch('/api/family/add-child', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+               firstName: newChild.first,
+               lastName: newChild.last,
+               email: newChild.email,
+               sport: newChild.sport,
+               parentId: profileData.id
+            })
          });
 
-         if (onAddChild) onAddChild();
-         setShowAddChild(false);
-         setNewChildName({ first: '', last: '' });
+         const data = await res.json();
+
+         if (!res.ok) {
+            alert('Error: ' + data.error);
+         } else {
+            alert(`Child Registered! An email has been sent to ${newChild.email}.`);
+            if (onAddChild) onAddChild();
+            setShowAddChild(false);
+            setNewChild({ first: '', last: '', email: '', sport: '' });
+         }
+      } catch (e: any) {
+         alert('Network Error: ' + e.message);
       }
    };
 
@@ -278,17 +343,38 @@ export default function ParentProfile({
                                  <div>
                                     <label className="text-[10px] uppercase font-bold text-gray-500">First Name</label>
                                     <input
-                                       value={newChildName.first}
-                                       onChange={e => setNewChildName({ ...newChildName, first: e.target.value })}
+                                       value={newChild.first}
+                                       onChange={e => setNewChild({ ...newChild, first: e.target.value })}
                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-lg text-white outline-none focus:border-east-light"
+                                       placeholder="e.g. Michael"
                                     />
                                  </div>
                                  <div>
                                     <label className="text-[10px] uppercase font-bold text-gray-500">Last Name</label>
                                     <input
-                                       value={newChildName.last}
-                                       onChange={e => setNewChildName({ ...newChildName, last: e.target.value })}
+                                       value={newChild.last}
+                                       onChange={e => setNewChild({ ...newChild, last: e.target.value })}
                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-lg text-white outline-none focus:border-east-light"
+                                       placeholder="e.g. Jordan"
+                                    />
+                                 </div>
+                                 <div>
+                                    <label className="text-[10px] uppercase font-bold text-gray-500">Email Address</label>
+                                    <input
+                                       value={newChild.email}
+                                       onChange={e => setNewChild({ ...newChild, email: e.target.value })}
+                                       className="w-full bg-black/50 border border-white/10 p-3 rounded-lg text-white outline-none focus:border-east-light"
+                                       placeholder="child@example.com"
+                                       type="email"
+                                    />
+                                 </div>
+                                 <div>
+                                    <label className="text-[10px] uppercase font-bold text-gray-500">Sport / Team</label>
+                                    <input
+                                       value={newChild.sport}
+                                       onChange={e => setNewChild({ ...newChild, sport: e.target.value })}
+                                       className="w-full bg-black/50 border border-white/10 p-3 rounded-lg text-white outline-none focus:border-east-light"
+                                       placeholder="e.g. Ice Hockey"
                                     />
                                  </div>
                                  <div className="flex gap-2 pt-2">
@@ -309,23 +395,28 @@ export default function ParentProfile({
                         <div className="flex justify-between items-end mb-6">
                            <div>
                               <h3 className="font-montserrat font-black italic text-sm text-white uppercase tracking-widest">Live Availability</h3>
-                              <p className="text-[9px] font-bold text-gray-500 uppercase mt-1">Syncing with Schedule</p>
+                              <p className="text-[9px] font-bold text-gray-500 uppercase mt-1">
+                                 {savingAvailability ? <span className="text-east-light animate-pulse">SAVING CHANGES...</span> : 'Tap dates to toggle available days'}
+                              </p>
                            </div>
-                           <Calendar size={18} className="text-east-light" />
+                           <Calendar size={18} className={savingAvailability ? 'text-east-light animate-spin' : 'text-east-light'} />
                         </div>
                         <div className="grid grid-cols-7 gap-3">
-                           {next14Days.slice(0, 7).map((day, i) => (
-                              <div key={i} className="flex flex-col items-center gap-2">
-                                 <span className="text-[8px] font-bold text-gray-600 uppercase">{day.day}</span>
-                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black transition-all ${i === 0 ? 'bg-east-light text-black scale-110 shadow-lg' : 'bg-white/5 text-white'}`}>
-                                    {day.date}
+                           {next14Days.slice(0, 14).map((day, i) => {
+                              const isAvailable = availability.includes(day.fullDate);
+                              return (
+                                 <div key={i} onClick={() => toggleAvailability(day.fullDate)} className="flex flex-col items-center gap-2 cursor-pointer group">
+                                    <span className="text-[8px] font-bold text-gray-600 uppercase group-hover:text-white transition-colors">{day.day}</span>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black transition-all ${day.fullDate === new Date().toISOString().split('T')[0] ? 'border border-east-light text-east-light' : 'bg-white/5 text-white group-hover:bg-white/10'}`}>
+                                       {day.date}
+                                    </div>
+                                    <div className={`w-1.5 h-1.5 rounded-full transition-all ${isAvailable ? 'bg-east-light scale-110 shadow-[0_0_10px_#28D160]' : 'bg-white/10'}`} />
                                  </div>
-                                 <div className={`w-1 h-1 rounded-full ${day.isAvailable ? 'bg-east-light animate-pulse' : 'bg-red-500'}`} />
-                              </div>
-                           ))}
+                              )
+                           })}
                         </div>
                      </div>
-                     <p className="text-[10px] text-gray-500 text-center italic font-bold">Next 7 days shown. Adjust availability in family settings.</p>
+                     <p className="text-[10px] text-gray-500 text-center italic font-bold">Your availability helps us coordinate volunteering & events.</p>
                   </div>
                )}
 
@@ -367,29 +458,30 @@ export default function ParentProfile({
                         <input type="file" ref={galleryInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*" />
                      </div>
                      <div className="grid grid-cols-3 gap-2">
-                        {(profileData.gallery_images && profileData.gallery_images.length > 0
-                           ? profileData.gallery_images
-                           : [
-                              "https://cdn.hockeycanada.ca/hockey-canada/community-engagement/asian-heritage-month/2025/2025-ahm-chihiro-suzuki.jpg?w=620&h=350&fit=crop?q=60&w=620&format=auto",
-                              "https://eastsportsgroup.com/cdn/shop/files/WhatsApp_Image_2025-10-01_at_19.22.53.jpg?v=1759379442&width=1250",
-                              "https://i1.wp.com/media.globalnews.ca/videostatic/335/843/larry_kwong_848x480_1190060611624.jpg?w=1040&quality=70&strip=all",
-                              "https://eastsportsgroup.com/cdn/shop/files/esh.webp?v=1756778710&width=1500",
-                              "https://st.focusedcollection.com/9163412/i/650/focused_517122206-stock-photo-focused-asian-male-athlete-doing.jpg",
-                              "https://eastsportsgroup.com/cdn/shop/files/WhatsAppImage2024-11-21at14.04.48.jpg?v=1732169191&width=720",
-                           ]).map((src: string, i: number) => (
-                              <div key={i} className="aspect-square relative overflow-hidden rounded-xl bg-white/5 group">
-                                 <img
-                                    src={src}
-                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100"
-                                    alt="Gallery"
-                                 />
-                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                 <ImageIcon className="absolute bottom-2 right-2 text-white/50 opacity-0 group-hover:opacity-100" size={12} />
-                              </div>
-                           ))}
+                        {displayGallery.map((src: string, i: number) => (
+                           <div key={i} onClick={() => gallery.open(i)} className="aspect-square relative overflow-hidden rounded-xl bg-white/5 group cursor-pointer">
+                              <img
+                                 src={src}
+                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100"
+                                 alt="Gallery"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                              <ImageIcon className="absolute bottom-2 right-2 text-white/50 opacity-0 group-hover:opacity-100" size={12} />
+                           </div>
+                        ))}
                      </div>
                   </div>
                )}
+
+               <Lightbox
+                  isOpen={gallery.isOpen}
+                  imageSrc={gallery.currentImage}
+                  onClose={gallery.close}
+                  onNext={gallery.next}
+                  onPrev={gallery.prev}
+                  currentIndex={gallery.selectedIndex ?? 0}
+                  totalImages={displayGallery.length}
+               />
             </div>
          </div>
       </div>
