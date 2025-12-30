@@ -1,0 +1,481 @@
+'use client';
+import React, { useState, useEffect, useRef } from 'react';
+import { useToast } from '@/app/components/ui/Toast';
+import { Camera, Edit2, Play, Plus, ChevronRight, Award, Trophy, Users, Calendar, Video } from 'lucide-react';
+import { supabase } from '@/app/lib/supabase';
+
+// Mock Data for redesign
+const PROFILE_STATS = {
+    win_rate: '85%',
+    total_sessions: 412,
+    experience: '12 YRS'
+};
+
+const UPCOMING_SESSIONS = [
+    { id: 1, title: 'Power Skating', image: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=400' },
+    { id: 2, title: 'Shot Mechanics', image: 'https://images.unsplash.com/photo-1519766304807-5f2c90def053?auto=format&fit=crop&q=80&w=400' },
+    { id: 3, title: 'Team Defense', image: 'https://images.unsplash.com/photo-1508285296815-93184f8db7e5?auto=format&fit=crop&q=80&w=400' }
+];
+
+const DRILL_FILTERS = {
+    age: ['U10', 'U12', 'U15', 'PRO'],
+    type: ['SHOOTING', 'DEFENSE', 'PASSING']
+};
+
+export default function CoachProfile({ onOpenSettings, profileData, isPublic = false }: { onOpenSettings: () => void, profileData: any, isPublic?: boolean }) {
+    const { addToast } = useToast();
+    const [activeTab, setActiveTab] = useState<'profile' | 'sessions' | 'drills' | 'roster'>('profile');
+    const [uploading, setUploading] = useState(false);
+    const [availability, setAvailability] = useState<any[]>([]);
+    const [isEditingBio, setIsEditingBio] = useState(false);
+    const [bioText, setBioText] = useState(profileData.bio || '');
+    const [rosterSessions, setRosterSessions] = useState<any[]>([]);
+
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const avatarInputRef = useRef<HTMLInputElement>(null);
+
+    // Fetch Availability
+    const fetchAvailability = async () => {
+        const { data } = await supabase
+            .from('availability')
+            .select('*')
+            .eq('coach_id', profileData.id)
+            .gte('start_time', new Date().toISOString())
+            .order('start_time', { ascending: true })
+            .limit(9);
+
+        if (data) setAvailability(data);
+    };
+
+    useEffect(() => {
+        if (profileData?.id) fetchAvailability();
+    }, [profileData]);
+
+    useEffect(() => {
+        if (activeTab === 'roster') {
+            fetchRoster();
+        }
+    }, [activeTab]);
+
+    const fetchRoster = async () => {
+        const coachName = profileData.first_name || profileData.username;
+        if (!coachName) return;
+
+        const { data } = await supabase
+            .from('sessions')
+            .select('*, registrations(profiles(*))')
+            .ilike('instructor', `%${coachName}%`)
+            .gte('start_time', new Date().toISOString())
+            .order('start_time', { ascending: true });
+
+        if (data) setRosterSessions(data);
+    };
+
+    // Avatar Upload
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        setUploading(true);
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `avatar-${profileData.id}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
+
+        if (uploadError) {
+            addToast('Avatar upload failed', 'error');
+            setUploading(false);
+            return;
+        }
+
+        const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
+
+        const { error: dbError } = await supabase
+            .from('profiles')
+            .update({ avatar_url: data.publicUrl })
+            .eq('id', profileData.id);
+
+        if (!dbError) {
+            profileData.avatar_url = data.publicUrl;
+            window.location.reload();
+        }
+        setUploading(false);
+    };
+
+    // Gallery Upload
+    const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+        const file = e.target.files[0];
+        setUploading(true);
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `gallery-${profileData.id}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
+
+        if (uploadError) {
+            addToast('Upload failed', 'error');
+            setUploading(false);
+            return;
+        }
+
+        const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
+        const newImageUrl = data.publicUrl;
+
+        const updatedGallery = [...(profileData.gallery_images || []), newImageUrl];
+        const { error: dbError } = await supabase
+            .from('profiles')
+            .update({ gallery_images: updatedGallery })
+            .eq('id', profileData.id);
+
+        if (!dbError) {
+            addToast('Photo added to gallery!', 'success');
+            window.location.reload();
+        }
+        setUploading(false);
+    };
+
+    // Save Bio
+    const saveBio = async () => {
+        const { error } = await supabase
+            .from('profiles')
+            .update({ bio: bioText })
+            .eq('id', profileData.id);
+
+        if (!error) {
+            profileData.bio = bioText;
+            setIsEditingBio(false);
+            addToast('Bio updated successfully', 'success');
+        } else {
+            addToast("Failed to save bio", 'error');
+        }
+    };
+
+    if (!profileData) return <div className="min-h-screen bg-black flex items-center justify-center text-white font-montserrat font-bold animate-pulse uppercase tracking-widest">Loading Coach Profile...</div>;
+
+    const displayGallery = profileData.gallery_images && profileData.gallery_images.length > 0
+        ? profileData.gallery_images
+        : [
+            "https://images.unsplash.com/photo-1518407613690-d9fc996e74bc?auto=format&fit=crop&q=80&w=400",
+            "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&q=80&w=400",
+            "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=400",
+        ];
+
+    return (
+        <div className="animate-fadeIn bg-black min-h-screen pb-24 relative overflow-hidden font-montserrat">
+            {/* Background Image Layer - Premium Blur Overlay */}
+            <div className="fixed inset-0 z-0">
+                <img
+                    src="https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=1200"
+                    className="w-full h-full object-cover opacity-20 grayscale"
+                    alt="bg"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90" />
+            </div>
+
+            <div className="relative z-10 w-full max-w-md mx-auto">
+                {/* HEADER CONTAINER */}
+                <div className="flex flex-col">
+                    {/* 1. TOP VISUALS */}
+                    <div className="relative h-[250px] w-full shrink-0">
+                        {!isPublic && (
+                            <button onClick={onOpenSettings} className="absolute top-4 right-6 z-30 text-gray-400 hover:text-white transition-colors">
+                                <Edit2 size={24} />
+                            </button>
+                        )}
+
+                        <div className="absolute right-8 top-20 z-0 opacity-20">
+                            <h1 className="font-black italic text-[8rem] text-white leading-none tracking-tighter select-none uppercase">COACH</h1>
+                        </div>
+
+                        <div className="absolute left-6 top-16 z-10">
+                            <div
+                                className={`w-44 h-44 rounded-full border-[6px] border-white/10 bg-white/5 overflow-hidden shadow-2xl backdrop-blur-sm relative ${isPublic ? '' : 'cursor-pointer group'}`}
+                                onClick={() => !isPublic && avatarInputRef.current?.click()}
+                            >
+                                <img
+                                    src={profileData.avatar_url || "https://images.pexels.com/photos/6550836/pexels-photo-6550836.jpeg"}
+                                    className={`w-full h-full object-cover opacity-90 transition-opacity ${isPublic ? '' : 'group-hover:opacity-40'}`}
+                                    alt="profile"
+                                />
+                                {!isPublic && (
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Camera size={32} className="text-white" />
+                                    </div>
+                                )}
+                            </div>
+                            <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="hidden" accept="image/*" />
+                            <input type="file" ref={fileInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*" />
+                        </div>
+                    </div>
+
+                    {/* 2. MIDDLE CONTENT */}
+                    <div className="px-6 pb-8 flex flex-col gap-6 items-center w-full -mt-2">
+                        <div className="w-full flex flex-col items-center pt-8">
+                            <h2 className="font-black italic text-2xl text-white uppercase tracking-tighter leading-none text-center">
+                                {profileData.first_name || 'COACH'} <span className="text-east-light">{profileData.last_name || 'WHIT'}</span>
+                            </h2>
+                            <p className="font-bold text-[10px] text-gray-500 uppercase tracking-widest mt-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+                                PRO INSTRUCTOR • HOCKEY SPECIALIST
+                            </p>
+                        </div>
+
+                        {/* Bio Section with Toggle */}
+                        <div className="w-full bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl relative z-20">
+                            {isEditingBio ? (
+                                <div className="flex flex-col gap-3">
+                                    <textarea
+                                        value={bioText}
+                                        onChange={(e) => setBioText(e.target.value)}
+                                        className="w-full bg-black/40 text-white text-xs p-3 rounded-lg border border-east-light outline-none min-h-[80px] font-bold"
+                                        placeholder="Write your bio..."
+                                    />
+                                    <div className="flex gap-2">
+                                        <button onClick={saveBio} className="bg-east-light text-black text-[10px] font-black italic px-4 py-2 rounded-full uppercase hover:bg-white transition-all shadow-lg">SAVE</button>
+                                        <button onClick={() => setIsEditingBio(false)} className="text-gray-400 text-[10px] font-black italic px-4 py-2 uppercase hover:text-white transition-all">CANCEL</button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="group relative">
+                                    <p className="text-white text-xs font-bold italic leading-relaxed opacity-90 text-center">"{profileData.bio || "Crafting athletes of the future at East Sports Group."}"</p>
+                                    {!isPublic && (
+                                        <button
+                                            onClick={() => setIsEditingBio(true)}
+                                            className="absolute -top-2 -right-2 p-1.5 bg-black/60 rounded-full border border-white/10 text-gray-500 hover:text-east-light opacity-0 group-hover:opacity-100 transition-all"
+                                        >
+                                            <Edit2 size={10} />
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Stat Grid */}
+                        <div className="grid grid-cols-3 w-full gap-2">
+                            {[
+                                { l: 'WIN\nRATE', v: PROFILE_STATS.win_rate, icon: Trophy },
+                                { l: 'SESSIONS\nDONE', v: PROFILE_STATS.total_sessions, icon: Video },
+                                { l: 'EXP\nLEVEL', v: PROFILE_STATS.experience, icon: Award },
+                            ].map((stat, i) => (
+                                <div key={i} className="flex flex-col items-center p-3 bg-white/5 rounded-xl border border-white/10 group hover:border-east-light/50 transition-colors">
+                                    <div className="w-8 h-8 rounded-full bg-black/40 flex items-center justify-center mb-2 border border-white/10 group-hover:border-east-light/30 transition-colors shadow-lg">
+                                        <stat.icon size={14} className="text-white" />
+                                    </div>
+                                    <span className="font-black text-lg text-white italic">{stat.v}</span>
+                                    <span className="text-[7px] font-black uppercase text-center leading-tight text-gray-500 whitespace-pre-line">{stat.l}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 3. COLORED BANNER */}
+                    <div className="w-full bg-gradient-to-r from-east-light to-east-dark py-4 px-8 flex justify-between items-center shadow-lg border-y border-white/10 relative z-30">
+                        <div className="text-center">
+                            <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">SPECIALTY</div>
+                            <div className="font-black text-xl text-white mt-0.5 italic uppercase">HOCKEY IQ</div>
+                        </div>
+                        <div className="text-center">
+                            <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">RATING</div>
+                            <div className="font-black text-xl text-white mt-0.5 italic uppercase">4.9/5.0</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* NAVIGATION TABS */}
+                <div className="flex justify-center gap-6 py-6 relative z-20 overflow-x-auto no-scrollbar px-4">
+                    {['PROFILE', 'SESSIONS', 'DRILLS', 'ROSTER'].map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab.toLowerCase() as any)}
+                            className={`font-black italic text-xs uppercase transition-all drop-shadow-lg whitespace-nowrap ${activeTab === tab.toLowerCase() ? 'text-white border-b-2 border-east-light pb-1' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            {tab}
+                        </button>
+                    ))}
+                </div>
+
+                {/* CONTENT AREA */}
+                <div className="px-4 pb-24 w-full">
+                    {/* PROFILE TAB */}
+                    {activeTab === 'profile' && (
+                        <div className="flex flex-col gap-6 animate-fadeIn">
+                            {/* Intro Video Card */}
+                            <div className="relative rounded-[2rem] overflow-hidden border border-white/10 group cursor-pointer shadow-2xl">
+                                <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=800" className="w-full h-48 object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" alt="intro" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="w-14 h-14 rounded-full bg-east-light flex items-center justify-center pl-1 shadow-2xl group-hover:scale-110 transition-transform">
+                                        <Play fill="black" size={24} className="text-black" />
+                                    </div>
+                                </div>
+                                <div className="absolute bottom-4 left-6">
+                                    <h4 className="font-black italic text-lg text-white uppercase tracking-tighter">MEET COACH WHIT</h4>
+                                    <p className="text-[9px] font-bold text-east-light uppercase tracking-widest">WATCH INTRO VIDEO</p>
+                                </div>
+                            </div>
+
+                            {/* Gallery Row */}
+                            <div className="flex flex-col gap-3">
+                                <div className="flex justify-between items-center">
+                                    <h3 className="font-black italic text-sm text-white uppercase tracking-widest">Gallery</h3>
+                                    {!isPublic && (
+                                        <button onClick={() => fileInputRef.current?.click()} className="text-[10px] font-black text-east-light uppercase hover:text-white transition-all flex items-center gap-1">
+                                            <Plus size={12} /> ADD PHOTO
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                                    {displayGallery.map((img: string, i: number) => (
+                                        <div key={i} className="w-32 h-20 shrink-0 rounded-xl overflow-hidden border border-white/10 shadow-lg group">
+                                            <img src={img} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Availability Summary */}
+                            <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-6 backdrop-blur-md">
+                                <div className="flex justify-between items-end mb-4">
+                                    <h3 className="font-black italic text-sm text-white uppercase tracking-widest">NEXT SLOTS</h3>
+                                    <Calendar size={18} className="text-east-light" />
+                                </div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {availability.length > 0 ? availability.slice(0, 3).map((slot, i) => {
+                                        const start = new Date(slot.start_time);
+                                        return (
+                                            <div key={i} className="bg-white/5 border border-white/5 p-3 rounded-xl flex flex-col items-center transition-colors hover:border-east-light/40">
+                                                <span className="text-[9px] font-black text-east-light uppercase">{start.toLocaleDateString([], { weekday: 'short' })}</span>
+                                                <span className="text-lg font-black italic text-white leading-none my-1">{start.getDate()}</span>
+                                                <span className="text-[8px] font-bold text-gray-500 uppercase">{start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                                            </div>
+                                        );
+                                    }) : (
+                                        <div className="col-span-3 py-4 text-center border border-dashed border-white/10 rounded-xl">
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">No slots listed</p>
+                                        </div>
+                                    )}
+                                </div>
+                                {!isPublic && <p className="text-[9px] text-gray-600 font-bold text-center mt-4 uppercase underline cursor-pointer hover:text-white transition-colors">Manage Full Calendar</p>}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* SESSIONS TAB */}
+                    {activeTab === 'sessions' && (
+                        <div className="flex flex-col gap-4 animate-fadeIn">
+                            <h3 className="font-black italic text-sm text-white uppercase tracking-widest mb-2 px-2">Upcoming Classes</h3>
+                            {UPCOMING_SESSIONS.map((session) => (
+                                <div key={session.id} onClick={() => addToast("Viewing Session Details: " + session.title, 'info')} className="relative overflow-hidden rounded-2xl border border-white/10 group hover:border-east-light/50 transition-all cursor-pointer bg-white/5 shadow-xl">
+                                    <div className="p-4 flex items-center gap-4">
+                                        <div className="w-16 h-16 rounded-xl overflow-hidden border border-white/20">
+                                            <img src={session.image} className="w-full h-full object-cover" alt={session.title} />
+                                        </div>
+                                        <div className="flex-1">
+                                            <h4 className="font-black italic text-lg text-white leading-none uppercase">{session.title}</h4>
+                                            <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">WED • 4:00 PM • EAST ARENA</p>
+                                            <div className="flex gap-3 mt-3">
+                                                <div className="flex items-center gap-1">
+                                                    <Users size={10} className="text-east-light" />
+                                                    <span className="text-[9px] font-black text-white/50 uppercase">12/15 JOINED</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <ChevronRight size={18} className="text-gray-600 group-hover:text-east-light transition-colors" />
+                                    </div>
+                                </div>
+                            ))}
+                            {!isPublic && (
+                                <button onClick={() => addToast("Feature Coming Soon: Session Management", 'warning')} className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-gray-500 font-black italic text-xs hover:border-east-light/50 hover:text-white transition-all uppercase tracking-widest bg-white/5 mt-2">
+                                    + Schedule New Group Session
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {/* DRILLS TAB */}
+                    {activeTab === 'drills' && (
+                        <div className="flex flex-col gap-6 animate-fadeIn">
+                            <div className="flex flex-wrap gap-2 px-2">
+                                {DRILL_FILTERS.type.map((type, i) => (
+                                    <button key={i} className={`px-4 py-1.5 rounded-full text-[10px] font-black italic uppercase transition-all ${i === 0 ? 'bg-east-light text-black shadow-lg shadow-east-light/20' : 'bg-white/5 text-gray-400 border border-white/10'}`}>
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                {[1, 2, 3, 4].map(i => (
+                                    <div key={i} onClick={() => addToast("Viewing Drill Details...", 'info')} className="aspect-square bg-[#1e1e1e] border border-white/10 rounded-2xl p-4 flex flex-col justify-between group hover:border-east-light transition-all shadow-xl hover:-translate-y-1 cursor-pointer">
+                                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-east-light/30 transition-colors">
+                                            <Video size={20} className="text-gray-500 group-hover:text-east-light" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-black italic text-xs text-white uppercase leading-tight line-clamp-2">Power Slapshot<br />Mastery</h4>
+                                            <p className="text-[8px] font-bold text-east-light uppercase tracking-widest mt-1">Difficulty: PRO</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            {!isPublic && (
+                                <button onClick={() => addToast("Feature Coming Soon: Drill Creator", 'warning')} className="w-full py-4 bg-east-light text-black font-black italic text-xs rounded-2xl uppercase tracking-widest shadow-xl hover:scale-[1.02] transition-transform">
+                                    CREATE NEW DRILL
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ROSTER TAB */}
+                    {activeTab === 'roster' && (
+                        <div className="flex flex-col gap-4 animate-fadeIn">
+                            {rosterSessions.length === 0 ? (
+                                <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-10 text-center">
+                                    <Users size={40} className="text-gray-800 mx-auto mb-4" />
+                                    <p className="font-black italic text-sm text-gray-500 uppercase tracking-widest">No Active Rosters</p>
+                                </div>
+                            ) : (
+                                rosterSessions.map((session, idx) => (
+                                    <div key={idx} className="bg-[#1e1e1e] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+                                        <div className="bg-white/5 p-4 border-b border-white/10 flex justify-between items-center">
+                                            <div>
+                                                <h4 className="font-black italic text-sm text-white uppercase">{session.title}</h4>
+                                                <p className="text-[9px] font-bold text-east-light uppercase tracking-widest">{new Date(session.start_time).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="font-black italic text-lg text-white leading-none">{session.registrations?.length || 0}</span>
+                                                <p className="text-[8px] font-bold text-gray-500 uppercase">Registered</p>
+                                            </div>
+                                        </div>
+                                        <div className="p-2 space-y-1">
+                                            {session.registrations?.map((reg: any, i: number) => (
+                                                <div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors group">
+                                                    <div className="w-10 h-10 rounded-full bg-gray-600 overflow-hidden border border-white/10 group-hover:border-east-light transition-colors">
+                                                        {reg.profiles?.avatar_url ? <img src={reg.profiles.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-500" />}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <h5 className="text-[11px] font-black text-white uppercase">{reg.profiles?.first_name} {reg.profiles?.last_name || ''}</h5>
+                                                        <p className="text-[8px] font-bold text-gray-500">@{reg.profiles?.username || 'member'}</p>
+                                                    </div>
+                                                    <ChevronRight size={14} className="text-gray-800" />
+                                                </div>
+                                            ))}
+                                            {(!session.registrations || session.registrations.length === 0) && (
+                                                <p className="text-[10px] text-gray-600 font-bold italic text-center py-4 uppercase tracking-widest">Waitlist Only</p>
+                                            )}
+                                        </div>
+                                        {!isPublic && (
+                                            <div className="p-3 bg-black/40 text-center">
+                                                <button onClick={() => addToast("Feature Coming Soon: Team Analytics", 'warning')} className="text-[9px] font-black text-gray-400 hover:text-white uppercase tracking-widest transition-colors">Full Analytics & Messaging</button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}

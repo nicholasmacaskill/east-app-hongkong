@@ -1,0 +1,338 @@
+'use client';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { supabase } from '@/app/lib/supabase';
+import { Home, User, QrCode, Activity, MessageSquare, Plus } from 'lucide-react';
+
+// Screens
+import HomeScreen from '@/app/components/screens/HomeScreen';
+import ScheduleScreen from '@/app/components/screens/ScheduleScreen';
+import CommunityScreen from '@/app/components/CommunityScreen';
+import PlayerProfile from '@/app/components/screens/PlayerProfile';
+import CoachProfile from '@/app/components/screens/CoachProfile';
+import ParentProfile from '@/app/components/screens/ParentProfile';
+import QRScreen from '@/app/components/screens/QRScreen';
+import AuthScreen from '@/app/auth/AuthScreen';
+import LandingScreen from '@/app/components/screens/LandingScreen';
+import BottomNav from '@/app/components/BottomNav';
+
+// Modals
+import ClassModal from '@/app/components/modals/ClassModal';
+import SettingsModal from '@/app/components/modals/SettingsModal';
+import NewsArticleModal from '@/app/components/modals/NewsArticleModal';
+
+import { ToastProvider } from '@/app/components/ui/Toast';
+import type { UserRole, Tab } from './types';
+import { Session } from './types/session';
+
+// 1. Updated Interface to include credits and role
+export interface UserProfileData {
+  name: string;
+  surname: string;
+  first_name: string;
+  last_name: string;
+  username: string;
+  bio: string;
+  email: string;
+  mobile: string;
+  avatar_url?: string;
+  credits: number;
+  gallery_images: string[];
+  schedule_photo_url?: string;
+  role?: UserRole;
+  id?: string;
+  preferences?: any;
+}
+
+// 2. Updated Initial State
+const initialProfileData: UserProfileData = {
+  name: '', surname: '', first_name: '', last_name: '', username: '', bio: '', email: '', mobile: '', avatar_url: '', credits: 0, gallery_images: [], schedule_photo_url: '', role: undefined, preferences: {}
+};
+
+function AppContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+
+  // App State
+  const [showClassModal, setShowClassModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showNewsModal, setShowNewsModal] = useState(false);
+  const [selectedSessions, setSelectedSessions] = useState<Session[]>([]);
+  const [selectedNews, setSelectedNews] = useState<Session | null>(null);
+  const [bookedSessionIds, setBookedSessionIds] = useState<number[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const [userProfile, setUserProfile] = useState<UserProfileData>(initialProfileData);
+
+  // 1. Auth & Data Fetch
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          setCurrentUserId(user.id);
+
+          // A. INITIAL SETUP (If user is new)
+          const emailName = user.email?.split('@')[0] || 'Member';
+
+          // B. ENSURE PROFILE EXISTS (DOUBTFUL UPSERT - PREFER SELECT THEN INSERT)
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+          if (!existingProfile) {
+            await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                first_name: emailName,
+                avatar_url: 'https://placehold.co/100',
+                role: 'player'
+              });
+          }
+
+          // C. FETCH REAL PROFILE DATA
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          if (profileData) {
+            setUserProfile({
+              name: profileData.first_name || '',
+              surname: profileData.last_name || '',
+              first_name: profileData.first_name || '',
+              last_name: profileData.last_name || '',
+              username: profileData.username || '',
+              bio: profileData.bio || '',
+              email: profileData.contact_email || user.email || '',
+              mobile: profileData.mobile || '',
+              avatar_url: profileData.avatar_url || '',
+              credits: profileData.credits || 0,
+              gallery_images: profileData.gallery_images || [],
+              schedule_photo_url: profileData.schedule_photo_url || '',
+              role: profileData.role as UserRole,
+              id: profileData.id,
+              preferences: profileData.preferences || {}
+            });
+          }
+
+          // D. FETCH BOOKINGS (SAFER VERSION)
+          try {
+            const res = await fetch(`/api/my-schedule?userId=${user.id}`);
+
+            if (res.ok) {
+              const contentType = res.headers.get("content-type");
+              if (contentType && contentType.indexOf("application/json") !== -1) {
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                  setBookedSessionIds(data.map((s: Session) => s.id));
+                }
+              }
+            }
+          } catch (fetchError) {
+            console.error("Error fetching schedule:", fetchError);
+          }
+
+        }
+      } catch (error) {
+        console.error("Initialization error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    init();
+  }, [refreshKey]);
+
+  useEffect(() => {
+    const targetTab = searchParams.get('tab');
+    const isTab = (t: string): t is Tab => {
+      return ['home', 'profile', 'coach', 'schedule', 'community', 'qr'].includes(t);
+    };
+    if (targetTab && isTab(targetTab)) {
+      setActiveTab(targetTab);
+    }
+
+    if (searchParams.get('success') === 'true') {
+      setRefreshKey(prev => prev + 1);
+      router.replace('/');
+      alert("Purchase Successful! Credits added.");
+    }
+  }, [searchParams, router]);
+
+  const handleSaveProfile = async (updatedData: UserProfileData) => {
+    if (!currentUserId) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        first_name: updatedData.name,
+        last_name: updatedData.surname,
+        username: updatedData.username,
+        bio: updatedData.bio,
+        mobile: updatedData.mobile,
+        contact_email: updatedData.email,
+        avatar_url: updatedData.avatar_url,
+        gallery_images: updatedData.gallery_images
+      })
+      .eq('id', currentUserId);
+
+    if (error) {
+      alert('Failed to save profile. ' + error.message);
+    } else {
+      setUserProfile(updatedData);
+      setRefreshKey(prev => prev + 1);
+      alert('Profile updated successfully');
+      setShowSettingsModal(false);
+    }
+  };
+
+  const handleClassClick = (s: Session[]) => {
+    if (s.length === 1 && s[0].category === 'NEWS') {
+      setSelectedNews(s[0]);
+      setShowNewsModal(true);
+      return;
+    }
+    setSelectedSessions(s);
+    setShowClassModal(true);
+  };
+
+  if (loading) return <div className="bg-black h-screen text-white flex justify-center items-center font-montserrat font-black italic uppercase tracking-widest animate-pulse">Loading...</div>;
+
+  if (!currentUserId) {
+    if (!selectedRole) {
+      return <LandingScreen onSelectRole={setSelectedRole} />;
+    }
+    return (
+      <div className="relative min-h-screen bg-black">
+        <button
+          onClick={() => setSelectedRole(null)}
+          className="absolute top-6 left-6 z-50 text-[10px] font-black italic text-white/40 uppercase tracking-widest hover:text-white transition-colors"
+        >
+          ← BACK
+        </button>
+        <AuthScreen
+          expectedRole={selectedRole || undefined}
+          onAuthSuccess={(role) => {
+            if (role === 'admin') {
+              window.location.href = '/sys-admin';
+            } else {
+              window.location.reload();
+            }
+          }}
+        />
+      </div>
+    );
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.reload();
+  };
+
+  if (userProfile.role === 'admin') {
+    return (
+      <div className="bg-black min-h-screen text-white flex flex-col justify-center items-center font-montserrat p-6 select-none cursor-default">
+        {/* Animated Background Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#28D160]/5 via-black to-black z-0 pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col items-center animate-fadeIn">
+          <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 text-white drop-shadow-2xl">
+            Admin <span className="text-[#28D160]">Access</span>
+          </h1>
+          <p className="text-gray-500 mb-12 text-center max-w-xs text-xs font-bold uppercase tracking-widest">
+            Welcome Administrator. Access the management portal below.
+          </p>
+
+          <button
+            onClick={() => window.location.href = '/sys-admin'}
+            className="group relative bg-[#28D160] text-black font-black italic text-xl px-12 py-5 rounded-2xl uppercase tracking-widest hover:bg-white transition-all shadow-[0_0_30px_rgba(40,209,96,0.3)] hover:shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:-translate-y-1 active:translate-y-0.5 active:scale-95 duration-300"
+          >
+            Enter Portal
+            <div className="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="text-gray-600 hover:text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-12 transition-colors hover:scale-105"
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-black text-white font-opensans select-none">
+      <div className="max-w-md mx-auto bg-black min-h-screen relative border-x border-gray-900 shadow-2xl">
+        <main>
+          {activeTab === 'home' && (
+            <HomeScreen
+              onClassClick={handleClassClick}
+              onOpenSettings={() => setShowSettingsModal(true)}
+              bookedSessionIds={bookedSessionIds}
+              credits={userProfile.credits || 0}
+              setTab={setActiveTab}
+            />
+          )}
+
+          {activeTab === 'profile' && (
+            (userProfile.role as string) === 'coach' || (userProfile.role as string) === 'admin'
+              ? <CoachProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} />
+              : userProfile.role === 'parent'
+                ? <ParentProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} />
+                : <PlayerProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} />
+          )}
+
+
+          {activeTab === 'schedule' && <ScheduleScreen currentUserId={currentUserId} refreshKey={refreshKey} onPreviewClick={(s) => { setSelectedSessions([s]); setShowClassModal(true); }} />}
+
+          {activeTab === 'community' && <CommunityScreen key={refreshKey} currentUserId={currentUserId} />}
+
+          {activeTab === 'qr' && <QRScreen credits={userProfile.credits || 0} currentUserId={currentUserId} />}
+        </main>
+
+        <BottomNav activeTab={activeTab} setTab={setActiveTab} />
+
+        {showClassModal && <ClassModal sessions={selectedSessions} currentUserId={currentUserId} bookedSessionIds={bookedSessionIds} onClose={() => setShowClassModal(false)} onScheduleChange={() => setRefreshKey(k => k + 1)} />}
+
+        {showSettingsModal && (
+          <SettingsModal
+            onClose={() => setShowSettingsModal(false)}
+            onLogout={handleLogout}
+            profileData={userProfile}
+            setProfileData={setUserProfile}
+            onSave={handleSaveProfile}
+          />
+        )}
+
+        {showNewsModal && selectedNews && (
+          <NewsArticleModal
+            item={selectedNews}
+            onClose={() => setShowNewsModal(false)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <Suspense fallback={<div className="bg-black h-screen text-white flex justify-center items-center font-montserrat font-black italic uppercase tracking-widest animate-pulse">Loading...</div>}>
+        <AppContent />
+      </Suspense>
+    </ToastProvider>
+  );
+}
