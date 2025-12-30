@@ -23,12 +23,11 @@ const DRILL_FILTERS = {
 
 export default function CoachProfile({ onOpenSettings, profileData, isPublic = false, currentUserId }: { onOpenSettings: () => void, profileData: any, isPublic?: boolean, currentUserId?: string | null }) {
     const { addToast } = useToast();
-    const [activeTab, setActiveTab] = useState<'profile' | 'sessions' | 'drills' | 'roster'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'sessions' | 'drills'>('profile');
     const [uploading, setUploading] = useState(false);
     const [availability, setAvailability] = useState<any[]>([]);
     const [isEditingBio, setIsEditingBio] = useState(false);
     const [bioText, setBioText] = useState(profileData.bio || '');
-    const [rosterSessions, setRosterSessions] = useState<any[]>([]);
 
     // New State for Real Sessions
     const [upcomingSessions, setUpcomingSessions] = useState<Session[]>([]);
@@ -102,25 +101,6 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
         if (data) setUpcomingSessions(data as Session[]);
     };
 
-    useEffect(() => {
-        if (activeTab === 'roster') {
-            fetchRoster();
-        }
-    }, [activeTab]);
-
-    const fetchRoster = async () => {
-        const coachName = profileData.first_name || profileData.username;
-        if (!coachName) return;
-
-        const { data } = await supabase
-            .from('sessions')
-            .select('*, registrations(profiles(*))')
-            .ilike('instructor', `%${coachName}%`)
-            .gte('start_time', new Date().toISOString())
-            .order('start_time', { ascending: true });
-
-        if (data) setRosterSessions(data);
-    };
 
     // Avatar Upload
     const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -358,7 +338,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
 
                 {/* NAVIGATION TABS */}
                 <div className="flex justify-center gap-6 py-6 relative z-20 overflow-x-auto no-scrollbar px-4">
-                    {['PROFILE', 'SESSIONS', 'DRILLS', 'ROSTER'].map(tab => (
+                    {['PROFILE', 'SESSIONS', 'DRILLS'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab.toLowerCase() as any)}
@@ -533,49 +513,6 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                         </div>
                     )}
 
-                    {/* ROSTER TAB */}
-                    {activeTab === 'roster' && (
-                        <div className="flex flex-col gap-4 animate-fadeIn">
-                            {rosterSessions.length === 0 ? (
-                                <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-10 text-center">
-                                    <Users size={40} className="text-gray-800 mx-auto mb-4" />
-                                    <p className="font-black italic text-sm text-gray-500 uppercase tracking-widest">No Active Rosters</p>
-                                </div>
-                            ) : (
-                                rosterSessions.map((session, idx) => (
-                                    <div key={idx} className="bg-[#1e1e1e] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-                                        <div className="bg-white/5 p-4 border-b border-white/10 flex justify-between items-center">
-                                            <div>
-                                                <h4 className="font-black italic text-sm text-white uppercase">{session.title}</h4>
-                                                <p className="text-[9px] font-bold text-east-light uppercase tracking-widest">{new Date(session.start_time).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <span className="font-black italic text-lg text-white leading-none">{session.registrations?.length || 0}</span>
-                                                <p className="text-[8px] font-bold text-gray-500 uppercase">Registered</p>
-                                            </div>
-                                        </div>
-                                        <div className="p-2 space-y-1">
-                                            {session.registrations?.map((reg: any, i: number) => (
-                                                <div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors group">
-                                                    <div className="w-10 h-10 rounded-full bg-gray-600 overflow-hidden border border-white/10 group-hover:border-east-light transition-colors">
-                                                        {reg.profiles?.avatar_url ? <img src={reg.profiles.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-500" />}
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <h5 className="text-[11px] font-black text-white uppercase">{reg.profiles?.first_name} {reg.profiles?.last_name || ''}</h5>
-                                                        <p className="text-[8px] font-bold text-gray-500">@{reg.profiles?.username || 'member'}</p>
-                                                    </div>
-                                                    <ChevronRight size={14} className="text-gray-800" />
-                                                </div>
-                                            ))}
-                                            {(!session.registrations || session.registrations.length === 0) && (
-                                                <p className="text-[10px] text-gray-600 font-bold italic text-center py-4 uppercase tracking-widest">Waitlist Only</p>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    )}
                 </div>
             </div>
 

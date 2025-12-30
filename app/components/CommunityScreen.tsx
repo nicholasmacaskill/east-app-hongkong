@@ -93,7 +93,6 @@ const SharedPostCard = ({ post }: { post: Post }) => {
 // ✅ UPDATED: Component now accepts currentUserId prop
 export default function CommunityScreen({ currentUserId }: { currentUserId: string }) {
     const [viewMode, setViewMode] = useState<'feed' | 'messenger-list' | 'chat-detail'>('feed');
-    const [activeChannel, setActiveChannel] = useState('general');
 
     const [posts, setPosts] = useState<Post[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -483,17 +482,6 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
                     <Link href="/stats" className="bg-gray-900 border border-gray-800 p-2.5 rounded-full hover:border-east-light transition-all active:scale-90">
                         <Trophy className="text-east-light" size={22} />
                     </Link>
-                </div>
-                <div className="flex gap-3 mb-10 overflow-x-auto no-scrollbar">
-                    {['GENERAL', 'TEAM', 'LEAGUE'].map(tab => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveChannel(tab.toLowerCase())}
-                            className={`font-montserrat font-black italic text-[10px] px-8 py-2.5 rounded-full uppercase transition-all tracking-widest ${activeChannel === tab.toLowerCase() ? 'bg-east-light text-black scale-105 shadow-[0_0_15px_rgba(209,242,217,0.3)]' : 'bg-transparent border border-gray-800 text-gray-600 hover:border-gray-500'}`}
-                        >
-                            {tab}
-                        </button>
-                    ))}
                 </div>
                 <div className="mb-10 bg-[#0a0a0a] p-5 rounded-2xl border border-gray-800 relative z-20 shadow-2xl">
                     {postToShare && (
