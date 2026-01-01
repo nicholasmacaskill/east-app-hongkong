@@ -1,26 +1,877 @@
-CREATE TABLE IF NOT EXISTS players_stats (
-  player_id SERIAL PRIMARY KEY,
-  age INTEGER,
-  season INTEGER,
-  team VARCHAR(255),
-  games_played_season INTEGER,
-  games_played_total INTEGER,
-  games_missed_healthy INTEGER,
-  games_missed_injured INTEGER,
-  goals_season INTEGER,
-  goals_total INTEGER,
-  assists_season INTEGER,
-  assists_total INTEGER,
-  gp INTEGER,
-  points INTEGER,
-  gwg INTEGER,
-  ppg INTEGER,
-  shg INTEGER,
-  pim INTEGER,
-  top_scorer_team BOOLEAN,
-  top_scorer_league BOOLEAN,
-  least_pim_team BOOLEAN,
-  most_shots_team BOOLEAN,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+
+CREATE EXTENSION IF NOT EXISTS "pg_net" WITH SCHEMA "extensions";
+
+
+
+
+
+
+COMMENT ON SCHEMA "public" IS 'standard public schema';
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pg_graphql" WITH SCHEMA "graphql";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pg_stat_statements" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "supabase_vault" WITH SCHEMA "vault";
+
+
+
+
+
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
+
+
+
+
+
+
+CREATE OR REPLACE FUNCTION "public"."book_session_with_credits"("p_user_id" "uuid", "p_session_id" bigint, "p_attendee_id" "uuid" DEFAULT NULL::"uuid") RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+declare
+  v_credit_cost int;
+  v_user_credits int;
+begin
+  select credit_cost into v_credit_cost from sessions where id = p_session_id;
+  select credits into v_user_credits from profiles where id = p_user_id;
+
+  if v_credit_cost is null then
+    return json_build_object('success', false, 'message', 'Session cost not defined.');
+  end if;
+
+  if v_user_credits < v_credit_cost then
+    return json_build_object('success', false, 'message', 'Insufficient credits.');
+  end if;
+
+  update profiles set credits = credits - v_credit_cost where id = p_user_id;
+  
+  -- Use attendee_id if provided, otherwise user_id
+  insert into registrations (user_id, session_id) values (COALESCE(p_attendee_id, p_user_id), p_session_id);
+
+  return json_build_object('success', true, 'message', 'Booking confirmed!', 'new_balance', v_user_credits - v_credit_cost);
+end;
+$$;
+
+
+ALTER FUNCTION "public"."book_session_with_credits"("p_user_id" "uuid", "p_session_id" bigint, "p_attendee_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."cancel_session_and_refund"("p_user_id" "uuid", "p_session_id" bigint) RETURNS json
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+declare
+  v_credit_cost int;
+  v_registration_exists bool;
+begin
+  select exists(select 1 from registrations where user_id = p_user_id and session_id = p_session_id) into v_registration_exists;
+
+  if not v_registration_exists then
+    return json_build_object('success', false, 'message', 'Booking not found.');
+  end if;
+
+  select credit_cost into v_credit_cost from sessions where id = p_session_id;
+
+  if v_credit_cost is null then
+    delete from registrations where user_id = p_user_id and session_id = p_session_id;
+    return json_build_object('success', true, 'message', 'Cancellation confirmed.');
+  end if;
+
+  update profiles set credits = credits + v_credit_cost where id = p_user_id;
+  delete from registrations where user_id = p_user_id and session_id = p_session_id;
+
+  return json_build_object('success', true, 'message', 'Cancellation successful. Credits refunded.', 'refund_amount', v_credit_cost);
+end;
+$$;
+
+
+ALTER FUNCTION "public"."cancel_session_and_refund"("p_user_id" "uuid", "p_session_id" bigint) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+    BEGIN
+      INSERT INTO public.profiles (id, contact_email, first_name, last_name, username, avatar_url, role)
+      VALUES (
+        NEW.id, 
+        NEW.email,
+        split_part(NEW.email, '@', 1),
+        '',
+        split_part(NEW.email, '@', 1),
+        'https://placehold.co/100',
+        COALESCE(NEW.raw_user_meta_data->>'role', 'player')
+      )
+      ON CONFLICT (id) DO NOTHING;
+      RETURN NEW;
+    END;
+    $$;
+
+
+ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
+
+SET default_tablespace = '';
+
+SET default_table_access_method = "heap";
+
+
+CREATE TABLE IF NOT EXISTS "public"."availability" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "coach_id" "uuid",
+    "start_time" timestamp with time zone NOT NULL,
+    "end_time" timestamp with time zone NOT NULL,
+    "is_recurring" boolean DEFAULT false,
+    "status" "text" DEFAULT 'available'::"text",
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"())
 );
+
+
+ALTER TABLE "public"."availability" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."likes" (
+    "id" bigint NOT NULL,
+    "user_id" "uuid",
+    "post_id" bigint
+);
+
+
+ALTER TABLE "public"."likes" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."likes" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."likes_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."messages" (
+    "id" bigint NOT NULL,
+    "sender_id" "uuid",
+    "receiver_id" "uuid",
+    "content" "text",
+    "image_url" "text",
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()),
+    "shared_event_id" bigint
+);
+
+
+ALTER TABLE "public"."messages" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."messages" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."messages_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."player_relationships" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "parent_id" "uuid",
+    "child_id" "uuid",
+    "relationship_type" character varying(50) DEFAULT 'parent_child'::character varying,
+    "created_at" timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE "public"."player_relationships" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."players_stats" (
+    "id" bigint NOT NULL,
+    "player_id" "uuid",
+    "age" integer,
+    "season" integer,
+    "team" "text",
+    "games_played_season" integer,
+    "games_played_total" integer,
+    "games_missed_healthy" integer,
+    "games_missed_injured" integer,
+    "goals_season" integer,
+    "goals_total" integer,
+    "assists_season" integer,
+    "assists_total" integer,
+    "gp" integer,
+    "points" integer,
+    "gwg" integer,
+    "ppg" integer,
+    "shg" integer,
+    "pim" integer,
+    "top_scorer_team" boolean,
+    "top_scorer_league" boolean,
+    "least_pim_team" boolean,
+    "most_shots_team" boolean,
+    "is_verified" boolean DEFAULT false,
+    "verified_by" "uuid",
+    "verified_at" timestamp with time zone,
+    "created_at" timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE "public"."players_stats" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."players_stats" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."players_stats_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."posts" (
+    "id" bigint NOT NULL,
+    "user_id" "uuid",
+    "image_url" "text",
+    "caption" "text",
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()),
+    "shared_post_id" bigint
+);
+
+
+ALTER TABLE "public"."posts" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."posts" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."posts_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."profiles" (
+    "id" "uuid" NOT NULL,
+    "username" "text",
+    "first_name" "text",
+    "last_name" "text",
+    "mobile" "text",
+    "contact_email" "text",
+    "avatar_url" "text",
+    "bio" "text",
+    "tier" "text" DEFAULT 'free'::"text",
+    "stripe_customer_id" "text",
+    "stripe_subscription_id" "text",
+    "subscription_status" "text" DEFAULT 'inactive'::"text",
+    "credits" integer DEFAULT 100,
+    "gallery_images" "text"[] DEFAULT '{}'::"text"[],
+    "schedule_photo_url" "text",
+    "role" "text" DEFAULT 'player'::"text",
+    "parent_id" "uuid",
+    "intro_video_url" "text",
+    "preferences" "jsonb" DEFAULT '{}'::"jsonb"
+);
+
+
+ALTER TABLE "public"."profiles" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."registrations" (
+    "id" bigint NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "session_id" bigint NOT NULL,
+    "registered_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"())
+);
+
+
+ALTER TABLE "public"."registrations" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."registrations" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."registrations_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."sessions" (
+    "id" bigint NOT NULL,
+    "title" "text" NOT NULL,
+    "category" "text",
+    "instructor" "text",
+    "start_time" timestamp with time zone NOT NULL,
+    "end_time" timestamp with time zone NOT NULL,
+    "image_url" "text",
+    "coach_image_url" "text",
+    "description" "text",
+    "credit_cost" integer DEFAULT 10
+);
+
+
+ALTER TABLE "public"."sessions" OWNER TO "postgres";
+
+
+ALTER TABLE "public"."sessions" ALTER COLUMN "id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME "public"."sessions_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "public"."voice_commands" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "coach_id" "uuid",
+    "command_text" "text" NOT NULL,
+    "processed_json" "jsonb",
+    "created_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"())
+);
+
+
+ALTER TABLE "public"."voice_commands" OWNER TO "postgres";
+
+
+ALTER TABLE ONLY "public"."availability"
+    ADD CONSTRAINT "availability_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."likes"
+    ADD CONSTRAINT "likes_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."likes"
+    ADD CONSTRAINT "likes_user_id_post_id_key" UNIQUE ("user_id", "post_id");
+
+
+
+ALTER TABLE ONLY "public"."messages"
+    ADD CONSTRAINT "messages_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."player_relationships"
+    ADD CONSTRAINT "player_relationships_parent_id_child_id_key" UNIQUE ("parent_id", "child_id");
+
+
+
+ALTER TABLE ONLY "public"."player_relationships"
+    ADD CONSTRAINT "player_relationships_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."players_stats"
+    ADD CONSTRAINT "players_stats_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."posts"
+    ADD CONSTRAINT "posts_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."registrations"
+    ADD CONSTRAINT "registrations_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."registrations"
+    ADD CONSTRAINT "registrations_user_id_session_id_key" UNIQUE ("user_id", "session_id");
+
+
+
+ALTER TABLE ONLY "public"."sessions"
+    ADD CONSTRAINT "sessions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."voice_commands"
+    ADD CONSTRAINT "voice_commands_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."availability"
+    ADD CONSTRAINT "availability_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."likes"
+    ADD CONSTRAINT "likes_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "public"."posts"("id");
+
+
+
+ALTER TABLE ONLY "public"."likes"
+    ADD CONSTRAINT "likes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id");
+
+
+
+ALTER TABLE ONLY "public"."player_relationships"
+    ADD CONSTRAINT "player_relationships_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."players_stats"
+    ADD CONSTRAINT "players_stats_player_id_fkey" FOREIGN KEY ("player_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."players_stats"
+    ADD CONSTRAINT "players_stats_verified_by_fkey" FOREIGN KEY ("verified_by") REFERENCES "public"."profiles"("id");
+
+
+
+ALTER TABLE ONLY "public"."posts"
+    ADD CONSTRAINT "posts_shared_post_id_fkey" FOREIGN KEY ("shared_post_id") REFERENCES "public"."posts"("id");
+
+
+
+ALTER TABLE ONLY "public"."posts"
+    ADD CONSTRAINT "posts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id");
+
+
+
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id");
+
+
+
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_parent_id_fkey" FOREIGN KEY ("parent_id") REFERENCES "public"."profiles"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."registrations"
+    ADD CONSTRAINT "registrations_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "public"."sessions"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."registrations"
+    ADD CONSTRAINT "registrations_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."voice_commands"
+    ADD CONSTRAINT "voice_commands_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE "public"."player_relationships" ENABLE ROW LEVEL SECURITY;
+
+
+
+
+ALTER PUBLICATION "supabase_realtime" OWNER TO "postgres";
+
+
+
+
+
+
+
+
+
+GRANT USAGE ON SCHEMA "public" TO "postgres";
+GRANT USAGE ON SCHEMA "public" TO "anon";
+GRANT USAGE ON SCHEMA "public" TO "authenticated";
+GRANT USAGE ON SCHEMA "public" TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GRANT ALL ON FUNCTION "public"."book_session_with_credits"("p_user_id" "uuid", "p_session_id" bigint, "p_attendee_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."book_session_with_credits"("p_user_id" "uuid", "p_session_id" bigint, "p_attendee_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."book_session_with_credits"("p_user_id" "uuid", "p_session_id" bigint, "p_attendee_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."cancel_session_and_refund"("p_user_id" "uuid", "p_session_id" bigint) TO "anon";
+GRANT ALL ON FUNCTION "public"."cancel_session_and_refund"("p_user_id" "uuid", "p_session_id" bigint) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."cancel_session_and_refund"("p_user_id" "uuid", "p_session_id" bigint) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_new_user"() TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GRANT ALL ON TABLE "public"."availability" TO "anon";
+GRANT ALL ON TABLE "public"."availability" TO "authenticated";
+GRANT ALL ON TABLE "public"."availability" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."likes" TO "anon";
+GRANT ALL ON TABLE "public"."likes" TO "authenticated";
+GRANT ALL ON TABLE "public"."likes" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."likes_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."likes_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."likes_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."messages" TO "anon";
+GRANT ALL ON TABLE "public"."messages" TO "authenticated";
+GRANT ALL ON TABLE "public"."messages" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."messages_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."messages_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."messages_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."player_relationships" TO "anon";
+GRANT ALL ON TABLE "public"."player_relationships" TO "authenticated";
+GRANT ALL ON TABLE "public"."player_relationships" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."players_stats" TO "anon";
+GRANT ALL ON TABLE "public"."players_stats" TO "authenticated";
+GRANT ALL ON TABLE "public"."players_stats" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."players_stats_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."players_stats_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."players_stats_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."posts" TO "anon";
+GRANT ALL ON TABLE "public"."posts" TO "authenticated";
+GRANT ALL ON TABLE "public"."posts" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."posts_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."posts_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."posts_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."profiles" TO "anon";
+GRANT ALL ON TABLE "public"."profiles" TO "authenticated";
+GRANT ALL ON TABLE "public"."profiles" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."registrations" TO "anon";
+GRANT ALL ON TABLE "public"."registrations" TO "authenticated";
+GRANT ALL ON TABLE "public"."registrations" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."registrations_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."registrations_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."registrations_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."sessions" TO "anon";
+GRANT ALL ON TABLE "public"."sessions" TO "authenticated";
+GRANT ALL ON TABLE "public"."sessions" TO "service_role";
+
+
+
+GRANT ALL ON SEQUENCE "public"."sessions_id_seq" TO "anon";
+GRANT ALL ON SEQUENCE "public"."sessions_id_seq" TO "authenticated";
+GRANT ALL ON SEQUENCE "public"."sessions_id_seq" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."voice_commands" TO "anon";
+GRANT ALL ON TABLE "public"."voice_commands" TO "authenticated";
+GRANT ALL ON TABLE "public"."voice_commands" TO "service_role";
+
+
+
+
+
+
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "service_role";
+
+
+
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON FUNCTIONS TO "service_role";
+
+
+
+
+
+
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "postgres";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
+ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

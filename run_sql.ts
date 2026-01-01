@@ -6,6 +6,8 @@ import { Pool } from 'pg';
 
 // --- CONFIGURATION: FIXED USER IDs ---
 const TEST_USER_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+const COACH_USER_ID = '722deeb8-289b-4652-9acb-f8e854cfbaf1';
+const PARENT_USER_ID = '833deeb8-390c-5763-9acb-f8e854cfbaf2';
 const TEST_USER_ID_2 = 'a1b2c3d4-e5f6-7890-1234-567890abcdef';
 
 // --- TRIGGER LOGIC ---
@@ -147,7 +149,8 @@ const schemaCommands = [
 
   `CREATE EXTENSION IF NOT EXISTS "pgcrypto";`,
 
-  // 1. DROP EVERYTHING FIRST
+  // 1. DROP EVERYTHING FIRST & PURGE STALE USERS
+  `DELETE FROM auth.users WHERE id NOT IN ('${TEST_USER_ID}', '${COACH_USER_ID}', '${PARENT_USER_ID}');`,
   "DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;",
   "DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;",
   "DROP TABLE IF EXISTS registrations CASCADE;",
@@ -281,6 +284,30 @@ VALUES('d4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4', '${TEST_USER_ID}', format('{"sub"
 VALUES('${TEST_USER_ID}', 'admin.east', 'Admin', 'User', '+1 000 000 0000', 'admin@east.com', 'System Administrator.', 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?q=80&w=2940&auto=format&fit=crop', 'admin') 
      ON CONFLICT(id) DO UPDATE SET username = EXCLUDED.username; `,
 
+  // --- COACH USER (coach@east.com / password123) ---
+  `INSERT INTO auth.users(instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, recovery_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token)
+VALUES('00000000-0000-0000-0000-000000000000', '${COACH_USER_ID}', 'authenticated', 'authenticated', 'coach@east.com', crypt('password123', gen_salt('bf')), current_timestamp, current_timestamp, current_timestamp, '{"provider":"email","providers":["email"]}', '{"role":"coach"}', current_timestamp, current_timestamp, '', '', '', '')
+     ON CONFLICT(id) DO NOTHING; `,
+  `INSERT INTO auth.identities(id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
+VALUES('c4d4d4d4-c4d4-c4d4-c4d4-c4d4d4d4d4d4', '${COACH_USER_ID}', format('{"sub":"%s","email":"%s"}', '${COACH_USER_ID}', 'coach@east.com'):: jsonb, 'email', 'coach@east.com', current_timestamp, current_timestamp, current_timestamp)
+     ON CONFLICT(id) DO NOTHING; `,
+
+  `INSERT INTO profiles(id, username, first_name, last_name, mobile, contact_email, bio, avatar_url, role)
+VALUES('${COACH_USER_ID}', 'coach.east', 'Coach', 'Demo', '+1 555 000 0000', 'coach@east.com', 'Elite Hockey Coach.', 'https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800', 'coach') 
+     ON CONFLICT(id) DO UPDATE SET username = EXCLUDED.username; `,
+
+  // --- PARENT USER (parent@east.com / password123) ---
+  `INSERT INTO auth.users(instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, recovery_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token)
+VALUES('00000000-0000-0000-0000-000000000000', '${PARENT_USER_ID}', 'authenticated', 'authenticated', 'parent@east.com', crypt('password123', gen_salt('bf')), current_timestamp, current_timestamp, current_timestamp, '{"provider":"email","providers":["email"]}', '{"role":"parent"}', current_timestamp, current_timestamp, '', '', '', '')
+     ON CONFLICT(id) DO NOTHING; `,
+  `INSERT INTO auth.identities(id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
+VALUES('e4d4d4d4-e4d4-e4d4-e4d4-e4d4d4d4d4d4', '${PARENT_USER_ID}', format('{"sub":"%s","email":"%s"}', '${PARENT_USER_ID}', 'parent@east.com'):: jsonb, 'email', 'parent@east.com', current_timestamp, current_timestamp, current_timestamp)
+     ON CONFLICT(id) DO NOTHING; `,
+
+  `INSERT INTO profiles(id, username, first_name, last_name, mobile, contact_email, bio, avatar_url, role)
+VALUES('${PARENT_USER_ID}', 'parent.east', 'Parent', 'Demo', '+1 666 000 0000', 'parent@east.com', 'Hockey Parent.', 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&q=80&w=800', 'parent') 
+     ON CONFLICT(id) DO UPDATE SET username = EXCLUDED.username; `,
+
   `INSERT INTO players_stats(player_id, age, season, team, games_played_season, goals_season, points)
 VALUES('${TEST_USER_ID}', 31, 3, 'RHINOS', 48, 110, 6)
      ON CONFLICT(id) DO NOTHING; `,
@@ -298,76 +325,52 @@ VALUES('${TEST_USER_ID}', 31, 3, 'RHINOS', 48, 110, 6)
   ('EAST Golf Classic 2', 'EVENT', 'EAST Sports', NOW() + interval '10 days 09:00:00', NOW() + interval '10 days 17:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Golf2.jpg?v=1765941578', 'EAST Golf Classic. Round 2 is set for January 31st, 2026. Save the date!'),
   ('EAST Adult 3v3', 'EVENT', 'EAST Sports', NOW() + interval '14 days 10:00:00', NOW() + interval '14 days 16:00:00', 'https://eastsportsgroup.com/cdn/shop/files/136cecf3-a757-4dae-a754-7e4f4f16e7d9.jpg?v=1704914815&width=3840', 'Adult 3v3 Tournament Live from Empire Rink on January 4th, 2026. Contact us to register!'); `,
 
-  // 3. FACILITIES
+  // 3. FACILITIES (Updated Pricing & Inventory)
   `INSERT INTO sessions(title, category, instructor, start_time, end_time, image_url, description, credit_cost) VALUES
-  ('Locker', 'FACILITY', 'Staff', NOW() + interval '1 days 08:00:00', NOW() + interval '1 days 22:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility3.png?v=1765941246', 'Secure your belongings and Sports gear.', 1000),
-  ('Golf Simulator', 'FACILITY', 'Staff', NOW() + interval '1 days 12:00:00', NOW() + interval '1 days 13:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility2.png?v=1765941246', 'Experience virtual golf.', 200),
-('Shooting Pad', 'FACILITY', 'Staff', NOW() + interval '1 days 14:00:00', NOW() + interval '1 days 15:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility4.png?v=1765941249', 'Practice your shooting skills.', 50); `,
+  ('Golf Simulator - North Bay', 'FACILITY', 'Staff', NOW() + interval '1 days 12:00:00', NOW() + interval '1 days 13:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility2.png?v=1765941246', 'Private Golf Simulator Bay (North).', 200),
+  ('Golf Simulator - South Bay', 'FACILITY', 'Staff', NOW() + interval '1 days 13:00:00', NOW() + interval '1 days 14:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility2.png?v=1765941246', 'Private Golf Simulator Bay (South).', 200),
+  ('Shooting Bay - Blue Pad', 'FACILITY', 'Staff', NOW() + interval '1 days 14:00:00', NOW() + interval '1 days 15:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility4.png?v=1765941249', 'Synthetic Ice Shooting Lane (Blue).', 100),
+  ('Shooting Bay - Green Pad', 'FACILITY', 'Staff', NOW() + interval '1 days 15:00:00', NOW() + interval '1 days 16:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility4.png?v=1765941249', 'Synthetic Ice Shooting Lane (Green).', 100); `,
 
-  // 4. CLASSES (Updated Prices to 250)
+  // 4. CLASSES
   `INSERT INTO sessions(title, category, instructor, start_time, end_time, image_url, description, credit_cost) VALUES
   ('Hyrox', 'CLASS', 'Coach Connor', NOW() + interval '2 days 18:00:00', NOW() + interval '2 days 19:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/hyrox_b8249f8b-911d-466f-bd0f-a6c32a096647.png?v=1765941270', 'Prepare for your upcoming Hyrox Event.', 250),
   ('EAST60', 'CLASS', 'Coach Tim', NOW() + interval '3 days 18:00:00', NOW() + interval '3 days 19:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/WhatsApp_Image_2024-08-27_at_11.46.59.jpg?v=1724730513', 'High-intensity functional fitness training.', 250); `,
 
-  // 5. PRIVATE LESSONS (Category: 'PRIVATE')
+  // 5. PRIVATE LESSONS (Updated Pricing Structure)
   `INSERT INTO sessions(title, category, instructor, start_time, end_time, image_url, coach_image_url, description, credit_cost) VALUES
---SHOOTING(250 Credits)
-  ('Shooting', 'PRIVATE', 'Coach Ben', NOW() + interval '3 days 11:00:00', NOW() + interval '3 days 12:00:00',
+  
+  -- SHOOTING (Senior Coach: 850, Junior Coach: 500)
+  ('Shooting (Senior)', 'PRIVATE', 'Coach Ben', NOW() + interval '3 days 11:00:00', NOW() + interval '3 days 12:00:00',
     'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/snipes.jpg?v=1765941161',
     'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/ben.jpg?v=1765941257',
-    'Shooting with Coach Ben', 250),
+    'Elite Shooting with Senior Coach Ben.', 850),
 
-  ('Shooting', 'PRIVATE', 'Coach Rhett', NOW() + interval '3 days 12:00:00', NOW() + interval '3 days 13:00:00',
+  ('Shooting (Senior)', 'PRIVATE', 'Coach Rhett', NOW() + interval '3 days 12:00:00', NOW() + interval '3 days 13:00:00',
     'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/snipes.jpg?v=1765941161',
     'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/rhett.jpg?v=1765941257',
-    'Shooting with Coach Rhett', 250),
+    'Elite Shooting with Senior Coach Rhett.', 850),
 
-('Shooting', 'PRIVATE', 'Coach Whitney', NOW() + interval '3 days 13:00:00', NOW() + interval '3 days 14:00:00',
-  'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/snipes.jpg?v=1765941161',
-  'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/whit.png?v=1765941257',
-  'Shooting with Coach Whitney', 250),
+  ('Shooting (Junior)', 'PRIVATE', 'Coach Whitney', NOW() + interval '3 days 13:00:00', NOW() + interval '3 days 14:00:00',
+    'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/snipes.jpg?v=1765941161',
+    'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/whit.png?v=1765941257',
+    'Development Shooting with Junior Coach Whitney.', 500),
 
-('Shooting', 'PRIVATE', 'Coach Ryan', NOW() + interval '3 days 14:00:00', NOW() + interval '3 days 15:00:00',
-  'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/snipes.jpg?v=1765941161',
-  'https://eastsportsgroup.com/cdn/shop/files/WhatsApp_Image_2025-09-26_at_16.03.36.jpg?v=1759211469&width=1500',
-  'Shooting with Coach Ryan', 250),
+  ('Shooting (Junior)', 'PRIVATE', 'Coach Ryan', NOW() + interval '3 days 14:00:00', NOW() + interval '3 days 15:00:00',
+    'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/snipes.jpg?v=1765941161',
+    'https://eastsportsgroup.com/cdn/shop/files/WhatsApp_Image_2025-09-26_at_16.03.36.jpg?v=1759211469&width=1500',
+    'Development Shooting with Junior Coach Ryan.', 500),
 
---GOLF(800 Credits)
-  ('Golf', 'PRIVATE', 'Coach Ben', NOW() + interval '4 days 09:00:00', NOW() + interval '4 days 10:00:00',
-    'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/ben.jpg?v=1765941257',
-    'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/ben.jpg?v=1765941257',
-    'Golf with Coach Ben', 800),
-
-  ('Golf', 'PRIVATE', 'Coach Rhett', NOW() + interval '4 days 10:00:00', NOW() + interval '4 days 11:00:00',
-    'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/rhett.jpg?v=1765941257',
-    'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/rhett.jpg?v=1765941257',
-    'Golf with Coach Rhett', 800),
-
-('Golf', 'PRIVATE', 'Coach Whitney', NOW() + interval '4 days 11:00:00', NOW() + interval '4 days 12:00:00',
-  'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/whit.png?v=1765941257',
-  'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/whit.png?v=1765941257',
-  'Golf with Coach Whitney', 800),
-
---GYM(250 Credits)
-  ('Gym', 'PRIVATE', 'Coach Ben', NOW() + interval '5 days 10:00:00', NOW() + interval '5 days 11:00:00',
+  -- PERSONAL TRAINING (700 Credits)
+  ('Personal Training', 'PRIVATE', 'Coach Seb', NOW() + interval '5 days 10:00:00', NOW() + interval '5 days 11:00:00',
+    'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility5.png?v=1765941250',
+    'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/seb_655d89b0-5675-40f3-87cd-e0a867a5d4e5.jpg?v=1765941258',
+    '1-on-1 Gym Personal Training.', 700),
+  
+  ('Personal Training', 'PRIVATE', 'Coach Ben', NOW() + interval '5 days 11:00:00', NOW() + interval '5 days 12:00:00',
     'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility5.png?v=1765941250',
     'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/ben.jpg?v=1765941257',
-    'Gym with Coach Ben', 250),
-
-  ('Gym', 'PRIVATE', 'Coach Rhett', NOW() + interval '5 days 11:00:00', NOW() + interval '5 days 12:00:00',
-    'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility5.png?v=1765941250',
-    'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/rhett.jpg?v=1765941257',
-    'Gym with Coach Rhett', 250),
-
-('Gym', 'PRIVATE', 'Coach Whitney', NOW() + interval '5 days 12:00:00', NOW() + interval '5 days 13:00:00',
-  'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility5.png?v=1765941250',
-  'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/whit.png?v=1765941257',
-  'Gym with Coach Whitney', 250),
-
-('Gym', 'PRIVATE', 'Coach Seb', NOW() + interval '5 days 13:00:00', NOW() + interval '5 days 14:00:00',
-  'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility5.png?v=1765941250',
-  'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/seb_655d89b0-5675-40f3-87cd-e0a867a5d4e5.jpg?v=1765941258',
-  'Gym with Coach Seb', 250); `,
+    '1-on-1 Gym Personal Training.', 700); `,
 
   `NOTIFY pgrst, 'reload schema'; `
 ];

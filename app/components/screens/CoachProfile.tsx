@@ -102,6 +102,8 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
     };
 
 
+
+
     // Avatar Upload
     const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
@@ -528,15 +530,17 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
             />
 
             {/* CLASS MODAL */}
-            {selectedSession && (
-                <ClassModal
-                    sessions={[selectedSession]}
-                    currentUserId={currentUserId || null}
-                    bookedSessionIds={bookedSessionIds}
-                    onClose={() => setSelectedSession(null)}
-                    onScheduleChange={() => setRefreshKey(prev => prev + 1)}
-                />
-            )}
-        </div>
+            {
+                selectedSession && (
+                    <ClassModal
+                        sessions={[selectedSession]}
+                        currentUserId={currentUserId || null}
+                        bookedSessionIds={bookedSessionIds}
+                        onClose={() => setSelectedSession(null)}
+                        onScheduleChange={() => setRefreshKey(prev => prev + 1)}
+                    />
+                )
+            }
+        </div >
     );
 }

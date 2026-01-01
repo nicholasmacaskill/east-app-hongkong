@@ -90,14 +90,8 @@ function AppContent() {
             .single();
 
           if (!existingProfile) {
-            await supabase
-              .from('profiles')
-              .insert({
-                id: user.id,
-                first_name: emailName,
-                avatar_url: 'https://placehold.co/100',
-                role: 'player'
-              });
+            // Wait / Retry logic handled by UI loading state or subsequent fetch
+            console.log("Profile not found yet. Waiting for Trigger...");
           }
 
           // C. FETCH REAL PROFILE DATA
@@ -126,6 +120,18 @@ function AppContent() {
               id: profileData.id,
               preferences: profileData.preferences || {}
             });
+          } else {
+            // Fallback: Use Metadata if Profile is missing (406 or pending trigger)
+            const metadataRole = user.user_metadata?.role as UserRole;
+            if (metadataRole) {
+              console.log("Using Metadata Fallback Role:", metadataRole);
+              setUserProfile(prev => ({
+                ...prev,
+                email: user.email || '',
+                role: metadataRole,
+                id: user.id
+              }));
+            }
           }
 
           // D. FETCH BOOKINGS (SAFER VERSION)
@@ -294,10 +300,14 @@ function AppContent() {
     );
   }
 
+
+
   return (
     <div className="min-h-screen bg-black text-white font-opensans select-none">
       <div className="max-w-md mx-auto bg-black min-h-screen relative border-x border-gray-900 shadow-2xl">
         <main>
+
+
           {activeTab === 'home' && (
             <HomeScreen
               onClassClick={handleClassClick}

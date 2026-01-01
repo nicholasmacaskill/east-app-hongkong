@@ -13,7 +13,7 @@ interface FormData {
     password: string;
     confirmPassword: string;
     phone: string;
-    role: 'player' | 'parent';
+    role: 'player' | 'parent' | 'coach';
 }
 
 const initialFormData: FormData = {
@@ -33,10 +33,7 @@ interface AuthScreenProps {
 const AuthHeader = ({ title }: { title: string }) => (
     <div className="text-center mb-6">
         {/* Logo */}
-        <div className="mb-4">
-            <img src="/east-logo-transparent.png" alt="EAST" className="h-32 h-auto mx-auto" />
-        </div>
-        <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-4">{title}</h2>
+        <h2 className="text-xl font-bold italic text-gray-400 uppercase tracking-widest mt-4">{title}</h2>
     </div>
 );
 
@@ -52,7 +49,10 @@ const InputField: React.FC<{ label: string; name: keyof FormData; type: string; 
 
 export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenProps) {
     const [step, setStep] = useState<AuthStep>('login');
-    const [formData, setFormData] = useState<FormData>(initialFormData);
+    const [formData, setFormData] = useState<FormData>({
+        ...initialFormData,
+        role: (expectedRole === 'parent' || expectedRole === 'coach' || expectedRole === 'player') ? expectedRole : 'player'
+    });
     const [loading, setLoading] = useState(false);
 
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
