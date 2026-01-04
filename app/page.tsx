@@ -64,7 +64,7 @@ function AppContent() {
   const [showNewsModal, setShowNewsModal] = useState(false);
   const [selectedSessions, setSelectedSessions] = useState<Session[]>([]);
   const [selectedNews, setSelectedNews] = useState<Session | null>(null);
-  const [bookedSessionIds, setBookedSessionIds] = useState<number[]>([]);
+  const [bookedSessions, setBookedSessions] = useState<Session[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [myChildren, setMyChildren] = useState<any[]>([]);
 
@@ -143,7 +143,7 @@ function AppContent() {
               if (contentType && contentType.indexOf("application/json") !== -1) {
                 const data = await res.json();
                 if (Array.isArray(data)) {
-                  setBookedSessionIds(data.map((s: Session) => s.id));
+                  setBookedSessions(data);
                 }
               }
             }
@@ -312,7 +312,7 @@ function AppContent() {
             <HomeScreen
               onClassClick={handleClassClick}
               onOpenSettings={() => setShowSettingsModal(true)}
-              bookedSessionIds={bookedSessionIds}
+              bookedSessions={bookedSessions}
               credits={userProfile.credits || 0}
               setTab={setActiveTab}
             />
@@ -344,7 +344,7 @@ function AppContent() {
 
         <BottomNav activeTab={activeTab} setTab={setActiveTab} />
 
-        {showClassModal && <ClassModal sessions={selectedSessions} currentUserId={currentUserId} bookedSessionIds={bookedSessionIds} onClose={() => setShowClassModal(false)} onScheduleChange={() => setRefreshKey(k => k + 1)} />}
+        {showClassModal && <ClassModal sessions={selectedSessions} currentUserId={currentUserId} bookedSessions={bookedSessions} onClose={() => setShowClassModal(false)} onScheduleChange={() => setRefreshKey(k => k + 1)} />}
 
         {showSettingsModal && (
           <SettingsModal

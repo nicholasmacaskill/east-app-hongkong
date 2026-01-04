@@ -16,13 +16,13 @@ const SectionHeader = ({ title, className = "" }: { title: string, className?: s
 export default function HomeScreen({
   onClassClick,
   onOpenSettings,
-  bookedSessionIds,
+  bookedSessions,
   credits,
   setTab
 }: {
   onClassClick: (sessions: Session[]) => void,
   onOpenSettings: () => void,
-  bookedSessionIds: number[],
+  bookedSessions: Session[],
   credits: number,
   setTab: (t: any) => void
 }) {
@@ -55,7 +55,7 @@ export default function HomeScreen({
 
   const isGroupBooked = (item: Session, groupByKey: 'title' | 'instructor') => {
     const relatedSessions = sessions.filter(s => s[groupByKey] === item[groupByKey] && s.category === item.category);
-    return relatedSessions.some(s => bookedSessionIds.includes(s.id));
+    return relatedSessions.some(s => bookedSessions.some(b => b.id === s.id));
   };
 
   // --- Filter Lists ---

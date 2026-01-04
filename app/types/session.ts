@@ -9,4 +9,10 @@ export interface Session {
     coach_image_url?: string; // New field
     description?: string;
     credit_cost?: number;
+    attendee?: {
+        id: string;
+        first_name: string;
+        last_name: string;
+        role: string;
+    };
 }

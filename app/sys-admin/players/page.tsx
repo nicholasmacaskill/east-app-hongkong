@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Plus, Search, QrCode as QrIcon, Trash2, Edit2, Shield } from 'lucide-react';
+import { ChevronLeft, Plus, Search, QrCode as QrIcon, Trash2, Edit2, Shield, Copy, X } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -15,9 +15,14 @@ export default function PlayerManagement() {
     const [newPlayer, setNewPlayer] = useState({
         first_name: '',
         last_name: '',
+        email: '',
+        password: 'password123', // Default password suggestion
         team: '',
         position: ''
     });
+
+    // Success / QR State
+    const [createdPlayer, setCreatedPlayer] = useState<any>(null); // Stores details of player just created
 
     useEffect(() => {
         fetchPlayers();
@@ -25,13 +30,9 @@ export default function PlayerManagement() {
 
     const fetchPlayers = async () => {
         setLoading(true);
-        // Assuming 'profiles' table holds players. We might filter by role if it existed, 
-        // but for now we'll just fetch all or filter by a convention if needed.
-        // The user mentioned "Add players".
         const { data, error } = await supabase
             .from('profiles')
             .select('*')
-            // .eq('role', 'player') // Uncomment if role column exists and is populated
             .order('created_at', { ascending: false });
 
         if (data) {
@@ -41,29 +42,43 @@ export default function PlayerManagement() {
     };
 
     const handleAddPlayer = async () => {
-        if (!newPlayer.first_name || !newPlayer.last_name || !newPlayer.team) return alert("Please fill required fields");
+        if (!newPlayer.first_name || !newPlayer.last_name || !newPlayer.email || !newPlayer.password) {
+            return alert("Please fill required fields (Name, Email, Password)");
+        }
 
-        const tempId = crypto.randomUUID(); // Generate a ID for the profile
+        try {
+            const response = await fetch('/api/admin/create-player', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    firstName: newPlayer.first_name,
+                    lastName: newPlayer.last_name,
+                    email: newPlayer.email,
+                    password: newPlayer.password,
+                    team: newPlayer.team
+                })
+            });
 
-        // Note: Creating a profile without an auth user is valid if RLS allows it.
-        // This profile can later be 'claimed' or just used as a roster entry.
-        const { error } = await supabase.from('profiles').insert({
-            id: tempId,
-            name: newPlayer.first_name, // Mapping to existing schema 'name'
-            surname: newPlayer.last_name, // Mapping to existing schema 'surname'
-            role: 'player', // Explicitly setting role
-            team: newPlayer.team, // Assuming this column exists or we might store in metadata
-            // position: newPlayer.position,
-            // bio: '',
-        });
+            const data = await response.json();
 
-        if (error) {
-            alert('Error adding player: ' + error.message);
-        } else {
-            alert('Player added successfully');
+            if (!data.success) {
+                throw new Error(data.error);
+            }
+
+            // Success! Show QR code
+            setCreatedPlayer({
+                id: data.userId,
+                name: `${newPlayer.first_name} ${newPlayer.last_name}`,
+                email: newPlayer.email,
+                team: newPlayer.team
+            });
+
             setShowAddForm(false);
-            setNewPlayer({ first_name: '', last_name: '', team: '', position: '' });
+            setNewPlayer({ first_name: '', last_name: '', email: '', password: 'password123', team: '', position: '' });
             fetchPlayers();
+
+        } catch (error: any) {
+            alert('Error creating player: ' + error.message);
         }
     };
 
@@ -74,7 +89,7 @@ export default function PlayerManagement() {
     );
 
     return (
-        <div className="flex flex-col gap-6 animate-fadeIn">
+        <div className="flex flex-col gap-6 animate-fadeIn pb-20">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -93,6 +108,52 @@ export default function PlayerManagement() {
                     <Plus size={16} /> Add Player
                 </button>
             </div>
+
+            {/* Success / QR Modal */}
+            {createdPlayer && (
+                <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4">
+                    <div className="bg-[#1e1e1e] p-8 rounded-3xl w-full max-w-md border border-[#28D160] flex flex-col items-center text-center relative shadow-2xl shadow-[#28D160]/20">
+                        <button
+                            onClick={() => setCreatedPlayer(null)}
+                            className="absolute top-4 right-4 text-gray-500 hover:text-white"
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <div className="w-16 h-16 bg-[#28D160] rounded-full flex items-center justify-center mb-6 text-black">
+                            <QrIcon size={32} />
+                        </div>
+
+                        <h2 className="font-black italic text-2xl uppercase mb-2 text-white">Player Created!</h2>
+                        <p className="text-gray-400 text-sm mb-8">Scan or screenshot this QR code for the player.</p>
+
+                        <div className="bg-white p-6 rounded-2xl mb-6">
+                            <QRCodeSVG
+                                value={`${typeof window !== 'undefined' ? window.location.origin : ''}/profile/${createdPlayer.id}`}
+                                size={200}
+                            />
+                        </div>
+
+                        <div className="bg-black/30 w-full p-4 rounded-xl border border-white/10 text-left mb-6">
+                            <p className="text-xs text-gray-500 uppercase mb-1">Name</p>
+                            <p className="font-bold text-white mb-3">{createdPlayer.name}</p>
+
+                            <p className="text-xs text-gray-500 uppercase mb-1">Login Email</p>
+                            <div className="flex justify-between items-center">
+                                <p className="font-mono text-[#28D160]">{createdPlayer.email}</p>
+                                <Copy size={14} className="text-gray-600 hover:text-white cursor-pointer" />
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setCreatedPlayer(null)}
+                            className="w-full bg-[#28D160] text-black font-bold py-3 rounded-xl uppercase hover:bg-white transition-colors"
+                        >
+                            Done
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Add Player Modal/Form */}
             {showAddForm && (
@@ -118,6 +179,27 @@ export default function PlayerManagement() {
                                     />
                                 </div>
                             </div>
+
+                            {/* New Auth Fields */}
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Email (Login)</label>
+                                <input
+                                    value={newPlayer.email}
+                                    onChange={e => setNewPlayer({ ...newPlayer, email: e.target.value })}
+                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                    placeholder="player@example.com"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Password</label>
+                                <input
+                                    value={newPlayer.password}
+                                    onChange={e => setNewPlayer({ ...newPlayer, password: e.target.value })}
+                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                    type="text"
+                                />
+                            </div>
+
                             <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase">Team</label>
                                 <input
@@ -128,8 +210,8 @@ export default function PlayerManagement() {
                                 />
                             </div>
                             <div className="flex gap-2 mt-4">
-                                <button onClick={handleAddPlayer} className="flex-1 bg-[#28D160] text-black font-bold py-2 rounded uppercase text-xs hover:bg-white">Save Player</button>
-                                <button onClick={() => setShowAddForm(false)} className="flex-1 bg-white/10 text-white font-bold py-2 rounded uppercase text-xs hover:bg-white/20">Cancel</button>
+                                <button onClick={handleAddPlayer} className="flex-1 bg-[#28D160] text-black font-bold py-2 rounded uppercase text-xs hover:bg-white transition-colors">Create Account</button>
+                                <button onClick={() => setShowAddForm(false)} className="flex-1 bg-white/10 text-white font-bold py-2 rounded uppercase text-xs hover:bg-white/20 transition-colors">Cancel</button>
                             </div>
                         </div>
                     </div>
@@ -174,15 +256,14 @@ export default function PlayerManagement() {
                                             </span>
                                         </div>
                                         <p className="text-gray-500 text-xs truncate mt-1">ID: {player.id}</p>
-
                                         <div className="mt-auto flex gap-2 pt-2">
-                                            <button className="text-xs font-bold text-[#28D160] uppercase hover:text-white transition-colors">
-                                                Edit
-                                            </button>
+                                            <a href={`/profile/${player.id}`} className="text-xs font-bold text-[#28D160] uppercase hover:text-white transition-colors">
+                                                View
+                                            </a>
                                             <span className="text-gray-700">|</span>
-                                            <button className="text-xs font-bold text-gray-500 uppercase hover:text-red-500 transition-colors">
-                                                Delete
-                                            </button>
+                                            <span className="text-xs font-bold text-gray-500 uppercase">
+                                                {player.role || 'Player'}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -198,3 +279,4 @@ export default function PlayerManagement() {
         </div>
     );
 }
+

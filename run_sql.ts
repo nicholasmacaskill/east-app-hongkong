@@ -43,9 +43,9 @@ const TRIGGER_SQL = [
 // --- BOOKING FUNCTIONS ---
 const BOOKING_FUNCTION_SQL = `
 create or replace function book_session_with_credits(
-  p_user_id uuid,
-  p_session_id bigint,
-  p_attendee_id uuid default null
+  p_user_id uuid,          -- The payer (who pays)
+  p_session_id bigint,     -- The session
+  p_attendee_id uuid       -- The attendee (who goes)
 )
 returns json
 language plpgsql
@@ -54,7 +54,16 @@ as $$
 declare
   v_credit_cost int;
   v_user_credits int;
+  v_attendee_id uuid;
 begin
+  -- Determine attendee (default to payer if null)
+  v_attendee_id := COALESCE(p_attendee_id, p_user_id);
+
+  -- Check if already registered
+  IF EXISTS (SELECT 1 FROM registrations WHERE user_id = v_attendee_id AND session_id = p_session_id) THEN
+      RETURN json_build_object('success', false, 'message', 'Attendee is already registered.');
+  END IF;
+
   select credit_cost into v_credit_cost from sessions where id = p_session_id;
   select credits into v_user_credits from profiles where id = p_user_id;
 
@@ -66,54 +75,22 @@ begin
     return json_build_object('success', false, 'message', 'Insufficient credits.');
   end if;
 
+  -- Deduct from PAYER
   update profiles set credits = credits - v_credit_cost where id = p_user_id;
   
-  -- Use attendee_id if provided, otherwise user_id
-  insert into registrations (user_id, session_id) values (COALESCE(p_attendee_id, p_user_id), p_session_id);
+  -- Insert with payer_id
+  insert into registrations (user_id, session_id, payer_id) values (v_attendee_id, p_session_id, p_user_id);
 
   return json_build_object('success', true, 'message', 'Booking confirmed!', 'new_balance', v_user_credits - v_credit_cost);
 end;
 $$;
 `;
 
-const BOOKING_FUNCTION_SQL_V2 = `
-create or replace function book_session_with_credits(
-  p_user_id uuid,
-  p_session_id bigint,
-  p_attendee_id uuid default null
-)
-returns json
-language plpgsql
-security definer
-as $$
-declare
-  v_credit_cost int;
-  v_user_credits int;
-begin
-  select credit_cost into v_credit_cost from sessions where id = p_session_id;
-  select credits into v_user_credits from profiles where id = p_user_id;
-
-  if v_credit_cost is null then
-    return json_build_object('success', false, 'message', 'Session cost not defined.');
-  end if;
-
-  if v_user_credits < v_credit_cost then
-    return json_build_object('success', false, 'message', 'Insufficient credits.');
-  end if;
-
-  update profiles set credits = credits - v_credit_cost where id = p_user_id;
-  
-  -- Use attendee_id if provided, otherwise user_id
-  insert into registrations (user_id, session_id) values (COALESCE(p_attendee_id, p_user_id), p_session_id);
-
-  return json_build_object('success', true, 'message', 'Booking confirmed!', 'new_balance', v_user_credits - v_credit_cost);
-end;
-$$;
-`;
+const BOOKING_FUNCTION_SQL_V2 = BOOKING_FUNCTION_SQL; // Sync versions
 
 const CANCEL_FUNCTION_SQL = `
 create or replace function cancel_session_and_refund(
-  p_user_id uuid,
+  p_attendee_id uuid,
   p_session_id bigint
 )
 returns json
@@ -122,23 +99,30 @@ security definer
 as $$
 declare
   v_credit_cost int;
-  v_registration_exists bool;
+  v_payer_id uuid;
 begin
-  select exists(select 1 from registrations where user_id = p_user_id and session_id = p_session_id) into v_registration_exists;
+  -- Check registration and get Payer
+  SELECT payer_id INTO v_payer_id 
+  FROM registrations 
+  WHERE user_id = p_attendee_id AND session_id = p_session_id;
 
-  if not v_registration_exists then
+  if not found then
     return json_build_object('success', false, 'message', 'Booking not found.');
   end if;
+
+  -- Default payer to attendee if null
+  v_payer_id := COALESCE(v_payer_id, p_attendee_id);
 
   select credit_cost into v_credit_cost from sessions where id = p_session_id;
 
   if v_credit_cost is null then
-    delete from registrations where user_id = p_user_id and session_id = p_session_id;
+    delete from registrations where user_id = p_attendee_id and session_id = p_session_id;
     return json_build_object('success', true, 'message', 'Cancellation confirmed.');
   end if;
 
-  update profiles set credits = credits + v_credit_cost where id = p_user_id;
-  delete from registrations where user_id = p_user_id and session_id = p_session_id;
+  -- Refund PAYER
+  update profiles set credits = credits + v_credit_cost where id = v_payer_id;
+  delete from registrations where user_id = p_attendee_id and session_id = p_session_id;
 
   return json_build_object('success', true, 'message', 'Cancellation successful. Credits refunded.', 'refund_amount', v_credit_cost);
 end;
@@ -174,7 +158,10 @@ const schemaCommands = [
         credits INTEGER DEFAULT 100,
         gallery_images TEXT[] DEFAULT '{}',
         schedule_photo_url TEXT,
-        role TEXT DEFAULT 'player'
+        role TEXT DEFAULT 'player',
+        parent_id UUID REFERENCES profiles(id),
+        intro_video_url TEXT,
+        preferences JSONB DEFAULT '{}'
     );`,
 
   // UPDATED: Added coach_image_url
@@ -213,6 +200,7 @@ const schemaCommands = [
     id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
     user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     session_id BIGINT REFERENCES sessions(id) ON DELETE CASCADE NOT NULL,
+    payer_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
     registered_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc':: text, now()),
     UNIQUE(user_id, session_id)
   ); `,
@@ -306,6 +294,18 @@ VALUES('e4d4d4d4-e4d4-e4d4-e4d4-e4d4d4d4d4d4', '${PARENT_USER_ID}', format('{"su
 
   `INSERT INTO profiles(id, username, first_name, last_name, mobile, contact_email, bio, avatar_url, role)
 VALUES('${PARENT_USER_ID}', 'parent.east', 'Parent', 'Demo', '+1 666 000 0000', 'parent@east.com', 'Hockey Parent.', 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&q=80&w=800', 'parent') 
+     ON CONFLICT(id) DO UPDATE SET username = EXCLUDED.username; `,
+
+  // --- PLAYER USER (player@east.com / password123) ---
+  `INSERT INTO auth.users(instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, recovery_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token)
+VALUES('00000000-0000-0000-0000-000000000000', '${TEST_USER_ID_2}', 'authenticated', 'authenticated', 'player@east.com', crypt('password123', gen_salt('bf')), current_timestamp, current_timestamp, current_timestamp, '{"provider":"email","providers":["email"]}', '{"role":"player"}', current_timestamp, current_timestamp, '', '', '', '')
+     ON CONFLICT(id) DO NOTHING; `,
+  `INSERT INTO auth.identities(id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
+VALUES('f4d4d4d4-f4d4-f4d4-f4d4-f4d4d4d4d4d4', '${TEST_USER_ID_2}', format('{"sub":"%s","email":"%s"}', '${TEST_USER_ID_2}', 'player@east.com'):: jsonb, 'email', 'player@east.com', current_timestamp, current_timestamp, current_timestamp)
+     ON CONFLICT(id) DO NOTHING; `,
+
+  `INSERT INTO profiles(id, username, first_name, last_name, mobile, contact_email, bio, avatar_url, role, credits, preferences, parent_id)
+VALUES('${TEST_USER_ID_2}', 'player.east', 'Test', 'Player', '+1 777 000 0000', 'player@east.com', 'Aspiring Athlete.', 'https://images.unsplash.com/photo-1547941126-be8c96fd6908?auto=format&fit=crop&q=80&w=800', 'player', 100, '{}', NULL) 
      ON CONFLICT(id) DO UPDATE SET username = EXCLUDED.username; `,
 
   `INSERT INTO players_stats(player_id, age, season, team, games_played_season, goals_season, points)

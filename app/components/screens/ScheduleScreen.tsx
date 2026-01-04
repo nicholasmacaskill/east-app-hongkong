@@ -42,7 +42,7 @@ export default function ScheduleScreen({
   // State for Navigation and Selection
   const [viewStartDate, setViewStartDate] = useState(new Date()); // The first visible day in the strip
   const [selectedDate, setSelectedDate] = useState(new Date());   // The currently selected date filter
-  const [filter, setFilter] = useState<'parent' | 'player' | 'combined'>('player');
+
 
   // Constraints: Current month start up to next December end
   const minDate = startOfMonth(new Date());
@@ -132,20 +132,7 @@ export default function ScheduleScreen({
       <div className="relative z-10">
         <div className="mx-4 mb-4 flex flex-col gap-3">
 
-          {/* --- FILTER TABS: High contrast dark theme --- */}
-          {parentMode && (
-            <div className="flex bg-[#1a1a1a] rounded-xl p-1">
-              {['PLAYER', 'PARENT'].map(f => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f.toLowerCase() as any)}
-                  className={`flex-1 text-center font-montserrat font-black italic text-[10px] py-2 rounded-lg transition-all ${filter === f.toLowerCase() ? 'bg-east-light text-black shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-          )}
+
 
           {/* --- CHILD SWITCHER (For Parents) --- */}
           {parentMode && (
@@ -280,6 +267,12 @@ export default function ScheduleScreen({
                           </p>
                         </div>
                         <div className="text-right">
+                          {event.attendee && (
+                            <div className="mb-1">
+                              <span className="text-[10px] font-black italic text-gray-400 uppercase mr-1">ATTENDING:</span>
+                              <span className="text-xs font-black italic text-east-light uppercase border-b border-east-light/30 pb-0.5">{event.attendee.first_name}</span>
+                            </div>
+                          )}
                           <span className="text-[8px] font-black uppercase text-east-light bg-east-light/10 px-2 py-0.5 rounded-full border border-east-light/20">
                             {event.category}
                           </span>

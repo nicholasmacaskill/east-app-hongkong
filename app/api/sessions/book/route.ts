@@ -24,59 +24,66 @@ export async function GET() {
 // **********************************************
 // 2. POST - Handles the booking via RPC
 // **********************************************
+// Define expected payload
+interface BookingRequest {
+  sessionId: number;
+  userId: string;
+  attendeeId?: string;
+  attendeeIds?: string[];
+}
+
 export async function POST(request: Request) {
-  const { sessionId, userId, attendeeId } = await request.json();
+  const { sessionId, userId, attendeeId, attendeeIds } = await request.json() as BookingRequest;
 
   if (!sessionId || !userId) {
     return NextResponse.json({ error: 'Missing sessionId or userId' }, { status: 400 });
   }
 
+  // Normalize to array: usage of single attendeeId or multiple attendeeIds
+  const targets = attendeeIds && Array.isArray(attendeeIds) ? attendeeIds : (attendeeId ? [attendeeId] : []);
+
+  // If nothing provided, default to booking the user themselves
+  if (targets.length === 0) targets.push(userId);
+
+  console.log(`Booking for User: ${userId}, Session: ${sessionId}, Targets:`, targets);
+
+  const results = [];
+  let successCount = 0;
+
   try {
-    // 1. Call the Postgres Function (RPC)
-    // This handles cost check, balance check, credit deduction, and registration atomically.
-    // Updated to support booking for a child (attendeeId)
-    const { data: result, error: rpcError } = await supabase.rpc('book_session_with_credits', {
-      p_user_id: userId,
-      p_session_id: sessionId,
-      p_attendee_id: attendeeId || null
-    });
+    // Iterate and book each
+    for (const targetId of targets) {
+      console.log(`Processing target: ${targetId}`);
+      const { data: result, error: rpcError } = await supabase.rpc('book_session_with_credits', {
+        p_user_id: userId, // Payer is always the logged-in user
+        p_session_id: sessionId,
+        p_attendee_id: targetId
+      });
 
-    if (rpcError) {
-      console.error("RPC Error:", rpcError);
-      return NextResponse.json({ error: rpcError.message || 'Database error during booking.' }, { status: 500 });
-    }
-
-    // result is JSON: { success: boolean, message: string, new_balance?: number }
-    if (!result.success) {
-      return NextResponse.json({ error: result.message }, { status: 400 });
-    }
-
-    // 2. Send Confirmation Email (Async - don't fail request if this fails)
-    // We need to fetch session/user details briefly for the email content if we want it rich.
-    // Or we just send a generic one. Let's try to be nice.
-    try {
-      const { data: session } = await supabase.from('sessions').select('title, start_time, credit_cost').eq('id', sessionId).single();
-      const { data: profile } = await supabase.from('profiles').select('contact_email, first_name').eq('id', userId).single();
-
-      if (session && profile && profile.contact_email) {
-        await sendEmail({
-          to: profile.contact_email,
-          subject: `Booking Confirmed: ${session.title}`,
-          html: `
-                  <p>Hi ${profile.first_name || 'Member'},</p>
-                  <p>Your spot is successfully reserved for <strong>${session.title}</strong>.</p>
-                  <p><strong>Time:</strong> ${new Date(session.start_time).toLocaleString()}</p>
-                  <p>Your booking is confirmed.</p>
-                  <p>See you there!</p>
-                `
-        });
+      if (rpcError) {
+        console.error(`RPC Error for ${targetId}:`, rpcError);
+        results.push({ attendeeId: targetId, success: false, error: rpcError.message });
+      } else if (!result.success) {
+        results.push({ attendeeId: targetId, success: false, error: result.message });
+      } else {
+        successCount++;
+        results.push({ attendeeId: targetId, success: true, message: result.message });
       }
-    } catch (emailErr) {
-      console.error("Email sending failed:", emailErr);
-      // Continue, do not fail the request
     }
 
-    return NextResponse.json({ success: true, message: result.message });
+    // Determine overall response
+    if (successCount === 0) {
+      // If ALL failed, return error (using the first error message for simplicity, or generic)
+      const firstError = results[0]?.error || 'Booking failed.';
+      return NextResponse.json({ error: firstError, details: results }, { status: 400 });
+    }
+
+    // Partial or Full Success
+    return NextResponse.json({
+      success: true,
+      message: `Successfully booked ${successCount} session(s).`,
+      results
+    });
 
   } catch (e) {
     console.error('API Error:', e);

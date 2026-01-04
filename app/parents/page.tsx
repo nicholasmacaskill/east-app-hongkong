@@ -51,12 +51,13 @@ function ParentsContent() {
     const [showClassModal, setShowClassModal] = useState(false);
     const [showSettingsModal, setShowSettingsModal] = useState(false);
     const [selectedSessions, setSelectedSessions] = useState<Session[]>([]);
-    const [bookedSessionIds, setBookedSessionIds] = useState<number[]>([]);
+    const [bookedSessions, setBookedSessions] = useState<Session[]>([]);
     const [refreshKey, setRefreshKey] = useState(0);
 
     const [userProfile, setUserProfile] = useState<UserProfileData>(initialProfileData);
     const [myChildren, setMyChildren] = useState<any[]>([]);
     const [activeChildId, setActiveChildId] = useState<string | null>(null);
+    const [modalAttendeeId, setModalAttendeeId] = useState<string | null>(null);
     const [isLoadingChildren, setIsLoadingChildren] = useState(false);
 
     // Fetch children helper
@@ -119,7 +120,7 @@ function ParentsContent() {
                         if (res.ok) {
                             const data = await res.json();
                             if (Array.isArray(data)) {
-                                setBookedSessionIds(data.map((s: Session) => s.id));
+                                setBookedSessions(data);
                             }
                         }
                     } catch (fetchError) {
@@ -198,8 +199,12 @@ function ParentsContent() {
                     {activeTab === 'home' && (
                         <HomeScreen
                             credits={userProfile.credits}
-                            onClassClick={(s) => { setSelectedSessions(s); setShowClassModal(true); }}
-                            bookedSessionIds={bookedSessionIds}
+                            onClassClick={(s) => {
+                                setSelectedSessions(s);
+                                setModalAttendeeId(null); // Home screen usually group booking or generic
+                                setShowClassModal(true);
+                            }}
+                            bookedSessions={bookedSessions}
                             onOpenSettings={() => setShowSettingsModal(true)}
                             setTab={setActiveTab}
                         />
@@ -220,7 +225,11 @@ function ParentsContent() {
                         <ScheduleScreen
                             currentUserId={activeChildId || currentUserId}
                             refreshKey={refreshKey}
-                            onPreviewClick={(s) => { setSelectedSessions([s]); setShowClassModal(true); }}
+                            onPreviewClick={(s) => {
+                                setSelectedSessions([s]);
+                                setModalAttendeeId(s.attendee?.id || null);
+                                setShowClassModal(true);
+                            }}
                             parentMode={true}
                             myChildren={myChildren}
                             activeChildId={activeChildId}
@@ -239,10 +248,10 @@ function ParentsContent() {
                     <ClassModal
                         sessions={selectedSessions}
                         currentUserId={currentUserId}
-                        bookedSessionIds={bookedSessionIds}
+                        bookedSessions={bookedSessions}
                         onClose={() => setShowClassModal(false)}
                         onScheduleChange={() => setRefreshKey(k => k + 1)}
-                        initialAttendeeId={activeChildId}
+                        initialAttendeeId={modalAttendeeId || activeChildId}
                     />
                 )}
 
