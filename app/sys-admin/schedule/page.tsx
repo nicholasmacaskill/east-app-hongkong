@@ -114,7 +114,7 @@ export default function ScheduleManagement() {
 
         const prepareSlot = (sDate: string) => ({
             coach_id: coachId || null,
-            facility_id: facilityId || null,
+            // facility_id: facilityId || null, // Removed: column missing in DB
             start_time: new Date(`${sDate}T${startTime}`).toISOString(),
             end_time: new Date(`${sDate}T${endTime}`).toISOString(),
             status: 'available'
