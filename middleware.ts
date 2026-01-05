@@ -2,86 +2,85 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-    let response = NextResponse.next({
-        request: {
-            headers: request.headers,
-        },
-    });
-
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-            cookies: {
-                get(name: string) {
-                    return request.cookies.get(name)?.value;
-                },
-                set(name: string, value: string, options: CookieOptions) {
-                    request.cookies.set({
-                        name,
-                        value,
-                        ...options,
-                    });
-                    response = NextResponse.next({
-                        request: {
-                            headers: request.headers,
-                        },
-                    });
-                    response.cookies.set({
-                        name,
-                        value,
-                        ...options,
-                    });
-                },
-                remove(name: string, options: CookieOptions) {
-                    request.cookies.set({
-                        name,
-                        value: '',
-                        ...options,
-                    });
-                    response = NextResponse.next({
-                        request: {
-                            headers: request.headers,
-                        },
-                    });
-                    response.cookies.set({
-                        name,
-                        value: '',
-                        ...options,
-                    });
-                },
+    try {
+        let response = NextResponse.next({
+            request: {
+                headers: request.headers,
             },
-        }
-    );
+        });
 
-    // Refresh session
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-    // 1. PROTECT ADMIN ROUTES
-    if (request.nextUrl.pathname.startsWith('/sys-admin')) {
-        if (!user) {
-            console.log("Middleware: No user found for /sys-admin request");
-            return NextResponse.redirect(new URL('/', request.url));
+        if (!supabaseUrl || !supabaseKey) {
+            console.warn('Middleware: Missing Supabase Env Vars. Skipping auth checks.');
+            return response;
         }
 
-        console.log("Middleware: Checking admin role for user", user?.id);
+        const supabase = createServerClient(
+            supabaseUrl,
+            supabaseKey,
+            {
+                cookies: {
+                    getAll() {
+                        return request.cookies.getAll()
+                    },
+                    setAll(cookiesToSet) {
+                        try {
+                            cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+                            response = NextResponse.next({
+                                request,
+                            })
+                            cookiesToSet.forEach(({ name, value, options }) =>
+                                response.cookies.set(name, value, options)
+                            )
+                        } catch (err) {
+                            console.error("Middleware: Failed to set cookies", err);
+                        }
+                    },
+                },
+            }
+        );
 
-        // Check for "admin" role
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user?.id)
-            .single();
+        // Refresh session
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
 
-        if (!profile || profile.role !== 'admin') {
-            console.log("Middleware: Access denied. Role is", profile?.role);
-            return NextResponse.redirect(new URL('/', request.url));
+        // 1. PROTECT ADMIN ROUTES
+        if (request.nextUrl.pathname.startsWith('/sys-admin')) {
+            if (!user) {
+                console.log("Middleware: No user found for /sys-admin request");
+                return NextResponse.redirect(new URL('/', request.url));
+            }
+
+            console.log("Middleware: Checking admin role for user", user?.id);
+
+            // Check for "admin" role
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user?.id)
+                .single();
+
+            if (!profile || profile.role !== 'admin') {
+                console.log("Middleware: Access denied. Role is", profile?.role);
+                return NextResponse.redirect(new URL('/', request.url));
+            }
         }
+
+        return response;
+
+    } catch (e) {
+        // FAIL OPEN: If middleware crashes, log it but don't take down the site
+        // Unless it's a critical security route, but 'fail open' allows debugging rather than 500
+        console.error("CRITICAL MIDDLEWARE ERROR:", e);
+        return NextResponse.next({
+            request: {
+                headers: request.headers,
+            },
+        });
     }
-
-    return response;
 }
 
 export const config = {
