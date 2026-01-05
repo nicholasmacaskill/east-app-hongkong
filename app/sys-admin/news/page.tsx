@@ -82,7 +82,6 @@ export default function AdminNewsPage() {
             category: 'NEWS',
             instructor: 'Admin', // Default author
             end_time: new Date(Date.now() + 86400000).toISOString(), // Dummy end time (24h later)
-            card_color: 'bg-black', // Default style
             credit_cost: 0
         };
 
