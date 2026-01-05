@@ -53,7 +53,9 @@ const nextConfig = {
         destination: 'http://127.0.0.1:54321/:path*',
       },
     ]
-  }
+  },
+  // Enable standalone output for Docker/Cloud Run
+  output: 'standalone',
 };
 
 module.exports = nextConfig;

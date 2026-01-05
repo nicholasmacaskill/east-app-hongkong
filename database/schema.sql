@@ -80,7 +80,8 @@ begin
   update profiles set credits = credits - v_credit_cost where id = p_user_id;
   
   -- Use attendee_id if provided, otherwise user_id
-  insert into registrations (user_id, session_id) values (COALESCE(p_attendee_id, p_user_id), p_session_id);
+  -- Track payer_id for refund logic (parent booking for child)
+  insert into registrations (user_id, session_id, payer_id) values (COALESCE(p_attendee_id, p_user_id), p_session_id, p_user_id);
 
   return json_build_object('success', true, 'message', 'Booking confirmed!', 'new_balance', v_user_credits - v_credit_cost);
 end;
@@ -130,7 +131,7 @@ end;
 $$;
 
 
-ALTER FUNCTION "public"."cancel_session_and_refund"("p_user_id" "uuid", "p_session_id" bigint) OWNER TO "postgres";
+ALTER FUNCTION "public"."cancel_session_and_refund"("p_attendee_id" "uuid", "p_session_id" bigint) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
@@ -334,7 +335,8 @@ CREATE TABLE IF NOT EXISTS "public"."registrations" (
     "id" bigint NOT NULL,
     "user_id" "uuid" NOT NULL,
     "session_id" bigint NOT NULL,
-    "registered_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"())
+    "registered_at" timestamp with time zone DEFAULT "timezone"('utc'::"text", "now"()),
+    "payer_id" "uuid"
 );
 
 
@@ -522,6 +524,15 @@ ALTER TABLE ONLY "public"."voice_commands"
 
 
 
+ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."registrations" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."sessions" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."players_stats" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."posts" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."likes" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."messages" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."availability" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."voice_commands" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."player_relationships" ENABLE ROW LEVEL SECURITY;
 
 

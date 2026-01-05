@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/app/lib/supabaseAdmin';
 
 export async function POST(request: Request) {
     try {
@@ -11,19 +12,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: false, error: 'Missing required fields' }, { status: 400 });
         }
 
-        // Initialize Supabase Admin Client
-        // Note: We use the direct 127.0.0.1 URL for server-side operations to avoid 
-        // issues with the frontend proxy (localhost:3000/supabase).
-        const supabaseAdmin = createClient(
-            'http://127.0.0.1:54321',
-            process.env.SUPABASE_SERVICE_ROLE_KEY!,
-            {
-                auth: {
-                    autoRefreshToken: false,
-                    persistSession: false
-                }
-            }
-        );
+        // Use shared admin client
 
         // 1. Create Auth User
         const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({

@@ -2,11 +2,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, getRateLimitIdentifier } from '@/app/lib/rateLimit';
+import { supabaseAdmin } from '@/app/lib/supabaseAdmin';
 
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+
 
 export async function POST(request: Request) {
     // 1. Rate limiting

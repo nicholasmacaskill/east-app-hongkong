@@ -1,14 +1,13 @@
-import React from 'react';
+'use client';
+import React, { useEffect, useState } from 'react';
 import { Shield, Newspaper, QrCode } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/app/lib/supabase';
 import AdminLogoutButton from '../components/AdminLogoutButton';
 
 // Helper Component for Sidebar Links
 const AdminNavLink = ({ href, icon: Icon, label }: { href: string, icon: any, label: string }) => {
-    // Only use client-side hooks if we convert layout to client, but simpler to just use Link for now or make it client
-    // Since we need active state logic, let's assume we want this.
-    // However, layout.tsx is usually server component. Let's make a client wrapper or just simple links.
-    // For simplicity/speed in MVP, we'll just style it simply.
     return (
         <Link href={href} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-xs font-bold uppercase tracking-wider">
             <Icon size={16} />
@@ -22,6 +21,44 @@ export default function AdminLayout({
 }: {
     children: React.ReactNode;
 }) {
+    const router = useRouter();
+    const [authorized, setAuthorized] = useState(false);
+
+    useEffect(() => {
+        const checkAuth = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                router.replace('/');
+                return;
+            }
+
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            if (!profile || profile.role !== 'admin') {
+                router.replace('/');
+            } else {
+                setAuthorized(true);
+            }
+        };
+
+        checkAuth();
+    }, [router]);
+
+    if (!authorized) {
+        return (
+            <div className="min-h-screen bg-black flex items-center justify-center text-white">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-8 h-8 border-2 border-[#28D160] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-[#28D160]">Verifying Access...</span>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-black text-white font-montserrat">
             <header className="bg-[#1e1e1e] border-b border-white/10 p-4 sticky top-0 z-50">

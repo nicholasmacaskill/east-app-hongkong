@@ -32,6 +32,9 @@ export default function ClassModal({
     const [selectedAttendeeIds, setSelectedAttendeeIds] = useState<string[]>([]);
     // Facility Date Filter State
     const [viewDate, setViewDate] = useState<string | null>(null);
+    const [availableCoaches, setAvailableCoaches] = useState<any[]>([]);
+    const [selectedCoachId, setSelectedCoachId] = useState<string | null>(null);
+    const [isLoadingCoaches, setIsLoadingCoaches] = useState(false);
 
     // Fetch children on mount
     useEffect(() => {
@@ -90,6 +93,7 @@ export default function ClassModal({
     // Helpers
     const selectedSession = sessions.find(s => s.id === selectedSessionId);
     const creditCostPerPerson = selectedSession ? selectedSession.credit_cost || 10 : 10;
+    const COACH_ADDON_COST = 750; // Constant for now
 
     // Check who is ALREADY booked for the SELECTED session
     // bookedSessions contains objects with session details AND attendee details (from my-schedule API)
@@ -102,7 +106,7 @@ export default function ClassModal({
     };
 
     // Derived State
-    const totalCost = selectedAttendeeIds.length * creditCostPerPerson;
+    const totalCost = (selectedAttendeeIds.length * creditCostPerPerson) + (selectedCoachId ? COACH_ADDON_COST : 0);
 
     // Are ALL selected attendees already booked? if so, show "Manage" or "Cancel"
     // Usually if you select multiple, some might be booked, some not.
@@ -142,7 +146,8 @@ export default function ClassModal({
                 body: JSON.stringify({
                     userId: currentUserId,
                     sessionId: selectedSessionId,
-                    attendeeIds: attendeesToBook // Send Array
+                    attendeeIds: attendeesToBook, // Send Array
+                    coachId: selectedCoachId // Optional Coach
                 })
             });
             const data = await res.json();
@@ -254,6 +259,34 @@ export default function ClassModal({
             alert('Link copied to clipboard!');
         }
     };
+
+    // Fetch available coaches for the selected facility slot
+    useEffect(() => {
+        if (selectedSessionId && displaySession.category === 'FACILITY') {
+            const sess = sessions.find(s => s.id === selectedSessionId);
+            if (sess) {
+                const fetchCoaches = async () => {
+                    setIsLoadingCoaches(true);
+                    setSelectedCoachId(null);
+                    try {
+                        const res = await fetch(`/api/coaches/available?startTime=${encodeURIComponent(sess.start_time)}&endTime=${encodeURIComponent(sess.end_time)}`);
+                        if (res.ok) {
+                            const data = await res.json();
+                            setAvailableCoaches(data);
+                        }
+                    } catch (e) {
+                        console.error("Error fetching coaches:", e);
+                    } finally {
+                        setIsLoadingCoaches(false);
+                    }
+                };
+                fetchCoaches();
+            }
+        } else {
+            setAvailableCoaches([]);
+            setSelectedCoachId(null);
+        }
+    }, [selectedSessionId, displaySession.category]);
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn overscroll-y-none">
@@ -458,6 +491,47 @@ export default function ClassModal({
                                                 );
                                             })}
                                         </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* ADD A COACH? (Only for Facilities) */}
+                            {displaySession.category === 'FACILITY' && selectedSessionId && (
+                                <div className="mb-6 animate-fadeIn">
+                                    <p className="font-montserrat font-bold text-[10px] mb-2 uppercase text-gray-400">ADD A COACH? (+{COACH_ADDON_COST} Credits)</p>
+
+                                    {isLoadingCoaches ? (
+                                        <div className="flex gap-2 animate-pulse">
+                                            {[1, 2, 3].map(i => (
+                                                <div key={i} className="w-12 h-12 rounded-full bg-gray-100" />
+                                            ))}
+                                        </div>
+                                    ) : availableCoaches.length > 0 ? (
+                                        <div className="flex gap-4 overflow-x-auto pb-2 hide-scrollbar">
+                                            <button
+                                                onClick={() => setSelectedCoachId(null)}
+                                                className={`flex flex-col items-center gap-1 shrink-0 ${!selectedCoachId ? 'opacity-100' : 'opacity-40'}`}
+                                            >
+                                                <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center ${!selectedCoachId ? 'border-black bg-black' : 'border-gray-200 bg-white'}`}>
+                                                    <X size={20} className={!selectedCoachId ? 'text-white' : 'text-gray-300'} />
+                                                </div>
+                                                <span className="text-[8px] font-black uppercase text-center">None</span>
+                                            </button>
+                                            {availableCoaches.map(coach => (
+                                                <button
+                                                    key={coach.id}
+                                                    onClick={() => setSelectedCoachId(coach.id)}
+                                                    className={`flex flex-col items-center gap-1 shrink-0 transition-opacity ${selectedCoachId === coach.id ? 'opacity-100' : (selectedCoachId ? 'opacity-40' : 'opacity-100')}`}
+                                                >
+                                                    <div className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${selectedCoachId === coach.id ? 'border-east-light ring-4 ring-east-light/20 scale-110' : 'border-gray-200'}`}>
+                                                        <img src={coach.avatar_url || 'https://placehold.co/100'} className="w-full h-full object-cover" alt={coach.first_name} />
+                                                    </div>
+                                                    <span className="text-[8px] font-black uppercase text-center w-12 truncate">{coach.first_name}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-[9px] font-bold text-gray-400 italic uppercase">No coaches available for this slot</p>
                                     )}
                                 </div>
                             )}

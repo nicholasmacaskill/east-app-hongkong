@@ -1,0 +1,65 @@
+# ==================================
+# PRODUCTION ENVIRONMENT VARIABLES
+# Copy these to Vercel Dashboard → Settings → Environment Variables
+# ==================================
+
+# 1. SUPABASE (From Supabase Dashboard → Settings → API)
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... # ⚠️ SECRET
+
+# 2. DATABASE (From Supabase Dashboard → Settings → Database)
+# Only needed for running migration scripts, optional after initial setup
+DB_HOST=db.xxxxxxxxxxxxx.supabase.co
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=your-database-password # ⚠️ SECRET
+DB_NAME=postgres
+
+# 3. STRIPE (From Stripe Dashboard → Developers → API Keys)
+# Use "Test" keys for staging, "Live" keys for production
+STRIPE_SECRET_KEY=sk_test_... # or sk_live_... for production ⚠️ SECRET
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_... # or pk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_... # From Stripe Webhooks page ⚠️ SECRET
+
+# 4. STRIPE PRODUCT IDs (From Stripe Dashboard → Products)
+NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=price_xxx # Elite Monthly subscription
+NEXT_PUBLIC_STRIPE_PRICE_YEARLY=price_xxx # Elite Yearly subscription
+NEXT_PUBLIC_STRIPE_PRICE_TOPUP=price_xxx # Credit top-up product
+
+# 5. EMAIL (Optional - for password reset & notifications)
+# Option A: Resend (Free tier: 3,000 emails/month)
+RESEND_API_KEY=re_xxxxxxxxxxxxx
+EMAIL_FROM=noreply@yourdomain.com
+
+# Option B: SMTP (e.g., SendGrid, Mailgun)
+# SMTP_HOST=smtp.sendgrid.net
+# SMTP_PORT=587
+# SMTP_USER=apikey
+# SMTP_PASSWORD=your-api-key
+
+# 6. APP CONFIG
+NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
+
+# ==================================
+# DEPLOYMENT CHECKLIST
+# ==================================
+# Before deploying:
+# ✅ Create Supabase project at supabase.com
+# ✅ Run database/production_bundle.sql in Supabase SQL Editor
+# ✅ Run database/enable_rls_security.ts SQL in Supabase
+# ✅ Create Stripe products and get price IDs
+# ✅ Push code to GitHub
+# ✅ Import project to Vercel
+# ✅ Add all environment variables above to Vercel
+# ✅ Deploy!
+# ✅ Create Stripe webhook pointing to: https://your-app.vercel.app/api/webhooks/stripe
+# ✅ Add STRIPE_WEBHOOK_SECRET to Vercel and redeploy
+
+# ==================================
+# FREE TIER LIMITS
+# ==================================
+# Vercel: 100GB bandwidth/month, unlimited projects
+# Supabase: 500MB database, 2GB storage, 50K MAU
+# Stripe: No monthly fees, only transaction fees
+# Total: $0/month 🎉

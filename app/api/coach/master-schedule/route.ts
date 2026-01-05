@@ -1,11 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/app/lib/supabaseAdmin';
 
-// Initialize Admin Client for fetching all data (bypassing RLS perms that might limit to "own" bookings)
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+
 
 export async function GET(request: Request) {
     try {
@@ -37,8 +34,10 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Forbidden: Coaches only.' }, { status: 403 });
         }
 
-        // 2. FETCH SESSIONS (Past 24 hours & Future)
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        // 2. FETCH SESSIONS (Today & Future)
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const startTimeFilter = todayStart.toISOString();
 
         // We need: Session Info + Registrations -> User Profile (Name)
         const { data: sessions, error: sessionError } = await supabaseAdmin
@@ -50,7 +49,7 @@ export async function GET(request: Request) {
                     profiles:user_id ( first_name, last_name, role )
                 )
             `)
-            .gte('start_time', twentyFourHoursAgo)
+            .gte('start_time', startTimeFilter)
             .order('start_time', { ascending: true });
 
         if (sessionError) {

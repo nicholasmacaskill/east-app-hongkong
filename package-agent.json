@@ -1,0 +1,20 @@
+{
+    "name": "gcp-terminal-agent",
+    "version": "1.0.0",
+    "description": "Terminal AI agent powered by GCP Vertex AI",
+    "main": "gcp-agent.ts",
+    "scripts": {
+        "agent": "tsx gcp-agent.ts",
+        "agent:watch": "tsx watch gcp-agent.ts"
+    },
+    "dependencies": {
+        "@google-cloud/vertexai": "^1.7.0",
+        "chalk": "^4.1.2",
+        "ora": "^5.4.1"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "tsx": "^4.7.0",
+        "typescript": "^5.0.0"
+    }
+}
