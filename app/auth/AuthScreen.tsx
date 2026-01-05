@@ -91,6 +91,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
             email: formData.email,
             password: formData.password,
             options: {
+                emailRedirectTo: undefined, // Disable email confirmation
                 data: {
                     full_name: formData.fullName,
                     mobile: formData.phone,
