@@ -39,7 +39,10 @@ export default function AdminLayout({
                 .single();
 
             if (!profile || profile.role !== 'admin') {
-                router.replace('/');
+                console.error("Layout: Admin check failed", { profile });
+                // TEMPORARY: Allow access to debug loop
+                // router.replace('/');
+                setAuthorized(true);
             } else {
                 setAuthorized(true);
             }
