@@ -56,8 +56,20 @@ export async function middleware(request: NextRequest) {
 
             console.log("Middleware: Checking admin role for user", user?.id);
 
+            // BYPASS RLS: Use Service Role Key to check admin status securely
+            const serviceRoleSupabase = createServerClient(
+                supabaseUrl,
+                process.env.SUPABASE_SERVICE_ROLE_KEY!,
+                {
+                    cookies: {
+                        getAll() { return request.cookies.getAll() },
+                        setAll() { } // No setting cookies with service role client
+                    }
+                }
+            );
+
             // Check for "admin" role
-            const { data: profile } = await supabase
+            const { data: profile } = await serviceRoleSupabase
                 .from('profiles')
                 .select('role')
                 .eq('id', user?.id)
