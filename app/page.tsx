@@ -196,12 +196,14 @@ function AppContent() {
     }
   }, [searchParams, router]);
 
-  // NEW: Auto-redirect admin (Top-level effect)
+  // REMOVED: Auto-redirect admin (Top-level effect) - caused loops
+  /*
   useEffect(() => {
     if (userProfile.role === 'admin') {
       router.push('/sys-admin');
     }
   }, [userProfile.role, router]);
+  */
 
   const handleSaveProfile = async (updatedData: UserProfileData) => {
     if (!currentUserId) return;
@@ -286,11 +288,36 @@ function AppContent() {
     );
   }
 
-  // AUTO-REDIRECT ADMINS TO PORTAL (UI ONLY)
+  // AUTO-REDIRECT ADMINS TO PORTAL (UI ONLY) - DISABLED, RESTORE MANUAL ENTRY
   if (userProfile.role === 'admin') {
     return (
-      <div className="bg-black min-h-screen text-white flex justify-center items-center">
-        <p className="text-gray-500 font-montserrat">Redirecting to admin portal...</p>
+      <div className="bg-black min-h-screen text-white flex flex-col justify-center items-center font-montserrat p-6 select-none cursor-default">
+        {/* Animated Background Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#28D160]/5 via-black to-black z-0 pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col items-center animate-fadeIn">
+          <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 text-white drop-shadow-2xl">
+            Admin <span className="text-[#28D160]">Access</span>
+          </h1>
+          <p className="text-gray-500 mb-12 text-center max-w-xs text-xs font-bold uppercase tracking-widest">
+            Welcome Administrator. Access the management portal below.
+          </p>
+
+          <button
+            onClick={() => router.push('/sys-admin')}
+            className="group relative bg-[#28D160] text-black font-black italic text-xl px-12 py-5 rounded-2xl uppercase tracking-widest hover:bg-white transition-all shadow-[0_0_30px_rgba(40,209,96,0.3)] hover:shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:-translate-y-1 active:translate-y-0.5 active:scale-95 duration-300"
+          >
+            Enter Portal
+            <div className="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="text-gray-600 hover:text-red-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-12 transition-colors hover:scale-105"
+          >
+            Log Out
+          </button>
+        </div>
       </div>
     );
   }
