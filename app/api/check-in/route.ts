@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, getRateLimitIdentifier } from '@/app/lib/rateLimit';
-import { supabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 
 
 
@@ -38,6 +38,7 @@ export async function POST(request: Request) {
         // 3. Record Check-in
         console.log(`[API] Processing Check-In for User: ${userId} at ${locationId}`);
 
+        const supabaseAdmin = getSupabaseAdmin();
         const { error } = await supabaseAdmin
             .from('check_ins')
             .insert({

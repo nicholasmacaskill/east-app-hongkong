@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 
 
 
@@ -24,6 +24,7 @@ export async function GET(request: Request) {
         }
 
         // Check Role
+        const supabaseAdmin = getSupabaseAdmin();
         const { data: profile } = await supabaseAdmin
             .from('profiles')
             .select('role')

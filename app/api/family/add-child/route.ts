@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 
 
 
@@ -25,6 +25,7 @@ export async function POST(request: Request) {
         // Actually, `inviteUserByEmail` creates a user and sends a link.
 
         // Attempt to create user
+        const supabaseAdmin = getSupabaseAdmin();
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: email,
             email_confirm: true, // Auto-confirm so they don't get blocked if email delivery fails in dev

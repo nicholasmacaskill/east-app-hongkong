@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/app/lib/supabase';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { sendEmail } from '@/app/lib/email'; // Assume you have this utility
 
 // **********************************************
@@ -7,7 +7,8 @@ import { sendEmail } from '@/app/lib/email'; // Assume you have this utility
 // **********************************************
 export async function GET() {
   // Fetch sessions that are in the future, ordered by time
-  const { data, error } = await supabase
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data, error } = await supabaseAdmin
     .from('sessions')
     .select('*')
     .gt('start_time', new Date().toISOString())
@@ -34,7 +35,8 @@ export async function POST(request: Request) {
 
   try {
     // 1. Fetch User Profile and Credits
-    const { data: profile, error: profileError } = await supabase
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('credits, contact_email, first_name')
       .eq('id', userId)
@@ -50,12 +52,12 @@ export async function POST(request: Request) {
     }
 
     // 3. Register the User (Insert into registrations table)
-    const { data: registration, error: regError } = await supabase
+    const { data: registration, error: regError } = await supabaseAdmin
       .from('registrations')
       .insert({ session_id: sessionId, user_id: userId })
       .select()
       .single();
-    
+
     if (regError || !registration) {
       // Handle scenario where user is already registered, or other DB failure
       return NextResponse.json({ error: regError?.message || 'Failed to register for session.' }, { status: 500 });
@@ -63,7 +65,7 @@ export async function POST(request: Request) {
 
     // 4. Deduct Credits (Update profiles table)
     const newCredits = profile.credits - COST_PER_SESSION;
-    const { error: creditError } = await supabase
+    const { error: creditError } = await supabaseAdmin
       .from('profiles')
       .update({ credits: newCredits })
       .eq('id', userId);
@@ -75,7 +77,7 @@ export async function POST(request: Request) {
     }
 
     // 5. Fetch Session Details for Email
-    const { data: session, error: sessionError } = await supabase
+    const { data: session, error: sessionError } = await supabaseAdmin
       .from('sessions')
       .select('title, start_time')
       .eq('id', sessionId)
@@ -96,7 +98,7 @@ export async function POST(request: Request) {
       });
       console.log(`Booking Confirmation Email sent to: ${profile.contact_email}`);
     }
-    
+
     // Final Success Response
     return NextResponse.json({ success: true, message: 'Session booked, credits deducted, and confirmation email sent.' });
 

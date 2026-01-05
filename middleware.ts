@@ -63,7 +63,7 @@ export async function middleware(request: NextRequest) {
     if (request.nextUrl.pathname.startsWith('/sys-admin')) {
         if (!user) {
             console.log("Middleware: No user found for /sys-admin request");
-            // return NextResponse.redirect(new URL('/', request.url));
+            return NextResponse.redirect(new URL('/', request.url));
         }
 
         console.log("Middleware: Checking admin role for user", user?.id);
@@ -77,7 +77,7 @@ export async function middleware(request: NextRequest) {
 
         if (!profile || profile.role !== 'admin') {
             console.log("Middleware: Access denied. Role is", profile?.role);
-            // return NextResponse.redirect(new URL('/', request.url));
+            return NextResponse.redirect(new URL('/', request.url));
         }
     }
 

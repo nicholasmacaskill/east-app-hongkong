@@ -3,22 +3,16 @@ import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from '@/app/lib/email';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 
 // 1. Setup Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+// 1. Setup Stripe
+// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!); (Lazy init below)
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 // 2. Setup Supabase Admin (Bypass RLS)
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false
-        }
-    }
-);
+// Initialize Admin Client lazily inside handler
+// const supabaseAdmin = createClient(...) -> Removed top-level call
 
 // 3. CONFIG: Map Price IDs to Credits & Tiers
 // ✅ FIX: This ensures Elite members get 3500 credits, not 1000.
@@ -36,6 +30,9 @@ export async function POST(request: Request) {
     // ✅ FIX: Await headers() before accessing properties (Required for Next.js 15/16)
     const headersList = await headers();
     const sig = headersList.get('stripe-signature')!;
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
 
     let event: Stripe.Event;
 
@@ -134,6 +131,7 @@ export async function POST(request: Request) {
             const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'gym' };
 
             // Find user by Stripe Customer ID
+            const supabaseAdmin = getSupabaseAdmin();
             const { data: profile } = await supabaseAdmin
                 .from('profiles')
                 .select('id')
@@ -175,6 +173,7 @@ export async function POST(request: Request) {
 async function updateProfile(userId: string, creditsToAdd: number, tier: string, customerId: string, subscriptionId: string) {
     // 1. Fetch current credits
     // This is needed to get the existing credit count before adding new ones
+    const supabaseAdmin = getSupabaseAdmin();
     const { data: profile } = await supabaseAdmin.from('profiles').select('credits').eq('id', userId).single();
     const currentCredits = profile?.credits || 0;
 
@@ -198,6 +197,7 @@ async function updateProfile(userId: string, creditsToAdd: number, tier: string,
 }
 
 async function addCreditsOnly(userId: string, creditsToAdd: number) {
+    const supabaseAdmin = getSupabaseAdmin();
     const { data: profile } = await supabaseAdmin.from('profiles').select('credits').eq('id', userId).single();
     const currentCredits = profile?.credits || 0;
 

@@ -1,6 +1,6 @@
 // app/api/cron/reminders/route.ts (OPTIMIZED)
 import { NextResponse } from 'next/server';
-import { supabase } from '@/app/lib/supabase';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { sendEmail } from '@/app/lib/email';
 
 // This route checks for sessions starting in ~1 hour and emails attendees
@@ -10,10 +10,10 @@ export async function GET() {
   // Set the upper boundary to 61 minutes from now
   const oneHourFromNow = new Date(now.getTime() + 61 * 60 * 1000);
 
-  // 1. Find ALL relevant registrations in one efficient query:
   //    - Starts by checking the 'registrations' table (only active users are there).
   //    - Selects the linked session and user profile data.
-  const { data: registrations, error: fetchError } = await supabase
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data: registrations, error: fetchError } = await supabaseAdmin
     .from('registrations')
     .select(`
         session:session_id (id, title, start_time),

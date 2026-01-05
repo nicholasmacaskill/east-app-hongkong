@@ -7,7 +7,7 @@ import { Home, User, QrCode, Activity, MessageSquare, Plus } from 'lucide-react'
 // Screens
 import HomeScreen from '@/app/components/screens/HomeScreen';
 import ScheduleScreen from '@/app/components/screens/ScheduleScreen';
-import CommunityScreen from '@/app/components/CommunityScreen';
+// import CommunityScreen from '@/app/components/CommunityScreen';
 import PlayerProfile from '@/app/components/screens/PlayerProfile';
 import CoachProfile from '@/app/components/screens/CoachProfile';
 import ParentProfile from '@/app/components/screens/ParentProfile';
@@ -349,7 +349,7 @@ function AppContent() {
             />
           )}
 
-          {activeTab === 'community' && <CommunityScreen key={refreshKey} currentUserId={currentUserId} />}
+          {/* {activeTab === 'community' && <CommunityScreen key={refreshKey} currentUserId={currentUserId} />} */}
 
           {activeTab === 'qr' && <QRScreen credits={userProfile.credits || 0} currentUserId={currentUserId} />}
         </main>

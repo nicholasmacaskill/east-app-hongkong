@@ -66,6 +66,30 @@ USING (
 -- This is handled by GRANT statements, not RLS
 
 -- ============================================
+-- SECURE COLUMN PRIVILEGES (CRITICAL)
+-- ============================================
+-- Prevent authenticated users from updating sensitive columns like 'credits'
+REVOKE UPDATE ON public.profiles FROM authenticated;
+
+GRANT UPDATE (
+  username, 
+  first_name, 
+  last_name, 
+  mobile, 
+  contact_email,
+  avatar_url, 
+  bio, 
+  gallery_images, 
+  schedule_photo_url,
+  intro_video_url, 
+  preferences, 
+  team, 
+  position
+) ON public.profiles TO authenticated;
+
+-- ============================================
+
+-- ============================================
 -- REGISTRATIONS TABLE POLICIES
 -- ============================================
 

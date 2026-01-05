@@ -1,20 +1,40 @@
 import { createClient } from '@supabase/supabase-js';
 
-// ⚠️ TEMPORARY: Hardcoding local keys to force connection
-// These come from your terminal output earlier
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Lazy initialization to prevent build-time crashes
+let client: ReturnType<typeof createClient> | null = null;
 
-console.log('[SUPABASE INIT] URL:', supabaseUrl ? 'Found' : 'Missing');
-console.log('[SUPABASE INIT] URL VALUE (partial):', supabaseUrl?.substring(0, 8) + '...'); // Check protocol
-console.log('[SUPABASE INIT] KEY:', supabaseKey ? 'Found' : 'Missing');
+const getSupabase = () => {
+    if (client) return client;
 
-let client;
-try {
-    client = createClient(supabaseUrl, supabaseKey);
-} catch (e: any) {
-    console.error('❌ Supabase Client Init Failed:', e.message);
-    throw e;
-}
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabase = client;
+    if (!supabaseUrl || !supabaseKey) {
+        // Return a dummy client or throw ONLY when used, not on import
+        // For now, we'll throw if actually called to ensure we don't hide runtime errors
+        // But throwing here is safer than top-level.
+        // Better yet, during build time (if vars missing), we return a dummy or null, 
+        // but Typescript expects a client.
+        // We'll throw relevant error.
+
+        // Check if we are in a build/node environment where we might just need to pass
+        if (typeof window === 'undefined' && (!supabaseUrl || !supabaseKey)) {
+            console.warn('⚠️ Supabase Env Vars missing. Client will fail if used.');
+        }
+
+        // If we really need keys:
+        if (!supabaseUrl) throw new Error('Supabase Url Missing');
+        if (!supabaseKey) throw new Error('Supabase Key Missing');
+    }
+
+    client = createClient(supabaseUrl!, supabaseKey!);
+    return client;
+};
+
+// Export a Proxy that initializes on first property access
+export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+    get: (_target, prop) => {
+        const instance = getSupabase();
+        return (instance as any)[prop];
+    }
+});

@@ -10,8 +10,17 @@ ALTER TABLE player_relationships ENABLE ROW LEVEL SECURITY;
 -- Everyone can read stats/names (needed for leaderboards/community)
 CREATE POLICY "Public Profiles Access" ON profiles FOR SELECT USING (true);
 
--- Users can update their own profile
+-- Users can update their own profile (COLUMN RESTRICTED)
 CREATE POLICY "Users allow update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+
+-- CRITICAL: Prevent updating sensitive columns (credits, role)
+-- This must be run to secure the table:
+REVOKE UPDATE ON profiles FROM authenticated;
+GRANT UPDATE (
+  username, first_name, last_name, mobile, contact_email,
+  avatar_url, bio, gallery_images, schedule_photo_url,
+  intro_video_url, preferences, team, position
+) ON profiles TO authenticated;
 
 -- 3. Registrations
 -- Users can see their own bookings

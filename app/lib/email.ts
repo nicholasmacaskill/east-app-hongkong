@@ -2,7 +2,14 @@
 import { Resend } from 'resend';
 
 // Initialize Resend with the key from env.local
-const resend = new Resend(process.env.RESEND_API_KEY);
+// const resend = new Resend(process.env.RESEND_API_KEY); (Lazy init below)
+
+// Helper for Base URL to prevent malformed links
+export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://MISSING-BASE-URL';
+
+if (!process.env.NEXT_PUBLIC_BASE_URL) {
+  console.warn('⚠️ NEXT_PUBLIC_BASE_URL is missing. Email links may be broken.');
+}
 
 interface EmailParams {
   to: string;
@@ -24,6 +31,9 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
       console.log(`Subject: ${subject}`);
       console.log(`HTML Preview: ${html.substring(0, 100)}...`);
     }
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
 
     const { data, error } = await resend.emails.send({
       from: 'EAST Training <onboarding@resend.dev>',

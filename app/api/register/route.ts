@@ -1,12 +1,12 @@
 // app/api/register/route.ts (MODIFIED)
 
 import { NextResponse } from 'next/server';
-import { supabase } from '@/app/lib/supabase';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 // REMOVE: import { Resend } from 'resend';
 // REMOVE: const resend = new Resend(process.env.RESEND_API_KEY);
 
 // IMPORT the Inngest client to send the event
-import { inngest } from '@/app/inngest/client'; 
+import { inngest } from '@/app/inngest/client';
 
 const CLASS_CAPACITY = 12;
 const COST_IN_CREDITS = 1;
@@ -26,7 +26,8 @@ export async function POST(request: Request) {
     // ... (Your existing code) ...
 
     // 2. Check & Deduct Credits (Atomic Transaction)
-    const { data: profile, error: profileError } = await supabase
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('credits, contact_email, first_name')
       .eq('id', userId)
@@ -35,11 +36,11 @@ export async function POST(request: Request) {
     if (profileError || !profile) return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
 
     if (profile.credits < COST_IN_CREDITS) {
-      return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 }); 
+      return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 });
     }
 
     // 3. Register the User
-    const { error: registerError } = await supabase
+    const { error: registerError } = await supabaseAdmin
       .from('registrations')
       .insert([{ user_id: userId, session_id: sessionId }]);
 
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
 
     // 4. Deduct the Credit (Keep this synchronous for atomicity)
     const newCredits = profile.credits - COST_IN_CREDITS; // Calculate new credit amount
-    const { error: deductError } = await supabase
+    const { error: deductError } = await supabaseAdmin
       .from('profiles')
       .update({ credits: newCredits }) // Use the new credit amount
       .eq('id', userId);

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { rateLimit, getRateLimitIdentifier } from '@/app/lib/rateLimit';
-import { supabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 
 
 
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
         // 3. Atomic Deduction via RPC
         console.log(`[API] Processing QR Payment: ${amount} credits for ${userId} (${reason})`);
 
+        const supabaseAdmin = getSupabaseAdmin();
         const { data, error: rpcError } = await supabaseAdmin.rpc('deduct_credits', {
             p_user_id: userId,
             p_amount: amount,

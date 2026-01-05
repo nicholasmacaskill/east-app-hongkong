@@ -2,11 +2,12 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!); (Lazy init below)
 
 export async function POST(request: Request) {
   try {
     const { priceId, userId, userEmail, successUrl, cancelUrl } = await request.json();
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
     console.log("---- CHECKOUT REQUEST RECEIVED ----");
     console.log("Price ID:", priceId);

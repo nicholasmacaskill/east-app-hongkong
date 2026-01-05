@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 
 export async function POST(request: Request) {
     try {
@@ -15,6 +15,7 @@ export async function POST(request: Request) {
         // Use shared admin client
 
         // 1. Create Auth User
+        const supabaseAdmin = getSupabaseAdmin();
         const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
             email: email,
             password: password,

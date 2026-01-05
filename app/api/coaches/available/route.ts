@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 
 
 
@@ -17,6 +17,7 @@ export async function GET(request: Request) {
 
     try {
         // Query coaches who have availability covering this range
+        const supabaseAdmin = getSupabaseAdmin();
         const { data: availability, error } = await supabaseAdmin
             .from('availability')
             .select(`

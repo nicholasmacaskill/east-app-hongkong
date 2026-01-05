@@ -1,3 +1,6 @@
+-- FORCE SEARCH PATH
+-- Fixes ERROR: 3F000: no schema has been selected to create in
+SET search_path = public, extensions;
 
 
 
@@ -903,3 +906,149 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
+-- Create a table to link Parents (users) to Children (profiles)
+-- This allows a parent to manage multiple player profiles
+CREATE TABLE IF NOT EXISTS player_relationships (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  parent_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  child_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  relationship_type VARCHAR(50) DEFAULT 'parent_child', -- scalable for guardians, etc.
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(parent_id, child_id)
+);
+
+-- Enable RLS
+ALTER TABLE player_relationships ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Parents can see their own relationships
+CREATE POLICY "Parents can view their relationships"
+  ON player_relationships FOR SELECT
+  USING (auth.uid() = parent_id);
+
+-- Policy: Parents can insert relationships for themselves
+CREATE POLICY "Parents can insert relationships"
+  ON player_relationships FOR INSERT
+  WITH CHECK (auth.uid() = parent_id);
+  
+-- Policy: Parents can delete their relationships
+CREATE POLICY "Parents can delete relationships"
+  ON player_relationships FOR DELETE
+  USING (auth.uid() = parent_id);
+
+-- Add column to profiles to distinguish Real Users vs Managed Children
+-- If 'is_managed' is true, they might not have a login.
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_managed BOOLEAN DEFAULT false;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES auth.users(id);
+
+-- Ensure players_stats has all necessary fields (from previous review it seemed okay, but ensuring constraints)
+-- Linking to the specific game or session might be useful later, but for now season/total is key.
+-- Add preferences column to profiles table
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}'::jsonb;
+-- Create Golf Stats Table
+CREATE TABLE IF NOT EXISTS public.golf_stats (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    player_id UUID REFERENCES public.profiles(id) NOT NULL UNIQUE,
+    handicap NUMERIC(4, 1) DEFAULT 0,
+    average_score INTEGER DEFAULT 0,
+    rounds_played INTEGER DEFAULT 0,
+    best_score INTEGER DEFAULT 0,
+    driver_distance INTEGER DEFAULT 0,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE public.golf_stats ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+
+-- Public Read
+CREATE POLICY "Public can view golf stats"
+ON public.golf_stats FOR SELECT
+USING (true);
+
+-- User Update Own Stats
+CREATE POLICY "Users can update own golf stats"
+ON public.golf_stats FOR UPDATE
+USING (auth.uid() = player_id);
+
+-- User Insert Own Stats
+CREATE POLICY "Users can insert own golf stats"
+ON public.golf_stats FOR INSERT
+WITH CHECK (auth.uid() = player_id);
+
+-- Grant Access
+GRANT SELECT, INSERT, UPDATE ON public.golf_stats TO authenticated;
+GRANT SELECT ON public.golf_stats TO anon;
+-- RLS POLICIES (Production Security)
+-- Run this on Production to Secure the App
+
+-- 1. Enable RLS
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE registrations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE player_relationships ENABLE ROW LEVEL SECURITY;
+
+-- 2. Profiles Policies
+-- Everyone can read stats/names (needed for leaderboards/community)
+CREATE POLICY "Public Profiles Access" ON profiles FOR SELECT USING (true);
+
+-- Users can update their own profile (COLUMN RESTRICTED)
+CREATE POLICY "Users allow update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+
+-- CRITICAL: Prevent updating sensitive columns (credits, role)
+-- This must be run to secure the table:
+REVOKE UPDATE ON profiles FROM authenticated;
+GRANT UPDATE (
+  username, first_name, last_name, mobile, contact_email,
+  avatar_url, bio, gallery_images, schedule_photo_url,
+  intro_video_url, preferences, team, position
+) ON profiles TO authenticated;
+
+-- 3. Registrations
+-- Users can see their own bookings
+CREATE POLICY "View Own Bookings" ON registrations FOR SELECT USING (auth.uid() = user_id OR auth.uid() = payer_id);
+
+-- 4. Relationships (Family)
+-- Parents can see their children
+CREATE POLICY "View Relationships" ON player_relationships FOR SELECT USING (auth.uid() = parent_id OR auth.uid() = child_id);
+
+-- 5. Admin Override (Optional, if using Service Role this isn't strictly needed but good for Admin User Login)
+-- If we have an 'admin' role in auth.users schema or check profile role
+-- CREATE POLICY "Admin All Access" ON profiles FOR ALL USING ( (select role from profiles where id = auth.uid()) = 'admin' );
+-- FORCE CLEANUP
+-- Explicitly drop all found policies by exact name
+
+DROP POLICY IF EXISTS "Public Profiles Access" ON profiles;
+DROP POLICY IF EXISTS "Users allow update own profile" ON profiles;
+DROP POLICY IF EXISTS "Users allow insert own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
+DROP POLICY IF EXISTS "Admins can update all profiles" ON profiles;
+
+-- Re-apply ONLY SAFE policies
+-- 1. READ: Public (No recursion)
+CREATE POLICY "Public Profiles Access" ON profiles FOR SELECT USING (true);
+
+-- 2. UPDATE: Self Only (No recursion)
+CREATE POLICY "Users allow update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+
+-- 3. INSERT: Self Only (No recursion)
+CREATE POLICY "Users allow insert own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- No Admin access via RLS directly to avoid recursion
+-- Admins should use service role or a separate 'admin_users' table if needed later
+-- STORAGE BUCKET SETUP
+-- Automatically create the 'avatars' bucket if it doesn't exist
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow Public Access to Avatars
+CREATE POLICY "Public Avatars Access"
+ON storage.objects FOR SELECT
+USING ( bucket_id = 'avatars' );
+
+-- Allow Authenticated Uploads
+CREATE POLICY "Authenticated Avatar Upload"
+ON storage.objects FOR INSERT
+WITH CHECK ( bucket_id = 'avatars' AND auth.role() = 'authenticated' );

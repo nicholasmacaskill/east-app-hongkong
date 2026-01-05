@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { sendEmail } from '@/app/lib/email';
 
 export async function POST(request: Request) {
@@ -13,6 +13,7 @@ export async function POST(request: Request) {
         console.log(`[RESET API] Requesting link for ${email}`);
 
         // 1. Generate Link (OTP) via Supabase Admin
+        const supabaseAdmin = getSupabaseAdmin();
         const { data, error } = await supabaseAdmin.auth.admin.generateLink({
             type: 'recovery',
             email,

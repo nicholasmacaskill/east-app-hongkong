@@ -1,6 +1,6 @@
-// app/api/debug/route.ts
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 
 export async function GET() {
   // 1. Check if Environment Variables are loaded
@@ -16,20 +16,17 @@ export async function GET() {
 
   // 2. Test Database Admin Connection
   try {
-    const supabaseAdmin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-    
+    const supabaseAdmin = getSupabaseAdmin();
+
     // Try to count profiles (simple read)
     const { count, error } = await supabaseAdmin
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+      .from('profiles')
+      .select('*', { count: 'exact', head: true });
 
     if (error) {
-        status.database = `❌ Error: ${error.message}`;
+      status.database = `❌ Error: ${error.message}`;
     } else {
-        status.database = `✅ Connected! (Found ${count} profiles)`;
+      status.database = `✅ Connected! (Found ${count} profiles)`;
     }
   } catch (err: any) {
     status.database = `❌ CRITICAL FAIL: ${err.message}`;

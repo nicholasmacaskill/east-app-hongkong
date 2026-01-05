@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import { supabase } from '@/app/lib/supabase';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 
 export async function GET(request: Request) {
     const apiKey = process.env.RESEND_API_KEY;
@@ -29,7 +29,8 @@ export async function GET(request: Request) {
 
         // 2. Check a user profile to see if they have an email
         // taking a likely user ID from run_sql.ts or just listing first 1
-        const { data: profiles, error: dbError } = await supabase
+        const supabaseAdmin = getSupabaseAdmin();
+        const { data: profiles, error: dbError } = await supabaseAdmin
             .from('profiles')
             .select('*')
             .limit(1);

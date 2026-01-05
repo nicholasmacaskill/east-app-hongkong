@@ -11,6 +11,7 @@ const requiredEnvVars = [
     'NEXT_PUBLIC_STRIPE_PRICE_YEARLY',
     'NEXT_PUBLIC_STRIPE_PRICE_CREDIT',
     'NEXT_PUBLIC_STRIPE_PRICE_TOPUP',
+    'NEXT_PUBLIC_BASE_URL',
 ] as const;
 
 export function validateEnvironment(): void {
@@ -32,6 +33,7 @@ export function validateEnvironment(): void {
 }
 
 // Call this in your app initialization
-if (process.env.NODE_ENV === 'production') {
-    validateEnvironment();
-}
+// Call this in your app initialization
+// if (process.env.NODE_ENV === 'production') {
+//     validateEnvironment();
+// }

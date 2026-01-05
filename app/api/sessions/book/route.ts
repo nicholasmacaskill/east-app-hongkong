@@ -1,14 +1,15 @@
 // app/api/sessions/book/route.ts (RPC VERSION)
 
 import { NextResponse } from 'next/server';
-import { supabase } from '@/app/lib/supabase';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { sendEmail } from '@/app/lib/email';
 
 // **********************************************
 // 1. GET - Fetches the list of all future sessions
 // **********************************************
 export async function GET() {
-  const { data, error } = await supabase
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data, error } = await supabaseAdmin
     .from('sessions')
     .select('*')
     .gt('start_time', new Date().toISOString())
@@ -56,7 +57,8 @@ export async function POST(request: Request) {
 
   try {
     // 1. Fetch Session Info (for time and type)
-    const { data: mainSession, error: fetchErr } = await supabase
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data: mainSession, error: fetchErr } = await supabaseAdmin
       .from('sessions')
       .select('*')
       .eq('id', sessionId)
@@ -69,7 +71,7 @@ export async function POST(request: Request) {
     // 2. Handle Coach Booking (if selected)
     let coachSessionId: number | null = null;
     if (coachId) {
-      const { data: coachProfile } = await supabase
+      const { data: coachProfile } = await supabaseAdmin
         .from('profiles')
         .select('*')
         .eq('id', coachId)
@@ -79,7 +81,7 @@ export async function POST(request: Request) {
         // Create a temporary PRIVATE session for this coach
         // Ideally we'd check for existing or use a different model, 
         // but this fits the current 'sessions' based booking RPC.
-        const { data: newSess, error: createSessErr } = await supabase
+        const { data: newSess, error: createSessErr } = await supabaseAdmin
           .from('sessions')
           .insert({
             title: `Private with ${coachProfile.first_name}`,
@@ -105,7 +107,7 @@ export async function POST(request: Request) {
 
     // 3. Iterate and book each target for the MAIN session
     for (const targetId of targets) {
-      const { data: result, error: rpcError } = await supabase.rpc('book_session_with_credits', {
+      const { data: result, error: rpcError } = await supabaseAdmin.rpc('book_session_with_credits', {
         p_user_id: userId,
         p_session_id: sessionId,
         p_attendee_id: targetId
@@ -121,7 +123,7 @@ export async function POST(request: Request) {
 
         // 4. Also book the COACH SESSION for this same target if it was created
         if (coachSessionId) {
-          const { data: coachResult, error: coachRpcError } = await supabase.rpc('book_session_with_credits', {
+          const { data: coachResult, error: coachRpcError } = await supabaseAdmin.rpc('book_session_with_credits', {
             p_user_id: userId,
             p_session_id: coachSessionId,
             p_attendee_id: targetId

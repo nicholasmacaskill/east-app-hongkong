@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/app/lib/supabase';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -10,7 +10,8 @@ export async function GET(request: Request) {
   const familyIds = [userId];
 
   // A. Check Relationships Table
-  const { data: rels } = await supabase
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data: rels } = await supabaseAdmin
     .from('player_relationships')
     .select('child_id')
     .eq('parent_id', userId);
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
   }
 
   // B. Check Profiles Table (Legacy/Direct Link)
-  const { data: profileChildren } = await supabase
+  const { data: profileChildren } = await supabaseAdmin
     .from('profiles')
     .select('id')
     .eq('parent_id', userId);
@@ -31,7 +32,7 @@ export async function GET(request: Request) {
     });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('registrations')
     .select(`
       session_id,

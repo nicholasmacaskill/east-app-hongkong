@@ -1,7 +1,7 @@
 // app/api/sessions/cancel/route.ts (DYNAMIC COST)
 
 import { NextResponse } from 'next/server';
-import { supabase } from '@/app/lib/supabase';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { sendEmail } from '@/app/lib/email';
 
 // **********************************************
@@ -24,7 +24,8 @@ export async function DELETE(request: Request) {
     // 2. Identifying the correct Payer (Parent vs Child)
     // 3. Calculating Refund (Dynamic Cost)
     // 4. Updating Credits & Deleting Registration
-    const { data: result, error } = await supabase.rpc('cancel_session_and_refund', {
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data: result, error } = await supabaseAdmin.rpc('cancel_session_and_refund', {
       p_attendee_id: userId,
       p_session_id: sessionId
     });
@@ -48,8 +49,9 @@ export async function DELETE(request: Request) {
     if (result.success) {
       (async () => {
         try {
-          const { data: profile } = await supabase.from('profiles').select('contact_email, first_name').eq('id', userId).single();
-          const { data: session } = await supabase.from('sessions').select('title, start_time').eq('id', sessionId).single();
+          const supabaseAdmin = getSupabaseAdmin();
+          const { data: profile } = await supabaseAdmin.from('profiles').select('contact_email, first_name').eq('id', userId).single();
+          const { data: session } = await supabaseAdmin.from('sessions').select('title, start_time').eq('id', sessionId).single();
           if (profile?.contact_email && session) {
             await sendEmail({
               to: profile.contact_email,
