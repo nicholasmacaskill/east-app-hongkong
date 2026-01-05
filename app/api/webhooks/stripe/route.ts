@@ -22,11 +22,13 @@ const supabaseAdmin = createClient(
 
 // 3. CONFIG: Map Price IDs to Credits & Tiers
 // ✅ FIX: This ensures Elite members get 3500 credits, not 1000.
-const PLAN_DETAILS: Record<string, { credits: number; tier: string }> = {
-    [process.env.NEXT_PUBLIC_STRIPE_PRICE_GYM!]: { credits: 1000, tier: 'gym' },
-    [process.env.NEXT_PUBLIC_STRIPE_PRICE_ALL!]: { credits: 2000, tier: 'all' },
-    [process.env.NEXT_PUBLIC_STRIPE_PRICE_ELITE!]: { credits: 3500, tier: 'elite' },
-};
+const PLAN_DETAILS: Record<string, { credits: number; tier: string }> = {};
+if (process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY) {
+    PLAN_DETAILS[process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY] = { credits: 3500, tier: 'elite' };
+}
+if (process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY) {
+    PLAN_DETAILS[process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY] = { credits: 3500, tier: 'elite' };
+}
 
 export async function POST(request: Request) {
     const body = await request.text();
@@ -87,7 +89,7 @@ export async function POST(request: Request) {
             const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
             const priceId = lineItems.data[0]?.price?.id;
 
-            const TOPUP_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SfcDS12ap1SCxToMWo5Lz3m';
+            const TOPUP_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SkINl12ap1SCxToSkb1jrWV';
             console.log(`[WEBHOOK] Check TopUp vs Payment. Received: ${priceId}, Expected: ${TOPUP_PRICE_ID}`);
 
             if (priceId === TOPUP_PRICE_ID) {

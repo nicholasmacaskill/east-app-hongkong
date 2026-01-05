@@ -16,7 +16,7 @@ export default function PlayerManagement() {
         first_name: '',
         last_name: '',
         email: '',
-        password: 'password123', // Default password suggestion
+        password: '',
         team: '',
         position: ''
     });
@@ -35,15 +35,19 @@ export default function PlayerManagement() {
             .select('*')
             .order('created_at', { ascending: false });
 
-        if (data) {
+        if (error) {
+            console.error('Error fetching players:', error);
+            alert('Failed to load players: ' + error.message);
+        } else if (data) {
             setPlayers(data);
         }
         setLoading(false);
     };
 
     const handleAddPlayer = async () => {
-        if (!newPlayer.first_name || !newPlayer.last_name || !newPlayer.email || !newPlayer.password) {
-            return alert("Please fill required fields (Name, Email, Password)");
+        if (!newPlayer.email || !newPlayer.password || !newPlayer.first_name || !newPlayer.last_name) {
+            alert('Please fill in all required fields');
+            return;
         }
 
         try {
@@ -55,7 +59,8 @@ export default function PlayerManagement() {
                     lastName: newPlayer.last_name,
                     email: newPlayer.email,
                     password: newPlayer.password,
-                    team: newPlayer.team
+                    team: newPlayer.team,
+                    position: newPlayer.position
                 })
             });
 
@@ -83,8 +88,8 @@ export default function PlayerManagement() {
     };
 
     const filteredPlayers = players.filter(p =>
-    (p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.surname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    ((p.first_name || p.name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.last_name || p.surname)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.team?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
@@ -191,6 +196,24 @@ export default function PlayerManagement() {
                                 />
                             </div>
                             <div>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Team</label>
+                                <input
+                                    value={newPlayer.team}
+                                    onChange={e => setNewPlayer({ ...newPlayer, team: e.target.value })}
+                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                    placeholder="e.g. U12 Elite"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Position</label>
+                                <input
+                                    value={newPlayer.position}
+                                    onChange={e => setNewPlayer({ ...newPlayer, position: e.target.value })}
+                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                    placeholder="e.g. Center, Defense"
+                                />
+                            </div>
+                            <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase">Password</label>
                                 <input
                                     value={newPlayer.password}
@@ -200,15 +223,6 @@ export default function PlayerManagement() {
                                 />
                             </div>
 
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Team</label>
-                                <input
-                                    value={newPlayer.team}
-                                    onChange={e => setNewPlayer({ ...newPlayer, team: e.target.value })}
-                                    placeholder="e.g. Rhinos"
-                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
-                                />
-                            </div>
                             <div className="flex gap-2 mt-4">
                                 <button onClick={handleAddPlayer} className="flex-1 bg-[#28D160] text-black font-bold py-2 rounded uppercase text-xs hover:bg-white transition-colors">Create Account</button>
                                 <button onClick={() => setShowAddForm(false)} className="flex-1 bg-white/10 text-white font-bold py-2 rounded uppercase text-xs hover:bg-white/20 transition-colors">Cancel</button>
@@ -250,7 +264,9 @@ export default function PlayerManagement() {
 
                                     <div className="flex flex-col min-w-0">
                                         <div className="flex items-start justify-between">
-                                            <h3 className="font-bold text-white truncate pr-2">{player.name} {player.surname}</h3>
+                                            <h3 className="font-bold text-white truncate pr-2">
+                                                {player.first_name || player.name} {player.last_name || player.surname}
+                                            </h3>
                                             <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-gray-300 uppercase shrink-0">
                                                 {player.team || 'No Team'}
                                             </span>

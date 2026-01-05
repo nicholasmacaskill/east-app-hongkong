@@ -1,6 +1,21 @@
 import React from 'react';
-import { Shield } from 'lucide-react';
+import { Shield, Newspaper, QrCode } from 'lucide-react';
+import Link from 'next/link';
 import AdminLogoutButton from '../components/AdminLogoutButton';
+
+// Helper Component for Sidebar Links
+const AdminNavLink = ({ href, icon: Icon, label }: { href: string, icon: any, label: string }) => {
+    // Only use client-side hooks if we convert layout to client, but simpler to just use Link for now or make it client
+    // Since we need active state logic, let's assume we want this.
+    // However, layout.tsx is usually server component. Let's make a client wrapper or just simple links.
+    // For simplicity/speed in MVP, we'll just style it simply.
+    return (
+        <Link href={href} className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors text-xs font-bold uppercase tracking-wider">
+            <Icon size={16} />
+            {label}
+        </Link>
+    );
+};
 
 export default function AdminLayout({
     children,
@@ -18,9 +33,10 @@ export default function AdminLayout({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <div className="text-right hidden sm:block">
-                            <p className="text-xs font-bold text-gray-400 uppercase">Management Console</p>
+                    <div className="flex items-center gap-6">
+                        <div className="hidden sm:flex items-center gap-8 mr-4 border-r border-white/10 pr-8">
+                            <AdminNavLink href="/sys-admin/qr" icon={QrCode} label="QR Codes" />
+                            <AdminNavLink href="/sys-admin/news" icon={Newspaper} label="News" />
                         </div>
                         <AdminLogoutButton />
                     </div>

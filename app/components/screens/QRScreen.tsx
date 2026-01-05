@@ -13,7 +13,13 @@ export default function QRScreen({ credits, currentUserId }: { credits: number, 
     setIsLoading(true);
 
     try {
-      const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SfcDS12ap1SCxToMWo5Lz3m';
+      const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP;
+
+      if (!priceId) {
+        alert("Configuration Error: Missing Top Up Price ID. Please check .env.local.");
+        setIsLoading(false);
+        return;
+      }
 
       // Fetch user email
       const { data: profile } = await supabase.from('profiles').select('contact_email').eq('id', currentUserId).single();

@@ -90,28 +90,40 @@ $$;
 ALTER FUNCTION "public"."book_session_with_credits"("p_user_id" "uuid", "p_session_id" bigint, "p_attendee_id" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."cancel_session_and_refund"("p_user_id" "uuid", "p_session_id" bigint) RETURNS json
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    AS $$
+create or replace function cancel_session_and_refund(
+  p_attendee_id uuid,
+  p_session_id bigint
+)
+returns json
+language plpgsql
+security definer
+as $$
 declare
   v_credit_cost int;
-  v_registration_exists bool;
+  v_payer_id uuid;
 begin
-  select exists(select 1 from registrations where user_id = p_user_id and session_id = p_session_id) into v_registration_exists;
+  -- Check registration and get Payer
+  SELECT payer_id INTO v_payer_id 
+  FROM registrations 
+  WHERE user_id = p_attendee_id AND session_id = p_session_id;
 
-  if not v_registration_exists then
+  if not found then
     return json_build_object('success', false, 'message', 'Booking not found.');
   end if;
+
+  -- Default payer to attendee if null
+  v_payer_id := COALESCE(v_payer_id, p_attendee_id);
 
   select credit_cost into v_credit_cost from sessions where id = p_session_id;
 
   if v_credit_cost is null then
-    delete from registrations where user_id = p_user_id and session_id = p_session_id;
+    delete from registrations where user_id = p_attendee_id and session_id = p_session_id;
     return json_build_object('success', true, 'message', 'Cancellation confirmed.');
   end if;
 
-  update profiles set credits = credits + v_credit_cost where id = p_user_id;
-  delete from registrations where user_id = p_user_id and session_id = p_session_id;
+  -- Refund PAYER
+  update profiles set credits = credits + v_credit_cost where id = v_payer_id;
+  delete from registrations where user_id = p_attendee_id and session_id = p_session_id;
 
   return json_build_object('success', true, 'message', 'Cancellation successful. Credits refunded.', 'refund_amount', v_credit_cost);
 end;
@@ -308,7 +320,10 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "role" "text" DEFAULT 'player'::"text",
     "parent_id" "uuid",
     "intro_video_url" "text",
-    "preferences" "jsonb" DEFAULT '{}'::"jsonb"
+    "preferences" "jsonb" DEFAULT '{}'::"jsonb",
+    "team" "text",
+    "position" "text",
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
 

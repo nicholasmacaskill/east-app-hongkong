@@ -12,6 +12,7 @@ import PlayerProfile from '@/app/components/screens/PlayerProfile';
 import CoachProfile from '@/app/components/screens/CoachProfile';
 import ParentProfile from '@/app/components/screens/ParentProfile';
 import QRScreen from '@/app/components/screens/QRScreen';
+import CoachDashboard from '@/app/components/screens/CoachDashboard'; // NEW DASHBOARD
 import AuthScreen from '@/app/auth/AuthScreen';
 import LandingScreen from '@/app/components/screens/LandingScreen';
 import BottomNav from '@/app/components/BottomNav';
@@ -91,11 +92,10 @@ function AppContent() {
 
           if (!existingProfile) {
             // Wait / Retry logic handled by UI loading state or subsequent fetch
-            console.log("Profile not found yet. Waiting for Trigger...");
           }
 
           // C. FETCH REAL PROFILE DATA
-          const { data: profileData } = await supabase
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', user.id)
@@ -124,7 +124,6 @@ function AppContent() {
             // Fallback: Use Metadata if Profile is missing (406 or pending trigger)
             const metadataRole = user.user_metadata?.role as UserRole;
             if (metadataRole) {
-              console.log("Using Metadata Fallback Role:", metadataRole);
               setUserProfile(prev => ({
                 ...prev,
                 email: user.email || '',
@@ -137,6 +136,7 @@ function AppContent() {
           // D. FETCH BOOKINGS (SAFER VERSION)
           try {
             const res = await fetch(`/api/my-schedule?userId=${user.id}`);
+
 
             if (res.ok) {
               const contentType = res.headers.get("content-type");
@@ -266,6 +266,18 @@ function AppContent() {
     await supabase.auth.signOut();
     window.location.reload();
   };
+
+  // ----------------------------------------------------
+  // COACH VIEW (Redirect to Master Dashboard)
+  // ----------------------------------------------------
+  if (userProfile.role === 'coach') {
+    return (
+      <CoachDashboard
+        currentUserId={currentUserId}
+        userName={userProfile.first_name || 'Coach'}
+      />
+    );
+  }
 
   if (userProfile.role === 'admin') {
     return (

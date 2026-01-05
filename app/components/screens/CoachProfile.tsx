@@ -535,7 +535,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                     <ClassModal
                         sessions={[selectedSession]}
                         currentUserId={currentUserId || null}
-                        bookedSessionIds={bookedSessionIds}
+                        bookedSessions={bookedSessionIds.map(id => ({ id } as Session))}
                         onClose={() => setSelectedSession(null)}
                         onScheduleChange={() => setRefreshKey(prev => prev + 1)}
                     />

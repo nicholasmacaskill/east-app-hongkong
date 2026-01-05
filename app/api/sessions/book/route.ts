@@ -35,6 +35,9 @@ interface BookingRequest {
 export async function POST(request: Request) {
   const { sessionId, userId, attendeeId, attendeeIds } = await request.json() as BookingRequest;
 
+  // SECURITY NOTE: In production, verify that 'userId' matches the authenticated user token.
+  // Currently, this blindly trusts the client-provided userId.
+
   if (!sessionId || !userId) {
     return NextResponse.json({ error: 'Missing sessionId or userId' }, { status: 400 });
   }

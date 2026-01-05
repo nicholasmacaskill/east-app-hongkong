@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     }
 
     // Determine mode based on Price ID (Top Up is one-time payment)
-    const TOPUP_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SfcDS12ap1SCxToMWo5Lz3m';
+    const TOPUP_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SkINl12ap1SCxToSkb1jrWV';
     const isTopUp = priceId === TOPUP_PRICE_ID;
     const mode = isTopUp ? 'payment' : 'subscription';
 

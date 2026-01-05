@@ -324,9 +324,9 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
                 <SettingsMenuItem icon={CreditCard} label="Membership" onClick={() => router.push('/membership')} />
                 <SettingsMenuItem
                     icon={CreditCard}
-                    label="Top Up Credits (1500 HKD)"
+                    label="Top Up Credits"
                     onClick={async () => {
-                        const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SfcDS12ap1SCxToMWo5Lz3m';
+                        const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SkINl12ap1SCxToSkb1jrWV';
                         if (!priceId) {
                             addToast('Top Up not configured', 'error');
                             return;

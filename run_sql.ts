@@ -133,8 +133,7 @@ const schemaCommands = [
 
   `CREATE EXTENSION IF NOT EXISTS "pgcrypto";`,
 
-  // 1. DROP EVERYTHING FIRST & PURGE STALE USERS
-  `DELETE FROM auth.users WHERE id NOT IN ('${TEST_USER_ID}', '${COACH_USER_ID}', '${PARENT_USER_ID}');`,
+  // 1. DROP TABLES FIRST (To release FK on auth.users)
   "DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;",
   "DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;",
   "DROP TABLE IF EXISTS registrations CASCADE;",
@@ -146,8 +145,26 @@ const schemaCommands = [
   "DROP TABLE IF EXISTS messages CASCADE;",
   "DROP TABLE IF EXISTS availability CASCADE;",
   "DROP TABLE IF EXISTS voice_commands CASCADE;",
+  "DROP TABLE IF EXISTS player_relationships CASCADE;",
+  "DROP TABLE IF EXISTS content_blocks CASCADE;",
 
-  // 2. CREATE TABLES
+  // 2. NOW DELETE USERS (Safe now that profiles is gone)
+  `DELETE FROM auth.users WHERE email ILIKE ANY (ARRAY['admin@east.com', 'coach@east.com', 'parent@east.com', 'player@east.com']);`,
+
+  // 3. CREATE TABLES
+  `CREATE TABLE content_blocks (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+  );`,
+  `ALTER TABLE content_blocks ENABLE ROW LEVEL SECURITY;`,
+  `CREATE POLICY "Allow Public Read" ON content_blocks FOR SELECT USING (true);`,
+  `CREATE POLICY "Allow Admin Update" ON content_blocks FOR ALL USING (
+    auth.uid() IN (SELECT id FROM auth.users WHERE role = 'service_role' OR email = 'admin@east.com')
+  );`, // Simplified admin check for MVP speed
+
   `CREATE TABLE profiles (
         id UUID REFERENCES auth.users(id) PRIMARY KEY,
         username TEXT, first_name TEXT, last_name TEXT, 
@@ -161,7 +178,10 @@ const schemaCommands = [
         role TEXT DEFAULT 'player',
         parent_id UUID REFERENCES profiles(id),
         intro_video_url TEXT,
-        preferences JSONB DEFAULT '{}'
+        preferences JSONB DEFAULT '{}',
+        team TEXT,
+        position TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
     );`,
 
   // UPDATED: Added coach_image_url
@@ -270,7 +290,7 @@ VALUES('d4d4d4d4-d4d4-d4d4-d4d4-d4d4d4d4d4d4', '${TEST_USER_ID}', format('{"sub"
 
   `INSERT INTO profiles(id, username, first_name, last_name, mobile, contact_email, bio, avatar_url, role)
 VALUES('${TEST_USER_ID}', 'admin.east', 'Admin', 'User', '+1 000 000 0000', 'admin@east.com', 'System Administrator.', 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?q=80&w=2940&auto=format&fit=crop', 'admin') 
-     ON CONFLICT(id) DO UPDATE SET username = EXCLUDED.username; `,
+     ON CONFLICT(id) DO UPDATE SET username = EXCLUDED.username, role = EXCLUDED.role, contact_email = EXCLUDED.contact_email; `,
 
   // --- COACH USER (coach@east.com / password123) ---
   `INSERT INTO auth.users(instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, recovery_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token)
@@ -325,12 +345,45 @@ VALUES('${TEST_USER_ID}', 31, 3, 'RHINOS', 48, 110, 6)
   ('EAST Golf Classic 2', 'EVENT', 'EAST Sports', NOW() + interval '10 days 09:00:00', NOW() + interval '10 days 17:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Golf2.jpg?v=1765941578', 'EAST Golf Classic. Round 2 is set for January 31st, 2026. Save the date!'),
   ('EAST Adult 3v3', 'EVENT', 'EAST Sports', NOW() + interval '14 days 10:00:00', NOW() + interval '14 days 16:00:00', 'https://eastsportsgroup.com/cdn/shop/files/136cecf3-a757-4dae-a754-7e4f4f16e7d9.jpg?v=1704914815&width=3840', 'Adult 3v3 Tournament Live from Empire Rink on January 4th, 2026. Contact us to register!'); `,
 
-  // 3. FACILITIES (Updated Pricing & Inventory)
-  `INSERT INTO sessions(title, category, instructor, start_time, end_time, image_url, description, credit_cost) VALUES
-  ('Golf Simulator - North Bay', 'FACILITY', 'Staff', NOW() + interval '1 days 12:00:00', NOW() + interval '1 days 13:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility2.png?v=1765941246', 'Private Golf Simulator Bay (North).', 200),
-  ('Golf Simulator - South Bay', 'FACILITY', 'Staff', NOW() + interval '1 days 13:00:00', NOW() + interval '1 days 14:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility2.png?v=1765941246', 'Private Golf Simulator Bay (South).', 200),
-  ('Shooting Bay - Blue Pad', 'FACILITY', 'Staff', NOW() + interval '1 days 14:00:00', NOW() + interval '1 days 15:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility4.png?v=1765941249', 'Synthetic Ice Shooting Lane (Blue).', 100),
-  ('Shooting Bay - Green Pad', 'FACILITY', 'Staff', NOW() + interval '1 days 15:00:00', NOW() + interval '1 days 16:00:00', 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility4.png?v=1765941249', 'Synthetic Ice Shooting Lane (Green).', 100); `,
+  // 3. FACILITIES (Generated Slots for Next 30 Days)
+  // We will generate slots dynamically using a SQL block instead of hardcoding
+  `DO $$
+  DECLARE
+      i INT;
+      day_offset INT;
+      start_hour INT;
+      base_date TIMESTAMP;
+      slot_start TIMESTAMP;
+      slot_end TIMESTAMP;
+  BEGIN
+      -- Loop for 30 days
+      FOR day_offset IN 1..30 LOOP
+          base_date := DATE_TRUNC('day', NOW() + (day_offset || ' days')::INTERVAL);
+          
+          -- Loop 9am to 5pm (17:00)
+          FOR start_hour IN 9..16 LOOP 
+              slot_start := base_date + (start_hour || ' hours')::INTERVAL;
+              slot_end := base_date + (start_hour + 1 || ' hours')::INTERVAL;
+
+              -- 1. Golf Sim North
+              INSERT INTO sessions(title, category, instructor, start_time, end_time, image_url, description, credit_cost) 
+              VALUES ('Golf Simulator - North Bay', 'FACILITY', 'Staff', slot_start, slot_end, 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility2.png?v=1765941246', 'Private Golf Simulator Bay (North).', 200);
+
+              -- 2. Golf Sim South
+              INSERT INTO sessions(title, category, instructor, start_time, end_time, image_url, description, credit_cost) 
+              VALUES ('Golf Simulator - South Bay', 'FACILITY', 'Staff', slot_start, slot_end, 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility2.png?v=1765941246', 'Private Golf Simulator Bay (South).', 200);
+
+              -- 3. Shooting Bay Blue
+              INSERT INTO sessions(title, category, instructor, start_time, end_time, image_url, description, credit_cost) 
+              VALUES ('Shooting Bay - Blue Pad', 'FACILITY', 'Staff', slot_start, slot_end, 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility4.png?v=1765941249', 'Synthetic Ice Shooting Lane (Blue).', 100);
+
+             -- 4. Shooting Bay Green
+              INSERT INTO sessions(title, category, instructor, start_time, end_time, image_url, description, credit_cost) 
+              VALUES ('Shooting Bay - Green Pad', 'FACILITY', 'Staff', slot_start, slot_end, 'https://cdn.shopify.com/s/files/1/0759/3721/8848/files/Facility4.png?v=1765941249', 'Synthetic Ice Shooting Lane (Green).', 100);
+
+          END LOOP;
+      END LOOP;
+  END $$; `,
 
   // 4. CLASSES
   `INSERT INTO sessions(title, category, instructor, start_time, end_time, image_url, description, credit_cost) VALUES

@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { email, password, firstName, lastName, team } = body;
+        const { email, password, firstName, lastName, team, position } = body;
 
         // Basic Validation
         if (!email || !password || !firstName || !lastName) {
@@ -58,6 +58,7 @@ export async function POST(request: Request) {
                 last_name: lastName,
                 username: username,
                 team: team || '',  // Add team field specific to players
+                position: position || '',
                 credits: 0,        // Initialize with 0 credits
                 avatar_url: ''     // Default empty
             });

@@ -10,19 +10,23 @@ import type { Tab } from '../types';
 import { supabase } from '@/app/lib/supabase';
 
 // ✅ Updated: Get Price IDs from the .env.local file we configured
-const GYM_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_GYM || '';
-const ALL_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_ALL || '';
-const ELITE_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_ELITE || '';
+const ELITE_PRICE_MONTHLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY || '';
+const ELITE_PRICE_YEARLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY || '';
 
 const plans = [
     {
         id: 'elite',
         name: 'ELITE PASS',
         shortName: 'ELITE',
-        // Matches NEXT_PUBLIC_STRIPE_PRICE_ELITE
-        stripePriceId: ELITE_PRICE_ID,
-        priceMonthly: '3,500',
-        priceYearly: '35,000',
+        // We now store both IDs
+        prices: {
+            monthly: ELITE_PRICE_MONTHLY,
+            yearly: ELITE_PRICE_YEARLY
+        },
+        displayPrice: {
+            monthly: '3,500',
+            yearly: '35,000'
+        },
         savings: 'SAVE 7,000 ANNUALLY',
         sections: [
             { title: 'ACCESS', items: [{ label: 'PLAYER LOUNGE & ARENA', value: 'INCLUDED', isPositive: true }, { label: 'SHOOTING PAD', value: 'INCLUDED', isPositive: true }] },
@@ -36,6 +40,9 @@ const plans = [
 function MembershipContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    // New State for Billing Cycle
+    const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+
     const [selectedPlanId, setSelectedPlanId] = useState('elite');
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
@@ -51,10 +58,13 @@ function MembershipContent() {
         }
     }, [searchParams, router]);
 
-    const handlePurchase = async (priceId: string) => {
+    const handlePurchase = async () => {
+        // Resolve the correct Price ID based on selection
+        const priceId = billingCycle === 'monthly' ? activePlan.prices.monthly : activePlan.prices.yearly;
+
         // Validation
-        if (!priceId || priceId.includes('placeholder')) {
-            alert("Configuration Error: This membership plan is not yet configured with a valid Stripe Price ID.");
+        if (!priceId) {
+            alert(`Configuration Error: Missing Stripe Price ID for ${billingCycle} plan. Please check .env.local.`);
             return;
         }
 
@@ -140,18 +150,28 @@ function MembershipContent() {
                     </div>
                 </div>
 
-                {/* Plan Tabs */}
-                <div className="flex px-8 mb-6 shrink-0 gap-2 justify-center w-full">
-                    {plans.map(plan => (
+                {/* BILLING CYCLE TOGGLE */}
+                <div className="flex justify-center px-8 mb-4 shrink-0">
+                    <div className="bg-gray-100 p-1 rounded-full flex w-full relative">
                         <button
-                            key={plan.id}
-                            onClick={() => setSelectedPlanId(plan.id)}
-                            className={`flex-1 text-center font-montserrat font-black italic text-[10px] py-2 rounded-xl transition-all uppercase tracking-widest border ${selectedPlanId === plan.id ? 'bg-black text-white border-black shadow-lg' : 'bg-gray-50 text-gray-400 border-gray-100 hover:bg-gray-100'
-                                }`}
+                            onClick={() => setBillingCycle('monthly')}
+                            className={`flex-1 py-2 rounded-full text-[10px] font-black italic uppercase tracking-widest transition-all z-10 ${billingCycle === 'monthly' ? 'text-white' : 'text-gray-400 hover:text-gray-600'}`}
                         >
-                            {plan.shortName}
+                            Monthly
                         </button>
-                    ))}
+                        <button
+                            onClick={() => setBillingCycle('yearly')}
+                            className={`flex-1 py-2 rounded-full text-[10px] font-black italic uppercase tracking-widest transition-all z-10 ${billingCycle === 'yearly' ? 'text-white' : 'text-gray-400 hover:text-gray-600'}`}
+                        >
+                            Yearly
+                        </button>
+
+                        {/* Animated Slider Background */}
+                        <div
+                            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-black rounded-full shadow-md transition-transform duration-300 ease-in-out ${billingCycle === 'yearly' ? 'translate-x-[100%] ml-1' : 'ml-0'
+                                }`}
+                        />
+                    </div>
                 </div>
 
                 {/* Plan Card (Inside the main container) */}
@@ -162,10 +182,19 @@ function MembershipContent() {
                             <h2 className="font-montserrat font-black italic text-4xl uppercase mb-2 leading-none tracking-tighter text-transparent text-stroke-thin opacity-20">{activePlan.name.split(' ')[1]}</h2>
 
                             <div className="flex items-baseline justify-center gap-1 mt-2">
-                                <span className="font-montserrat font-black italic text-3xl tracking-tight">{activePlan.priceMonthly}</span>
-                                <span className="font-montserrat font-black italic text-[10px] text-gray-400 uppercase tracking-tight">HKD / MO</span>
+                                <span className="font-montserrat font-black italic text-3xl tracking-tight">
+                                    {billingCycle === 'monthly' ? activePlan.displayPrice.monthly : activePlan.displayPrice.yearly}
+                                </span>
+                                <span className="font-montserrat font-black italic text-[10px] text-gray-400 uppercase tracking-tight">
+                                    HKD / {billingCycle === 'monthly' ? 'MO' : 'YR'}
+                                </span>
                             </div>
-                            <div className="mt-3 inline-block bg-east-light/20 text-east-dark text-[9px] font-black italic px-3 py-1 rounded-lg uppercase tracking-widest border border-east-light/20">
+
+                            {/* Savings Badge - Show distinct highlight for Yearly */}
+                            <div className={`mt-3 inline-block text-[9px] font-black italic px-3 py-1 rounded-lg uppercase tracking-widest border transition-all ${billingCycle === 'yearly'
+                                ? 'bg-east-light text-black border-east-light shadow-glow'
+                                : 'bg-gray-50 text-gray-400 border-gray-100'
+                                }`}>
                                 {activePlan.savings}
                             </div>
                         </div>
@@ -191,11 +220,11 @@ function MembershipContent() {
                         </div>
 
                         <button
-                            onClick={() => handlePurchase(activePlan.stripePriceId)}
+                            onClick={handlePurchase}
                             disabled={isLoading}
                             className="w-full bg-black text-white font-montserrat font-black italic text-[12px] py-4 rounded-full uppercase tracking-widest hover:bg-east-light hover:text-black transition-all shadow-xl shrink-0 mt-auto active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-transparent hover:border-black"
                         >
-                            {isLoading ? 'PROCESSING...' : 'ACTIVATE MEMBERSHIP'}
+                            {isLoading ? 'PROCESSING...' : (billingCycle === 'yearly' ? 'ACTIVATE YEARLY PASS' : 'ACTIVATE MONTHLY PASS')}
                         </button>
                     </div>
                 </div>

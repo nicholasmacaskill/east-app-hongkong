@@ -6,7 +6,10 @@ import { supabase } from '@/app/lib/supabase';
 
 export default function ScheduleManagement() {
     const [coaches, setCoaches] = useState<any[]>([]);
+    const [facilities, setFacilities] = useState<any[]>([]);
     const [selectedCoach, setSelectedCoach] = useState<any>(null);
+    const [selectedFacility, setSelectedFacility] = useState<any>(null);
+    const [sidebarTab, setSidebarTab] = useState<'coaches' | 'facilities'>('coaches');
     const [slots, setSlots] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -14,6 +17,8 @@ export default function ScheduleManagement() {
     const [date, setDate] = useState('');
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
+    const [facilityId, setFacilityId] = useState('');
+    const [coachId, setCoachId] = useState('');
 
     // Recurring State
     const [isRepeating, setIsRepeating] = useState(false);
@@ -42,13 +47,20 @@ export default function ScheduleManagement() {
 
     useEffect(() => {
         fetchCoaches();
+        fetchFacilities();
     }, []);
 
     useEffect(() => {
-        if (selectedCoach && viewMode === 'coach') {
-            fetchAvailability(selectedCoach.id);
+        if (sidebarTab === 'coaches' && selectedCoach) {
+            fetchAvailability('coach_id', selectedCoach.id);
+            setCoachId(selectedCoach.id);
+            setFacilityId('');
+        } else if (sidebarTab === 'facilities' && selectedFacility) {
+            fetchAvailability('facility_id', selectedFacility.id);
+            setFacilityId(selectedFacility.id);
+            setCoachId('');
         }
-    }, [selectedCoach, viewMode]);
+    }, [selectedCoach, selectedFacility, sidebarTab]);
 
     useEffect(() => {
         if (viewMode === 'master') {
@@ -61,12 +73,17 @@ export default function ScheduleManagement() {
         if (data) setCoaches(data);
     };
 
-    const fetchAvailability = async (coachId: string) => {
+    const fetchFacilities = async () => {
+        const { data } = await supabase.from('facilities').select('*').eq('is_active', true);
+        if (data) setFacilities(data);
+    };
+
+    const fetchAvailability = async (filterKey: 'coach_id' | 'facility_id', filterValue: string) => {
         setLoading(true);
         const { data } = await supabase
             .from('availability')
-            .select('*')
-            .eq('coach_id', coachId)
+            .select('*, facilities(name)')
+            .eq(filterKey, filterValue)
             .gte('start_time', new Date().toISOString())
             .order('start_time', { ascending: true });
 
@@ -76,10 +93,10 @@ export default function ScheduleManagement() {
 
     const fetchMasterSchedule = async () => {
         setLoading(true);
-        // Join with profiles to get coach details
+        // Join with profiles and facilities
         const { data, error } = await supabase
             .from('availability')
-            .select('*, profiles:coach_id(first_name, last_name, avatar_url)')
+            .select('*, profiles:coach_id(first_name, last_name, avatar_url), facilities(name)')
             .gte('start_time', new Date().toISOString())
             .order('start_time', { ascending: true });
 
@@ -89,36 +106,32 @@ export default function ScheduleManagement() {
     };
 
     const handleAddSlot = async () => {
-        if (!selectedCoach) return;
+        if (!coachId && !facilityId) return alert("Select a Coach or Facility");
         if (!date || !startTime || !endTime) return alert("Please fill all fields");
-        if (isRepeating && (!repeatUntil || selectedDays.length === 0)) return alert("Run recurring setup checks");
 
         setLoading(true);
         const slotsToInsert = [];
 
+        const prepareSlot = (sDate: string) => ({
+            coach_id: coachId || null,
+            facility_id: facilityId || null,
+            start_time: new Date(`${sDate}T${startTime}`).toISOString(),
+            end_time: new Date(`${sDate}T${endTime}`).toISOString(),
+            status: 'available'
+        });
+
         if (!isRepeating) {
-            const startISO = new Date(`${date}T${startTime}`).toISOString();
-            const endISO = new Date(`${date}T${endTime}`).toISOString();
-            slotsToInsert.push({ coach_id: selectedCoach.id, start_time: startISO, end_time: endISO, status: 'available' });
+            slotsToInsert.push(prepareSlot(date));
         } else {
-            // Generate Recurring Slots
-            // Append T00:00:00 to ensure we work with Local Time, not UTC
             const start = new Date(date + 'T00:00:00');
             const end = new Date(repeatUntil + 'T00:00:00');
 
             for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                // d is now iterating in local time (00:00:00)
-                // d.getDay() returns local day of week
                 if (selectedDays.includes(d.getDay())) {
-                    // Extract YYYY-MM-DD from the local date object
                     const year = d.getFullYear();
                     const month = String(d.getMonth() + 1).padStart(2, '0');
                     const day = String(d.getDate()).padStart(2, '0');
-                    const dayStr = `${year}-${month}-${day}`;
-
-                    const s = new Date(`${dayStr}T${startTime}`).toISOString();
-                    const e = new Date(`${dayStr}T${endTime}`).toISOString();
-                    slotsToInsert.push({ coach_id: selectedCoach.id, start_time: s, end_time: e, status: 'available' });
+                    slotsToInsert.push(prepareSlot(`${year}-${month}-${day}`));
                 }
             }
         }
@@ -126,8 +139,9 @@ export default function ScheduleManagement() {
         const { error } = await supabase.from('availability').insert(slotsToInsert);
         if (error) alert(error.message);
         else {
-            if (viewMode === 'coach') fetchAvailability(selectedCoach.id);
-            else fetchMasterSchedule();
+            if (sidebarTab === 'coaches' && selectedCoach) fetchAvailability('coach_id', selectedCoach.id);
+            else if (sidebarTab === 'facilities' && selectedFacility) fetchAvailability('facility_id', selectedFacility.id);
+            if (viewMode === 'master') fetchMasterSchedule();
         }
 
         setLoading(false);
@@ -136,8 +150,9 @@ export default function ScheduleManagement() {
     const handleDeleteSlot = async (id: string) => {
         const { error } = await supabase.from('availability').delete().eq('id', id);
         if (!error) {
-            if (viewMode === 'coach' && selectedCoach) fetchAvailability(selectedCoach.id);
-            else if (viewMode === 'master') fetchMasterSchedule();
+            if (sidebarTab === 'coaches' && selectedCoach) fetchAvailability('coach_id', selectedCoach.id);
+            else if (sidebarTab === 'facilities' && selectedFacility) fetchAvailability('facility_id', selectedFacility.id);
+            if (viewMode === 'master') fetchMasterSchedule();
         }
     };
 
@@ -272,46 +287,90 @@ export default function ScheduleManagement() {
 
             {viewMode === 'coach' ? (
                 <div className="flex flex-col md:flex-row gap-6 h-full overflow-hidden">
-                    {/* 1. Coach List */}
+                    {/* 1. Sidebar List */}
                     <div className="w-full md:w-1/3 bg-[#1e1e1e] rounded-2xl border border-white/5 flex flex-col overflow-hidden">
-                        <div className="p-4 border-b border-white/5 bg-black/20">
-                            <h2 className="font-bold text-gray-400 text-xs uppercase tracking-widest">Select Coach</h2>
+                        <div className="p-1 border-b border-white/5 bg-black/20 flex">
+                            <button
+                                onClick={() => setSidebarTab('coaches')}
+                                className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-colors ${sidebarTab === 'coaches' ? 'text-[#28D160] border-b-2 border-[#28D160]' : 'text-gray-500 hover:text-white'}`}
+                            >
+                                Coaches
+                            </button>
+                            <button
+                                onClick={() => setSidebarTab('facilities')}
+                                className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest transition-colors ${sidebarTab === 'facilities' ? 'text-[#28D160] border-b-2 border-[#28D160]' : 'text-gray-500 hover:text-white'}`}
+                            >
+                                Facilities
+                            </button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-2">
-                            {coaches.map(coach => (
-                                <button
-                                    key={coach.id}
-                                    onClick={() => setSelectedCoach(coach)}
-                                    className={`w-full text-left p-3 rounded-xl flex items-center gap-3 transition-colors mb-1 ${selectedCoach?.id === coach.id ? 'bg-[#28D160] text-black' : 'hover:bg-white/5 text-white'}`}
-                                >
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedCoach?.id === coach.id ? 'bg-black/20' : 'bg-white/10'}`}>
-                                        {coach.avatar_url ? (
-                                            <img src={coach.avatar_url} className="w-full h-full object-cover rounded-full" />
-                                        ) : (
-                                            <User size={16} />
-                                        )}
-                                    </div>
-                                    <div>
-                                        <p className="font-bold text-sm">{coach.name || `${coach.first_name} ${coach.last_name}` || 'Unknown'}</p>
-                                        <p className={`text-[10px] uppercase ${selectedCoach?.id === coach.id ? 'text-black/60' : 'text-gray-500'}`}>Coach</p>
-                                    </div>
-                                    {selectedCoach?.id === coach.id && <CheckCircle size={16} className="ml-auto" />}
-                                </button>
-                            ))}
+                            {sidebarTab === 'coaches' ? (
+                                coaches.map(coach => (
+                                    <button
+                                        key={coach.id}
+                                        onClick={() => {
+                                            setSelectedCoach(coach);
+                                            setSelectedFacility(null);
+                                        }}
+                                        className={`w-full text-left p-3 rounded-xl flex items-center gap-3 transition-colors mb-1 ${selectedCoach?.id === coach.id ? 'bg-[#28D160] text-black' : 'hover:bg-white/5 text-white'}`}
+                                    >
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${selectedCoach?.id === coach.id ? 'bg-black/20' : 'bg-white/10'}`}>
+                                            {coach.avatar_url ? (
+                                                <img src={coach.avatar_url} className="w-full h-full object-cover rounded-full" />
+                                            ) : (
+                                                <User size={16} />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 overflow-hidden">
+                                            <p className="font-bold text-sm truncate">{coach.name || `${coach.first_name} ${coach.last_name}` || 'Unknown'}</p>
+                                            <p className={`text-[9px] uppercase font-bold ${selectedCoach?.id === coach.id ? 'text-black/60' : 'text-gray-500'}`}>{coach.contact_email || 'Coach'}</p>
+                                        </div>
+                                        {selectedCoach?.id === coach.id && <CheckCircle size={16} className="ml-auto" />}
+                                    </button>
+                                ))
+                            ) : (
+                                facilities.map(facility => (
+                                    <button
+                                        key={facility.id}
+                                        onClick={() => {
+                                            setSelectedFacility(facility);
+                                            setSelectedCoach(null);
+                                        }}
+                                        className={`w-full text-left p-3 rounded-xl flex items-center gap-3 transition-colors mb-1 ${selectedFacility?.id === facility.id ? 'bg-[#28D160] text-black' : 'hover:bg-white/5 text-white'}`}
+                                    >
+                                        <div className={`w-12 h-10 rounded-lg flex items-center justify-center overflow-hidden ${selectedFacility?.id === facility.id ? 'bg-black/20' : 'bg-white/10'}`}>
+                                            {facility.image_url ? (
+                                                <img src={facility.image_url} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Calendar size={16} />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 overflow-hidden">
+                                            <p className="font-bold text-sm truncate">{facility.name}</p>
+                                            <p className={`text-[9px] uppercase font-bold ${selectedFacility?.id === facility.id ? 'text-black/60' : 'text-gray-500'}`}>{facility.credit_cost} Credits</p>
+                                        </div>
+                                        {selectedFacility?.id === facility.id && <CheckCircle size={16} className="ml-auto" />}
+                                    </button>
+                                ))
+                            )}
                         </div>
                     </div>
 
                     {/* 2. Schedule Editor */}
                     <div className="flex-1 bg-[#1e1e1e] rounded-2xl border border-white/5 flex flex-col overflow-hidden">
-                        {!selectedCoach ? (
+                        {!selectedCoach && !selectedFacility ? (
                             <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
                                 <Calendar size={48} className="mb-4 opacity-20" />
-                                <p>Select a coach to manage their schedule</p>
+                                <p>Select a resource to manage schedule</p>
                             </div>
                         ) : (
                             <div className="flex flex-col h-full">
                                 <div className="p-4 border-b border-white/5 bg-black/20 flex justify-between items-center">
-                                    <h2 className="font-bold text-gray-400 text-xs uppercase tracking-widest">Editing: <span className="text-white">{selectedCoach.name || selectedCoach.first_name}</span></h2>
+                                    <h2 className="font-bold text-gray-400 text-xs uppercase tracking-widest">
+                                        Editing: <span className="text-white">
+                                            {selectedCoach ? (selectedCoach.name || selectedCoach.first_name) : selectedFacility.name}
+                                        </span>
+                                    </h2>
                                 </div>
 
                                 <div className="flex-1 overflow-y-auto p-6">
@@ -319,11 +378,27 @@ export default function ScheduleManagement() {
                                     <div className="bg-black/40 p-4 rounded-xl border border-white/5 mb-8">
                                         <h3 className="font-black italic text-lg uppercase mb-4">Add Availability</h3>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                             <div>
                                                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Date</label>
                                                 <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full bg-[#1e1e1e] border border-white/10 p-2 rounded text-white text-xs" />
                                             </div>
+                                            {selectedCoach && (
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Assigned Facility (Optional)</label>
+                                                    <select
+                                                        value={facilityId}
+                                                        onChange={e => setFacilityId(e.target.value)}
+                                                        className="w-full bg-[#1e1e1e] border border-white/10 p-2 rounded text-white text-xs"
+                                                    >
+                                                        <option value="">No Facility (Mobile)</option>
+                                                        {facilities.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                             <div>
                                                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Start</label>
                                                 <select value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full bg-[#1e1e1e] border border-white/10 p-2 rounded text-white text-xs">
@@ -381,6 +456,9 @@ export default function ScheduleManagement() {
                                                             <p className="text-gray-400 text-[10px]">
                                                                 {new Date(slot.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(slot.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </p>
+                                                            {slot.facilities && (
+                                                                <p className="text-[#28D160] text-[9px] font-bold uppercase mt-1">@ {slot.facilities.name}</p>
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <button onClick={() => handleDeleteSlot(slot.id)} className="p-2 text-gray-600 hover:text-red-500 transition-colors">
@@ -416,8 +494,11 @@ export default function ScheduleManagement() {
                                             </div>
                                             <div>
                                                 <p className="font-bold text-sm text-white">
-                                                    {slot.profiles?.first_name} {slot.profiles?.last_name}
+                                                    {slot.profiles ? `${slot.profiles.first_name} ${slot.profiles.last_name}` : slot.facilities?.name || 'Standalone Booking'}
                                                 </p>
+                                                {slot.profiles && slot.facilities && (
+                                                    <p className="text-[#28D160] text-[10px] uppercase font-bold">@ {slot.facilities.name}</p>
+                                                )}
                                                 <div className="flex items-center gap-2 text-xs text-gray-400">
                                                     <span className="text-[#28D160] font-bold">
                                                         {new Date(slot.start_time).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}

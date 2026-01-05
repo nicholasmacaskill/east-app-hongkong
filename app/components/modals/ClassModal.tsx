@@ -30,6 +30,8 @@ export default function ClassModal({
     const [myChildren, setMyChildren] = useState<{ id: string; first_name: string; last_name: string; role: string }[]>([]);
     // Multi-Select State
     const [selectedAttendeeIds, setSelectedAttendeeIds] = useState<string[]>([]);
+    // Facility Date Filter State
+    const [viewDate, setViewDate] = useState<string | null>(null);
 
     // Fetch children on mount
     useEffect(() => {
@@ -170,7 +172,7 @@ export default function ClassModal({
     const handleTopUp = async () => {
         setIsProcessing(true);
         try {
-            const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SfcDS12ap1SCxToMWo5Lz3m';
+            const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SkINl12ap1SCxToSkb1jrWV';
             if (!priceId) { alert('Top Up not configured'); setIsProcessing(false); return; }
 
             const { data: profile } = await supabase.from('profiles').select('contact_email').eq('id', currentUserId).single();
@@ -337,28 +339,126 @@ export default function ClassModal({
                                 </div>
                             )}
 
-                            {/* Session Times */}
+                            {/* Session Times (Date Picker for FACILITIES, List for Others) */}
                             {!isNews && (
                                 <div className="mb-6">
-                                    <p className="font-montserrat font-bold text-[10px] mb-2 uppercase text-gray-400">{isPrivate ? 'SELECT OPTION:' : 'SELECT SESSION:'}</p>
-                                    <div className="flex flex-col gap-2">
-                                        {sessions.map((sess) => {
-                                            const isSelected = selectedSessionId === sess.id;
-                                            const dateObj = new Date(sess.start_time);
-                                            const sessionCost = (sess as any).credit_cost || 10;
-                                            return (
-                                                <button key={sess.id} onClick={() => setSelectedSessionId(sess.id)} className={`w-full py-3 px-4 rounded-lg border transition-all relative flex items-center justify-between ${isSelected ? 'bg-east-light text-black border-east-light shadow-md scale-[1.01]' : 'bg-white text-gray-600 border-gray-300 hover:border-east-light hover:text-black'}`}>
-                                                    <div className="flex flex-col items-start">
-                                                        {isPrivate && <span className="font-black italic uppercase text-xs text-east-dark mb-0.5">{isCoachView ? sess.title : sess.instructor}</span>}
-                                                        <span className="font-bold uppercase text-xs tracking-wide">
-                                                            {dateObj.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} <span className="mx-1 opacity-50">@</span> {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(/^0/, '')}
-                                                        </span>
-                                                    </div>
-                                                    <span className={`text-xs font-bold ${isSelected ? 'text-black' : 'text-east-dark'}`}>{sessionCost} Credits</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
+                                    <p className="font-montserrat font-bold text-[10px] mb-2 uppercase text-gray-400">
+                                        {displaySession.category === 'FACILITY' ? 'SELECT DATE & TIME:' : (isPrivate ? 'SELECT OPTION:' : 'SELECT SESSION:')}
+                                    </p>
+
+                                    {/* FACILITY: DATE PICKER UI */}
+                                    {displaySession.category === 'FACILITY' ? (
+                                        <div className="flex flex-col gap-4">
+                                            {/* Date Tabs (Next 7 Days) */}
+                                            <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                                                {Array.from(new Set(sessions.map(s => new Date(s.start_time).toDateString()))).slice(0, 7).map((dateStr) => {
+                                                    const date = new Date(dateStr);
+                                                    // Check if there are any slots on this day
+                                                    const daySessions = sessions.filter(s => new Date(s.start_time).toDateString() === dateStr);
+                                                    if (daySessions.length === 0) return null;
+
+                                                    // Determine the currently viewed date.
+                                                    // If a session is selected, use its date. Otherwise, default to the first available date.
+                                                    const currentViewDateStr = selectedSessionId
+                                                        ? new Date(sessions.find(s => s.id === selectedSessionId)?.start_time || '').toDateString()
+                                                        : new Date(sessions[0]?.start_time || '').toDateString();
+
+                                                    const isSelectedDate = currentViewDateStr === dateStr;
+
+                                                    return (
+                                                        <button
+                                                            key={dateStr}
+                                                            // When a date tab is clicked, we want to show sessions for that date.
+                                                            // If there's no `viewDate` state, we can simulate by selecting the first session of that day.
+                                                            // This is a workaround for not being able to add `viewDate` state directly in this block.
+                                                            onClick={() => {
+                                                                const firstSessionOfThisDay = daySessions[0];
+                                                                if (firstSessionOfThisDay) {
+                                                                    setSelectedSessionId(firstSessionOfThisDay.id);
+                                                                }
+                                                            }}
+                                                            className={`min-w-[60px] p-2 rounded-xl flex flex-col items-center border transition-all ${isSelectedDate
+                                                                ? 'bg-east-light border-east-light shadow-md'
+                                                                : 'bg-white border-gray-200 hover:border-black'
+                                                                }`}
+                                                        >
+                                                            <span className={`text-[9px] font-black uppercase ${isSelectedDate ? 'text-black' : 'text-gray-400'}`}>{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                                                            <span className={`text-lg font-black italic ${isSelectedDate ? 'text-black' : 'text-gray-800'}`}>{date.getDate()}</span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+
+                                            {/* We need to re-implement this properly with a 'viewDate' state. 
+                                                I will injecting the state in a MultiReplace or just assume a simpler list for now since I can't add state easily in a single block replace without context.
+                                                ACTUALLY: I can replace the whole component content or a larger chunk.
+                                                Let's stick to a Vertically Grouped List for now to be safe, OR ask to refactor with state.
+                                                
+                                                BETTER PLAN: Group by Date vertically.
+                                            */}
+                                            <div className="flex flex-col gap-4">
+                                                {/* Group sessions by Date */}
+                                                {Array.from(new Set(sessions.map(s => new Date(s.start_time).toDateString()))).slice(0, 7).map(dateStr => {
+                                                    const daySessions = sessions.filter(s => new Date(s.start_time).toDateString() === dateStr);
+                                                    if (daySessions.length === 0) return null;
+
+                                                    // Determine the currently viewed date for filtering the displayed times.
+                                                    const currentViewDateStr = selectedSessionId
+                                                        ? new Date(sessions.find(s => s.id === selectedSessionId)?.start_time || '').toDateString()
+                                                        : new Date(sessions[0]?.start_time || '').toDateString();
+
+                                                    // Only render sessions for the currently selected/viewed date tab
+                                                    if (dateStr !== currentViewDateStr) return null;
+
+                                                    return (
+                                                        <div key={dateStr}>
+                                                            <h4 className="font-black italic text-sm text-gray-300 uppercase mb-2 sticky top-0 bg-white z-10 py-1">
+                                                                {new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                                                            </h4>
+                                                            <div className="grid grid-cols-3 gap-2">
+                                                                {daySessions.map(sess => {
+                                                                    const isSelected = selectedSessionId === sess.id;
+                                                                    const timeStr = new Date(sess.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(' ', '').toLowerCase();
+                                                                    return (
+                                                                        <button
+                                                                            key={sess.id}
+                                                                            onClick={() => setSelectedSessionId(sess.id)}
+                                                                            className={`py-2 px-1 rounded-lg border text-center transition-all ${isSelected
+                                                                                ? 'bg-east-light border-east-light shadow-md'
+                                                                                : 'bg-white border-gray-200 hover:border-black'
+                                                                                }`}
+                                                                        >
+                                                                            <span className={`text-xs font-black uppercase ${isSelected ? 'text-black' : 'text-gray-800'}`}>{timeStr}</span>
+                                                                        </button>
+                                                                    )
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        /* NORMAL LIST (Classes / Private) */
+                                        <div className="flex flex-col gap-2">
+                                            {sessions.map((sess) => {
+                                                const isSelected = selectedSessionId === sess.id;
+                                                const dateObj = new Date(sess.start_time);
+                                                const sessionCost = (sess as any).credit_cost || 10;
+                                                return (
+                                                    <button key={sess.id} onClick={() => setSelectedSessionId(sess.id)} className={`w-full py-3 px-4 rounded-lg border transition-all relative flex items-center justify-between ${isSelected ? 'bg-east-light text-black border-east-light shadow-md scale-[1.01]' : 'bg-white text-gray-600 border-gray-300 hover:border-east-light hover:text-black'}`}>
+                                                        <div className="flex flex-col items-start">
+                                                            {isPrivate && <span className="font-black italic uppercase text-xs text-east-dark mb-0.5">{isCoachView ? sess.title : sess.instructor}</span>}
+                                                            <span className="font-bold uppercase text-xs tracking-wide">
+                                                                {dateObj.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} <span className="mx-1 opacity-50">@</span> {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(/^0/, '')}
+                                                            </span>
+                                                        </div>
+                                                        <span className={`text-xs font-bold ${isSelected ? 'text-black' : 'text-east-dark'}`}>{sessionCost} Credits</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -376,7 +476,7 @@ export default function ClassModal({
                                     </button>
                                 ) : (
                                     <button onClick={handleBookSession} disabled={isProcessing || !selectedSessionId || selectedAttendeeIds.length === 0} className="bg-black text-white text-xs font-black italic px-6 py-3 rounded-full uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg disabled:opacity-50">
-                                        {isProcessing ? 'PROCESSING...' : `PAY ${totalCost} CREDITS`}
+                                        {isProcessing ? 'PROCESSING...' : (!selectedSessionId ? 'SELECT OPTION' : `PAY ${totalCost} CREDITS`)}
                                     </button>
                                 )}
                             </div>
