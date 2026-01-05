@@ -196,6 +196,13 @@ function AppContent() {
     }
   }, [searchParams, router]);
 
+  // NEW: Auto-redirect admin (Top-level effect)
+  useEffect(() => {
+    if (userProfile.role === 'admin') {
+      router.push('/sys-admin');
+    }
+  }, [userProfile.role, router]);
+
   const handleSaveProfile = async (updatedData: UserProfileData) => {
     if (!currentUserId) return;
 
@@ -279,14 +286,8 @@ function AppContent() {
     );
   }
 
-  // AUTO-REDIRECT ADMINS TO PORTAL
+  // AUTO-REDIRECT ADMINS TO PORTAL (UI ONLY)
   if (userProfile.role === 'admin') {
-    const router = useRouter();
-
-    useEffect(() => {
-      router.push('/sys-admin');
-    }, [router]);
-
     return (
       <div className="bg-black min-h-screen text-white flex justify-center items-center">
         <p className="text-gray-500 font-montserrat">Redirecting to admin portal...</p>
