@@ -10,6 +10,7 @@ import type { Tab } from '../types';
 import { supabase } from '@/app/lib/supabase';
 
 // ✅ Updated: Get Price IDs from the .env.local file we configured
+// Force rebuild to pick up env vars - 2026-01-05
 const ELITE_PRICE_MONTHLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY || '';
 const ELITE_PRICE_YEARLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY || '';
 
