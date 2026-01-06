@@ -1,9 +1,8 @@
-'use client';
+// ... imports ...
 import React, { useState } from 'react';
-import { Edit2, CheckCircle2, ChevronRight, Users, Calendar, Heart, Image as ImageIcon, Award } from 'lucide-react';
+import { Edit2, CheckCircle2, ChevronRight, Users, Calendar, Heart, Award } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
-import { useGallery } from '@/app/hooks/useGallery';
-import Lightbox from '@/app/components/ui/Lightbox';
+// Removed: useGallery, Lightbox, ImageIcon
 
 // Simple Card Wrapper
 const Card = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
@@ -35,22 +34,9 @@ export default function ParentProfile({
    const [selectedChildId, setSelectedChildId] = useState<number | string>(activeChildId || 1);
    const [showAddChild, setShowAddChild] = useState(false);
    const [newChild, setNewChild] = useState({ first: '', last: '', email: '', sport: '' });
-   const [uploadingGallery, setUploadingGallery] = useState(false);
-   const galleryInputRef = React.useRef<HTMLInputElement>(null);
-   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+   // Removed gallery state/refs upload gallery state
 
-   const displayGallery = profileData.gallery_images && profileData.gallery_images.length > 0
-      ? profileData.gallery_images
-      : [
-         "https://cdn.hockeycanada.ca/hockey-canada/community-engagement/asian-heritage-month/2025/2025-ahm-chihiro-suzuki.jpg?w=620&h=350&fit=crop?q=60&w=620&format=auto",
-         "https://eastsportsgroup.com/cdn/shop/files/WhatsApp_Image_2025-10-01_at_19.22.53.jpg?v=1759379442&width=1250",
-         "https://i1.wp.com/media.globalnews.ca/videostatic/335/843/larry_kwong_848x480_1190060611624.jpg?w=1040&quality=70&strip=all",
-         "https://eastsportsgroup.com/cdn/shop/files/esh.webp?v=1756778710&width=1500",
-         "https://st.focusedcollection.com/9163412/i/650/focused_517122206-stock-photo-focused-asian-male-athlete-doing.jpg",
-         "https://eastsportsgroup.com/cdn/shop/files/WhatsAppImage2024-11-21at14.04.48.jpg?v=1732169191&width=720",
-      ];
-
-   const gallery = useGallery(displayGallery);
+   // Removed displayGallery and useGallery
 
    // Availability Logic
    const [prefObj, setPrefObj] = useState(profileData.preferences || {});
@@ -107,12 +93,7 @@ export default function ParentProfile({
       }
    };
 
-   const contributions = [
-      { label: 'Event Host', count: 12 },
-      { label: 'Carpool', count: 45 },
-      { label: 'Sponsor', count: 2 },
-      { label: 'Ambassador', count: 1 }
-   ];
+   // Removed contributions array
 
    // Sync local state if activeChildId changes
    React.useEffect(() => {
@@ -156,41 +137,7 @@ export default function ParentProfile({
       }
    };
 
-   const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (!e.target.files || e.target.files.length === 0) return;
-      const file = e.target.files[0];
-      setUploadingGallery(true);
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `gallery-${profileData.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
-
-      if (uploadError) {
-         alert('Upload failed: ' + uploadError.message);
-         setUploadingGallery(false);
-         return;
-      }
-
-      const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
-      const newImageUrl = data.publicUrl;
-
-      // Update Database
-      const updatedGallery = [...(profileData.gallery_images || []), newImageUrl];
-      const { error: dbError } = await supabase
-         .from('profiles')
-         .update({ gallery_images: updatedGallery })
-         .eq('id', profileData.id);
-
-      if (!dbError) {
-         if (onAddChild) onAddChild(); // Refresh profile data by triggering parent refresh
-         alert('Photo added to gallery!');
-      } else {
-         alert('Failed to update profile: ' + dbError.message);
-      }
-      setUploadingGallery(false);
-   };
+   // Removed handleGalleryUpload
 
    return (
       <div className="animate-fadeIn bg-black min-h-screen pb-24 relative overflow-hidden">
@@ -277,7 +224,7 @@ export default function ParentProfile({
 
             {/* NAVIGATION */}
             <div className="flex justify-center gap-6 py-6 relative z-20 overflow-x-auto no-scrollbar px-4">
-               {['ATHLETES', 'AVAILABILITY', 'CONTRIBUTIONS', 'GALLERY'].map(tab => (
+               {['ATHLETES', 'AVAILABILITY'].map(tab => (
                   <button
                      key={tab}
                      onClick={() => setActiveTab(tab.toLowerCase())}
@@ -420,68 +367,7 @@ export default function ParentProfile({
                   </div>
                )}
 
-               {/* CONTRIBUTIONS TAB */}
-               {activeTab === 'contributions' && (
-                  <div className="flex flex-col gap-3 animate-fadeIn">
-                     {contributions.map((item, i) => (
-                        <div key={i} className="group relative overflow-hidden rounded-2xl bg-white/5 border border-white/10 hover:border-east-light/50 transition-all cursor-pointer">
-                           <div className="p-5 flex items-center gap-5">
-                              <div className="w-12 h-12 rounded-full bg-black flex items-center justify-center border border-white/10 group-hover:border-east-light/30 transition-colors shadow-xl">
-                                 <Award
-                                    size={24}
-                                    className="text-white drop-shadow-md"
-                                 />
-                              </div>
-                              <div>
-                                 <h4 className="font-montserrat font-black italic text-sm text-white uppercase tracking-widest">{item.label}</h4>
-                                 <p className="text-[10px] font-bold text-east-light uppercase">{item.count} ACTIVATIONS</p>
-                              </div>
-                              <ChevronRight className="ml-auto text-gray-600 group-hover:text-east-light transition-colors" size={18} />
-                           </div>
-                        </div>
-                     ))}
-                  </div>
-               )}
-
-               {/* GALLERY TAB */}
-               {activeTab === 'gallery' && (
-                  <div className="flex flex-col gap-4 animate-fadeIn">
-                     <div className="flex justify-between items-center mb-2 px-1">
-                        <h3 className="font-montserrat font-black italic text-sm text-white uppercase tracking-widest">Memories</h3>
-                        <button
-                           onClick={() => galleryInputRef.current?.click()}
-                           disabled={uploadingGallery}
-                           className="text-[10px] font-black text-east-light uppercase hover:text-white transition-all flex items-center gap-1 bg-white/5 px-3 py-1.5 rounded-full border border-white/10"
-                        >
-                           {uploadingGallery ? 'UPLOADING...' : <><ImageIcon size={12} /> ADD PHOTO</>}
-                        </button>
-                        <input type="file" ref={galleryInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*" />
-                     </div>
-                     <div className="grid grid-cols-3 gap-2">
-                        {displayGallery.map((src: string, i: number) => (
-                           <div key={i} onClick={() => gallery.open(i)} className="aspect-square relative overflow-hidden rounded-xl bg-white/5 group cursor-pointer">
-                              <img
-                                 src={src}
-                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100"
-                                 alt="Gallery"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                              <ImageIcon className="absolute bottom-2 right-2 text-white/50 opacity-0 group-hover:opacity-100" size={12} />
-                           </div>
-                        ))}
-                     </div>
-                  </div>
-               )}
-
-               <Lightbox
-                  isOpen={gallery.isOpen}
-                  imageSrc={gallery.currentImage}
-                  onClose={gallery.close}
-                  onNext={gallery.next}
-                  onPrev={gallery.prev}
-                  currentIndex={gallery.selectedIndex ?? 0}
-                  totalImages={displayGallery.length}
-               />
+               {/* Removed CONTRIBUTIONS and GALLERY Tabs */}
             </div>
          </div>
       </div>
