@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Shield, Newspaper, QrCode } from 'lucide-react';
+import { Shield, Newspaper, QrCode, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
@@ -74,6 +74,7 @@ export default function AdminLayout({
                         <div className="hidden sm:flex items-center gap-8 mr-4 border-r border-white/10 pr-8">
                             <AdminNavLink href="/sys-admin/qr" icon={QrCode} label="QR Codes" />
                             <AdminNavLink href="/sys-admin/news" icon={Newspaper} label="News" />
+                            <AdminNavLink href="/sys-admin/events" icon={Calendar} label="Events" />
                         </div>
                         <AdminLogoutButton />
                     </div>
