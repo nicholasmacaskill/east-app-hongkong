@@ -1,9 +1,8 @@
-'use client';
+// ... imports ...
 import React, { useState, useEffect } from 'react';
-import { Edit2, Trophy, Target, Shield, Users, Activity, Award, ChevronRight, Image as ImageIcon, Camera } from 'lucide-react';
+import { Edit2, Trophy, Target, Shield, Users, Activity, Award, ChevronRight, Camera } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
-import { useGallery } from '@/app/hooks/useGallery';
-import Lightbox from '@/app/components/ui/Lightbox';
+// Removed: useGallery, Lightbox, ImageIcon
 
 // Simple Card Wrapper
 const Card = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
@@ -28,24 +27,12 @@ interface PlayerProfileProps {
 }
 
 export default function PlayerProfile({ onOpenSettings, profileData, stats: initialStats, isReadOnly = false }: PlayerProfileProps) {
-  const [activeTab, setActiveTab] = useState<'streaks' | 'full_stats' | 'news' | 'gallery'>('streaks');
+  const [activeTab, setActiveTab] = useState<'streaks' | 'full_stats'>('streaks');
   const [stats, setStats] = useState<PlayerStats | null>(initialStats || null);
-  const [uploadingGallery, setUploadingGallery] = useState(false);
-  const galleryInputRef = React.useRef<HTMLInputElement>(null);
+  // Removed gallery state and refs
   const avatarInputRef = React.useRef<HTMLInputElement>(null);
 
-  const displayGallery = profileData.gallery_images && profileData.gallery_images.length > 0
-    ? profileData.gallery_images
-    : [
-      "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=400",
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400",
-      "https://images.unsplash.com/photo-1518407613690-d9fc996e74bc?auto=format&fit=crop&q=80&w=400",
-      "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&q=80&w=400",
-      "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=400",
-      "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=400",
-    ];
-
-  const gallery = useGallery(displayGallery);
+  // Removed displayGallery and useGallery hook replacement
 
   // Safety Check
   if (!profileData) return <div className="min-h-screen bg-black flex items-center justify-center text-white font-montserrat font-bold animate-pulse uppercase tracking-widest">Loading Player Profile...</div>;
@@ -61,45 +48,12 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
     }
   }, [initialStats]);
 
-  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    setUploadingGallery(true);
-
-    const fileExt = file.name.split('.').pop();
-    const fileName = `gallery-${profileData.id}-${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
-
-    const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
-
-    if (uploadError) {
-      alert('Upload failed: ' + uploadError.message);
-      setUploadingGallery(false);
-      return;
-    }
-
-    const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
-    const newImageUrl = data.publicUrl;
-
-    const updatedGallery = [...(profileData.gallery_images || []), newImageUrl];
-    const { error: dbError } = await supabase
-      .from('profiles')
-      .update({ gallery_images: updatedGallery })
-      .eq('id', profileData.id);
-
-    if (!dbError) {
-      alert('Photo added to gallery!');
-      window.location.reload();
-    } else {
-      alert('Failed to update profile: ' + dbError.message);
-    }
-    setUploadingGallery(false);
-  };
+  // Removed handleGalleryUpload
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
-    setUploadingGallery(true);
+    // Removed setUploadingGallery(true)
 
     const fileExt = file.name.split('.').pop();
     const fileName = `avatar-${profileData.id}-${Date.now()}.${fileExt}`;
@@ -109,7 +63,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
     if (uploadError) {
       alert('Avatar upload failed');
-      setUploadingGallery(false);
+      // Removed setUploadingGallery(false)
       return;
     }
 
@@ -123,7 +77,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
       alert('Avatar updated!');
       window.location.reload();
     }
-    setUploadingGallery(false);
+    // Removed setUploadingGallery(false)
   };
 
   return (
@@ -227,7 +181,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
         {/* NAVIGATION TABS */}
         <div className="flex justify-center gap-6 py-6 relative z-20 overflow-x-auto no-scrollbar px-4">
-          {['STREAKS', 'FULL STATS', 'NEWS', 'GALLERY'].map(tab => {
+          {['STREAKS', 'FULL STATS'].map(tab => {
             const tabKey = tab.toLowerCase().replace(' ', '_') as any;
             return (
               <button
@@ -346,67 +300,8 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
               </div>
             </div>
           )}
-
-          {/* NEWS */}
-          {activeTab === 'news' && (
-            <div className="flex flex-col gap-4 animate-fadeIn">
-              <Card className="hover:border-east-light/30 transition-colors group cursor-pointer">
-                <img src="https://images.unsplash.com/photo-1515523110800-9415d13b84a8?auto=format&fit=crop&q=80&w=600" className="w-full h-40 object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="news" />
-                <div className="p-5">
-                  <h4 className="font-black italic text-lg text-white leading-none uppercase">LEE SCORES GAME WINNER</h4>
-                  <p className="text-[10px] font-bold text-gray-500 mt-2 uppercase leading-relaxed">Next game will take place in a few days vs the Wolves.</p>
-                  <div className="mt-4 flex items-center gap-2">
-                    <span className="text-[8px] font-black text-east-light uppercase tracking-widest">Read Article</span>
-                    <ChevronRight size={12} className="text-east-light" />
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {/* GALLERY TAB */}
-          {activeTab === 'gallery' && (
-            <div className="flex flex-col gap-4 animate-fadeIn">
-              <div className="flex justify-between items-center mb-2 px-1">
-                <h3 className="font-black italic text-sm text-white uppercase tracking-widest">Memories</h3>
-                {!isReadOnly && (
-                  <button
-                    onClick={() => galleryInputRef.current?.click()}
-                    disabled={uploadingGallery}
-                    className="text-[10px] font-black text-east-light uppercase hover:text-white transition-all flex items-center gap-1 bg-white/5 px-3 py-1.5 rounded-full border border-white/10"
-                  >
-                    {uploadingGallery ? 'UPLOADING...' : <><ImageIcon size={12} /> ADD PHOTO</>}
-                  </button>
-                )}
-                <input type="file" ref={galleryInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*" />
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {displayGallery.map((src: string, i: number) => (
-                  <div key={i} onClick={() => gallery.open(i)} className="aspect-square relative overflow-hidden rounded-xl bg-white/5 group cursor-pointer">
-                    <img
-                      src={src}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-80 group-hover:opacity-100"
-                      alt="Gallery"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <ImageIcon className="absolute bottom-2 right-2 text-white/50 opacity-0 group-hover:opacity-100" size={12} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
-
-      <Lightbox
-        isOpen={gallery.isOpen}
-        imageSrc={gallery.currentImage}
-        onClose={gallery.close}
-        onNext={gallery.next}
-        onPrev={gallery.prev}
-        currentIndex={gallery.selectedIndex ?? 0}
-        totalImages={displayGallery.length}
-      />
     </div>
   )
 }
