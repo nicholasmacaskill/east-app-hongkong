@@ -1,4 +1,4 @@
-// ... imports ...
+'use client';
 import React, { useState } from 'react';
 import { Edit2, CheckCircle2, ChevronRight, Users, Calendar, Heart, Award } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
@@ -34,7 +34,7 @@ export default function ParentProfile({
    const [selectedChildId, setSelectedChildId] = useState<number | string>(activeChildId || 1);
    const [showAddChild, setShowAddChild] = useState(false);
    const [newChild, setNewChild] = useState({ first: '', last: '', email: '', sport: '' });
-   // Removed gallery state/refs upload gallery state
+   // Removed gallery state and refs
 
    // Removed displayGallery and useGallery
 
@@ -93,7 +93,7 @@ export default function ParentProfile({
       }
    };
 
-   // Removed contributions array
+   // Removed contributions list
 
    // Sync local state if activeChildId changes
    React.useEffect(() => {
@@ -367,7 +367,7 @@ export default function ParentProfile({
                   </div>
                )}
 
-               {/* Removed CONTRIBUTIONS and GALLERY Tabs */}
+               {/* Removed Contributions and Gallery content */}
             </div>
          </div>
       </div>
