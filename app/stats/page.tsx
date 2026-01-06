@@ -117,8 +117,8 @@ export default function LeaderboardPage() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black via-black/40 to-black" />
             </div>
 
-            <div className="relative z-10 px-4 pt-12">
-                <Link href="/" className="fixed left-6 top-8 z-50 text-gray-500 hover:text-white transition-colors backdrop-blur-md p-2 rounded-full border border-white/5 bg-black/20">
+            <div className="relative z-10 px-4 pt-12 max-w-5xl mx-auto">
+                <Link href="/" className="absolute left-4 top-10 z-50 text-gray-500 hover:text-white transition-colors backdrop-blur-md p-2 rounded-full border border-white/5 bg-black/20">
                     <ChevronLeft size={24} />
                 </Link>
 
