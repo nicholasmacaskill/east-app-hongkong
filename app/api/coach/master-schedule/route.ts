@@ -40,7 +40,7 @@ export async function GET(request: Request) {
         todayStart.setHours(0, 0, 0, 0);
         const startTimeFilter = todayStart.toISOString();
 
-        // We need: Session Info + Registrations -> User Profile (Name)
+        // 2A. Fetch Sessions
         const { data: sessions, error: sessionError } = await supabaseAdmin
             .from('sessions')
             .select(`
@@ -54,20 +54,37 @@ export async function GET(request: Request) {
             .order('start_time', { ascending: true });
 
         if (sessionError) {
-            console.error('Master Schedule Error:', sessionError);
+            console.error('Master Schedule Error (Sessions):', sessionError);
             return NextResponse.json({ error: sessionError.message }, { status: 500 });
         }
 
-        // 3. TRANSFORM DATA
-        // Flatten the structure for the frontend
-        const detailedSessions = sessions.map((s: any) => ({
-            id: s.id,
+        // 2B. Fetch Availability (Open Slots)
+        const { data: availability, error: availError } = await supabaseAdmin
+            .from('availability')
+            .select(`
+                *,
+                profiles:coach_id ( first_name, last_name, avatar_url )
+            `)
+            .gte('start_time', startTimeFilter)
+            .eq('status', 'available')
+            .order('start_time', { ascending: true });
+
+        if (availError) {
+            console.error('Master Schedule Error (Availability):', availError);
+            // Non-critical, can continue with just sessions if needed, but better to fail or warn
+        }
+
+        // 3. TRANSFORM & MERGE DATA
+        const formattedSessions = (sessions || []).map((s: any) => ({
+            id: s.id, // bigint
+            type: 'session',
             title: s.title,
             category: s.category,
             instructor: s.instructor,
             start_time: s.start_time,
             end_time: s.end_time,
             image_url: s.image_url,
+            coach_image_url: s.coach_image_url,
             // Map registrations to a clean 'attendees' array
             attendees: (s.registrations || []).map((r: any) => ({
                 id: r.user_id,
@@ -76,7 +93,26 @@ export async function GET(request: Request) {
             }))
         }));
 
-        return NextResponse.json(detailedSessions);
+        const formattedAvailability = (availability || []).map((a: any) => ({
+            id: a.id, // uuid
+            type: 'slot',
+            title: 'Open Slot',
+            category: 'PRIVATE_SLOT',
+            instructor: a.profiles ? `${a.profiles.first_name} ${a.profiles.last_name || ''}`.trim() : 'Unknown Coach',
+            start_time: a.start_time,
+            end_time: a.end_time,
+            image_url: null,
+            coach_image_url: a.profiles?.avatar_url,
+            coach_id: a.coach_id, // Useful for frontend filtering
+            attendees: []
+        }));
+
+        // Combine and Sort
+        const masterSchedule = [...formattedSessions, ...formattedAvailability].sort((a, b) =>
+            new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+        );
+
+        return NextResponse.json(masterSchedule);
 
     } catch (e: any) {
         console.error('Master Schedule Server Error:', e);
