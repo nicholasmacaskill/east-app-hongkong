@@ -1,7 +1,6 @@
 export const MOCK_PLAYERS = [
     {
         id: 1,
-        // Using the same avatar as the profile mock for consistency or generic ones
         avatar: "https://images.pexels.com/photos/6550836/pexels-photo-6550836.jpeg",
         name: "Coach Whit",
         team: "Rhinos",
@@ -23,46 +22,53 @@ export const MOCK_PLAYERS = [
         team: "Sharks",
         rank: 3,
         stats: { gp: 45, goals: 4, assists: 7, points: 11 }
-    },
+    }
+];
+
+export const MOCK_GOALIES = [
     {
-        id: 4,
-        avatar: "", // No avatar
-        name: "Mike Ross",
+        id: 101,
+        avatar: "https://images.unsplash.com/photo-1547347298-4074fc30823c?auto=format&fit=crop&q=80&w=400",
+        name: "Marc Smith",
         team: "Rhinos",
-        rank: 4,
-        stats: { gp: 42, goals: 2, assists: 8, points: 10 }
+        rank: 1,
+        stats: { gp: 20, gaa: 2.15, sv: 0.925, w: 15, so: 3 }
     },
     {
-        id: 5,
-        avatar: "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=400",
-        name: "David Kim",
-        team: "Eagles",
-        rank: 5,
-        stats: { gp: 40, goals: 6, assists: 3, points: 9 }
-    },
-    {
-        id: 6,
+        id: 102,
         avatar: "",
-        name: "Tom Ford",
+        name: "Jason Bourne",
         team: "Wolves",
-        rank: 6,
-        stats: { gp: 45, goals: 1, assists: 7, points: 8 }
+        rank: 2,
+        stats: { gp: 18, gaa: 2.45, sv: 0.910, w: 12, so: 2 }
     },
     {
-        id: 7,
+        id: 103,
         avatar: "",
-        name: "Alex Wong",
+        name: "Kevin Chen",
         team: "Sharks",
-        rank: 7,
-        stats: { gp: 38, goals: 3, assists: 4, points: 7 }
-    },
+        rank: 3,
+        stats: { gp: 15, gaa: 3.10, sv: 0.895, w: 7, so: 1 }
+    }
+];
+
+export const MOCK_HYROX = [
     {
-        id: 8,
-        avatar: "",
-        name: "Chris Paul",
-        team: "Eagles",
-        rank: 8,
-        stats: { gp: 41, goals: 0, assists: 6, points: 6 }
+        id: 201,
+        avatar: "https://images.unsplash.com/photo-1594882645126-14020914d58d?auto=format&fit=crop&q=80&w=400",
+        name: "Nicholas Macaskill",
+        category: "Mens Full",
+        rank: 1,
+        stats: {
+            ski_erg: "3:45",
+            sled_push: "2:30",
+            sled_pull: "3:15",
+            burpee_jumps: "4:00",
+            row: "3:50",
+            farmers_carry: "1:45",
+            sandbag_lunges: "3:20",
+            wall_balls: "4:10"
+        }
     }
 ];
 
