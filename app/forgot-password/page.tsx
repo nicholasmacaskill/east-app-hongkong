@@ -90,13 +90,13 @@ export default function ForgotPasswordPage() {
 
     const handleVerifyOtp = async () => {
         setLoading(true);
-        const token = otp.join('');
+        const token = otp[0]; // Assuming single string stored in first element
 
-        // ✅ SUPABASE LOGIC: Verify the 6-digit code
+        // ✅ SUPABASE LOGIC: Verify the code
         const { error } = await supabase.auth.verifyOtp({
             email,
             token,
-            type: 'email', // Verifies the OTP for email login
+            type: 'recovery', // Correct type for password reset flow
         });
 
         setLoading(false);
@@ -170,26 +170,23 @@ export default function ForgotPasswordPage() {
                     <div className="text-center">
                         <AuthHeader title="Check Your Email" />
                         <Smartphone size={48} className="text-east-light mx-auto mb-4" />
-                        <p className="text-sm text-gray-400 mb-2">We sent a 6-digit code to:</p>
+                        <p className="text-sm text-gray-400 mb-2">We sent a verification code to:</p>
                         <p className="font-montserrat font-bold text-white mb-6">{email}</p>
 
-                        <div className="flex justify-center gap-2 mb-8">
-                            {otp.map((digit, index) => (
-                                <input
-                                    key={index}
-                                    id={`otp-${index}`}
-                                    type="tel"
-                                    maxLength={1}
-                                    value={digit}
-                                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                                    className="w-10 h-12 text-2xl text-center bg-gray-800 border-2 border-gray-700 rounded-lg text-white font-montserrat font-black focus:border-east-light focus:ring-0"
-                                />
-                            ))}
+                        <div className="mb-6">
+                            <InputField
+                                label="Verification Code"
+                                type="text"
+                                value={otp.join('')} // Reuse state but treat as string holder
+                                icon={Lock}
+                                onChange={(e) => setOtp([e.target.value])} // Store entire string in first element or refactor state
+                                placeholder="Enter code from email"
+                            />
                         </div>
 
                         <button
                             onClick={handleVerifyOtp}
-                            disabled={!otpComplete || loading}
+                            disabled={otp[0]?.length < 6 || loading}
                             className="w-full bg-east-light text-black font-montserrat font-black italic text-lg py-3 rounded-full uppercase tracking-wider disabled:opacity-50 transition-all duration-200"
                         >
                             {loading ? 'VERIFYING...' : 'VERIFY CODE'}
