@@ -72,7 +72,7 @@ export default function AdminLayout({
 
                     <div className="flex items-center gap-6">
                         <div className="hidden sm:flex items-center gap-8 mr-4 border-r border-white/10 pr-8">
-                            <AdminNavLink href="/" icon={Home} label="Back to Home" />
+                            <AdminNavLink href="/sys-admin" icon={Home} label="Admin Home" />
                             <AdminNavLink href="/sys-admin/qr" icon={QrCode} label="QR Codes" />
                             <AdminNavLink href="/sys-admin/news" icon={Newspaper} label="News" />
                             <AdminNavLink href="/sys-admin/events" icon={Calendar} label="Events" />
