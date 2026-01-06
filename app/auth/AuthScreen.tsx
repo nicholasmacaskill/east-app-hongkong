@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
 import type { UserRole } from '../types';
 
-type AuthStep = 'login' | 'register_step_1' | 'register_step_2' | 'success';
+type AuthStep = 'login' | 'register' | 'success';
 
 interface FormData {
     fullName: string;
@@ -150,38 +150,27 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
                         </form>
                         <div className="text-center mt-6 space-y-3">
                             {expectedRole !== 'admin' && (
-                                <p className="text-sm text-gray-400">Need an account? <button onClick={() => setStep('register_step_1')} className="text-east-light underline font-bold hover:text-white transition-colors">Register Now</button></p>
+                                <p className="text-sm text-gray-400">Need an account? <button onClick={() => setStep('register')} className="text-east-light underline font-bold hover:text-white transition-colors">Register Now</button></p>
                             )}
                             <Link href="/forgot-password" className="text-[10px] text-gray-500 hover:text-east-light transition-colors uppercase tracking-wider block">Forgot Password?</Link>
                         </div>
                     </>
                 )}
 
-                {/* --- REGISTER STEP 1 --- */}
-                {step === 'register_step_1' && (
+                {/* --- REGISTER (SINGLE STEP) --- */}
+                {step === 'register' && (
                     <>
                         <AuthHeader title="Create Account" />
-                        <form onSubmit={(e) => { e.preventDefault(); setStep('register_step_2'); }}>
+                        <form onSubmit={handleRegister}>
                             <InputField label="Full Name" name="fullName" type="text" value={formData.fullName} icon={User} onChange={handleChange} placeholder="First and Last Name" />
                             <InputField label="Mobile Number" name="phone" type="tel" value={formData.phone} icon={Phone} onChange={handleChange} placeholder="+852 1234 5678" />
-                            <button type="submit" className="w-full bg-east-light text-black font-montserrat font-black italic text-lg py-3 rounded-full uppercase tracking-wider shadow-lg hover:bg-east-dark hover:text-white transition-all mt-2">NEXT</button>
-                        </form>
-                        <button onClick={() => setStep('login')} className="w-full text-center text-gray-500 text-xs mt-4 hover:text-white uppercase tracking-widest">Back to Login</button>
-                    </>
-                )}
-
-                {/* --- REGISTER STEP 2 --- */}
-                {step === 'register_step_2' && (
-                    <>
-                        <AuthHeader title="Secure Account" />
-                        <form onSubmit={handleRegister}>
                             <InputField label="Email Address" name="email" type="email" value={formData.email} icon={Mail} onChange={handleChange} placeholder="Enter email" />
                             <InputField label="Password" name="password" type="password" value={formData.password} icon={Lock} onChange={handleChange} placeholder="Create password" />
                             <button type="submit" disabled={loading} className="w-full bg-east-light text-black font-montserrat font-black italic text-lg py-3 rounded-full uppercase tracking-wider shadow-lg hover:bg-east-dark hover:text-white transition-all disabled:opacity-50 mt-2">
-                                {loading ? 'CREATING...' : 'CREATE ACCOUNT'}
+                                {loading ? 'CREATING ACCT...' : 'CREATE ACCOUNT'}
                             </button>
                         </form>
-                        <button onClick={() => setStep('register_step_1')} className="w-full text-center text-gray-500 text-xs mt-4 hover:text-white uppercase tracking-widest">Back</button>
+                        <button onClick={() => setStep('login')} className="w-full text-center text-gray-500 text-xs mt-4 hover:text-white uppercase tracking-widest">Back to Login</button>
                     </>
                 )}
 
