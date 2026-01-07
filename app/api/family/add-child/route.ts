@@ -27,19 +27,43 @@ export async function POST(request: Request) {
         // Attempt to create user
         const supabaseAdmin = getSupabaseAdmin();
 
-        // 0. Validate Parent Exists (Debug Step)
+        // 0. Validate Parent Exists (Self-Healing Debug Step)
         console.log(`[ADD CHILD] Validating Parent ID: ${parentId}`);
-        const { data: parentExists, error: parentCheckErr } = await supabaseAdmin
+        let { data: parentExists, error: parentCheckErr } = await supabaseAdmin
             .from('profiles')
             .select('id')
             .eq('id', parentId)
             .single();
 
         if (parentCheckErr || !parentExists) {
-            console.error(`[ADD CHILD] Parent ID ${parentId} NOT FOUND in profiles table.`);
-            return NextResponse.json({ error: `Parent profile not found: ${parentId}` }, { status: 400 });
+            console.warn(`[ADD CHILD] Parent ID ${parentId} NOT FOUND in profiles table. Attempting self-healing...`);
+
+            // Self-Healing: Check Auth directly
+            const { data: { user: authUser }, error: authFetchErr } = await supabaseAdmin.auth.admin.getUserById(parentId);
+
+            if (authUser) {
+                console.log(`[ADD CHILD] Parent found in Auth. Proactively creating profile for ${authUser.email}`);
+                const { error: healErr } = await supabaseAdmin.from('profiles').upsert({
+                    id: parentId,
+                    first_name: authUser.user_metadata?.first_name || authUser.user_metadata?.full_name?.split(' ')[0] || 'User',
+                    last_name: authUser.user_metadata?.last_name || authUser.user_metadata?.full_name?.split(' ').slice(1).join(' ') || 'Parent',
+                    username: authUser.email,
+                    contact_email: authUser.email,
+                    role: 'parent'
+                });
+
+                if (healErr) {
+                    console.error(`[ADD CHILD] Self-healing failed:`, healErr);
+                    return NextResponse.json({ error: `Critical: Parent profile missing and auto-repair failed.` }, { status: 400 });
+                }
+                console.log(`[ADD CHILD] Self-healing success. Profile created.`);
+            } else {
+                console.error(`[ADD CHILD] Parent ID ${parentId} NOT FOUND in Auth either.`);
+                return NextResponse.json({ error: `Parent profile not found: ${parentId}` }, { status: 400 });
+            }
+        } else {
+            console.log(`[ADD CHILD] Parent found.`);
         }
-        console.log(`[ADD CHILD] Parent found.`);
 
         // 1. Create Auth User
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
