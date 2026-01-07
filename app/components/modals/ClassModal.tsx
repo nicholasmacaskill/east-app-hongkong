@@ -13,6 +13,7 @@ interface ClassModalProps {
     onScheduleChange: () => void;
     onShare?: (session: Session) => void;
     initialAttendeeId?: string | null;
+    origin?: 'facilities' | 'coaches'; // NEW
 }
 
 export default function ClassModal({
@@ -22,7 +23,8 @@ export default function ClassModal({
     currentUserId,
     bookedSessions,
     onShare,
-    initialAttendeeId
+    initialAttendeeId,
+    origin = 'facilities'
 }: ClassModalProps) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
@@ -80,8 +82,30 @@ export default function ClassModal({
     const uniqueInstructors = new Set(sessions.map(s => s.instructor));
     const isCoachView = uniqueInstructors.size === 1 && uniqueTitles.size > 1;
 
-    const modalHeaderTitle = isCoachView ? displaySession.instructor : displaySession.title;
-    const modalSubHeader = isCoachView ? 'PRIVATE COACH' : (isPrivate ? 'PRIVATE LESSON' : `INSTRUCTOR: ${displaySession.instructor}`);
+    // Dynamic Header Logic
+    let modalHeaderTitle = displaySession.title;
+    let modalSubHeader = `INSTRUCTOR: ${displaySession.instructor}`;
+
+    if (origin === 'coaches') {
+        modalHeaderTitle = "BOOK COACH";
+        modalSubHeader = displaySession.instructor;
+    } else if (origin === 'facilities') {
+        if (selectedCoachId) {
+            modalHeaderTitle = "BOOK PRIVATE LESSON";
+            modalSubHeader = "FACILITY + COACH";
+        } else {
+            modalHeaderTitle = "BOOK FACILITY";
+        }
+    } else {
+        // Fallback / Standard Class
+        if (isCoachView) {
+            modalHeaderTitle = displaySession.instructor;
+            modalSubHeader = 'PRIVATE COACH';
+        } else if (isPrivate) {
+            modalHeaderTitle = 'PRIVATE LESSON';
+            modalSubHeader = 'PRIVATE LESSON';
+        }
+    }
 
     // Auto-select session
     useEffect(() => {
@@ -147,7 +171,8 @@ export default function ClassModal({
                     userId: currentUserId,
                     sessionId: selectedSessionId,
                     attendeeIds: attendeesToBook, // Send Array
-                    coachId: selectedCoachId // Optional Coach
+                    coachId: selectedCoachId, // Optional Coach
+                    origin: origin // Pass origin to backend
                 })
             });
             const data = await res.json();
@@ -295,7 +320,7 @@ export default function ClassModal({
                 {/* Header */}
                 <div className="bg-gradient-to-r from-east-light to-east-dark p-4 flex justify-between items-center shrink-0">
                     <h2 className="font-montserrat font-black italic text-xl text-white uppercase truncate pr-2">
-                        {showTopUp ? 'TOP UP NEEDED' : 'BOOK CLASS'}
+                        {showTopUp ? 'TOP UP NEEDED' : modalHeaderTitle}
                     </h2>
                     <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors">
                         <X className="text-white" size={24} />

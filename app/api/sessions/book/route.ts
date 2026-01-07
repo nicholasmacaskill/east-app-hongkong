@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { sendEmail } from '@/app/lib/email';
 
 // Helper: Dynamic Coach Pricing
-function getCoachCost(tier: string, bookingMode: string): number {
+function getCoachCost(tier: string, origin: string): number {
   const coachPricing: Record<string, number> = {
     senior: 850,
     junior: 500,
@@ -14,8 +14,9 @@ function getCoachCost(tier: string, bookingMode: string): number {
     hyrox: 800
   };
 
-  // In coach_only mode, charge full price. In facility mode, may adjust if needed
-  return coachPricing[tier] || 750; // Default to 750 if tier not found
+  // In coach_only mode (origin = 'coaches'), charge full price.
+  // In facility mode (origin = 'facilities'), we also charge full coach price as add-on.
+  return coachPricing[tier] || 750;
 }
 
 
@@ -47,12 +48,12 @@ interface BookingRequest {
   attendeeId?: string;
   attendeeIds?: string[];
   coachId?: string | null;
-  bookingMode?: 'facility' | 'coach_only'; // NEW: Differentiate booking types
-  coachTier?: 'senior' | 'junior' | 'golf' | 'pt' | 'hyrox'; // NEW: For dynamic pricing
+  origin?: 'facilities' | 'coaches'; // UPDATED: Match user request terminology
+  coachTier?: 'senior' | 'junior' | 'golf' | 'pt' | 'hyrox';
 }
 
 export async function POST(request: Request) {
-  const { sessionId, userId, attendeeId, attendeeIds, coachId, bookingMode = 'facility', coachTier = 'junior' } = await request.json() as BookingRequest;
+  const { sessionId, userId, attendeeId, attendeeIds, coachId, origin = 'facilities', coachTier = 'junior' } = await request.json() as BookingRequest;
 
   // SECURITY NOTE: In production, verify that 'userId' matches the authenticated user token.
   // Currently, this blindly trusts the client-provided userId.
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
   // If nothing provided, default to booking the user themselves
   if (targets.length === 0) targets.push(userId);
 
-  console.log(`[BOOKING] Mode: ${bookingMode}, User: ${userId}, Session: ${sessionId}, Targets:`, targets, `Coach: ${coachId}, Tier: ${coachTier}`);
+  console.log(`[BOOKING] Origin: ${origin}, User: ${userId}, Session: ${sessionId}, Targets:`, targets, `Coach: ${coachId}, Tier: ${coachTier}`);
 
   const results = [];
   let successCount = 0;
@@ -86,24 +87,37 @@ export async function POST(request: Request) {
     }
 
     // ==========================
-    // VALIDATION: Dual Path Logic
+    // VALIDATION: Origin Logic
     // ==========================
-    if (bookingMode === 'facility') {
-      // Facility Mode: Check bay availability
+    if (origin === 'facilities') {
+      // 1. "Facilities": Verify Bay session_id availability
       const { count: bayBookings } = await supabaseAdmin
         .from('registrations')
         .select('*', { count: 'exact', head: true })
         .eq('session_id', sessionId);
 
-      const maxBays = mainSession.max_capacity || 999; // Default to unlimited if not set
+      const maxBays = mainSession.max_capacity || 999;
 
       if (bayBookings && bayBookings >= maxBays) {
         return NextResponse.json({ error: 'Facility fully booked' }, { status: 400 });
       }
 
-      console.log(`[FACILITY CHECK] Bays occupied: ${bayBookings}/${maxBays}`);
-    } else if (bookingMode === 'coach_only' && coachId) {
-      // Coach-Only Mode: Only validate coach availability (skip facility checks)
+      // 2. If coach attached, verify coach availability
+      if (coachId) {
+        const { data: coachAvailability, error: availErr } = await supabaseAdmin
+          .from('availability')
+          .select('*')
+          .eq('coach_id', coachId)
+          .lte('start_time', mainSession.start_time)
+          .gte('end_time', mainSession.end_time);
+
+        if (availErr || !coachAvailability || coachAvailability.length === 0) {
+          return NextResponse.json({ error: 'Coach not available' }, { status: 400 });
+        }
+      }
+
+    } else if (origin === 'coaches' && coachId) {
+      // "Our Coaches": Bypass Bay Checks. Validate Coach Only.
       const { data: coachAvailability, error: availErr } = await supabaseAdmin
         .from('availability')
         .select('*')
@@ -114,8 +128,6 @@ export async function POST(request: Request) {
       if (availErr || !coachAvailability || coachAvailability.length === 0) {
         return NextResponse.json({ error: 'Coach not available at this time' }, { status: 400 });
       }
-
-      console.log(`[COACH CHECK] Coach ${coachId} is available`);
     }
 
     // 2. Handle Coach Booking (if selected)
@@ -129,8 +141,8 @@ export async function POST(request: Request) {
 
       if (coachProfile) {
         // Create a temporary PRIVATE session for this coach
-        // Ideally we'd check for existing or use a different model, 
-        // but this fits the current 'sessions' based booking RPC.
+        // ideally in a real system we might not create a session row every time, 
+        // but this allows us to track it in registrations linking to a session_id
         const { data: newSess, error: createSessErr } = await supabaseAdmin
           .from('sessions')
           .insert({
@@ -142,7 +154,7 @@ export async function POST(request: Request) {
             image_url: mainSession.image_url,
             coach_image_url: coachProfile.avatar_url,
             description: `Private coaching during ${mainSession.title}`,
-            credit_cost: getCoachCost(coachTier, bookingMode) // Dynamic pricing
+            credit_cost: getCoachCost(coachTier, origin) // Dynamic pricing
           })
           .select()
           .single();
@@ -155,53 +167,92 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Iterate and book each target for the MAIN session
+    // 3. Iterate and book each target
     for (const targetId of targets) {
-      const { data: result, error: rpcError } = await supabaseAdmin.rpc('book_session_with_credits', {
-        p_user_id: userId,
-        p_session_id: sessionId,
-        p_attendee_id: targetId
-      });
 
-      if (rpcError) {
-        results.push({ attendeeId: targetId, type: 'facility', success: false, error: rpcError.message });
-      } else if (!result.success) {
-        results.push({ attendeeId: targetId, type: 'facility', success: false, error: result.message });
+      let facilitySuccess = true;
+
+      // A. BOOK FACILITY SESSION (Only if origin === 'facilities')
+      if (origin === 'facilities') {
+        const { data: result, error: rpcError } = await supabaseAdmin.rpc('book_session_with_credits', {
+          p_user_id: userId,
+          p_session_id: sessionId,
+          p_attendee_id: targetId
+        });
+
+        if (rpcError || !result.success) {
+          results.push({ attendeeId: targetId, type: 'facility', success: false, error: rpcError?.message || result?.message });
+          facilitySuccess = false;
+        } else {
+          results.push({ attendeeId: targetId, type: 'facility', success: true, message: result.message });
+        }
       } else {
-        successCount++;
-        results.push({ attendeeId: targetId, type: 'facility', success: true, message: result.message });
+        // Coach Only flow - assume "facility" part is passed/skipped
+        facilitySuccess = true;
+      }
 
-        // 4. Also book the COACH SESSION for this same target if it was created
-        if (coachSessionId) {
-          const { data: coachResult, error: coachRpcError } = await supabaseAdmin.rpc('book_session_with_credits', {
+      if (facilitySuccess) {
+        if (origin === 'facilities' && !coachId) {
+          successCount++; // Facility only booking confirmed
+        }
+
+        // B. BOOK COACH SESSION (If coach selected)
+        if (coachSessionId && coachId) {
+          const coachFee = getCoachCost(coachTier, origin);
+
+          const bookingOrigin = origin;
+
+          const { data: coachResult, error: coachRpcError } = await supabaseAdmin.rpc('book_coach_atomic', {
             p_user_id: userId,
             p_session_id: coachSessionId,
-            p_attendee_id: targetId
+            p_coach_id: coachId,
+            p_attendee_id: targetId,
+            p_credit_cost: coachFee,
+            p_origin: bookingOrigin
           });
 
-          if (!coachRpcError && coachResult.success) {
-            results.push({ attendeeId: targetId, type: 'coach', success: true, message: 'Coach added!' });
+          if (coachRpcError) {
+            results.push({ attendeeId: targetId, type: 'coach', success: false, error: coachRpcError.message });
+          } else if (!coachResult.success) {
+            results.push({ attendeeId: targetId, type: 'coach', success: false, error: coachResult.message });
           } else {
-            results.push({ attendeeId: targetId, type: 'coach', success: false, error: coachRpcError?.message || coachResult?.message });
+            results.push({ attendeeId: targetId, type: 'coach', success: true, message: 'Coach confirmed!' });
+            successCount++;
           }
         }
       }
     }
 
-    // Determine overall response
-    if (successCount === 0) {
-      const firstError = results[0]?.error || 'Booking failed.';
-      return NextResponse.json({ error: firstError, details: results }, { status: 400 });
+    // Attempt to send email summary (optional, best effort)
+    try {
+      if (successCount > 0) {
+        // Find email of user
+        const { data: userProfile } = await supabaseAdmin.from('profiles').select('contact_email').eq('id', userId).single();
+        if (userProfile?.contact_email) {
+          await sendEmail({
+            to: userProfile.contact_email,
+            subject: 'Booking Confirmation - EAST',
+            html: `
+              <h1>Booking Confirmed</h1>
+              <p>You have successfully booked ${successCount} slot(s).</p>
+              <p><strong>Session:</strong> ${mainSession.title}</p>
+              <p><strong>Time:</strong> ${new Date(mainSession.start_time).toLocaleString()}</p>
+              <p>Type: ${origin === 'facilities' ? 'Facility Booking' : 'Coach Booking'}</p>
+            `
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Email send failed', e);
     }
 
     return NextResponse.json({
-      success: true,
-      message: `Successfully booked ${successCount} session(s)${coachSessionId ? ' with coach' : ''}.`,
+      success: successCount > 0,
       results
     });
 
-  } catch (e) {
-    console.error('API Error:', e);
-    return NextResponse.json({ error: 'An unexpected error occurred during booking.' }, { status: 500 });
+  } catch (err: any) {
+    console.error('Booking error:', err);
+    return NextResponse.json({ error: 'Internal server error: ' + err.message }, { status: 500 });
   }
 }
