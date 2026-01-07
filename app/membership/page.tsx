@@ -68,14 +68,63 @@ function MembershipContent() {
     const [selectedPlanId, setSelectedPlanId] = useState('pro');
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
     const activeNavTab: Tab = 'qr';
     const activePlan = plans.find(p => p.id === selectedPlanId) || plans[0];
 
-    // ... (useEffect remains same)
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) setCurrentUserId(user.id);
+        };
+        getUser();
+    }, []);
 
     const handlePurchase = async () => {
-        // ... (handlePurchase remains same)
+        if (!currentUserId) {
+            alert("Please log in to purchase.");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            // Get correct Price ID based on toggle
+            const priceId = billingCycle === 'monthly' ? ELITE_PRICE_MONTHLY : ELITE_PRICE_YEARLY;
+
+            if (!priceId) {
+                alert(`Configuration Error: Missing Price ID for ${billingCycle} plan.`);
+                setIsLoading(false);
+                return;
+            }
+
+            const { data: { user } } = await supabase.auth.getUser();
+            const email = user?.email;
+
+            const res = await fetch('/api/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    priceId,
+                    userId: currentUserId,
+                    userEmail: email,
+                    successUrl: `${window.location.origin}/membership?success=true`,
+                    cancelUrl: `${window.location.origin}/membership?canceled=true`
+                })
+            });
+
+            const data = await res.json();
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                alert(`Checkout Failed: ${data.error || 'Unknown error'}`);
+            }
+        } catch (e: any) {
+            console.error(e);
+            alert(`Purchase Failed: ${e.message || 'Network error'}`);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (

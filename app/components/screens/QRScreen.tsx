@@ -14,6 +14,8 @@ export default function QRScreen({ credits, currentUserId }: { credits: number, 
 
     try {
       const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SkINl12ap1SCxToSkb1jrWV';
+      console.log("DEBUG: Using Price ID:", priceId);
+      alert(`DEBUG: Price ID is ${priceId}`); // Temporary debug
 
       if (!priceId) {
         alert("Configuration Error: Missing Top Up Price ID. Please check .env.local.");
