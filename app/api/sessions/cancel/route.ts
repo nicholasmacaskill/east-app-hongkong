@@ -26,7 +26,7 @@ export async function DELETE(request: Request) {
     // 4. Updating Credits & Deleting Registration
     const supabaseAdmin = getSupabaseAdmin();
     const { data: result, error } = await supabaseAdmin.rpc('cancel_session_and_refund', {
-      p_attendee_id: userId,
+      p_user_id: userId,
       p_session_id: sessionId
     });
 
