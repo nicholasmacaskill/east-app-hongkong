@@ -23,23 +23,10 @@ export interface UserProfileData {
     avatar_url?: string;
     credits: number;
     gallery_images: string[];
-    preferences?: UserPreferences;
     role?: any; // Loosened type to avoid conflict with Page's UserRole
 }
 
-interface UserPreferences {
-    masterNotifications: boolean;
-    newComments: boolean;
-    newVideos: boolean;
-    favouriteItem: string;
-}
-
-const initialPreferences: UserPreferences = {
-    masterNotifications: true,
-    newComments: false,
-    newVideos: true,
-    favouriteItem: ''
-};
+// Removed: UserPreferences interface and initialPreferences (Preferences screen removed)
 
 // --- UI Components ---
 const SettingsContainer = ({ children }: { children: React.ReactNode }) => {
@@ -156,13 +143,21 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
     const handleSaveWithUpload = async () => {
         setIsSaving(true);
 
+        // Password Change with Confirmation
         if (newPassword.trim().length > 0) {
+            const confirmed = window.confirm("Are you sure you want to change your password?");
+            if (!confirmed) {
+                setIsSaving(false);
+                return;
+            }
+
             const { error: pwError } = await supabase.auth.updateUser({ password: newPassword });
             if (pwError) {
                 addToast("Error updating password: " + pwError.message, 'error');
                 setIsSaving(false);
                 return;
             }
+            addToast("Password updated successfully!", 'success');
         }
 
         let finalAvatarUrl = profileData.avatar_url;
@@ -239,65 +234,7 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
     );
 };
 
-const PreferencesScreen = ({ onBack, profileData, onSave }: {
-    onBack: () => void,
-    profileData: UserProfileData,
-    setProfileData: (data: UserProfileData) => void, // Fix: Add setProfileData to match expected type if used, but let's check definition
-    // Actually PreferencesScreen only used onSave
-    onSave: (data: UserProfileData) => void
-}) => {
-    // If setProfileData is needed in props, we include it, otherwise remove from type definition in parent if mismatch
-    // But let's check usages.
-    const [prefs, setPrefs] = useState<UserPreferences>(profileData.preferences || initialPreferences);
-    const [isSaving, setIsSaving] = useState(false);
-    const { addToast } = useToast();
-
-    const toggle = (field: keyof UserPreferences) => setPrefs(prev => ({ ...prev, [field]: !prev[field as keyof UserPreferences] }));
-
-    const handleSave = async () => {
-        setIsSaving(true);
-        const updatedProfile = { ...profileData, preferences: prefs };
-
-        const { error } = await supabase
-            .from('profiles')
-            .update({ preferences: prefs })
-            .eq('id', (profileData as any).id);
-
-        if (!error) {
-            onSave(updatedProfile);
-            onBack();
-        } else {
-            addToast("Failed to save preferences: " + error.message, 'error');
-        }
-        setIsSaving(false);
-    };
-
-    return (
-        <SettingsContainer>
-            <SettingsHeader title="My Preferences" onBack={onBack} />
-            <div className="flex-1 overflow-y-auto no-scrollbar px-2 pb-12">
-                <SettingsSectionTitle title="Notifications" />
-                <SettingsToggle label="Enable / Disable Notifications" isActive={prefs.masterNotifications} onToggle={() => toggle('masterNotifications')} />
-                <SettingsSectionTitle title="Notification Types" />
-                <div className={`transition-opacity ${prefs.masterNotifications ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-                    <SettingsToggle label="New Comments" isActive={prefs.newComments} onToggle={() => toggle('newComments')} />
-                    <SettingsToggle label="New Videos" isActive={prefs.newVideos} onToggle={() => toggle('newVideos')} />
-                </div>
-                <SettingsSectionTitle title="Favourite Items" />
-                <div className="mb-4 mt-4">
-                    <SettingsDropdown value={prefs.favouriteItem} onChange={(val) => setPrefs(prev => ({ ...prev, favouriteItem: val }))} options={[{ label: 'Hockey Equipment', value: 'hockey' }, { label: 'Team Merchandise', value: 'merch' }, { label: 'Training Gear', value: 'training' }]} />
-                </div>
-                <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="w-full bg-east-light text-black font-montserrat font-black italic text-lg py-3 rounded-full uppercase tracking-wider shadow-lg hover:bg-white transition-all mt-8 mb-4 flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                    {isSaving ? 'SAVING...' : <><Save size={20} /> SAVE PREFERENCES</>}
-                </button>
-            </div>
-        </SettingsContainer>
-    );
-};
+// Removed: PreferencesScreen component (preferences managed via ParentProfile availability calendar instead)
 
 export default function SettingsModal({ onClose, onLogout, profileData, setProfileData, onSave }: {
     onClose: () => void,
@@ -307,12 +244,10 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
     onSave: (data: UserProfileData) => void
 }) {
     const router = useRouter();
-    const [view, setView] = useState<'menu' | 'edit' | 'prefs'>('menu');
+    const [view, setView] = useState<'menu' | 'edit'>('menu');
     const { addToast } = useToast();
 
-    // Fix: PreferencesScreen props
     if (view === 'edit') return <EditProfileScreen onBack={() => setView('menu')} profileData={profileData} setProfileData={setProfileData} onSave={onSave} />;
-    if (view === 'prefs') return <PreferencesScreen onBack={() => setView('menu')} profileData={profileData} setProfileData={setProfileData} onSave={onSave} />;
 
     return (
         <SettingsContainer>
@@ -320,7 +255,6 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
             <div className="flex-1 overflow-y-auto no-scrollbar pb-12">
                 <SettingsSectionTitle title="My Profile" />
                 <SettingsMenuItem icon={UserCog} label="Personal Details" onClick={() => setView('edit')} />
-                <SettingsMenuItem icon={Bell} label="My Preferences" onClick={() => setView('prefs')} />
                 <SettingsMenuItem icon={CreditCard} label="Membership" onClick={() => router.push('/membership')} />
                 <SettingsMenuItem
                     icon={CreditCard}
