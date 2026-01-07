@@ -109,6 +109,8 @@ export default function ParentProfile({
          return;
       }
 
+      console.log("[DEBUG] handleAddChild parentId:", profileData.id);
+
       try {
          const res = await fetch('/api/family/add-child', {
             method: 'POST',

@@ -36,10 +36,16 @@ export async function POST(request: Request) {
             .single();
 
         if (parentCheckErr || !parentExists) {
-            console.warn(`[ADD CHILD] Parent ID ${parentId} NOT FOUND in profiles table. Attempting self-healing...`);
+            console.warn(`[ADD CHILD] Parent ID ${parentId} NOT FOUND in profiles table (Error: ${parentCheckErr?.message || 'Not found'}). Attempting self-healing...`);
 
             // Self-Healing: Check Auth directly
-            const { data: { user: authUser }, error: authFetchErr } = await supabaseAdmin.auth.admin.getUserById(parentId);
+            const { data: authResult, error: authFetchErr } = await supabaseAdmin.auth.admin.getUserById(parentId);
+            const authUser = authResult?.user;
+
+            if (authFetchErr) {
+                console.error(`[ADD CHILD] Auth look-up failed for ID ${parentId}:`, authFetchErr);
+                return NextResponse.json({ error: `Verification Error: ${authFetchErr.message}` }, { status: 500 });
+            }
 
             if (authUser) {
                 console.log(`[ADD CHILD] Parent found in Auth. Proactively creating profile for ${authUser.email}`);
@@ -54,12 +60,12 @@ export async function POST(request: Request) {
 
                 if (healErr) {
                     console.error(`[ADD CHILD] Self-healing failed:`, healErr);
-                    return NextResponse.json({ error: `Critical: Parent profile missing and auto-repair failed.` }, { status: 400 });
+                    return NextResponse.json({ error: `Critical: Parent profile missing and auto-repair failed. ${healErr.message}` }, { status: 400 });
                 }
                 console.log(`[ADD CHILD] Self-healing success. Profile created.`);
             } else {
                 console.error(`[ADD CHILD] Parent ID ${parentId} NOT FOUND in Auth either.`);
-                return NextResponse.json({ error: `Parent profile not found: ${parentId}` }, { status: 400 });
+                return NextResponse.json({ error: `Parent profile not found: ${parentId}. Please try logging out and back in.` }, { status: 400 });
             }
         } else {
             console.log(`[ADD CHILD] Parent found.`);

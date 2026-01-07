@@ -121,14 +121,16 @@ function AppContent() {
               preferences: profileData.preferences || {}
             });
           } else {
-            // Fallback: Use Metadata if Profile is missing (406 or pending trigger)
+            console.log("No profile found for user, using Auth fallback.");
             const metadataRole = user.user_metadata?.role as UserRole;
             if (metadataRole) {
               setUserProfile(prev => ({
                 ...prev,
                 email: user.email || '',
                 role: metadataRole,
-                id: user.id
+                id: user.id,
+                first_name: user.user_metadata?.first_name || user.user_metadata?.full_name?.split(' ')[0] || 'Member',
+                last_name: user.user_metadata?.last_name || user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || 'User'
               }));
             }
           }
