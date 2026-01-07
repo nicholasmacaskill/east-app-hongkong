@@ -78,35 +78,52 @@ export async function POST(request: Request) {
             }
         }
 
-        // --- B. ONE-TIME TOP UP ---
+        // --- B. ONE-TIME TOP UP (Metadata-Driven) ---
         else if (session.mode === 'payment') {
-            console.log(`Processing One-time Payment for User: ${userId}`);
+            console.log(`Processing One-time Payment for Session: ${session.id}`);
 
-            // Retrieve line items to check if it's the Top Up
+            // Extract metadata
+            const metadata = session.metadata || {};
+            const creditAmount = parseInt(metadata.credit_amount || '0');
+            const targetUserId = metadata.target_user_id || userId;
+
+            // Retrieve line items for logging
             const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
             const priceId = lineItems.data[0]?.price?.id;
 
-            const TOPUP_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SkINl12ap1SCxToSkb1jrWV';
-            console.log(`[WEBHOOK] Check TopUp vs Payment. Received: ${priceId}, Expected: ${TOPUP_PRICE_ID}`);
+            console.log(`[WEBHOOK] Payment Metadata: credit_amount=${creditAmount}, target_user_id=${targetUserId}, price_id=${priceId}`);
 
-            if (priceId === TOPUP_PRICE_ID) {
-                const TOPUP_CREDITS = 1200;
-                console.log(`Identified Top-Up. Adding ${TOPUP_CREDITS} credits.`);
+            // ✅ VALIDATION: Ensure metadata is present and valid
+            if (!creditAmount || creditAmount <= 0) {
+                console.error(`❌ CRITICAL: Missing or invalid credit_amount in session ${session.id}. Metadata:`, metadata);
+                return NextResponse.json({
+                    error: 'Invalid or missing credit_amount metadata'
+                }, { status: 400 });
+            }
 
-                if (userId) {
-                    await addCreditsOnly(userId, TOPUP_CREDITS);
-                    if (customerEmail) {
-                        try {
-                            await sendEmail({
-                                to: customerEmail,
-                                subject: 'Credits Top Up Confirmed',
-                                html: `<h1>Top Up Successful!</h1><p>You have successfully purchased <strong>${TOPUP_CREDITS} credits</strong>.</p><p>These have been added to your balance.</p>`
-                            });
-                        } catch (e) { console.error("Email failed, but DB updated."); }
-                    }
+            if (!targetUserId) {
+                console.error(`❌ CRITICAL: Missing target_user_id in session ${session.id}. Metadata:`, metadata);
+                return NextResponse.json({
+                    error: 'Missing target_user_id'
+                }, { status: 400 });
+            }
+
+            // ✅ CREDIT INJECTION (Metadata-Driven)
+            console.log(`Identified Credit Purchase. Adding ${creditAmount} credits to user ${targetUserId}.`);
+
+            await addCreditsOnly(targetUserId, creditAmount);
+
+            // Send confirmation email
+            if (customerEmail) {
+                try {
+                    await sendEmail({
+                        to: customerEmail,
+                        subject: 'Credits Top Up Confirmed',
+                        html: `<h1>Top Up Successful!</h1><p>You have successfully purchased <strong>${creditAmount} credits</strong>.</p><p>These have been added to your balance.</p>`
+                    });
+                } catch (e) {
+                    console.error("Email failed, but DB updated.");
                 }
-            } else {
-                console.warn(`[WEBHOOK] Price mismatch. Session ${session.id} had price ${priceId}`);
             }
         }
     }

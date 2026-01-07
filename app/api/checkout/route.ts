@@ -45,8 +45,11 @@ export async function POST(request: Request) {
       customer_email: userEmail,
 
       // Metadata allows us to match the payment to the user in the Webhook
+      // ✅ UPDATED: Now includes credit_amount for metadata-driven webhook
       metadata: {
-        userId: userId
+        userId: userId,
+        target_user_id: userId,
+        credit_amount: isTopUp ? '1200' : '0' // Default 1200 credits for standard top-up
       }
     });
 
