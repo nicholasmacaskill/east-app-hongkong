@@ -24,6 +24,11 @@ export default function PlayerManagement() {
     // Success / QR State
     const [createdPlayer, setCreatedPlayer] = useState<any>(null); // Stores details of player just created
 
+    // Edit Player State
+    const [showEditForm, setShowEditForm] = useState(false);
+    const [editingPlayer, setEditingPlayer] = useState<any>(null);
+
+
     useEffect(() => {
         fetchPlayers();
     }, []);
@@ -84,6 +89,55 @@ export default function PlayerManagement() {
 
         } catch (error: any) {
             alert('Error creating player: ' + error.message);
+        }
+    };
+
+    const handleEditClick = (player: any) => {
+        setEditingPlayer({
+            id: player.id,
+            first_name: player.first_name || player.name?.split(' ')[0] || '',
+            last_name: player.last_name || player.name?.split(' ').slice(1).join(' ') || '',
+            email: player.contact_email || '', // Ideally fetch auth email if possible, but contact_email is proxy
+            credits: player.credits || 0,
+            team: player.team || '',
+            position: player.position || '',
+            password: '' // Placeholder, empty means don't change
+        });
+        setShowEditForm(true);
+    };
+
+    const handleUpdatePlayer = async () => {
+        if (!editingPlayer || !editingPlayer.id) return;
+
+        try {
+            const response = await fetch('/api/admin/update-player', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: editingPlayer.id,
+                    firstName: editingPlayer.first_name,
+                    lastName: editingPlayer.last_name,
+                    email: editingPlayer.email,
+                    password: editingPlayer.password, // Only sent if user typed something
+                    credits: parseInt(editingPlayer.credits),
+                    team: editingPlayer.team,
+                    position: editingPlayer.position
+                })
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.error);
+            }
+
+            alert('Player updated successfully');
+            setShowEditForm(false);
+            setEditingPlayer(null);
+            fetchPlayers(); // Refresh list
+
+        } catch (error: any) {
+            alert('Error updating player: ' + error.message);
         }
     };
 
@@ -232,6 +286,91 @@ export default function PlayerManagement() {
                 </div>
             )}
 
+            {/* Edit Player Modal */}
+            {showEditForm && editingPlayer && (
+                <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+                    <div className="bg-[#1e1e1e] p-6 rounded-2xl w-full max-w-md border border-white/10 max-h-[90vh] overflow-y-auto">
+                        <h2 className="font-black italic text-xl uppercase mb-4">Edit Player</h2>
+                        <div className="flex flex-col gap-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">First Name</label>
+                                    <input
+                                        value={editingPlayer.first_name}
+                                        onChange={e => setEditingPlayer({ ...editingPlayer, first_name: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Last Name</label>
+                                    <input
+                                        value={editingPlayer.last_name}
+                                        onChange={e => setEditingPlayer({ ...editingPlayer, last_name: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Credits (Balance)</label>
+                                <input
+                                    type="number"
+                                    value={editingPlayer.credits}
+                                    onChange={e => setEditingPlayer({ ...editingPlayer, credits: e.target.value })}
+                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Email (Login)</label>
+                                <input
+                                    value={editingPlayer.email}
+                                    onChange={e => setEditingPlayer({ ...editingPlayer, email: e.target.value })}
+                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Team</label>
+                                    <input
+                                        value={editingPlayer.team}
+                                        onChange={e => setEditingPlayer({ ...editingPlayer, team: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Position</label>
+                                    <input
+                                        value={editingPlayer.position}
+                                        onChange={e => setEditingPlayer({ ...editingPlayer, position: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="bg-red-900/20 p-4 rounded-lg border border-red-500/30">
+                                <label className="text-[10px] font-bold text-red-400 uppercase block mb-1">Reset Password</label>
+                                <input
+                                    value={editingPlayer.password}
+                                    onChange={e => setEditingPlayer({ ...editingPlayer, password: e.target.value })}
+                                    className="w-full bg-black/50 border border-red-500/30 p-2 rounded text-white text-sm outline-none focus:border-red-500"
+                                    placeholder="Leave blank to keep current"
+                                    type="text"
+                                />
+                                <p className="text-[10px] text-gray-500 mt-1">Only enter value to override existing password.</p>
+                            </div>
+
+                            <div className="flex gap-2 mt-4">
+                                <button onClick={handleUpdatePlayer} className="flex-1 bg-[#28D160] text-black font-bold py-2 rounded uppercase text-xs hover:bg-white transition-colors">Save Changes</button>
+                                <button onClick={() => setShowEditForm(false)} className="flex-1 bg-white/10 text-white font-bold py-2 rounded uppercase text-xs hover:bg-white/20 transition-colors">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
             {/* Search */}
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
@@ -272,13 +411,17 @@ export default function PlayerManagement() {
                                             </span>
                                         </div>
                                         <p className="text-gray-500 text-xs truncate mt-1">ID: {player.id}</p>
-                                        <div className="mt-auto flex gap-2 pt-2">
+                                        <div className="flex gap-2 items-center">
+                                            <button onClick={() => handleEditClick(player)} className="text-xs font-bold text-gray-400 uppercase hover:text-[#28D160] transition-colors flex items-center gap-1">
+                                                <Edit2 size={12} /> Edit
+                                            </button>
+                                            <span className="text-gray-700">|</span>
                                             <a href={`/profile/${player.id}`} className="text-xs font-bold text-[#28D160] uppercase hover:text-white transition-colors">
                                                 View
                                             </a>
                                             <span className="text-gray-700">|</span>
                                             <span className="text-xs font-bold text-gray-500 uppercase">
-                                                {player.role || 'Player'}
+                                                {player.credits} CR
                                             </span>
                                         </div>
                                     </div>
