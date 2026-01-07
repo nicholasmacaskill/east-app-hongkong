@@ -181,25 +181,25 @@ function MembershipContent() {
                 <div className="absolute inset-0 bg-black/80" />
             </div>
 
-            <div className="w-full max-w-[340px] bg-white text-black h-fit max-h-[92vh] relative flex flex-col z-10 border border-white/20 shadow-2xl rounded-[2rem] overflow-hidden m-2">
-                <div className="h-2 w-full bg-black shrink-0" />
+            <div className="w-full max-w-[370px] bg-white text-black h-fit max-h-[96vh] relative flex flex-col z-10 border border-white/20 shadow-2xl rounded-[2.5rem] overflow-hidden m-2">
+                <div className="h-2.5 w-full bg-black shrink-0" />
 
-                {/* SLIM HEADER */}
-                <div className="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
-                    <button onClick={() => router.back()} className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
-                        <ChevronLeft size={18} strokeWidth={3} />
+                {/* MODERATE HEADER */}
+                <div className="flex items-center justify-between px-7 pt-6 pb-3 shrink-0">
+                    <button onClick={() => router.back()} className="p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                        <ChevronLeft size={20} strokeWidth={3} />
                     </button>
                     <div className="text-right">
-                        <h2 className="font-montserrat font-black italic text-xl uppercase tracking-tighter leading-none">MEMBERSHIP</h2>
-                        <p className="font-bold text-[8px] text-gray-400 uppercase tracking-widest leading-none">THE PRO PASS</p>
+                        <h2 className="font-montserrat font-black italic text-2xl uppercase tracking-tighter leading-none">MEMBERSHIP</h2>
+                        <p className="font-bold text-[10px] text-gray-400 uppercase tracking-widest leading-none mt-1">THE PRO PASS</p>
                     </div>
                 </div>
 
-                {/* COMPACT TOP SECTION (Toggles) */}
-                <div className="px-5 space-y-2 mt-1 shrink-0">
+                {/* CONTROLS SECTION */}
+                <div className="px-7 space-y-3 mt-1 shrink-0">
                     {/* Individual vs Family Toggle */}
                     {(userRole === 'parent' || userRole === 'admin') && (
-                        <div className="bg-gray-50 p-0.5 rounded-lg flex border border-gray-100 h-8">
+                        <div className="bg-gray-50 p-1 rounded-xl flex border border-gray-100 h-10">
                             {['individual', 'family'].map((type) => (
                                 <button
                                     key={type}
@@ -207,7 +207,7 @@ function MembershipContent() {
                                         setPlanType(type as any);
                                         if (type === 'individual') setMemberCount('1');
                                     }}
-                                    className={`flex-1 rounded-md text-[9px] font-black italic uppercase tracking-widest transition-all ${planType === type ? 'bg-black text-white shadow-sm' : 'text-gray-400'}`}
+                                    className={`flex-1 rounded-lg text-[11px] font-black italic uppercase tracking-widest transition-all ${planType === type ? 'bg-black text-white shadow-md' : 'text-gray-400'}`}
                                 >
                                     {type}
                                 </button>
@@ -215,16 +215,16 @@ function MembershipContent() {
                         </div>
                     )}
 
-                    {/* Member Count Selector (Only for Family) - Horizontal List */}
+                    {/* Member Count Selector (Only for Family) */}
                     {planType === 'family' && (
-                        <div className="flex items-center gap-2 bg-black/5 p-1 rounded-lg animate-fadeIn h-8">
-                            <span className="text-[7px] font-black text-gray-400 uppercase tracking-tighter ml-1">SIZE:</span>
+                        <div className="flex items-center gap-2 bg-black/5 p-1 rounded-xl animate-fadeIn h-10">
+                            <span className="text-[8px] font-black text-gray-500 uppercase tracking-tighter ml-2">FAMILY SIZE:</span>
                             <div className="flex flex-1 gap-1">
                                 {['1', '2', '3+'].map((count) => (
                                     <button
                                         key={count}
                                         onClick={() => setMemberCount(count as any)}
-                                        className={`flex-1 py-1 rounded text-[8px] font-black italic transition-all ${memberCount === count ? 'bg-white text-black shadow-xs' : 'text-gray-400 opacity-60'}`}
+                                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-black italic transition-all ${memberCount === count ? 'bg-white text-black shadow-sm' : 'text-gray-400 opacity-60'}`}
                                     >
                                         {count}
                                     </button>
@@ -233,13 +233,13 @@ function MembershipContent() {
                         </div>
                     )}
 
-                    {/* Billing Cycle - Slim Pill */}
-                    <div className="bg-gray-100 p-0.5 rounded-full flex h-8">
+                    {/* Billing Cycle */}
+                    <div className="bg-gray-100 p-1 rounded-full flex h-10">
                         {['monthly', 'yearly'].map((cycle) => (
                             <button
                                 key={cycle}
                                 onClick={() => setBillingCycle(cycle as any)}
-                                className={`flex-1 rounded-full text-[8px] font-black italic uppercase tracking-widest transition-all ${billingCycle === cycle ? 'bg-black text-white shadow-sm' : 'text-gray-500'}`}
+                                className={`flex-1 rounded-full text-[10px] font-black italic uppercase tracking-widest transition-all ${billingCycle === cycle ? 'bg-black text-white shadow-md' : 'text-gray-500'}`}
                             >
                                 {cycle}
                             </button>
@@ -247,52 +247,52 @@ function MembershipContent() {
                     </div>
                 </div>
 
-                {/* CONTENT AREA (Scrollable) */}
-                <div className="flex-1 overflow-y-auto px-5 py-4 scrollbar-hide">
-                    {/* Compact Pricing Row */}
-                    <div className="flex items-end justify-between border-b border-dashed border-gray-200 pb-4 mb-4">
+                {/* CONTENT AREA */}
+                <div className="flex-1 overflow-y-auto px-7 py-5 scrollbar-hide">
+                    {/* Large Pricing Row */}
+                    <div className="flex items-end justify-between border-b-2 border-dashed border-gray-100 pb-5 mb-5">
                         <div className="text-left">
-                            <h2 className="font-montserrat font-black italic text-4xl uppercase leading-none tracking-tighter">PRO</h2>
-                            <p className="text-[7px] font-black text-east-light uppercase tracking-widest">
+                            <h2 className="font-montserrat font-black italic text-5xl uppercase leading-none tracking-tighter">PRO</h2>
+                            <p className="text-[9px] font-black text-east-light uppercase tracking-widest mt-1">
                                 {planType === 'family' ? `${memberCount} MEMBER FAMILY` : 'INDIVIDUAL PASS'}
                             </p>
                         </div>
                         <div className="text-right">
                             <div className="flex items-baseline justify-end gap-1">
-                                <span className="font-montserrat font-black italic text-3xl tracking-tight leading-none">{activeDetails.display}</span>
-                                <span className="font-montserrat font-black italic text-[8px] text-gray-400 uppercase tracking-tighter">HKD</span>
+                                <span className="font-montserrat font-black italic text-4xl tracking-tight leading-none">{activeDetails.display}</span>
+                                <span className="font-montserrat font-black italic text-[10px] text-gray-400 uppercase tracking-tighter">HKD</span>
                             </div>
-                            <p className="text-[7px] font-bold text-gray-400 uppercase">PER {billingCycle === 'monthly' ? 'MONTH' : 'YEAR'}</p>
+                            <p className="text-[9px] font-bold text-gray-400 uppercase mt-0.5">PER {billingCycle === 'monthly' ? 'MONTH' : 'YEAR'}</p>
                         </div>
                     </div>
 
-                    {/* Value Highlights (Horizontal Row) */}
-                    <div className="flex gap-2 mb-6">
-                        <div className="flex-1 bg-gray-50 border border-gray-100 px-2 py-1.5 rounded-lg text-center">
-                            <p className="text-[7px] font-black text-gray-400 uppercase tracking-tighter mb-0.5">CREDITS</p>
-                            <p className="text-[10px] font-black italic">+{activeDetails.credits}</p>
+                    {/* Highlights Row */}
+                    <div className="flex gap-3 mb-8">
+                        <div className="flex-1 bg-gray-50 border border-gray-100 px-3 py-2.5 rounded-xl text-center">
+                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-tighter mb-0.5">CREDITS</p>
+                            <p className="text-[12px] font-black italic">+{activeDetails.credits}</p>
                         </div>
                         {billingCycle === 'yearly' && (
-                            <div className="flex-1 bg-east-light/10 border border-east-light/20 px-2 py-1.5 rounded-lg text-center shadow-sm">
-                                <p className="text-[7px] font-black text-east-dark uppercase tracking-tighter mb-0.5">BENEFIT</p>
-                                <p className="text-[10px] font-black italic text-east-dark uppercase whitespace-nowrap">{activeDetails.savings}</p>
+                            <div className="flex-1 bg-east-light/10 border border-east-light/20 px-3 py-2.5 rounded-xl text-center shadow-sm">
+                                <p className="text-[8px] font-black text-east-dark uppercase tracking-tighter mb-0.5">BONUS</p>
+                                <p className="text-[12px] font-black italic text-east-dark uppercase whitespace-nowrap">{activeDetails.savings}</p>
                             </div>
                         )}
                     </div>
 
-                    {/* BENEFITS GRID (2 Columns) */}
-                    <div className="space-y-4 mb-4">
+                    {/* LARGER BENEFITS GRID (2 Columns) */}
+                    <div className="space-y-6 mb-6">
                         {BENEFITS.map((section, idx) => (
-                            <div key={idx} className="space-y-1.5">
-                                <div className="flex items-center gap-2">
-                                    <h3 className="font-montserrat font-black italic text-[8px] text-gray-300 uppercase tracking-widest">{section.title}</h3>
+                            <div key={idx} className="space-y-2.5">
+                                <div className="flex items-center gap-3">
+                                    <h3 className="font-montserrat font-black italic text-[10px] text-gray-300 uppercase tracking-widest">{section.title}</h3>
                                     <div className="h-[1px] flex-1 bg-gray-100" />
                                 </div>
-                                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                                     {section.items.map((item, i) => (
-                                        <div key={i} className="flex justify-between items-center py-0.5 border-b border-gray-50 last:border-0 overflow-hidden">
-                                            <span className="font-bold text-[9px] text-gray-600 uppercase tracking-tight truncate mr-1">{item.label}</span>
-                                            <span className="font-black text-[9px] uppercase italic text-black shrink-0">{item.value}</span>
+                                        <div key={i} className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0 overflow-hidden">
+                                            <span className="font-bold text-[11px] text-gray-700 uppercase tracking-tight truncate mr-2">{item.label}</span>
+                                            <span className="font-black text-[11px] uppercase italic text-black shrink-0">{item.value}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -301,21 +301,21 @@ function MembershipContent() {
                     </div>
                 </div>
 
-                {/* FIXED FOOTER BUTTON */}
-                <div className="p-5 pt-2 bg-gradient-to-t from-white via-white to-white/90 shrink-0">
+                {/* FOOTER BUTTON */}
+                <div className="px-7 pb-8 pt-4 bg-gradient-to-t from-white via-white to-white/90 shrink-0">
                     <button
                         onClick={handlePurchase}
                         disabled={isLoading}
-                        className="w-full bg-black text-white font-montserrat font-black italic text-[11px] py-3.5 rounded-xl uppercase tracking-widest hover:bg-east-light hover:text-black transition-all shadow-xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full bg-black text-white font-montserrat font-black italic text-[13px] py-4.5 rounded-2xl uppercase tracking-widest hover:bg-east-light hover:text-black transition-all shadow-2xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3 h-[60px]"
                     >
                         {isLoading ? 'WORKING...' : (
                             <>
                                 <span>{billingCycle === 'yearly' ? 'ACTIVATE YEARLY' : 'ACTIVATE MONTHLY'}</span>
-                                <CheckCircle size={14} />
+                                <CheckCircle size={18} />
                             </>
                         )}
                     </button>
-                    <p className="text-[7px] text-center text-gray-400 mt-2 font-bold uppercase tracking-widest">SECURE CHECKOUT VIA STRIPE</p>
+                    <p className="text-[8px] text-center text-gray-400 mt-4 font-bold uppercase tracking-widest">SECURE CHECKOUT VIA STRIPE</p>
                 </div>
             </div>
 
