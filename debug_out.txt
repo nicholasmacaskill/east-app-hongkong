@@ -1,0 +1,8 @@
+
+--- REPRODUCING ROUTE LOGIC ---
+[ADD CHILD] Validating Parent ID: 431d2e1a-3e96-469c-936c-5c6f6080d3ce
+[ADD CHILD] Parent found.
+Creating Auth User...
+Child ID Created: 33fde633-9e59-49aa-aac3-910c6cfb57ff
+Attempting UPSERT...
+UPSERT SUCCESS! (Cleaning up...)

@@ -177,16 +177,22 @@ export async function POST(request: Request) {
 
       // A. BOOK FACILITY SESSION (Only if origin === 'facilities')
       if (origin === 'facilities') {
+        console.log(`[BOOKING] Calling book_session_with_credits for User ${userId}, Session ${sessionId}, Attendee ${targetId}`);
         const { data: result, error: rpcError } = await supabaseAdmin.rpc('book_session_with_credits', {
           p_user_id: userId,
           p_session_id: sessionId,
           p_attendee_id: targetId
         });
 
+        console.log(`[BOOKING] RPC Result:`, result);
+        if (rpcError) console.error(`[BOOKING] RPC Error:`, rpcError);
+
         if (rpcError || !result.success) {
+          console.error(`[BOOKING] Failed: ${rpcError?.message || result?.message}`);
           results.push({ attendeeId: targetId, type: 'facility', success: false, error: rpcError?.message || result?.message });
           facilitySuccess = false;
         } else {
+          console.log(`[BOOKING] Success confirmed.`);
           results.push({ attendeeId: targetId, type: 'facility', success: true, message: result.message });
         }
       } else {

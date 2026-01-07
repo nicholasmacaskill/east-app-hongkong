@@ -26,6 +26,22 @@ export async function POST(request: Request) {
 
         // Attempt to create user
         const supabaseAdmin = getSupabaseAdmin();
+
+        // 0. Validate Parent Exists (Debug Step)
+        console.log(`[ADD CHILD] Validating Parent ID: ${parentId}`);
+        const { data: parentExists, error: parentCheckErr } = await supabaseAdmin
+            .from('profiles')
+            .select('id')
+            .eq('id', parentId)
+            .single();
+
+        if (parentCheckErr || !parentExists) {
+            console.error(`[ADD CHILD] Parent ID ${parentId} NOT FOUND in profiles table.`);
+            return NextResponse.json({ error: `Parent profile not found: ${parentId}` }, { status: 400 });
+        }
+        console.log(`[ADD CHILD] Parent found.`);
+
+        // 1. Create Auth User
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: email,
             email_confirm: true, // Auto-confirm so they don't get blocked if email delivery fails in dev

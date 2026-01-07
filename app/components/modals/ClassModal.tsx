@@ -203,7 +203,13 @@ export default function ClassModal({
     const handleTopUp = async () => {
         setIsProcessing(true);
         try {
-            const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SkINl12ap1SCxToSkb1jrWV';
+            const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP;
+            console.log("DEBUG: Env Var Value:", priceId);
+            if (!priceId) {
+                alert("CRITICAL ERROR: Limit Reached. (Missing TopUp Price ID)");
+                setIsProcessing(false);
+                return;
+            }
             console.log("DEBUG: Using Price ID:", priceId);
             alert(`DEBUG: Price ID is ${priceId}`); // Temporary debug
             if (!priceId) { alert('Top Up not configured'); setIsProcessing(false); return; }
