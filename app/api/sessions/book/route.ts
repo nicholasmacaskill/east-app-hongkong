@@ -24,6 +24,9 @@ function getCoachCost(tier: string, origin: string): number {
 // 1. GET - Fetches the list of all future sessions
 // **********************************************
 export async function GET() {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: 'Server Error: SUPABASE_SERVICE_ROLE_KEY is missing.' }, { status: 500 });
+  }
   const supabaseAdmin = getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
     .from('sessions')

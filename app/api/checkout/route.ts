@@ -7,7 +7,13 @@ import Stripe from 'stripe';
 export async function POST(request: Request) {
   try {
     const { priceId, userId, userEmail, successUrl, cancelUrl } = await request.json();
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error("CRITICAL: STRIPE_SECRET_KEY is missing in environment variables.");
+      return NextResponse.json({ error: 'Server Error: Stripe Secret Key is missing.' }, { status: 500 });
+    }
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     console.log("---- CHECKOUT REQUEST RECEIVED ----");
     console.log("Price ID:", priceId);
