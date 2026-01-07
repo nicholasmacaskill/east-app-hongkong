@@ -110,14 +110,28 @@ function MembershipContent() {
         const getUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
+                console.log("[MEMBERSHIP] Current Auth User:", user.id, "Meta Role:", user.user_metadata?.role);
                 setCurrentUserId(user.id);
-                // Fetch role for tab visibility
-                const { data: profile } = await supabase
+
+                // 1. Try Profile Table
+                const { data: profile, error: profileErr } = await supabase
                     .from('profiles')
                     .select('role')
                     .eq('id', user.id)
                     .single();
-                if (profile) setUserRole(profile.role);
+
+                console.log("[MEMBERSHIP] Profile Fetch:", profile, profileErr?.message);
+
+                // 2. Determine Role (Profile wins, then Meta)
+                const finalRole = profile?.role || user.user_metadata?.role;
+                console.log("[MEMBERSHIP] Final Detected Role:", finalRole);
+
+                if (finalRole) {
+                    setUserRole(finalRole);
+                } else {
+                    // Default to player if nothing found
+                    setUserRole('player');
+                }
             }
         };
         getUser();
@@ -202,7 +216,7 @@ function MembershipContent() {
                 </div>
 
                 {/* TAB SWITCHER (Individual vs Family) - ONLY FOR PARENTS */}
-                {userRole === 'parent' && (
+                {(userRole === 'parent' || userRole === 'admin') && (
                     <div className="flex justify-center px-8 mb-4 shrink-0 mt-2">
                         <div className="bg-gray-50 p-1 rounded-xl flex w-full relative border border-gray-100">
                             {['individual', 'family'].map((type) => (
