@@ -199,6 +199,7 @@ export default function ClassModal({
         }
     };
 
+    // --- TOP UP LOGIC ---
     const handleTopUp = async () => {
         setIsProcessing(true);
         try {
