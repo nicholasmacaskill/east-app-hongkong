@@ -44,11 +44,11 @@ export default function QRScreen({ credits, currentUserId }: { credits: number, 
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert("Failed to initiate checkout.");
+        alert(`Checkout Failed: ${data.error || 'Unknown error'}`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Error initiating Top Up.");
+      alert(`Top Up Failed: ${e.message || 'Network error'}`);
     } finally {
       setIsLoading(false);
     }
