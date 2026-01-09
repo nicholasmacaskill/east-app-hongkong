@@ -44,11 +44,12 @@ export interface UserProfileData {
   intro_video_url?: string;
   id?: string;
   preferences?: any;
+  subscription_status?: string;
 }
 
 // 2. Updated Initial State
 const initialProfileData: UserProfileData = {
-  name: '', surname: '', first_name: '', last_name: '', username: '', bio: '', email: '', mobile: '', avatar_url: '', credits: 0, gallery_images: [], schedule_photo_url: '', intro_video_url: '', role: undefined, preferences: {}
+  name: '', surname: '', first_name: '', last_name: '', username: '', bio: '', email: '', mobile: '', avatar_url: '', credits: 0, gallery_images: [], schedule_photo_url: '', intro_video_url: '', role: undefined, preferences: {}, subscription_status: 'inactive'
 };
 
 function AppContent() {
@@ -118,7 +119,8 @@ function AppContent() {
               intro_video_url: profileData.intro_video_url || '',
               role: profileData.role as UserRole,
               id: profileData.id,
-              preferences: profileData.preferences || {}
+              preferences: profileData.preferences || {},
+              subscription_status: profileData.subscription_status
             });
           } else {
             console.log("No profile found for user, using Auth fallback.");
@@ -130,7 +132,8 @@ function AppContent() {
                 role: metadataRole,
                 id: user.id,
                 first_name: user.user_metadata?.first_name || user.user_metadata?.full_name?.split(' ')[0] || 'Member',
-                last_name: user.user_metadata?.last_name || user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || 'User'
+                last_name: user.user_metadata?.last_name || user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || 'User',
+                subscription_status: 'inactive'
               }));
             }
           }
@@ -338,6 +341,7 @@ function AppContent() {
               onOpenSettings={() => setShowSettingsModal(true)}
               bookedSessions={bookedSessions}
               credits={userProfile.credits || 0}
+              subscriptionStatus={userProfile.subscription_status}
               setTab={setActiveTab}
             />
           )}

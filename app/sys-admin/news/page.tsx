@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Edit2, Upload, X, Save } from 'lucide-react';
+import { Plus, Trash2, Edit2, Upload, X, Save, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface NewsItem {
     id: number;
@@ -11,6 +11,7 @@ interface NewsItem {
     description: string;
     image_url: string;
     start_time: string;
+    priority?: number;
 }
 
 export default function AdminNewsPage() {
@@ -31,11 +32,53 @@ export default function AdminNewsPage() {
             .from('sessions')
             .select('*')
             .eq('category', 'NEWS')
+            // Order by priority first (NULLS LAST), then newest date
+            .order('priority', { ascending: false, nullsFirst: false })
             .order('start_time', { ascending: false });
 
         if (error) console.error('Error fetching news:', error);
         else setNews(data || []);
         setLoading(false);
+    };
+
+    const handleMove = async (index: number, direction: -1 | 1) => {
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= news.length) return;
+
+        const itemA = news[index];
+        const itemB = news[newIndex];
+
+        // Ensure both have valid priorities
+        const priorityA = (itemA.priority || 0);
+        const priorityB = (itemB.priority || 0);
+
+        // If priorities are equal, create a gap
+        // Or simpler: Just swap their distinct priority values.
+        // But simply swapping might not work if priorities are identical (default 0).
+        // Strategy: Assign explicit priorities based on current order. 
+        // We want the item moving UP (-1 index) to have a HIGHER priority value.
+
+        // Let's re-normalize the priority of the entire list to be safe, 
+        // assigning decreasing values from top to bottom.
+        // E.g. Top item = N, Bottom = 1.
+
+        const newNews = [...news];
+        // Swap items in local array
+        [newNews[index], newNews[newIndex]] = [newNews[newIndex], newNews[index]];
+        setNews(newNews); // Optimistic update
+
+        // Update DB
+        // Assign priority = length - index (so index 0 has highest priority)
+        const updates = newNews.map((item, i) => ({
+            id: item.id,
+            unweighted_priority: newNews.length - i
+        }));
+
+        // We can't do a bulk update easily in one query without a custom function or loop.
+        // Loop is fine for small lists like News.
+        for (const update of updates) {
+            await supabase.from('sessions').update({ priority: update.unweighted_priority }).eq('id', update.id);
+        }
     };
 
     const handleEdit = (item: NewsItem) => {
@@ -82,7 +125,8 @@ export default function AdminNewsPage() {
             category: 'NEWS',
             instructor: 'Admin', // Default author
             end_time: new Date(Date.now() + 86400000).toISOString(), // Dummy end time (24h later)
-            credit_cost: 0
+            credit_cost: 0,
+            priority: (currentItem as any).priority || 0
         };
 
         let error;
@@ -94,7 +138,21 @@ export default function AdminNewsPage() {
                 .eq('id', currentItem.id);
             error = res.error;
         } else {
-            // Create
+            // Create - Put at TOP by finding max priority + 1?
+            // For now, let's insert with high priority so it appears first potentially,
+            // OR fetch current max.
+            // Simplified: Insert with a high number OR just 0 and let user reorder.
+            // Let's use a reasonable default. Since we re-normalize to N...1, 
+            // inserting with N+1 is best. But we don't have N here easily. 
+            // We'll insert with 0 (bottom) or let DB handle default.
+
+            // Actually, if we want it at the top, we can use a huge number, 
+            // but then re-normalizing becomes weird.
+            // Let's just insert.
+
+            // To support "Add to Top", we'd need to shift everyone else down or use float priorities.
+            // Given the reorder function re-writes ALL IDs, 
+            // let's just insert as 0. The user can move it up.
             const res = await supabase
                 .from('sessions')
                 .insert(payload);
@@ -153,8 +211,29 @@ export default function AdminNewsPage() {
                 <div>Loading news...</div>
             ) : (
                 <div className="grid gap-4">
-                    {news.map(item => (
+                    {news.map((item, index) => (
                         <div key={item.id} className="border border-gray-200 p-4 rounded-xl flex items-center gap-6 shadow-sm hover:shadow-md transition-all">
+
+                            {/* REORDER CONTROLS */}
+                            <div className="flex flex-col gap-1 pr-2 border-r border-gray-100">
+                                <button
+                                    onClick={() => handleMove(index, -1)}
+                                    className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-black disabled:opacity-30 transition-colors"
+                                    disabled={index === 0}
+                                    title="Move Up"
+                                >
+                                    <ChevronUp size={20} />
+                                </button>
+                                <button
+                                    onClick={() => handleMove(index, 1)}
+                                    className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-black disabled:opacity-30 transition-colors"
+                                    disabled={index === news.length - 1}
+                                    title="Move Down"
+                                >
+                                    <ChevronDown size={20} />
+                                </button>
+                            </div>
+
                             <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden shrink-0">
                                 {item.image_url ? (
                                     <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
@@ -165,7 +244,9 @@ export default function AdminNewsPage() {
                             <div className="flex-1">
                                 <h3 className="font-bold text-lg uppercase tracking-tight">{item.title}</h3>
                                 <p className="text-gray-500 text-sm line-clamp-2">{item.description}</p>
-                                <span className="text-xs text-gray-400 mt-2 block">{new Date(item.start_time).toLocaleDateString()}</span>
+                                <span className="text-xs text-gray-400 mt-2 block">
+                                    {new Date(item.start_time).toLocaleDateString()} • Priority: {(item as any).priority || 0}
+                                </span>
                             </div>
                             <div className="flex gap-2">
                                 <button

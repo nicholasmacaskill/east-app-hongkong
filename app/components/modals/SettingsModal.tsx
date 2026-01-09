@@ -124,6 +124,7 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(profileData.avatar_url || null);
 
+    const [fullName, setFullName] = useState(`${profileData.first_name || ''} ${profileData.last_name || ''}`.trim());
     const [newPassword, setNewPassword] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const { addToast } = useToast();
@@ -141,6 +142,7 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
     };
 
     const handleSaveWithUpload = async () => {
+        if (isSaving) return;
         setIsSaving(true);
 
         // Password Change with Confirmation
@@ -176,8 +178,27 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
             }
         }
 
-        onSave({ ...profileData, avatar_url: finalAvatarUrl });
+        // Split Full Name
+        const nameParts = fullName.split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        onSave({
+            ...profileData,
+            first_name: firstName,
+            last_name: lastName,
+            // Keep legacy name/surname fields in sync if they exist on the object
+            name: firstName,
+            surname: lastName,
+            avatar_url: finalAvatarUrl
+        });
+
         setNewPassword('');
+        // No explicit success toast here as onSave usually handles it or closes modal, 
+        // but adding one for clarity if onSave is silent.
+        // Assuming onSave does the DB update.
+        // addToast("Profile saved!", 'success'); // Optional, leaving to onSave logic
+
         setIsSaving(false);
     };
 
@@ -206,15 +227,21 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
 
                 <form onSubmit={(e) => e.preventDefault()} className="px-2 pb-12">
                     <SettingsTextArea label="Profile Bio" value={profileData.bio} onChange={(v) => handleChange('bio', v)} />
-                    <SettingsInput label="Name" value={profileData.name} onChange={(v) => handleChange('name', v)} />
-                    <SettingsInput label="Surname" value={profileData.surname} onChange={(v) => handleChange('surname', v)} />
+
+                    <SettingsInput
+                        label="Full Name"
+                        value={fullName}
+                        onChange={(v) => setFullName(v)}
+                        placeholder="e.g. John Doe"
+                    />
+
                     <SettingsInput label="Username" value={profileData.username} onChange={(v) => handleChange('username', v)} />
 
                     <SettingsInput
                         label="New Password"
                         value={newPassword}
                         type="password"
-                        placeholder="••••••••"
+                        placeholder="Change Password"
                         onChange={(v) => setNewPassword(v)}
                     />
 

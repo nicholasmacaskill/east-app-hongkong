@@ -18,12 +18,14 @@ export default function HomeScreen({
   onOpenSettings,
   bookedSessions,
   credits,
+  subscriptionStatus, // NEW
   setTab
 }: {
   onClassClick: (sessions: Session[]) => void,
   onOpenSettings: () => void,
   bookedSessions: Session[],
   credits: number,
+  subscriptionStatus?: string, // NEW
   setTab: (t: any) => void
 }) {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -63,7 +65,16 @@ export default function HomeScreen({
   const privateRaw = sessions.filter(s => s.category === 'PRIVATE');
   const facilitiesRaw = sessions.filter(s => s.category === 'FACILITY');
   const eventsRaw = sessions.filter(s => s.category === 'EVENT');
-  const newsRaw = sessions.filter(s => s.category === 'NEWS');
+
+  // Sort news by priority (desc) then date (desc)
+  const newsRaw = sessions
+    .filter(s => s.category === 'NEWS')
+    .sort((a: any, b: any) => {
+      const pA = a.priority || 0;
+      const pB = b.priority || 0;
+      if (pA !== pB) return pB - pA;
+      return new Date(b.start_time).getTime() - new Date(a.start_time).getTime();
+    });
 
   const classesUnique = getUniqueItems(classesRaw, 'title');
   const facilitiesUnique = getUniqueItems(facilitiesRaw, 'title');
@@ -89,6 +100,7 @@ export default function HomeScreen({
         credits={credits}
         onOpenSettings={onOpenSettings}
         setTab={setTab}
+        subscriptionStatus={subscriptionStatus}
       />
 
       <div className="relative z-10 px-5 space-y-10 pt-6">

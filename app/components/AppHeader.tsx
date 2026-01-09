@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { Plus, Trophy, Settings, ChevronLeft } from 'lucide-react';
+import { Plus, Trophy, Settings, ChevronLeft, Lock } from 'lucide-react';
 import Link from 'next/link';
 
 interface AppHeaderProps {
@@ -11,6 +11,7 @@ interface AppHeaderProps {
     title?: string;
     className?: string;
     showLogo?: boolean;
+    subscriptionStatus?: string;
 }
 
 export default function AppHeader({
@@ -20,8 +21,13 @@ export default function AppHeader({
     setTab,
     title,
     className = "",
-    showLogo = true
+    showLogo = true,
+    subscriptionStatus
 }: AppHeaderProps) {
+
+    // Check locked status
+    const isLocked = subscriptionStatus && subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing';
+
     return (
         <div className={`sticky top-0 z-50 px-6 py-4 border-b border-white/5 flex justify-between items-center backdrop-blur-xl bg-black/50 transition-all duration-300 ${className}`}>
             <div className="flex-1 flex items-center justify-start">
@@ -46,11 +52,22 @@ export default function AppHeader({
                     credits !== undefined && setTab && (
                         <button
                             onClick={() => setTab('qr')}
-                            className="flex items-center justify-center gap-3 bg-[#1a1a1a] border border-white/20 rounded-full px-8 py-2.5 hover:bg-white/10 hover:border-east-light transition-all active:scale-95 group backdrop-blur-md shadow-2xl min-w-[140px]"
+                            className={`flex items-center justify-center gap-3 border rounded-full px-8 py-2.5 transition-all active:scale-95 group backdrop-blur-md shadow-2xl min-w-[140px]
+                                ${isLocked ? 'bg-red-900/20 border-red-500/50 hover:bg-red-900/30' : 'bg-[#1a1a1a] border-white/20 hover:bg-white/10 hover:border-east-light'}
+                            `}
                         >
-                            <span className="text-white font-black italic text-xl drop-shadow-md">{credits}</span>
-                            <span className="text-[10px] font-black text-east-light uppercase tracking-[0.2em]">CREDITS</span>
-                            <Plus size={12} className="text-gray-500 group-hover:text-white transition-colors" />
+                            {isLocked ? (
+                                <>
+                                    <Lock size={16} className="text-red-500" />
+                                    <span className="text-red-500 font-black italic text-xl drop-shadow-md">LOCKED</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-white font-black italic text-xl drop-shadow-md">{credits}</span>
+                                    <span className="text-[10px] font-black text-east-light uppercase tracking-[0.2em]">CREDITS</span>
+                                    <Plus size={12} className="text-gray-500 group-hover:text-white transition-colors" />
+                                </>
+                            )}
                         </button>
                     )
                 )}
