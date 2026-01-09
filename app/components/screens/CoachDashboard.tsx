@@ -120,6 +120,17 @@ export default function CoachDashboard({ currentUserId, userName }: { currentUse
                 </div>
 
                 <div className="flex items-center gap-4">
+                    {/* Availability Metric */}
+                    <div className="hidden md:flex flex-col items-end mr-4">
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Available Hours</span>
+                        <span className="text-xl font-black italic text-[#28D160]">
+                            {allSessions
+                                .filter(s => s.type === 'slot' && s.coach_id === currentUserId)
+                                .reduce((acc, curr) => acc + (new Date(curr.end_time).getTime() - new Date(curr.start_time).getTime()) / (1000 * 60 * 60), 0)
+                                .toFixed(1)} <span className="text-xs text-gray-600 not-italic">HRS</span>
+                        </span>
+                    </div>
+
                     {/* View Toggles */}
                     <div className="bg-[#1e1e1e] p-1 rounded-lg flex border border-white/10">
                         <button

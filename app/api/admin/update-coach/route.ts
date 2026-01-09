@@ -1,4 +1,4 @@
-// app/api/admin/update-player/route.ts
+// app/api/admin/update-coach/route.ts
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 
@@ -8,14 +8,13 @@ interface UpdateRequest {
     lastName?: string;
     email?: string;
     password?: string;
-    credits?: number;
-    team?: string;
-    position?: string;
+    mobile?: string;
+    bio?: string;
 }
 
 export async function POST(request: Request) {
     try {
-        const { userId, firstName, lastName, email, password, credits, team, position } = await request.json() as UpdateRequest;
+        const { userId, firstName, lastName, email, password, mobile, bio } = await request.json() as UpdateRequest;
 
         if (!userId) {
             return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -42,14 +41,13 @@ export async function POST(request: Request) {
             }
         }
 
-        // 2. Update Profiles Table (Credits, Name, Team, Position)
+        // 2. Update Profiles Table (Name, Email, Mobile, Bio)
         const profileUpdates: any = {};
         if (firstName) profileUpdates.first_name = firstName;
         if (lastName) profileUpdates.last_name = lastName;
         if (email) profileUpdates.contact_email = email;
-        if (team !== undefined) profileUpdates.team = team;
-        if (position !== undefined) profileUpdates.position = position;
-        if (credits !== undefined) profileUpdates.credits = credits;
+        if (mobile !== undefined) profileUpdates.mobile = mobile;
+        if (bio !== undefined) profileUpdates.bio = bio;
 
         if (Object.keys(profileUpdates).length > 0) {
             const { error: profileError } = await supabaseAdmin
@@ -65,11 +63,11 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             success: true,
-            message: 'Player updated successfully'
+            message: 'Coach updated successfully'
         });
 
     } catch (error: any) {
-        console.error('Update player API error:', error);
+        console.error('Update coach API error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

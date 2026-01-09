@@ -2,43 +2,39 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
-import { ChevronLeft, Calendar, User, LayoutGrid, RefreshCw } from 'lucide-react';
+import { ChevronLeft, Calendar, User, LayoutGrid, RefreshCw, Plus, X, Trash2, Save, Clock, Info, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 
 // Types
 interface Session {
-    id: number;
+    id?: number;
     title: string;
     start_time: string;
     end_time: string;
     category: string;
     instructor: string;
-    total_facility_bays: number; // bays required
-    max_capacity: number; // max users
+    total_facility_bays: number;
+    max_capacity: number;
+    credit_cost: number;
 }
 
-interface Registration {
-    id: number;
-    session_id: number;
-    user_id: string;
-    user?: {
-        first_name: string;
-        last_name: string;
-    };
+interface Coach {
+    id: string;
+    first_name: string;
+    last_name: string;
 }
 
-// Resources (Bays + Coaches)
+// Fixed Resources for Grid
 const RESOURCES = [
     { id: 'bay_1', name: 'Bay 1', type: 'facility' },
     { id: 'bay_2', name: 'Bay 2', type: 'facility' },
     { id: 'bay_3', name: 'Bay 3', type: 'facility' },
     { id: 'bay_4', name: 'Bay 4', type: 'facility' },
-    { id: 'coach_ben', name: 'Coach Ben', type: 'coach' },
-    { id: 'coach_sarah', name: 'Coach Sarah', type: 'coach' },
-    // In a real app complexity, these would be dynamic
+    { id: 'coach_col', name: 'Coach Tracking', type: 'coach' }, // Visualization of coach sessions
 ];
 
-// Time Slots (08:00 to 22:00)
+const CATEGORIES = ['Open Gym', 'Private Lesson', 'Class', 'Elite Training', 'Special Event'];
+
 const TIME_SLOTS = Array.from({ length: 15 }, (_, i) => {
     const hour = i + 8;
     return `${hour < 10 ? '0' : ''}${hour}:00`;
@@ -46,52 +42,122 @@ const TIME_SLOTS = Array.from({ length: 15 }, (_, i) => {
 
 export default function MasterSchedule() {
     const [sessions, setSessions] = useState<Session[]>([]);
-    const [registrations, setRegistrations] = useState<Registration[]>([]);
+    const [coaches, setCoaches] = useState<Coach[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
+    // UI States
+    const [showModal, setShowModal] = useState(false);
+    const [modalAction, setModalAction] = useState<'CREATE' | 'EDIT'>('CREATE');
+    const [editingSession, setEditingSession] = useState<any>(null);
+
     useEffect(() => {
         fetchSchedule();
+        fetchCoaches();
     }, [selectedDate]);
 
     const fetchSchedule = async () => {
         setLoading(true);
-
-        // Fetch Sessions for Date
         const startOfDay = new Date(selectedDate);
         startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(selectedDate);
         endOfDay.setHours(23, 59, 59, 999);
 
-        const { data: sessionData, error: sessError } = await supabase
+        const { data, error } = await supabase
             .from('sessions')
             .select('*')
             .gte('start_time', startOfDay.toISOString())
             .lte('start_time', endOfDay.toISOString())
             .order('start_time');
 
-        if (sessError) console.error('Error fetching sessions:', sessError);
-        else setSessions(sessionData || []);
-
-        // Fetch Registrations (to see who is in the bays)
-        // Optimization: In a real app we'd filter by session IDs
-        const { data: regData, error: regError } = await supabase
-            .from('registrations')
-            .select('*, user:profiles(first_name, last_name)');
-
-        if (regError) console.error('Error fetching registrations:', regError);
-        else setRegistrations(regData || []);
-
+        if (error) console.error('Error:', error);
+        else setSessions(data || []);
         setLoading(false);
     };
 
-    // Helper to check if a resource is occupied at a given time
-    const getCellContent = (resourceId: string, timeSlot: string) => {
-        // 1. Convert timeSlot to ISO range for comparison
-        const slotStart = new Date(`${selectedDate}T${timeSlot}:00`);
-        const slotEnd = new Date(slotStart.getTime() + 60 * 60 * 1000); // Assume 1 hour blocks for grid simplicity
+    const fetchCoaches = async () => {
+        const { data } = await supabase.from('profiles').select('id, first_name, last_name').eq('role', 'coach');
+        setCoaches(data || []);
+    };
 
-        // 2. Find sessions overlapping this slot
+    const handleCellClick = (timeSlot: string) => {
+        const start = `${selectedDate}T${timeSlot}:00`;
+        const nextHour = (parseInt(timeSlot) + 1).toString().padStart(2, '0');
+        const end = `${selectedDate}T${nextHour}:00`;
+
+        setModalAction('CREATE');
+        setEditingSession({
+            title: '',
+            category: 'Open Gym',
+            instructor: '',
+            start_time: start,
+            end_time: end,
+            total_facility_bays: 1,
+            max_capacity: 4,
+            credit_cost: 100 // Default cost
+        });
+        setShowModal(true);
+    };
+
+    const handleSessionClick = (session: Session) => {
+        setModalAction('EDIT');
+        setEditingSession({ ...session });
+        setShowModal(true);
+    };
+
+    const handleSaveSession = async () => {
+        if (!editingSession.title || !editingSession.start_time || !editingSession.end_time) {
+            alert("Title and times are required.");
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/admin/sessions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: modalAction,
+                    id: editingSession.id,
+                    sessionData: editingSession
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setShowModal(false);
+                fetchSchedule();
+            } else {
+                alert(data.error);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleDeleteSession = async () => {
+        if (!confirm("Are you sure you want to delete this session?")) return;
+        try {
+            const res = await fetch('/api/admin/sessions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'DELETE',
+                    id: editingSession.id
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setShowModal(false);
+                fetchSchedule();
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const getCellContent = (resourceId: string, timeSlot: string) => {
+        const slotStart = new Date(`${selectedDate}T${timeSlot}:00`);
+        const slotEnd = new Date(slotStart.getTime() + 60 * 60 * 1000);
+
         const activeSessions = sessions.filter(s => {
             const sessStart = new Date(s.start_time);
             const sessEnd = new Date(s.end_time);
@@ -100,52 +166,25 @@ export default function MasterSchedule() {
 
         if (activeSessions.length === 0) return null;
 
-        // 3. Map Session to Resource
-        // This is the tricky part: Mapping abstract "Session" to specific "Bay 1".
-        // Currently, our schema doesn't explicit assign "Bay 1". It just has "total_facility_bays".
-        // For this VISUALIZATION, we'll implement a simple allocation heuristic:
-        // - If it's a facility session, fill Bays 1..N based on total_facility_bays
-        // - If it has an instructor, fill the Coach column
-
         for (const session of activeSessions) {
-            // Check Coach Column
-            if (resourceId.startsWith('coach_')) {
-                const coachName = resourceId.replace('coach_', '').toLowerCase();
-                if (session.instructor?.toLowerCase().includes(coachName)) {
-                    return {
-                        type: 'session',
-                        title: session.title,
-                        category: session.category,
-                        color: 'bg-blue-600'
-                    };
-                }
+            // Coach Column Visualization (shows ANY session with an instructor)
+            if (resourceId === 'coach_col' && session.instructor) {
+                return { session, type: 'instructor', title: session.instructor, color: 'bg-blue-600' };
             }
 
-            // Check Facility Bays
+            // Facility Bays
             if (resourceId.startsWith('bay_') && session.total_facility_bays > 0) {
-                // Heuristic: Session assumes availability of ANY bay. 
-                // For visualization, we'll just show it in the first available bays.
-                // In a real system, we'd need a specific 'resource_allocation' table.
-                // For now, if "Private Lesson" consumes 1 bay, show it in Bay 1.
-                // If "Open Gym" consumes 4 bays, show it in Bay 1-4.
-
                 const bayNum = parseInt(resourceId.replace('bay_', ''));
                 if (bayNum <= session.total_facility_bays) {
-                    return {
-                        type: 'session',
-                        title: session.title,
-                        category: session.category,
-                        color: 'bg-[#28D160] text-black'
-                    };
+                    return { session, type: 'facility', title: session.title, color: 'bg-[#28D160] text-black' };
                 }
             }
         }
-
         return null;
     };
 
     return (
-        <div className="flex flex-col gap-6 animate-fadeIn pb-20 min-h-screen bg-black text-white p-6 font-montserrat">
+        <div className="flex flex-col gap-6 animate-fadeIn pb-20 min-h-screen bg-black text-white p-6 font-montserrat select-none">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -154,7 +193,7 @@ export default function MasterSchedule() {
                     </Link>
                     <div>
                         <h1 className="text-2xl font-black italic uppercase tracking-tighter">Master Schedule</h1>
-                        <p className="text-gray-400 text-xs text-[10px] font-bold uppercase tracking-widest">Global Facility Overview</p>
+                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Global Facility Editor</p>
                     </div>
                 </div>
 
@@ -174,15 +213,15 @@ export default function MasterSchedule() {
                 </div>
             </div>
 
-            {/* Grid Container */}
-            <div className="flex-1 overflow-x-auto border border-white/10 rounded-2xl bg-[#1e1e1e]">
+            {/* Grid */}
+            <div className="flex-1 overflow-x-auto border border-white/10 rounded-2xl bg-[#1e1e1e] shadow-2xl">
                 <div className="min-w-[1000px]">
                     {/* Header Row */}
                     <div className="flex border-b border-white/10 sticky top-0 bg-[#1e1e1e] z-10">
                         <div className="w-20 p-4 border-r border-white/10 font-bold text-xs text-gray-500 uppercase tracking-wider bg-[#151515]">Time</div>
                         {RESOURCES.map(resource => (
                             <div key={resource.id} className="flex-1 p-4 border-r border-white/10 min-w-[120px] text-center bg-[#151515]">
-                                <span className={`text-xs font-black uppercase italic tracking-tighter ${resource.type === 'coach' ? 'text-blue-400' : 'text-[#28D160]'}`}>
+                                <span className={`text-[10px] font-black uppercase italic tracking-widest ${resource.type === 'coach' ? 'text-blue-400' : 'text-[#28D160]'}`}>
                                     {resource.name}
                                 </span>
                             </div>
@@ -191,26 +230,27 @@ export default function MasterSchedule() {
 
                     {/* Time Slots */}
                     {TIME_SLOTS.map(time => (
-                        <div key={time} className="flex border-b border-white/5 hover:bg-white/5 transition-colors group">
-                            {/* Time Label */}
-                            <div className="w-20 p-3 border-r border-white/10 flex items-center justify-center text-[10px] font-bold text-gray-400 bg-[#1e1e1e] group-hover:bg-[#252525] sticky left-0 z-10 border-r border-white/10">
+                        <div key={time} className="flex border-b border-white/5 hover:bg-white/5 transition-colors group h-20">
+                            <div className="w-20 p-3 border-r border-white/10 flex items-center justify-center text-[10px] font-black text-gray-500 bg-[#1e1e1e] group-hover:bg-[#252525] sticky left-0 z-10">
                                 {time}
                             </div>
 
-                            {/* Resource Cells */}
                             {RESOURCES.map(resource => {
                                 const content = getCellContent(resource.id, time);
                                 return (
-                                    <div key={`${resource.id}-${time}`} className="flex-1 border-r border-white/5 min-w-[120px] relative p-1">
+                                    <div
+                                        key={`${resource.id}-${time}`}
+                                        className="flex-1 border-r border-white/5 min-w-[120px] relative p-1 cursor-crosshair group/cell"
+                                        onClick={() => content ? handleSessionClick(content.session) : handleCellClick(time)}
+                                    >
                                         {content ? (
-                                            <div className={`w-full h-full rounded-lg ${content.color} p-2 text-xs flex flex-col justify-center shadow-lg`}>
-                                                <span className="font-bold uppercase tracking-tight leading-tight">{content.title}</span>
-                                                <span className="text-[9px] opacity-80 uppercase tracking-widest mt-1">{content.category}</span>
+                                            <div className={`w-full h-full rounded-lg ${content.color} p-2 text-xs flex flex-col justify-center shadow-lg transition-transform hover:scale-[1.02] active:scale-95`}>
+                                                <span className="font-black uppercase tracking-tight leading-tight line-clamp-1">{content.title}</span>
+                                                <span className="text-[8px] opacity-70 uppercase font-bold tracking-widest mt-0.5">{content.type === 'instructor' ? 'Coach' : 'Facility'}</span>
                                             </div>
                                         ) : (
-                                            // Start / End indicators for drag-drop (future)
-                                            <div className="w-full h-full opacity-0 hover:opacity-100 flex items-center justify-center">
-                                                <PlusIcon />
+                                            <div className="w-full h-full opacity-0 group-hover/cell:opacity-100 flex items-center justify-center transition-opacity">
+                                                <Plus size={16} className="text-[#28D160]" />
                                             </div>
                                         )}
                                     </div>
@@ -220,12 +260,146 @@ export default function MasterSchedule() {
                     ))}
                 </div>
             </div>
+
+            {/* Session Editor Modal */}
+            {showModal && editingSession && (
+                <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-[#1e1e1e] p-8 rounded-[2rem] w-full max-w-lg border border-white/10 shadow-2xl overflow-y-auto max-h-[90vh]">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 className="font-black italic text-2xl uppercase tracking-tighter text-[#28D160]">
+                                    {modalAction === 'CREATE' ? 'Add Session' : 'Edit Session'}
+                                </h2>
+                                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Global Resource Allocation</p>
+                            </div>
+                            <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-500 hover:text-white">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-5">
+                            {/* Title */}
+                            <div>
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Session Title</label>
+                                <input
+                                    value={editingSession.title}
+                                    onChange={e => setEditingSession({ ...editingSession, title: e.target.value })}
+                                    placeholder="e.g. U14 Shooting Drills"
+                                    className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] transition-colors"
+                                />
+                            </div>
+
+                            {/* Category & Instructor */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Category</label>
+                                    <select
+                                        value={editingSession.category}
+                                        onChange={e => setEditingSession({ ...editingSession, category: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-sm uppercase font-bold"
+                                    >
+                                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Instructor</label>
+                                    <select
+                                        value={editingSession.instructor}
+                                        onChange={e => setEditingSession({ ...editingSession, instructor: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-sm font-bold"
+                                    >
+                                        <option value="">None</option>
+                                        {coaches.map(c => (
+                                            <option key={c.id} value={`${c.first_name} ${c.last_name}`}>
+                                                {c.first_name} {c.last_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Credit Cost */}
+                            <div>
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block flex items-center gap-1">
+                                    <DollarSign size={10} /> Credit Cost
+                                </label>
+                                <input
+                                    type="number"
+                                    value={editingSession.credit_cost}
+                                    onChange={e => setEditingSession({ ...editingSession, credit_cost: parseInt(e.target.value) })}
+                                    className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] transition-colors"
+                                />
+                            </div>
+
+                            {/* Start & End Times */}
+                            <div className="grid grid-cols-2 gap-4 bg-black/20 p-4 rounded-2xl border border-white/5">
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block flex items-center gap-1">
+                                        <Clock size={10} /> Start Time
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        value={editingSession.start_time.slice(0, 16)}
+                                        onChange={e => setEditingSession({ ...editingSession, start_time: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-[11px] text-white outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block flex items-center gap-1">
+                                        <Clock size={10} /> End Time
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        value={editingSession.end_time.slice(0, 16)}
+                                        onChange={e => setEditingSession({ ...editingSession, end_time: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-[11px] text-white outline-none"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Capacity & Bays */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Facility Bays (1-4)</label>
+                                    <input
+                                        type="number"
+                                        min="0" max="4"
+                                        value={editingSession.total_facility_bays}
+                                        onChange={e => setEditingSession({ ...editingSession, total_facility_bays: parseInt(e.target.value) })}
+                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Max Users</label>
+                                    <input
+                                        type="number"
+                                        value={editingSession.max_capacity}
+                                        onChange={e => setEditingSession({ ...editingSession, max_capacity: parseInt(e.target.value) })}
+                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160]"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4 mt-8">
+                                <button
+                                    onClick={handleSaveSession}
+                                    className="flex-1 bg-[#28D160] text-black font-black italic uppercase text-sm py-4 rounded-xl hover:bg-white transition-all shadow-xl shadow-[#28D160]/10 flex items-center justify-center gap-2"
+                                >
+                                    <Save size={18} /> Save Session
+                                </button>
+                                {modalAction === 'EDIT' && (
+                                    <button
+                                        onClick={handleDeleteSession}
+                                        className="bg-red-600/20 text-red-500 border border-red-500/30 p-4 rounded-xl hover:bg-red-500 hover:text-white transition-all"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
-
-const PlusIcon = () => (
-    <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50">
-        <span className="text-xl leading-none mb-1">+</span>
-    </div>
-);

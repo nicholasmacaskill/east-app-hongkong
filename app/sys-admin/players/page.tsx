@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Plus, Search, QrCode as QrIcon, Trash2, Edit2, Shield, Copy, X } from 'lucide-react';
+import { ChevronLeft, Plus, Search, QrCode as QrIcon, Trash2, Edit2, Shield, Copy, X, User } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -22,12 +22,11 @@ export default function PlayerManagement() {
     });
 
     // Success / QR State
-    const [createdPlayer, setCreatedPlayer] = useState<any>(null); // Stores details of player just created
+    const [createdPlayer, setCreatedPlayer] = useState<any>(null);
 
     // Edit Player State
     const [showEditForm, setShowEditForm] = useState(false);
     const [editingPlayer, setEditingPlayer] = useState<any>(null);
-
 
     useEffect(() => {
         fetchPlayers();
@@ -75,7 +74,6 @@ export default function PlayerManagement() {
                 throw new Error(data.error);
             }
 
-            // Success! Show QR code
             setCreatedPlayer({
                 id: data.userId,
                 name: `${newPlayer.first_name} ${newPlayer.last_name}`,
@@ -84,7 +82,7 @@ export default function PlayerManagement() {
             });
 
             setShowAddForm(false);
-            setNewPlayer({ first_name: '', last_name: '', email: '', password: 'password123', team: '', position: '' });
+            setNewPlayer({ first_name: '', last_name: '', email: '', password: '', team: '', position: '' });
             fetchPlayers();
 
         } catch (error: any) {
@@ -95,13 +93,14 @@ export default function PlayerManagement() {
     const handleEditClick = (player: any) => {
         setEditingPlayer({
             id: player.id,
-            first_name: player.first_name || player.name?.split(' ')[0] || '',
-            last_name: player.last_name || player.name?.split(' ').slice(1).join(' ') || '',
-            email: player.contact_email || '', // Ideally fetch auth email if possible, but contact_email is proxy
+            first_name: player.first_name || '',
+            last_name: player.last_name || '',
+            email: player.contact_email || '',
             credits: player.credits || 0,
             team: player.team || '',
             position: player.position || '',
-            password: '' // Placeholder, empty means don't change
+            username: player.username || '',
+            password: '' // Placeholder
         });
         setShowEditForm(true);
     };
@@ -118,10 +117,11 @@ export default function PlayerManagement() {
                     firstName: editingPlayer.first_name,
                     lastName: editingPlayer.last_name,
                     email: editingPlayer.email,
-                    password: editingPlayer.password, // Only sent if user typed something
+                    password: editingPlayer.password,
                     credits: parseInt(editingPlayer.credits),
                     team: editingPlayer.team,
-                    position: editingPlayer.position
+                    position: editingPlayer.position,
+                    username: editingPlayer.username
                 })
             });
 
@@ -134,7 +134,7 @@ export default function PlayerManagement() {
             alert('Player updated successfully');
             setShowEditForm(false);
             setEditingPlayer(null);
-            fetchPlayers(); // Refresh list
+            fetchPlayers();
 
         } catch (error: any) {
             alert('Error updating player: ' + error.message);
@@ -144,7 +144,8 @@ export default function PlayerManagement() {
     const filteredPlayers = players.filter(p =>
     ((p.first_name || p.name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (p.last_name || p.surname)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.team?.toLowerCase().includes(searchTerm.toLowerCase()))
+        p.team?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.username?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     return (
@@ -156,8 +157,8 @@ export default function PlayerManagement() {
                         <ChevronLeft size={20} />
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-black italic uppercase tracking-tighter">Players</h1>
-                        <p className="text-gray-400 text-xs">Manage roster & QR codes</p>
+                        <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white">Players</h1>
+                        <p className="text-gray-400 text-xs">Manage roster & account details</p>
                     </div>
                 </div>
                 <button
@@ -170,11 +171,11 @@ export default function PlayerManagement() {
 
             {/* Success / QR Modal */}
             {createdPlayer && (
-                <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4">
-                    <div className="bg-[#1e1e1e] p-8 rounded-3xl w-full max-w-md border border-[#28D160] flex flex-col items-center text-center relative shadow-2xl shadow-[#28D160]/20">
+                <div className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
+                    <div className="bg-[#1e1e1e] p-8 rounded-[2.5rem] w-full max-w-md border border-[#28D160]/30 flex flex-col items-center text-center relative shadow-2xl shadow-[#28D160]/10">
                         <button
                             onClick={() => setCreatedPlayer(null)}
-                            className="absolute top-4 right-4 text-gray-500 hover:text-white"
+                            className="absolute top-6 right-6 text-gray-500 hover:text-white"
                         >
                             <X size={24} />
                         </button>
@@ -186,27 +187,27 @@ export default function PlayerManagement() {
                         <h2 className="font-black italic text-2xl uppercase mb-2 text-white">Player Created!</h2>
                         <p className="text-gray-400 text-sm mb-8">Scan or screenshot this QR code for the player.</p>
 
-                        <div className="bg-white p-6 rounded-2xl mb-6">
+                        <div className="bg-white p-6 rounded-3xl mb-8 shadow-xl">
                             <QRCodeSVG
                                 value={`${typeof window !== 'undefined' ? window.location.origin : ''}/profile/${createdPlayer.id}`}
                                 size={200}
                             />
                         </div>
 
-                        <div className="bg-black/30 w-full p-4 rounded-xl border border-white/10 text-left mb-6">
-                            <p className="text-xs text-gray-500 uppercase mb-1">Name</p>
-                            <p className="font-bold text-white mb-3">{createdPlayer.name}</p>
+                        <div className="bg-black/40 w-full p-5 rounded-2xl border border-white/5 text-left mb-8">
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Assigned Name</p>
+                            <p className="font-bold text-white mb-4 text-lg">{createdPlayer.name}</p>
 
-                            <p className="text-xs text-gray-500 uppercase mb-1">Login Email</p>
-                            <div className="flex justify-between items-center">
-                                <p className="font-mono text-[#28D160]">{createdPlayer.email}</p>
-                                <Copy size={14} className="text-gray-600 hover:text-white cursor-pointer" />
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Login Email</p>
+                            <div className="flex justify-between items-center group">
+                                <p className="font-mono text-[#28D160] group-hover:text-white transition-colors cursor-copy">{createdPlayer.email}</p>
+                                <Copy size={16} className="text-gray-600 hover:text-white cursor-pointer" />
                             </div>
                         </div>
 
                         <button
                             onClick={() => setCreatedPlayer(null)}
-                            className="w-full bg-[#28D160] text-black font-bold py-3 rounded-xl uppercase hover:bg-white transition-colors"
+                            className="w-full bg-[#28D160] text-black font-black italic py-4 rounded-xl uppercase hover:bg-white transition-all tracking-widest shadow-lg active:scale-95"
                         >
                             Done
                         </button>
@@ -214,11 +215,11 @@ export default function PlayerManagement() {
                 </div>
             )}
 
-            {/* Add Player Modal/Form */}
+            {/* Add Player Modal */}
             {showAddForm && (
                 <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-                    <div className="bg-[#1e1e1e] p-6 rounded-2xl w-full max-w-md border border-white/10">
-                        <h2 className="font-black italic text-xl uppercase mb-4">Add New Player</h2>
+                    <div className="bg-[#1e1e1e] p-6 rounded-2xl w-full max-w-md border border-white/10 max-h-[90vh] overflow-y-auto">
+                        <h2 className="font-black italic text-xl uppercase mb-4 text-[#28D160]">Add New Player</h2>
                         <div className="flex flex-col gap-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -226,7 +227,7 @@ export default function PlayerManagement() {
                                     <input
                                         value={newPlayer.first_name}
                                         onChange={e => setNewPlayer({ ...newPlayer, first_name: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                     />
                                 </div>
                                 <div>
@@ -234,37 +235,18 @@ export default function PlayerManagement() {
                                     <input
                                         value={newPlayer.last_name}
                                         onChange={e => setNewPlayer({ ...newPlayer, last_name: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                     />
                                 </div>
                             </div>
 
-                            {/* New Auth Fields */}
                             <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase">Email (Login)</label>
                                 <input
                                     value={newPlayer.email}
                                     onChange={e => setNewPlayer({ ...newPlayer, email: e.target.value })}
-                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                     placeholder="player@example.com"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Team</label>
-                                <input
-                                    value={newPlayer.team}
-                                    onChange={e => setNewPlayer({ ...newPlayer, team: e.target.value })}
-                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
-                                    placeholder="e.g. U12 Elite"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Position</label>
-                                <input
-                                    value={newPlayer.position}
-                                    onChange={e => setNewPlayer({ ...newPlayer, position: e.target.value })}
-                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
-                                    placeholder="e.g. Center, Defense"
                                 />
                             </div>
                             <div>
@@ -272,14 +254,36 @@ export default function PlayerManagement() {
                                 <input
                                     value={newPlayer.password}
                                     onChange={e => setNewPlayer({ ...newPlayer, password: e.target.value })}
-                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                     type="text"
+                                    placeholder="Set temporary password"
                                 />
                             </div>
 
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Team</label>
+                                    <input
+                                        value={newPlayer.team}
+                                        onChange={e => setNewPlayer({ ...newPlayer, team: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                        placeholder="U12 Elite"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Position</label>
+                                    <input
+                                        value={newPlayer.position}
+                                        onChange={e => setNewPlayer({ ...newPlayer, position: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                        placeholder="Forward"
+                                    />
+                                </div>
+                            </div>
+
                             <div className="flex gap-2 mt-4">
-                                <button onClick={handleAddPlayer} className="flex-1 bg-[#28D160] text-black font-bold py-2 rounded uppercase text-xs hover:bg-white transition-colors">Create Account</button>
-                                <button onClick={() => setShowAddForm(false)} className="flex-1 bg-white/10 text-white font-bold py-2 rounded uppercase text-xs hover:bg-white/20 transition-colors">Cancel</button>
+                                <button onClick={handleAddPlayer} className="flex-1 bg-[#28D160] text-black font-black italic py-3 rounded-xl uppercase text-xs hover:bg-white transition-all shadow-lg active:scale-95">Create Account</button>
+                                <button onClick={() => setShowAddForm(false)} className="flex-1 bg-white/10 text-white font-bold py-3 rounded-xl uppercase text-xs hover:bg-white/20 transition-all">Cancel</button>
                             </div>
                         </div>
                     </div>
@@ -290,7 +294,7 @@ export default function PlayerManagement() {
             {showEditForm && editingPlayer && (
                 <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
                     <div className="bg-[#1e1e1e] p-6 rounded-2xl w-full max-w-md border border-white/10 max-h-[90vh] overflow-y-auto">
-                        <h2 className="font-black italic text-xl uppercase mb-4">Edit Player</h2>
+                        <h2 className="font-black italic text-xl uppercase mb-4 text-[#28D160]">Edit Player Account</h2>
                         <div className="flex flex-col gap-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -298,7 +302,7 @@ export default function PlayerManagement() {
                                     <input
                                         value={editingPlayer.first_name}
                                         onChange={e => setEditingPlayer({ ...editingPlayer, first_name: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                     />
                                 </div>
                                 <div>
@@ -306,27 +310,37 @@ export default function PlayerManagement() {
                                     <input
                                         value={editingPlayer.last_name}
                                         onChange={e => setEditingPlayer({ ...editingPlayer, last_name: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Credits (Balance)</label>
+                                    <input
+                                        type="number"
+                                        value={editingPlayer.credits}
+                                        onChange={e => setEditingPlayer({ ...editingPlayer, credits: e.target.value })}
+                                        className="w-full bg-black/50 border border-[#28D160]/30 p-2 rounded-lg text-white font-bold text-sm outline-none focus:border-[#28D160]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Username</label>
+                                    <input
+                                        value={editingPlayer.username}
+                                        onChange={e => setEditingPlayer({ ...editingPlayer, username: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Credits (Balance)</label>
-                                <input
-                                    type="number"
-                                    value={editingPlayer.credits}
-                                    onChange={e => setEditingPlayer({ ...editingPlayer, credits: e.target.value })}
-                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Email (Login)</label>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Email (Admin Search Only)</label>
                                 <input
                                     value={editingPlayer.email}
                                     onChange={e => setEditingPlayer({ ...editingPlayer, email: e.target.value })}
-                                    className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                 />
                             </div>
 
@@ -336,7 +350,7 @@ export default function PlayerManagement() {
                                     <input
                                         value={editingPlayer.team}
                                         onChange={e => setEditingPlayer({ ...editingPlayer, team: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                     />
                                 </div>
                                 <div>
@@ -344,91 +358,95 @@ export default function PlayerManagement() {
                                     <input
                                         value={editingPlayer.position}
                                         onChange={e => setEditingPlayer({ ...editingPlayer, position: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                     />
                                 </div>
                             </div>
 
-                            <div className="bg-red-900/20 p-4 rounded-lg border border-red-500/30">
-                                <label className="text-[10px] font-bold text-red-400 uppercase block mb-1">Reset Password</label>
+                            <div className="bg-red-900/10 p-4 rounded-xl border border-red-500/20">
+                                <label className="text-[10px] font-bold text-red-400 uppercase block mb-1">Set New Password</label>
                                 <input
                                     value={editingPlayer.password}
                                     onChange={e => setEditingPlayer({ ...editingPlayer, password: e.target.value })}
-                                    className="w-full bg-black/50 border border-red-500/30 p-2 rounded text-white text-sm outline-none focus:border-red-500"
+                                    className="w-full bg-black/50 border border-red-500/20 p-2 rounded-lg text-white text-sm outline-none focus:border-red-500"
                                     placeholder="Leave blank to keep current"
                                     type="text"
                                 />
-                                <p className="text-[10px] text-gray-500 mt-1">Only enter value to override existing password.</p>
+                                <p className="text-[9px] text-gray-500 mt-2 italic font-bold">This will immediately update the player's login credentials.</p>
                             </div>
 
                             <div className="flex gap-2 mt-4">
-                                <button onClick={handleUpdatePlayer} className="flex-1 bg-[#28D160] text-black font-bold py-2 rounded uppercase text-xs hover:bg-white transition-colors">Save Changes</button>
-                                <button onClick={() => setShowEditForm(false)} className="flex-1 bg-white/10 text-white font-bold py-2 rounded uppercase text-xs hover:bg-white/20 transition-colors">Cancel</button>
+                                <button onClick={handleUpdatePlayer} className="flex-1 bg-[#28D160] text-black font-black italic py-3 rounded-xl uppercase text-xs hover:bg-white transition-all shadow-lg active:scale-95">Save Changes</button>
+                                <button onClick={() => setShowEditForm(false)} className="flex-1 bg-white/10 text-white font-bold py-3 rounded-xl uppercase text-xs hover:bg-white/20 transition-all">Cancel</button>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-
             {/* Search */}
             <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
                 <input
                     type="text"
-                    placeholder="Search by name or team..."
+                    placeholder="Search by name, team, or username..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className="w-full bg-[#1e1e1e] border border-white/5 pl-10 pr-4 py-3 rounded-xl text-sm text-white placeholder:text-gray-600 outline-none focus:border-[#28D160]"
+                    className="w-full bg-[#1e1e1e] border border-white/5 pl-12 pr-4 py-4 rounded-xl text-sm text-white placeholder:text-gray-600 outline-none focus:border-[#28D160] focus:bg-[#252525] transition-all"
                 />
             </div>
 
             {/* List */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {loading ? (
-                    <div className="col-span-full text-center py-10 text-gray-500">Loading players...</div>
+                    <div className="col-span-full text-center py-20 text-gray-500 flex flex-col items-center gap-4">
+                        <Plus className="animate-spin text-[#28D160]" size={32} />
+                        <span className="font-bold uppercase tracking-widest text-[10px]">Loading Player Database...</span>
+                    </div>
                 ) : filteredPlayers.length === 0 ? (
-                    <div className="col-span-full text-center py-10 text-gray-500">No players found.</div>
+                    <div className="col-span-full text-center py-20 text-gray-500 font-bold uppercase tracking-widest text-xs">No records matching your search.</div>
                 ) : (
                     filteredPlayers.map(player => {
                         const profileUrl = typeof window !== 'undefined' ? `${window.location.origin}/profile/${player.id}` : '#';
 
                         return (
-                            <div key={player.id} className="bg-[#1e1e1e] rounded-xl overflow-hidden border border-white/5 group hover:border-[#28D160]/50 transition-colors">
-                                <div className="p-4 flex gap-4">
-                                    {/* QR Code */}
-                                    <div className="w-20 h-20 bg-white p-1 rounded-lg shrink-0 flex items-center justify-center">
-                                        <QRCodeSVG value={profileUrl} size={72} />
+                            <div key={player.id} className="bg-[#1e1e1e] rounded-2xl overflow-hidden border border-white/5 group hover:border-[#28D160]/50 transition-all shadow-xl hover:-translate-y-1">
+                                <div className="p-5 flex gap-5">
+                                    {/* QR Thumbnail */}
+                                    <div className="w-20 h-20 bg-white p-1.5 rounded-xl shrink-0 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                                        <QRCodeSVG value={profileUrl} size={68} />
                                     </div>
 
-                                    <div className="flex flex-col min-w-0">
-                                        <div className="flex items-start justify-between">
-                                            <h3 className="font-bold text-white truncate pr-2">
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <h3 className="font-bold text-white truncate text-lg">
                                                 {player.first_name || player.name} {player.last_name || player.surname}
                                             </h3>
-                                            <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded text-gray-300 uppercase shrink-0">
-                                                {player.team || 'No Team'}
+                                            <span className="text-[9px] bg-[#28D160]/10 border border-[#28D160]/20 px-2 py-0.5 rounded text-[#28D160] font-black italic uppercase shrink-0">
+                                                {player.team || 'FREE AGENT'}
                                             </span>
                                         </div>
-                                        <p className="text-gray-500 text-xs truncate mt-1">ID: {player.id}</p>
-                                        <div className="flex gap-2 items-center">
-                                            <button onClick={() => handleEditClick(player)} className="text-xs font-bold text-gray-400 uppercase hover:text-[#28D160] transition-colors flex items-center gap-1">
-                                                <Edit2 size={12} /> Edit
+                                        <p className="text-gray-500 text-[10px] font-mono truncate mt-0.5 opacity-60">@{player.username || 'no-username'}</p>
+
+                                        <div className="flex gap-3 items-center mt-3">
+                                            <button onClick={() => handleEditClick(player)} className="text-[10px] font-black italic text-gray-400 uppercase hover:text-[#28D160] transition-colors flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md">
+                                                <Edit2 size={12} /> Account
                                             </button>
-                                            <span className="text-gray-700">|</span>
-                                            <a href={`/profile/${player.id}`} className="text-xs font-bold text-[#28D160] uppercase hover:text-white transition-colors">
-                                                View
-                                            </a>
-                                            <span className="text-gray-700">|</span>
-                                            <span className="text-xs font-bold text-gray-500 uppercase">
-                                                {player.credits} CR
-                                            </span>
+                                            <div className="h-3 w-px bg-white/10" />
+                                            <div className="text-[10px] font-black text-white uppercase italic">
+                                                {player.credits} <span className="text-gray-500">Credits</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-black/40 px-4 py-2 flex justify-between items-center">
-                                    <span className="text-[10px] text-gray-500 font-mono">Scan to view profile</span>
-                                    <QrIcon size={14} className="text-gray-600 group-hover:text-white transition-colors" />
+                                <div className="bg-black/40 px-5 py-3 flex justify-between items-center group-hover:bg-[#28D160]/5 transition-colors">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#28D160] animate-pulse" />
+                                        <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Active Status</span>
+                                    </div>
+                                    <Link href={`/profile/${player.id}`} className="text-[9px] font-black text-[#28D160] uppercase tracking-widest hover:text-white transition-colors flex items-center gap-1">
+                                        View Profile <ChevronLeft size={10} className="rotate-180" />
+                                    </Link>
                                 </div>
                             </div>
                         );
@@ -438,4 +456,3 @@ export default function PlayerManagement() {
         </div>
     );
 }
-
