@@ -39,8 +39,34 @@ export default function AdminDashboard() {
                     </div>
                 </Link>
 
-                {/* Unified Coach & Schedule Management Card */}
+                {/* Coach Management Card */}
                 <Link href="/sys-admin/coaches" className="group">
+                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
+                        <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <Users size={120} />
+                        </div>
+
+                        <div className="relative z-10 flex flex-col h-full gap-4">
+                            <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                                <Users size={24} />
+                            </div>
+
+                            <div>
+                                <h2 className="text-xl font-black italic uppercase mb-2">Manage Coaches</h2>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                    Add/Edit coach profiles, contact info, and manage their individual availability rules.
+                                </p>
+                            </div>
+
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
+                                View Coach List <ArrowRight size={14} />
+                            </div>
+                        </div>
+                    </div>
+                </Link>
+
+                {/* Master Schedule Card */}
+                <Link href="/sys-admin/schedule" className="group">
                     <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Calendar size={120} />
@@ -52,14 +78,14 @@ export default function AdminDashboard() {
                             </div>
 
                             <div>
-                                <h2 className="text-xl font-black italic uppercase mb-2">Coaches & Schedules</h2>
+                                <h2 className="text-xl font-black italic uppercase mb-2">Master Schedule</h2>
                                 <p className="text-gray-400 text-sm leading-relaxed">
-                                    Manage coach profiles, contact details, and set availability or recurring time blocks in one place.
+                                    View the global facility timeline, manage sessions, and see resource allocation.
                                 </p>
                             </div>
 
                             <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
-                                Open Manager <ArrowRight size={14} />
+                                Open Master GRID <ArrowRight size={14} />
                             </div>
                         </div>
                     </div>

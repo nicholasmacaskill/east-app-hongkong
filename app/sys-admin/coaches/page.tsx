@@ -159,12 +159,20 @@ export default function CoachManagement() {
                         <p className="text-gray-400 text-xs">Manage coach profiles & details</p>
                     </div>
                 </div>
-                <button
-                    onClick={() => setShowAddForm(true)}
-                    className="bg-[#28D160] text-black font-bold text-xs px-4 py-2 rounded-lg hover:bg-white transition-colors flex items-center gap-2 uppercase tracking-wide"
-                >
-                    <Plus size={16} /> Add Coach
-                </button>
+                <div className="flex gap-4">
+                    <Link
+                        href="/sys-admin/schedule"
+                        className="bg-white/10 text-white font-bold text-xs px-4 py-2 rounded-lg hover:bg-white/20 transition-colors flex items-center gap-2 uppercase tracking-wide"
+                    >
+                        <Calendar size={16} /> View Master Schedule
+                    </Link>
+                    <button
+                        onClick={() => setShowAddForm(true)}
+                        className="bg-[#28D160] text-black font-bold text-xs px-4 py-2 rounded-lg hover:bg-white transition-colors flex items-center gap-2 uppercase tracking-wide"
+                    >
+                        <Plus size={16} /> Add Coach
+                    </button>
+                </div>
             </div>
 
             {/* Add Coach Modal */}
