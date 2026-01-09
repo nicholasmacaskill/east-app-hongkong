@@ -26,10 +26,10 @@ interface Coach {
 
 // Fixed Resources for Grid
 const RESOURCES = [
-    { id: 'bay_1', name: 'Bay 1', type: 'facility' },
-    { id: 'bay_2', name: 'Bay 2', type: 'facility' },
-    { id: 'bay_3', name: 'Bay 3', type: 'facility' },
-    { id: 'bay_4', name: 'Bay 4', type: 'facility' },
+    { id: 'bay_1', name: 'The Blue Bay', type: 'facility' },
+    { id: 'bay_2', name: 'Shooting Bay', type: 'facility' },
+    { id: 'bay_3', name: 'Trackman 1', type: 'facility' },
+    { id: 'bay_4', name: 'Trackman 2', type: 'facility' },
     { id: 'coach_col', name: 'Coach Tracking', type: 'coach' }, // Visualization of coach sessions
 ];
 

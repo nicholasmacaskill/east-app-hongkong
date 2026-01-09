@@ -71,10 +71,22 @@ export default function CoachManagement() {
             if (!result.success) {
                 alert('Error adding coach: ' + result.error);
             } else {
-                alert('Coach added successfully.');
+                // Determine the new coach object to set as selected
+                // Ideally the API should return the full object, but we can construct enough for the modal
+                const createdCoach = {
+                    id: result.userId,
+                    first_name: newCoach.first_name,
+                    last_name: newCoach.last_name
+                };
+
+                alert('Coach added successfully! You can now set their availability.');
                 setShowAddForm(false);
                 setNewCoach({ first_name: '', last_name: '', email: '', password: '', mobile: '', bio: '' });
-                fetchCoaches();
+                fetchCoaches(); // Refresh list in background
+
+                // Open availability immediately
+                setSelectedCoach(createdCoach);
+                setShowAvailability(true);
             }
         } catch (err) {
             alert('Failed to connect to server.');
