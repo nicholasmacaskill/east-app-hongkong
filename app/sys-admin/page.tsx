@@ -40,7 +40,7 @@ export default function AdminDashboard() {
                 </Link>
 
                 {/* Unified Coach & Schedule Management Card */}
-                <Link href="/sys-admin/schedule" className="group">
+                <Link href="/sys-admin/coaches" className="group">
                     <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Calendar size={120} />
