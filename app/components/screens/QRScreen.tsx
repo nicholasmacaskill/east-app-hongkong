@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { QrCode, User as UserIcon } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 
-export default function QRScreen({ credits, currentUserId }: { credits: number, currentUserId: string | null }) {
+export default function QRScreen({ credits, currentUserId, subscriptionStatus }: { credits: number, currentUserId: string | null, subscriptionStatus?: string }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -90,6 +90,15 @@ export default function QRScreen({ credits, currentUserId }: { credits: number, 
                 <span className="text-xs font-black text-gray-500 uppercase mt-2 italic tracking-tighter">Credits</span>
               </div>
             </div>
+
+            {/* Locked Credits Warning */}
+            {subscriptionStatus && subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && (
+              <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 mb-4">
+                <p className="text-[10px] font-bold text-red-400 text-center uppercase tracking-wide">
+                  ⚠️ Credits locked until subscription is purchased or reactivated
+                </p>
+              </div>
+            )}
 
             <button
               onClick={handleTopUp}

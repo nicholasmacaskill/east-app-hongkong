@@ -395,7 +395,7 @@ function AppContent() {
 
           {/* {activeTab === 'community' && <CommunityScreen key={refreshKey} currentUserId={currentUserId} />} */}
 
-          {activeTab === 'qr' && <QRScreen credits={userProfile.credits || 0} currentUserId={currentUserId} />}
+          {activeTab === 'qr' && <QRScreen credits={userProfile.credits || 0} currentUserId={currentUserId} subscriptionStatus={userProfile.subscription_status} />}
         </main>
 
         <BottomNav activeTab={activeTab} setTab={setActiveTab} />
