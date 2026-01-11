@@ -69,7 +69,7 @@ export default function ParentProfile({
             {
                activeTab === 'athletes' && (
                   <div className="flex flex-col gap-4 animate-fadeIn">
-                     {myChildren.map((athlete) => {
+                     {(myChildren || []).map((athlete) => {
                         const isSelected = selectedChildId === athlete.id;
                         return (
                            <div
