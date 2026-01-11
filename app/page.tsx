@@ -350,7 +350,35 @@ function AppContent() {
             (userProfile.role as string) === 'coach' || (userProfile.role as string) === 'admin'
               ? <CoachProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} currentUserId={currentUserId} />
               : userProfile.role === 'parent'
-                ? <ParentProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} myChildren={myChildren} onAddChild={() => setRefreshKey(prev => prev + 1)} />
+                ? <ParentProfile
+                  onOpenSettings={() => setShowSettingsModal(true)}
+                  profileData={userProfile}
+                  myChildren={myChildren}
+                  onAddChild={async (child) => {
+                    try {
+                      const res = await fetch('/api/family/add-child', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          firstName: child.first,
+                          lastName: child.last,
+                          email: child.email,
+                          sport: child.sport,
+                          parentId: currentUserId
+                        })
+                      });
+                      const data = await res.json();
+                      if (!res.ok) {
+                        alert(`Error: ${data.error}`);
+                      } else {
+                        alert('Child added successfully!');
+                        setRefreshKey(prev => prev + 1);
+                      }
+                    } catch (e: any) {
+                      alert(`Failed to add child: ${e.message}`);
+                    }
+                  }}
+                />
                 : <PlayerProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} />
           )}
 
