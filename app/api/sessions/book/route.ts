@@ -94,21 +94,36 @@ export async function POST(request: Request) {
     // ==========================
     const { data: userProfile, error: profileErr } = await supabaseAdmin
       .from('profiles')
-      .select('subscription_status')
+      .select('subscription_status, parent_id')
       .eq('id', userId)
       .single();
 
     if (profileErr || !userProfile) {
+      // It might be a child profile in the 'players' table or just missing?
+      // Let's check if it's a child by looking up 'profiles' (maybe they are a profile with parent_id)
+      // If not found in profiles, we can't check subscription easily.
+      // BUT, let's assume if not found, we return 404. 
+      // However, if found, we check parent_id.
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
-    const { subscription_status } = userProfile;
-    // Allow 'active' or 'trialing'. Reject everything else (null, incomplete, canceled, etc.)
-    if (subscription_status !== 'active' && subscription_status !== 'trialing') {
-      return NextResponse.json({
-        error: 'Account Locked: Active subscription required to book sessions.',
-        code: 'SUBSCRIPTION_LOCKED'
-      }, { status: 403 });
+    let subscriptionStatus = userProfile.subscription_status;
+
+    // Handle Child Accounts: If this user has a parent, check parent's subscription
+    if (userProfile.parent_id) {
+      const { data: parentProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('subscription_status')
+        .eq('id', userProfile.parent_id)
+        .single();
+
+      if (parentProfile) {
+        subscriptionStatus = parentProfile.subscription_status;
+      }
+    }
+
+    if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing') {
+      return NextResponse.json({ error: 'Account Locked: Active subscription required.', code: 'SUBSCRIPTION_LOCKED' }, { status: 403 });
     }
 
 
