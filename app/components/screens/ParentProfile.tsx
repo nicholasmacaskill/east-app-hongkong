@@ -2,7 +2,15 @@
 import React, { useState } from 'react';
 import { Edit2, CheckCircle2, ChevronRight, Users, Calendar, Heart, Award, Lock } from 'lucide-react';
 
-// ... (lines 4-31 same)
+interface ParentProfileProps {
+   onOpenSettings: () => void;
+   profileData: any;
+   isReadOnly?: boolean;
+   myChildren?: any[];
+   activeChildId?: string;
+   setActiveChildId?: (id: string) => void;
+   onAddChild: (child: any) => Promise<void>;
+}
 
 export default function ParentProfile({
    onOpenSettings,
@@ -13,39 +21,117 @@ export default function ParentProfile({
    setActiveChildId,
    onAddChild
 }: ParentProfileProps) {
-   // ... (lines 33-143 same)
 
+   const [activeTab, setActiveTab] = useState('athletes');
+   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+   const [showAddChild, setShowAddChild] = useState(false);
+   const [newChild, setNewChild] = useState({ first: '', last: '', email: '', sport: '' });
+   const [availability, setAvailability] = useState<string[]>([]);
+   const [savingAvailability, setSavingAvailability] = useState(false);
+
+   // Mock logic for next 14 days
+   const next14Days = Array.from({ length: 14 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+      return {
+         day: dayNames[d.getDay()],
+         date: d.getDate(),
+         fullDate: d.toISOString().split('T')[0]
+      };
+   });
+
+   const toggleAvailability = async (date: string) => {
+      setSavingAvailability(true);
+      // Simulate API call
+      setTimeout(() => {
+         setAvailability(prev =>
+            prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date]
+         );
+         setSavingAvailability(false);
+      }, 500);
+   };
+
+   const handleAddChild = async () => {
+      if (!newChild.first || !newChild.last) return;
+      await onAddChild(newChild);
+      setShowAddChild(false);
+      setNewChild({ first: '', last: '', email: '', sport: '' });
+   };
+
+   // Check lock status
    const isLocked = profileData.subscription_status && profileData.subscription_status !== 'active' && profileData.subscription_status !== 'trialing';
 
    return (
       <div className="animate-fadeIn bg-black min-h-screen pb-24 relative overflow-hidden">
-         {/* ... (lines 147-198 same) */}
+         {/* HEADER IMAGE */}
+         <div className="h-48 relative">
+            <img
+               src="https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=2670&auto=format&fit=crop"
+               className="w-full h-full object-cover opacity-60"
+               alt="Cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black to-transparent" />
+            <div className="absolute top-4 right-4 flex gap-3">
+               <button onClick={onOpenSettings} className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white hover:bg-white/10 active:scale-95 transition-all shadow-lg">
+                  <Edit2 size={16} />
+               </button>
+            </div>
+         </div>
 
-         <div className="grid grid-cols-3 w-full gap-2">
-            {[
-               { l: 'VOLUNTEER\nHRS', v: '48', icon: Heart },
-               {
-                  l: 'CREDITS\nBALANCE',
-                  v: profileData.credits || '0',
-                  icon: isLocked ? Lock : Users,
-                  isLocked: isLocked
-               },
-               { l: 'EVENTS\nJOINED', v: '15', icon: Calendar },
-            ].map((stat, i) => (
-               <div
-                  key={i}
-                  onClick={() => stat.isLocked && alert("Current credits are unusable until a new subscription is purchased.")}
-                  title={stat.isLocked ? "Current credits are unusable until a new subscription is purchased." : ""}
-                  className={`flex flex-col items-center p-3 bg-white/5 rounded-xl border group hover:border-east-light/50 transition-colors ${stat.isLocked ? 'border-red-900/50 bg-red-900/10 cursor-not-allowed' : 'border-white/10'}`}
-               >
-                  <div className="flex items-center gap-1 mb-1">
-                     <stat.icon size={14} className={stat.isLocked ? 'text-red-500' : 'text-east-light'} />
-                     {stat.isLocked && <Lock size={10} className="text-red-500" />}
+         {/* PROFILE INFO */}
+         <div className="px-6 -mt-16 relative z-10 flex flex-col items-center">
+            <div className="w-28 h-28 rounded-full border-4 border-black shadow-2xl overflow-hidden bg-zinc-900 relative group">
+               {profileData.avatar_url ? (
+                  <img src={profileData.avatar_url} className="w-full h-full object-cover" alt="Profile" />
+               ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-black">
+                     <span className="text-3xl font-black italic text-gray-700">{profileData.first_name?.[0]}</span>
                   </div>
-                  <span className={`font-black text-lg italic ${stat.isLocked ? 'text-red-500/50' : 'text-white'}`}>{stat.v}</span>
-                  <span className="text-[7px] font-black font-montserrat uppercase text-center leading-tight text-gray-500 whitespace-pre-line">{stat.l}</span>
+               )}
+               <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                  <Edit2 size={24} className="text-white" />
                </div>
-            ))}
+            </div>
+
+            <div className="mt-4 text-center">
+               <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none mb-1">
+                  {profileData.first_name} {profileData.last_name}
+               </h1>
+               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-east-light/10 border border-east-light/20">
+                  <div className="w-1.5 h-1.5 rounded-full bg-east-light animate-pulse shadow-[0_0_10px_#28D160]" />
+                  <span className="text-[10px] font-black uppercase tracking-wider text-east-light">
+                     {profileData.role || 'PARENT'} ACCT
+                  </span>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-3 w-full gap-2 mt-6">
+               {[
+                  { l: 'VOLUNTEER\nHRS', v: '48', icon: Heart },
+                  {
+                     l: 'CREDITS\nBALANCE',
+                     v: profileData.credits || '0',
+                     icon: isLocked ? Lock : Users,
+                     isLocked: isLocked
+                  },
+                  { l: 'EVENTS\nJOINED', v: '15', icon: Calendar },
+               ].map((stat, i) => (
+                  <div
+                     key={i}
+                     onClick={() => stat.isLocked && alert("Current credits are unusable until a new subscription is purchased.")}
+                     title={stat.isLocked ? "Current credits are unusable until a new subscription is purchased." : ""}
+                     className={`flex flex-col items-center p-3 bg-white/5 rounded-xl border group hover:border-east-light/50 transition-colors ${stat.isLocked ? 'border-red-900/50 bg-red-900/10 cursor-not-allowed' : 'border-white/10'}`}
+                  >
+                     <div className="flex items-center gap-1 mb-1">
+                        <stat.icon size={14} className={stat.isLocked ? 'text-red-500' : 'text-east-light'} />
+                        {stat.isLocked && <Lock size={10} className="text-red-500" />}
+                     </div>
+                     <span className={`font-black text-lg italic ${stat.isLocked ? 'text-red-500/50' : 'text-white'}`}>{stat.v}</span>
+                     <span className="text-[7px] font-black font-montserrat uppercase text-center leading-tight text-gray-500 whitespace-pre-line">{stat.l}</span>
+                  </div>
+               ))}
+            </div>
          </div>
 
          {/* NAVIGATION */}
@@ -198,8 +284,6 @@ export default function ParentProfile({
                   </div>
                )
             }
-
-            {/* Removed Contributions and Gallery content */}
          </div>
       </div>
    );
