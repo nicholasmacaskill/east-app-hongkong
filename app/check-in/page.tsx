@@ -67,7 +67,7 @@ export default function CheckIn() {
             setLastScanMessage(`Checked in at ${payload.location}`);
             setScanned(true);
           } else {
-            setError(data.error || "Check-in failed");
+            setError(data.error || "Check-In failed");
           }
         }
 

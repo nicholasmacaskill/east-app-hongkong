@@ -247,6 +247,10 @@ export async function POST(request: Request) {
               <p><strong>Session:</strong> ${mainSession.title}</p>
               <p><strong>Time:</strong> ${new Date(mainSession.start_time).toLocaleString()}</p>
               <p>Type: ${origin === 'facilities' ? 'Facility Booking' : 'Coach Booking'}</p>
+              <br/>
+              <p>Thanks for your booking, please be informed that, if you would like to take a friend, 
+              you must register them through our support chat: <a href="https://wa.link/b2y0sa">https://wa.link/b2y0sa</a> 
+              (upon approval, credits will be deducted from your account).</p>
             `
           });
         }

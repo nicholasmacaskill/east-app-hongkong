@@ -6,6 +6,7 @@ export default function AdminDashboard() {
     return (
         <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-2">
+                <Link href="/" className="self-start text-[10px] text-gray-500 font-bold uppercase tracking-widest hover:text-white mb-4 block transition-colors">← Back to App</Link>
                 <h1 className="text-3xl font-black italic uppercase tracking-tighter">Dashboard</h1>
                 <p className="text-gray-400 max-w-2xl">
                     Welcome to the EAST management console. Use the tabs below to manage players, teams, and coach schedules.

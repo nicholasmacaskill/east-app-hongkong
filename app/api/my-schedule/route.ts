@@ -9,18 +9,8 @@ export async function GET(request: Request) {
   // Check BOTH player_relationships table AND profiles.parent_id column for max compatibility
   const familyIds = [userId];
 
-  // A. Check Relationships Table
+  // A. Check Profiles Table (Legacy/Direct Link)
   const supabaseAdmin = getSupabaseAdmin();
-  const { data: rels } = await supabaseAdmin
-    .from('player_relationships')
-    .select('child_id')
-    .eq('parent_id', userId);
-
-  if (rels) {
-    rels.forEach((row: { child_id: string }) => familyIds.push(row.child_id));
-  }
-
-  // B. Check Profiles Table (Legacy/Direct Link)
   const { data: profileChildren } = await supabaseAdmin
     .from('profiles')
     .select('id')

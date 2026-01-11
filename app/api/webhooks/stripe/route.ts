@@ -14,14 +14,40 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 // Initialize Admin Client lazily inside handler
 // const supabaseAdmin = createClient(...) -> Removed top-level call
 
-// 3. CONFIG: Map Price IDs to Credits & Tiers
-// ✅ FIX: This ensures Elite members get 3500 credits, not 1000.
-const PLAN_DETAILS: Record<string, { credits: number; tier: string }> = {};
-if (process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY) {
-    PLAN_DETAILS[process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY] = { credits: 3500, tier: 'elite' };
+// Export for testing
+export const PLAN_DETAILS: Record<string, { credits: number; tier: string }> = {};
+
+// Individual (Pro) & Family 1 (Same Price)
+const INDIVIDUAL_PRICES = [
+    process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY,
+    process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_1_MONTHLY
+].filter(Boolean);
+INDIVIDUAL_PRICES.forEach(id => {
+    PLAN_DETAILS[id!] = { credits: 1000, tier: 'individual' };
+});
+
+const INDIVIDUAL_YEARLY = [
+    process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY,
+    process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_1_YEARLY
+].filter(Boolean);
+INDIVIDUAL_YEARLY.forEach(id => {
+    PLAN_DETAILS[id!] = { credits: 15000, tier: 'individual' }; // Yearly 15,000 credits
+});
+
+// Family 2
+if (process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY) {
+    PLAN_DETAILS[process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY] = { credits: 2500, tier: 'family_2' };
 }
-if (process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY) {
-    PLAN_DETAILS[process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY] = { credits: 3500, tier: 'elite' };
+if (process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY) {
+    PLAN_DETAILS[process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY] = { credits: 33000, tier: 'family_2' };
+}
+
+// Family 3+
+if (process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY) {
+    PLAN_DETAILS[process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY] = { credits: 3500, tier: 'family_3plus' };
+}
+if (process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY) {
+    PLAN_DETAILS[process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY] = { credits: 45000, tier: 'family_3plus' };
 }
 
 export async function POST(request: Request) {
@@ -60,7 +86,7 @@ export async function POST(request: Request) {
             // Fetch plan details
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
             const priceId = subscription.items.data[0].price.id;
-            const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'gym' };
+            const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
 
             console.log(`Processing Subscription: ${plan.tier.toUpperCase()} for User: ${userId}`);
 
@@ -145,7 +171,7 @@ export async function POST(request: Request) {
             // ✅ FETCH PLAN DETAILS AGAIN (So renewals also get the right amount)
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
             const priceId = subscription.items.data[0].price.id;
-            const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'gym' };
+            const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
 
             // Find user by Stripe Customer ID
             const supabaseAdmin = getSupabaseAdmin();

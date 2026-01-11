@@ -121,7 +121,27 @@ export default function ScheduleScreen({
 
   // Filter Events
   const eventsForSelectedDay = mySchedule.filter(event => {
-    return isSameDay(new Date(event.start_time), selectedDate);
+    const matchesDate = isSameDay(new Date(event.start_time), selectedDate);
+
+    // If in parent mode and a specific child is selected, filter by that child
+    // If activeChildId is null (or "myself"), we show events where attendee.id === currentUserId
+    // However, the "Myself" button sets activeChildId to null. 
+    // We need to clarify if "Myself" means JUST the parent or ALL. 
+    // Usually "Myself" means the parent. 
+    // The previous implementation didn't filter at all, showing everything mixed.
+
+    let matchesUser = true;
+    if (parentMode && activeChildId !== undefined) {
+      if (activeChildId) {
+        // Specific Child Selected
+        matchesUser = event.attendee?.id === activeChildId;
+      } else {
+        // "Myself" Selected (Parent)
+        matchesUser = event.attendee?.id === currentUserId;
+      }
+    }
+
+    return matchesDate && matchesUser;
   });
 
   // Calculate display month based on the currently selected date

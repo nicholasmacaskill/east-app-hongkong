@@ -103,6 +103,20 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
             alert(error.message);
             setLoading(false);
         } else {
+            // Send welcome email
+            if (data.user?.id) {
+                try {
+                    await fetch('/api/auth/send-welcome-email', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: data.user.id })
+                    });
+                } catch (emailErr) {
+                    console.error('Welcome email failed:', emailErr);
+                    // Don't block registration if email fails
+                }
+            }
+
             // Check for immediate session
             if (data.session) {
                 onAuthSuccess(formData.role);

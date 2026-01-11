@@ -93,6 +93,11 @@ export async function POST(request: Request) {
           <p>Your spot is successfully reserved for <strong>${session.title}</strong>.</p>
           <p><strong>Time:</strong> ${new Date(session.start_time).toLocaleString()}</p>
           <p>You now have **${newCredits}** credits remaining.</p>
+          <br/>
+          <p><strong>Want to bring a friend?</strong></p>
+          <p>Please message us on WhatsApp to register them: <a href="https://wa.link/b2y0sa">https://wa.link/b2y0sa</a></p>
+          <p><em>(Credits will be deducted from your account upon approval)</em></p>
+          <br/>
           <p>See you there!</p>
         `
       });
