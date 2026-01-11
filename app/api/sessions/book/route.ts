@@ -90,6 +90,30 @@ export async function POST(request: Request) {
     }
 
     // ==========================
+    // SECURITY: Check Subscription
+    // ==========================
+    const { data: userProfile, error: profileErr } = await supabaseAdmin
+      .from('profiles')
+      .select('subscription_status')
+      .eq('id', userId)
+      .single();
+
+    if (profileErr || !userProfile) {
+      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    }
+
+    const { subscription_status } = userProfile;
+    // Allow 'active' or 'trialing'. Reject everything else (null, incomplete, canceled, etc.)
+    if (subscription_status !== 'active' && subscription_status !== 'trialing') {
+      return NextResponse.json({
+        error: 'Account Locked: Active subscription required to book sessions.',
+        code: 'SUBSCRIPTION_LOCKED'
+      }, { status: 403 });
+    }
+
+
+
+    // ==========================
     // VALIDATION: Origin Logic
     // ==========================
     if (origin === 'facilities') {

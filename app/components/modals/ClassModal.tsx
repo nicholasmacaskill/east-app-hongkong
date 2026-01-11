@@ -183,6 +183,15 @@ export default function ClassModal({
                     setShowTopUp(true);
                     return;
                 }
+
+                // NEW: Handle Locked/Inactive Subscription
+                if (data.code === 'SUBSCRIPTION_LOCKED' || (data.error && data.error.includes('Account Locked'))) {
+                    if (window.confirm("Account Locked: active subscription required. Would you like to reactivate now?")) {
+                        window.location.href = '/membership';
+                    }
+                    return;
+                }
+
                 alert(data.error || 'A critical error occurred.');
                 return;
             }
