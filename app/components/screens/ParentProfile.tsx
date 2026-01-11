@@ -26,15 +26,23 @@ export default function ParentProfile({
                { l: 'VOLUNTEER\nHRS', v: '48', icon: Heart },
                {
                   l: 'CREDITS\nBALANCE',
-                  v: isLocked ? 'LOCKED' : (profileData.credits || '0'),
+                  v: profileData.credits || '0',
                   icon: isLocked ? Lock : Users,
                   isLocked: isLocked
                },
                { l: 'EVENTS\nJOINED', v: '15', icon: Calendar },
             ].map((stat, i) => (
-               <div key={i} className={`flex flex-col items-center p-3 bg-white/5 rounded-xl border group hover:border-east-light/50 transition-colors ${stat.isLocked ? 'border-red-900/50 bg-red-900/10' : 'border-white/10'}`}>
-                  <stat.icon size={14} className={`mb-1 ${stat.isLocked ? 'text-red-500' : 'text-east-light'}`} />
-                  <span className={`font-black text-lg italic ${stat.isLocked ? 'text-red-500 text-sm mt-1' : 'text-white'}`}>{stat.v}</span>
+               <div
+                  key={i}
+                  onClick={() => stat.isLocked && alert("Current credits are unusable until a new subscription is purchased.")}
+                  title={stat.isLocked ? "Current credits are unusable until a new subscription is purchased." : ""}
+                  className={`flex flex-col items-center p-3 bg-white/5 rounded-xl border group hover:border-east-light/50 transition-colors ${stat.isLocked ? 'border-red-900/50 bg-red-900/10 cursor-not-allowed' : 'border-white/10'}`}
+               >
+                  <div className="flex items-center gap-1 mb-1">
+                     <stat.icon size={14} className={stat.isLocked ? 'text-red-500' : 'text-east-light'} />
+                     {stat.isLocked && <Lock size={10} className="text-red-500" />}
+                  </div>
+                  <span className={`font-black text-lg italic ${stat.isLocked ? 'text-red-500/50' : 'text-white'}`}>{stat.v}</span>
                   <span className="text-[7px] font-black font-montserrat uppercase text-center leading-tight text-gray-500 whitespace-pre-line">{stat.l}</span>
                </div>
             ))}
@@ -61,7 +69,7 @@ export default function ParentProfile({
             {
                activeTab === 'athletes' && (
                   <div className="flex flex-col gap-4 animate-fadeIn">
-                     {myAthletes.map((athlete) => {
+                     {myChildren.map((athlete) => {
                         const isSelected = selectedChildId === athlete.id;
                         return (
                            <div
