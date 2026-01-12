@@ -27,9 +27,9 @@ export default function AdminDashboard() {
                             </div>
 
                             <div>
-                                <h2 className="text-xl font-black italic uppercase mb-2">Manage Players</h2>
+                                <h2 className="text-xl font-black italic uppercase mb-2">Manage Parents & Players</h2>
                                 <p className="text-gray-400 text-sm leading-relaxed">
-                                    Add new players, initialie profiles, generate QR codes, and update team rosters.
+                                    Add new accounts, initialize profiles, manage family roles, and update team rosters.
                                 </p>
                             </div>
 

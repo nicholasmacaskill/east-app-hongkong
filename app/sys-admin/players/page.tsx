@@ -450,9 +450,16 @@ export default function PlayerManagement() {
                                             <h3 className="font-bold text-white truncate text-lg">
                                                 {player.first_name || player.name} {player.last_name || player.surname}
                                             </h3>
-                                            <span className="text-[9px] bg-[#28D160]/10 border border-[#28D160]/20 px-2 py-0.5 rounded text-[#28D160] font-black italic uppercase shrink-0">
-                                                {player.team || 'FREE AGENT'}
-                                            </span>
+                                            <div className="flex gap-2">
+                                                {player.role === 'parent' && (
+                                                    <span className="text-[9px] bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded text-purple-400 font-black italic uppercase shrink-0">
+                                                        PARENT
+                                                    </span>
+                                                )}
+                                                <span className="text-[9px] bg-[#28D160]/10 border border-[#28D160]/20 px-2 py-0.5 rounded text-[#28D160] font-black italic uppercase shrink-0">
+                                                    {player.team || 'FREE AGENT'}
+                                                </span>
+                                            </div>
                                         </div>
                                         <p className="text-gray-500 text-[10px] font-mono truncate mt-0.5 opacity-60">@{player.username || 'no-username'}</p>
 
