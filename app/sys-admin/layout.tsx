@@ -38,7 +38,7 @@ export default function AdminLayout({
                 .eq('id', user.id)
                 .single();
 
-            if (!profile || profile.role !== 'admin') {
+            if (!profile || (profile.role !== 'admin' && profile.role !== 'sys-admin')) {
                 router.replace('/');
             } else {
                 setAuthorized(true);
