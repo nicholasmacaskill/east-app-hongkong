@@ -379,6 +379,12 @@ export default function CoachManagement() {
                                     <button onClick={() => { setSelectedCoach(coach); setShowAvailability(true); }} className="text-xs font-bold text-blue-400 uppercase hover:text-white transition-colors flex items-center gap-1">
                                         <Calendar size={12} /> Availability
                                     </button>
+                                    <Link
+                                        href={`/sys-admin/schedule?instructor=${encodeURIComponent(coach.first_name + ' ' + coach.last_name)}`}
+                                        className="text-xs font-bold text-[#28D160] uppercase hover:text-white transition-colors flex items-center gap-1"
+                                    >
+                                        <Plus size={12} /> Add Session
+                                    </Link>
                                     <button
                                         onClick={() => handleDeleteCoach(coach.id, `${coach.first_name} ${coach.last_name}`)}
                                         className="text-xs font-bold text-gray-400 uppercase hover:text-red-500 transition-colors flex items-center gap-1"

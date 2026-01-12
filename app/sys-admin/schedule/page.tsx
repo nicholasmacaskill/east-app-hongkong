@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { ChevronLeft, Calendar, User, LayoutGrid, RefreshCw, Plus, X, Trash2, Save, Clock, Info, DollarSign } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 // Types
@@ -33,7 +34,7 @@ const RESOURCES = [
     { id: 'coach_col', name: 'Coach Tracking', type: 'coach' }, // Visualization of coach sessions
 ];
 
-const CATEGORIES = ['Open Gym', 'Private Lesson', 'Class', 'Elite Training', 'Special Event'];
+const CATEGORIES = ['FACILITY', 'PRIVATE', 'CLASS', 'EVENT']; // Updated to match Enum values for safety
 
 const TIME_SLOTS = Array.from({ length: 15 }, (_, i) => {
     const hour = i + 8;
@@ -41,6 +42,10 @@ const TIME_SLOTS = Array.from({ length: 15 }, (_, i) => {
 });
 
 export default function MasterSchedule() {
+    const searchParams = useSearchParams();
+    const autoInstructor = searchParams?.get('instructor');
+    const hasAutoOpened = React.useRef(false);
+
     const [sessions, setSessions] = useState<Session[]>([]);
     const [coaches, setCoaches] = useState<Coach[]>([]);
     const [loading, setLoading] = useState(true);
@@ -50,6 +55,32 @@ export default function MasterSchedule() {
     const [showModal, setShowModal] = useState(false);
     const [modalAction, setModalAction] = useState<'CREATE' | 'EDIT'>('CREATE');
     const [editingSession, setEditingSession] = useState<any>(null);
+
+    useEffect(() => {
+        if (autoInstructor && !hasAutoOpened.current) {
+            hasAutoOpened.current = true;
+            // Set slight timeout to allow coaches to load? Not strictly needed for string match
+            setModalAction('CREATE');
+
+            // Calculate next hour for default time
+            const now = new Date();
+            now.setMinutes(0, 0, 0);
+            const start = new Date(now.getTime() + 60 * 60 * 1000).toISOString(); // Next hour
+            const end = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString(); // 1 hour duration
+
+            setEditingSession({
+                title: `${autoInstructor} - Session`,
+                category: 'PRIVATE',
+                instructor: autoInstructor,
+                start_time: start, // Use ISO String
+                end_time: end,
+                total_facility_bays: 0,
+                max_capacity: 1,
+                credit_cost: 100
+            });
+            setShowModal(true);
+        }
+    }, [autoInstructor]);
 
     useEffect(() => {
         fetchSchedule();
@@ -88,7 +119,7 @@ export default function MasterSchedule() {
         setModalAction('CREATE');
         setEditingSession({
             title: '',
-            category: 'Open Gym',
+            category: 'FACILITY',
             instructor: '',
             start_time: start,
             end_time: end,

@@ -19,7 +19,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: true, data });
         }
 
-        if (action === 'UPDATE') {
+        if (action === 'EDIT' || action === 'UPDATE') {
             if (!id) return NextResponse.json({ error: 'ID is required for update' }, { status: 400 });
             const { data, error } = await supabaseAdmin
                 .from('sessions')
