@@ -28,17 +28,21 @@ export async function GET(request: Request) {
 
         // 2. Get Conflicting Sessions
         // A session conflicts if it overlaps: (StartA < EndB) and (EndA > StartB)
+        // EXCLUDE 'NEWS' and 'EVENT' as they are often announcements, not actual bookings blocking the coach
         const { data: conflicts, error: conflictError } = await supabaseAdmin
             .from('sessions')
             .select('instructor')
             .lt('start_time', endTime)
-            .gt('end_time', startTime);
+            .gt('end_time', startTime)
+            .neq('category', 'NEWS')
+            .neq('category', 'EVENT');
 
         if (conflictError) throw conflictError;
 
         // 3. Filter
         // Create a Set of busy instructor names
         const busyInstructors = new Set(conflicts?.map(s => s.instructor) || []);
+        console.log(`Busy Instructors during ${startTime}-${endTime}:`, Array.from(busyInstructors));
 
         const availableCoaches = coaches?.filter(coach => {
             const fullName = `${coach.first_name} ${coach.last_name}`;
