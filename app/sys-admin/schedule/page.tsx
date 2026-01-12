@@ -37,13 +37,10 @@ const RESOURCES = [
 const CATEGORIES = ['FACILITY', 'PRIVATE', 'CLASS', 'EVENT']; // Updated to match Enum values for safety
 const LESSON_PRESETS = [
     'Hyrox',
-    'Strength & Conditioning',
     'EAST60',
-    'Shooting Drills',
-    'Skating Skills',
-    'Goalie Training',
-    'Elite Training',
-    'Intro to Hockey'
+    'Shooting (Senior)',
+    'Shooting (Junior)',
+    'Personal Training'
 ];
 
 const TIME_SLOTS = Array.from({ length: 15 }, (_, i) => {
