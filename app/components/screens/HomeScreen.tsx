@@ -29,19 +29,38 @@ export default function HomeScreen({
   setTab: (t: any) => void
 }) {
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [coaches, setCoaches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchSessions()
-      .then(data => {
-        if (Array.isArray(data)) {
-          // Filter out 'Coach User' test data as requested
-          const filtered = data.filter(s => s.instructor !== 'Coach User');
+    const loadData = async () => {
+      try {
+        // Fetch sessions
+        const sessionsData = await fetchSessions();
+        if (Array.isArray(sessionsData)) {
+          const filtered = sessionsData.filter(s => s.instructor !== 'Coach User');
           setSessions(filtered);
         }
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+
+        // Fetch coaches from profiles
+        const { supabase } = await import('@/app/lib/supabase');
+        const { data: coachesData } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, avatar_url, bio')
+          .eq('role', 'coach')
+          .order('first_name', { ascending: true });
+
+        if (coachesData) {
+          setCoaches(coachesData);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   // --- Helper: Group Sessions ---
@@ -83,8 +102,8 @@ export default function HomeScreen({
   // 1. Private Lessons (Grouped by ACTIVITY e.g. Golf, Gym)
   const privateUniqueByTitle = getUniqueItems(privateRaw, 'title');
 
-  // 2. Coaches (Grouped by INSTRUCTOR e.g. Coach Ben, Coach Rhett)
-  const privateUniqueByCoach = getUniqueItems(privateRaw, 'instructor');
+  // 2. Coaches (from profiles table - shows all admin-created coaches)
+  // privateUniqueByCoach is now replaced by the coaches state fetched from profiles
 
   const handleItemClick = (item: Session, groupByKey: 'title' | 'instructor') => {
     const allSlots = sessions.filter(s => s[groupByKey] === item[groupByKey] && s.category === item.category);
@@ -212,13 +231,25 @@ export default function HomeScreen({
             </div>
           ) : (
             <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-              {privateUniqueByCoach.map((p) => (
-                <div key={p.id} onClick={() => handleItemClick(p, 'instructor')} className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer group w-20 active:scale-95 transition-transform duration-200">
+              {coaches.map((coach) => (
+                <div key={coach.id} onClick={() => {
+                  // When clicking a coach, show their available sessions
+                  // For now, we'll show all private sessions (can be refined later)
+                  const coachSessions = sessions.filter(s =>
+                    s.category === 'PRIVATE' &&
+                    s.instructor?.toLowerCase().includes(coach.first_name.toLowerCase())
+                  );
+                  if (coachSessions.length > 0) {
+                    onClassClick(coachSessions);
+                  } else {
+                    alert(`${coach.first_name} ${coach.last_name} has no available sessions at the moment.`);
+                  }
+                }} className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer group w-20 active:scale-95 transition-transform duration-200">
                   <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-800 relative shadow-xl group-hover:border-east-light transition-colors">
-                    <img src={p.coach_image_url || p.image_url} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt={p.instructor} />
-                    {isGroupBooked(p, 'instructor') && <div className="absolute top-1 right-1 w-3 h-3 bg-east-light rounded-full border-2 border-black" />}
+                    <img src={coach.avatar_url || 'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?w=400'} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt={`${coach.first_name} ${coach.last_name}`} />
+                    {/* Removed isGroupBooked check for coaches as per new logic */}
                   </div>
-                  <span className="font-montserrat font-black italic text-[9px] uppercase text-center text-gray-400 group-hover:text-white transition-colors">{p.instructor}</span>
+                  <span className="font-montserrat font-black italic text-[9px] uppercase text-center text-gray-400 group-hover:text-white transition-colors">{coach.first_name} {coach.last_name}</span>
                 </div>
               ))}
             </div>
