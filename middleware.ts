@@ -75,7 +75,7 @@ export async function middleware(request: NextRequest) {
                 .eq('id', user?.id)
                 .single();
 
-            if (!profile || profile.role !== 'admin') {
+            if (!profile || (profile.role !== 'admin' && profile.role !== 'sys-admin')) {
                 console.log("Middleware: Access denied. Role is", profile?.role);
                 return NextResponse.redirect(new URL('/', request.url));
             }
