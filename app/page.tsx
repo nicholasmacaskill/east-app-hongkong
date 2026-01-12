@@ -201,14 +201,12 @@ function AppContent() {
     }
   }, [searchParams, router]);
 
-  // REMOVED: Auto-redirect admin (Top-level effect) - caused loops
-  /*
+  // Auto-redirect admin/sys-admin
   useEffect(() => {
-    if (userProfile.role === 'admin') {
+    if (userProfile.role === 'admin' || userProfile.role === 'sys-admin') {
       router.push('/sys-admin');
     }
   }, [userProfile.role, router]);
-  */
 
   const handleSaveProfile = async (updatedData: UserProfileData) => {
     if (!currentUserId) return;
@@ -265,7 +263,7 @@ function AppContent() {
         <AuthScreen
           expectedRole={selectedRole || undefined}
           onAuthSuccess={(role) => {
-            if (role === 'admin') {
+            if (role === 'admin' || role === 'sys-admin') {
               window.location.href = '/sys-admin';
             } else {
               window.location.reload();
@@ -347,39 +345,45 @@ function AppContent() {
           )}
 
           {activeTab === 'profile' && (
-            (userProfile.role as string) === 'coach' || (userProfile.role as string) === 'admin'
-              ? <CoachProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} currentUserId={currentUserId} />
-              : userProfile.role === 'parent'
-                ? <ParentProfile
-                  onOpenSettings={() => setShowSettingsModal(true)}
-                  profileData={userProfile}
-                  myChildren={myChildren}
-                  onAddChild={async (child) => {
-                    try {
-                      const res = await fetch('/api/family/add-child', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          firstName: child.first,
-                          lastName: child.last,
-                          email: child.email,
-                          sport: child.sport,
-                          parentId: currentUserId
-                        })
-                      });
-                      const data = await res.json();
-                      if (!res.ok) {
-                        alert(`Error: ${data.error}`);
-                      } else {
-                        alert('Child added successfully!');
-                        setRefreshKey(prev => prev + 1);
+            userProfile.role === 'sys-admin' ? (
+              <div className="flex h-screen items-center justify-center">
+                <p className="text-white">Redirecting to Admin Panel...</p>
+              </div>
+            ) : (
+              (userProfile.role as string) === 'coach' || (userProfile.role as string) === 'admin'
+                ? <CoachProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} currentUserId={currentUserId} />
+                : userProfile.role === 'parent'
+                  ? <ParentProfile
+                    onOpenSettings={() => setShowSettingsModal(true)}
+                    profileData={userProfile}
+                    myChildren={myChildren}
+                    onAddChild={async (child) => {
+                      try {
+                        const res = await fetch('/api/family/add-child', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            firstName: child.first,
+                            lastName: child.last,
+                            email: child.email,
+                            sport: child.sport,
+                            parentId: currentUserId
+                          })
+                        });
+                        const data = await res.json();
+                        if (!res.ok) {
+                          alert(`Error: ${data.error}`);
+                        } else {
+                          alert('Child added successfully!');
+                          setRefreshKey(prev => prev + 1);
+                        }
+                      } catch (e: any) {
+                        alert(`Failed to add child: ${e.message}`);
                       }
-                    } catch (e: any) {
-                      alert(`Failed to add child: ${e.message}`);
-                    }
-                  }}
-                />
-                : <PlayerProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} />
+                    }}
+                  />
+                  : <PlayerProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} />
+            )
           )}
 
 

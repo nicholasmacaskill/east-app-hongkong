@@ -19,7 +19,7 @@ export default function LoginPage() {
     // Handle success
     const handleAuthSuccess = (role: UserRole) => {
         localStorage.setItem('userRole', role);
-        if (role === 'admin') {
+        if (role === 'admin' || role === 'sys-admin') {
             router.push('/sys-admin');
         } else {
             router.push('/');
