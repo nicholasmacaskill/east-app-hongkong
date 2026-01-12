@@ -35,11 +35,30 @@ const RESOURCES = [
 ];
 
 const CATEGORIES = ['FACILITY', 'PRIVATE', 'CLASS', 'EVENT']; // Updated to match Enum values for safety
+const LESSON_PRESETS = [
+    'Hyrox',
+    'Strength & Conditioning',
+    'EAST60',
+    'Shooting Drills',
+    'Skating Skills',
+    'Goalie Training',
+    'Elite Training',
+    'Intro to Hockey'
+];
 
 const TIME_SLOTS = Array.from({ length: 15 }, (_, i) => {
     const hour = i + 8;
     return `${hour < 10 ? '0' : ''}${hour}:00`;
 });
+
+// ... (Rest of file unchanged until Modal)
+
+// Inside Modal (This replace block is too high up, I need to check line numbers for Modal content)
+// I will split this into two replacements if needed or target carefully.
+// The file is 406 lines. Modal is around line 265.
+// I can insert the constant at the top first (StartLine 25), then the UI in the modal (StartLine 280).
+
+// Let's do the constant first.
 
 export default function MasterSchedule() {
     const searchParams = useSearchParams();
@@ -309,15 +328,35 @@ export default function MasterSchedule() {
                         </div>
 
                         <div className="space-y-5">
-                            {/* Title */}
-                            <div>
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Session Title</label>
-                                <input
-                                    value={editingSession.title}
-                                    onChange={e => setEditingSession({ ...editingSession, title: e.target.value })}
-                                    placeholder="e.g. U14 Shooting Drills"
-                                    className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] transition-colors"
-                                />
+                            {/* Title & Type */}
+                            <div className="space-y-4 bg-black/20 p-4 rounded-2xl border border-white/5">
+                                {/* Quick Fill Preset */}
+                                <div>
+                                    <label className="text-[10px] font-black text-[#28D160] uppercase tracking-widest ml-1 mb-1 block">
+                                        Quick Fill Title
+                                    </label>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {LESSON_PRESETS.map(preset => (
+                                            <button
+                                                key={preset}
+                                                onClick={() => setEditingSession({ ...editingSession, title: preset })}
+                                                className="px-3 py-1 bg-white/5 hover:bg-[#28D160] hover:text-black border border-white/10 rounded-full text-[10px] font-bold uppercase transition-all"
+                                            >
+                                                {preset}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Session Title</label>
+                                    <input
+                                        value={editingSession.title}
+                                        onChange={e => setEditingSession({ ...editingSession, title: e.target.value })}
+                                        placeholder="e.g. U14 Shooting Drills"
+                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] transition-colors"
+                                    />
+                                </div>
                             </div>
 
                             {/* Category & Instructor */}

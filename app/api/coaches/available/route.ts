@@ -13,45 +13,44 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Missing startTime or endTime' }, { status: 400 });
     }
 
-    console.log(`Checking coaches for: ${startTime} to ${endTime}`);
+    // console.log(`Checking coaches for: ${startTime} to ${endTime}`);
 
     try {
-        // Query coaches who have availability covering this range
         const supabaseAdmin = getSupabaseAdmin();
-        const { data: availability, error } = await supabaseAdmin
-            .from('availability')
-            .select(`
-                coach_id,
-                profiles:coach_id (
-                    id,
-                    first_name,
-                    last_name,
-                    avatar_url,
-                    role,
-                    bio
-                )
-            `)
-            .eq('status', 'available')
-            .lte('start_time', startTime)
-            .gte('end_time', endTime);
 
-        if (error) {
-            console.error('Fetch Available Coaches Error:', error);
-            return NextResponse.json({ error: error.message }, { status: 500 });
-        }
+        // 1. Get ALL Coaches
+        const { data: coaches, error: coachError } = await supabaseAdmin
+            .from('profiles')
+            .select('id, first_name, last_name, avatar_url, bio')
+            .eq('role', 'coach');
 
-        console.log(`Found ${availability?.length || 0} availability blocks`);
+        if (coachError) throw coachError;
 
-        // De-duplicate coaches
-        const coaches = availability
-            .map((a: any) => a.profiles)
-            .filter((p: any) => p !== null);
+        // 2. Get Conflicting Sessions
+        // A session conflicts if it overlaps: (StartA < EndB) and (EndA > StartB)
+        const { data: conflicts, error: conflictError } = await supabaseAdmin
+            .from('sessions')
+            .select('instructor')
+            .lt('start_time', endTime)
+            .gt('end_time', startTime);
 
-        const uniqueCoaches = Array.from(new Map(coaches.map((c: any) => [c.id, c])).values());
+        if (conflictError) throw conflictError;
 
-        console.log(`Unique coaches found: ${uniqueCoaches.length}`);
+        // 3. Filter
+        // Create a Set of busy instructor names
+        const busyInstructors = new Set(conflicts?.map(s => s.instructor) || []);
 
-        return NextResponse.json(uniqueCoaches);
+        const availableCoaches = coaches?.filter(coach => {
+            const fullName = `${coach.first_name} ${coach.last_name}`;
+            // If the coach's name appears in busy list, exclude them.
+            // Also exclude if name is empty (sanity check)
+            if (!fullName.trim()) return false;
+            return !busyInstructors.has(fullName);
+        });
+
+        // console.log(`Found ${availableCoaches?.length || 0} active coaches`);
+
+        return NextResponse.json(availableCoaches || []);
 
     } catch (e: any) {
         console.error('Available Coaches API Error:', e);
