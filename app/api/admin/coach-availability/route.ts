@@ -47,20 +47,62 @@ export async function POST(request: Request) {
             if (deleteError) throw deleteError;
         }
 
-        // 2. Upsert new/modified slots
+        // 2. Process Slots (Split into Availability and Sessions)
         if (slots && slots.length > 0) {
-            // Ensure all slots have coach_id
-            const formattedSlots = slots.map((slot: any) => ({
-                ...slot,
-                coach_id: coachId,
-                status: 'available' // Default
-            }));
+            const availabilityToUpsert: any[] = [];
+            const sessionsToInsert: any[] = [];
 
-            const { error: upsertError } = await supabaseAdmin
-                .from('availability')
-                .upsert(formattedSlots);
+            // Helper to get Coach Name
+            const { data: coachProfile } = await supabaseAdmin.from('profiles').select('first_name, last_name, avatar_url').eq('id', coachId).single();
+            const coachName = coachProfile ? `${coachProfile.first_name} ${coachProfile.last_name}` : 'Coach';
 
-            if (upsertError) throw upsertError;
+            // Cache for session types
+            const sessionTypeCache: Record<string, any> = {};
+
+            for (const slot of slots) {
+                if (slot.session_type_id) {
+                    // It's a SESSION
+                    if (!sessionTypeCache[slot.session_type_id]) {
+                        const { data: typeData } = await supabaseAdmin.from('session_types').select('*').eq('id', slot.session_type_id).single();
+                        sessionTypeCache[slot.session_type_id] = typeData;
+                    }
+                    const serviceType = sessionTypeCache[slot.session_type_id];
+
+                    sessionsToInsert.push({
+                        title: serviceType?.title || 'Private Session',
+                        category: serviceType?.category || 'PRIVATE',
+                        instructor: coachName,
+                        start_time: slot.start_time,
+                        end_time: slot.end_time,
+                        image_url: serviceType?.image_url,
+                        coach_image_url: coachProfile?.avatar_url,
+                        description: `Booked via Coach Availability`,
+                        credit_cost: slot.credit_cost || 10,
+                        // Note: capacity isn't in sessions schema yet? Assuming default logic or it's implicitly 1 for now if PRIVATE.
+                        // If it's a CLASS, we might need a capacity column upgrade, but for now we follow schema.
+                    });
+
+                } else {
+                    // It's AVAILABILITY
+                    availabilityToUpsert.push({
+                        ...slot,
+                        coach_id: coachId,
+                        status: 'available'
+                    });
+                }
+            }
+
+            // Insert Sessions
+            if (sessionsToInsert.length > 0) {
+                const { error: sessionError } = await supabaseAdmin.from('sessions').insert(sessionsToInsert);
+                if (sessionError) throw sessionError;
+            }
+
+            // Upsert Availability
+            if (availabilityToUpsert.length > 0) {
+                const { error: upsertError } = await supabaseAdmin.from('availability').upsert(availabilityToUpsert);
+                if (upsertError) throw upsertError;
+            }
         }
 
         return NextResponse.json({ success: true });

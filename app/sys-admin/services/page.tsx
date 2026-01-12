@@ -16,7 +16,8 @@ interface SessionType {
 
 export default function ManageServicesPage() {
     const router = useRouter();
-    const { toast } = useToast();
+    const { addToast } = useToast();
+
     const [loading, setLoading] = useState(true);
     const [services, setServices] = useState<SessionType[]>([]);
 
@@ -37,7 +38,7 @@ export default function ManageServicesPage() {
 
         if (error) {
             console.error('Error fetching services:', error);
-            toast("Failed to load services", "error");
+            addToast("Failed to load services", "error");
         } else {
             setServices((data as any) || []);
         }
@@ -45,41 +46,56 @@ export default function ManageServicesPage() {
     };
 
     const handleSave = async () => {
+        console.log("handleSave called", currentService);
         if (!currentService.title || !currentService.category) {
-            toast("Please fill in Title and Category", "error");
+            addToast("Please fill in Title and Category", "error");
             return;
         }
 
-        const payload = {
-            title: currentService.title,
-            category: currentService.category,
-            image_url: currentService.image_url || null
-        };
+        try {
+            setLoading(true); // Re-use loading or add a saving state? Let's use a local saving state if possible, but for now re-use loading could be jarring.
+            // Actually let's just log for now.
 
-        let error;
-        if (currentService.id) {
-            // Update
-            const { error: updateError } = await supabase
-                .from('session_types')
-                .update(payload)
-                .eq('id', currentService.id);
-            error = updateError;
-        } else {
-            // Insert
-            const { error: insertError } = await supabase
-                .from('session_types')
-                .insert([payload]);
-            error = insertError;
-        }
+            const payload = {
+                title: currentService.title,
+                category: currentService.category,
+                image_url: currentService.image_url || null
+            };
 
-        if (error) {
-            console.error('Error saving service:', error);
-            toast("Failed to save service", "error");
-        } else {
-            toast("Service saved successfully", "success");
-            setIsEditing(false);
-            setCurrentService({});
-            fetchServices();
+            console.log("Sending payload:", payload);
+
+            let error;
+            if (currentService.id) {
+                // Update
+                const { error: updateError } = await supabase
+                    .from('session_types')
+                    .update(payload)
+                    .eq('id', currentService.id);
+                error = updateError;
+            } else {
+                // Insert
+                console.log("Inserting new service...");
+                const { data, error: insertError } = await supabase
+                    .from('session_types')
+                    .insert([payload])
+                    .select();
+                console.log("Insert response:", { data, insertError });
+                error = insertError;
+            }
+
+            if (error) {
+                console.error('Error saving service:', error);
+                addToast(`Failed to save: ${error.message || JSON.stringify(error)}`, "error");
+            } else {
+                console.log("Save successful");
+                addToast("Service saved successfully", "success");
+                setIsEditing(false);
+                setCurrentService({});
+                fetchServices();
+            }
+        } catch (e: any) {
+            console.error("Exception in handleSave:", e);
+            addToast(`Exception: ${e.message}`, "error");
         }
     };
 
@@ -93,9 +109,9 @@ export default function ManageServicesPage() {
 
         if (error) {
             console.error('Error deleting service:', error);
-            toast("Failed to delete service", "error");
+            addToast("Failed to delete service", "error");
         } else {
-            toast("Service deleted", "success");
+            addToast("Service deleted", "success");
             fetchServices();
         }
     };

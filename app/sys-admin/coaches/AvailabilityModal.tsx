@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Save, Clock, Trash2, Plus } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Save, Clock, Trash2, Plus, Info } from 'lucide-react';
+import { supabase } from '@/app/lib/supabase';
 
 interface AvailabilityModalProps {
     coach: any;
@@ -14,6 +15,10 @@ interface TimeSlot {
     end_time: string;   // ISO string
     is_recurring: boolean;
     status: string;
+    // New fields for Session Generation
+    session_type_id?: string;
+    credit_cost?: number;
+    capacity?: number;
 }
 
 // Helpers
@@ -25,6 +30,7 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
     const [slots, setSlots] = useState<TimeSlot[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [serviceTypes, setServiceTypes] = useState<any[]>([]);
 
     // Tracking changes
     const [deletedSlotIds, setDeletedSlotIds] = useState<string[]>([]);
@@ -37,12 +43,22 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
         endDate: new Date(new Date().setDate(new Date().getDate() + 28)).toISOString().split('T')[0], // 4 weeks
         startHour: 9,
         endHour: 17,
-        selectedDays: [1, 3, 5] // Mon, Wed, Fri default
+        selectedDays: [1, 3, 5], // Mon, Wed, Fri default
+        // New Configs
+        selectedServiceId: '',
+        creditCost: 10,
+        capacity: 1
     });
 
     useEffect(() => {
         fetchAvailability();
+        fetchServiceTypes();
     }, [coach.id]);
+
+    const fetchServiceTypes = async () => {
+        const { data } = await supabase.from('session_types').select('*').order('title');
+        if (data) setServiceTypes(data);
+    };
 
     const fetchAvailability = async () => {
         setLoading(true);
@@ -124,7 +140,7 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                 setAddedSlots(addedSlots.filter(s => s !== existing));
             }
         } else {
-            // Add it
+            // Add it (Simple Availability)
             const newSlot: TimeSlot = {
                 coach_id: coach.id,
                 start_time: start.toISOString(),
@@ -152,15 +168,16 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                     const slotEnd = new Date(d);
                     slotEnd.setHours(h + 1, 0, 0, 0);
 
-                    // Check overlap
-                    // Only add if not already in existing slots (ignore addedSlots for now to potentialy duplicate if user clicks twice, 
-                    // but practically we'll just merge)
+                    // If Service Type selected, include it
                     newBulkSlots.push({
                         coach_id: coach.id,
                         start_time: slotStart.toISOString(),
                         end_time: slotEnd.toISOString(),
                         is_recurring: false,
-                        status: 'available'
+                        status: 'available',
+                        session_type_id: bulkConfig.selectedServiceId || undefined,
+                        credit_cost: bulkConfig.selectedServiceId ? bulkConfig.creditCost : undefined,
+                        capacity: bulkConfig.selectedServiceId ? bulkConfig.capacity : undefined
                     });
                 }
             }
@@ -168,7 +185,8 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
 
         setAddedSlots([...addedSlots, ...newBulkSlots]);
         setShowBulkTool(false);
-        alert(`Generated ${newBulkSlots.length} slots. Click Save to confirm.`);
+        const typeLabel = bulkConfig.selectedServiceId ? 'SESSIONS' : 'Availability Slots';
+        alert(`Generated ${newBulkSlots.length} ${typeLabel}. Click Save to confirm.`);
     };
 
     const handleSave = async () => {
@@ -179,14 +197,14 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     coachId: coach.id,
-                    slots: addedSlots,
+                    slots: addedSlots, // Now includes session_type_id etc if set
                     deletedSlots: deletedSlotIds
                 })
             });
 
             const data = await res.json();
             if (data.success) {
-                alert('Availability saved successfully!');
+                alert('Availability/Sessions saved successfully!');
                 onClose();
             } else {
                 alert('Error saving: ' + data.error);
@@ -253,8 +271,10 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
 
                 {/* Bulk Tool Panel */}
                 {showBulkTool && (
-                    <div className="bg-[#222] p-4 border-b border-white/10 animate-fadeIn">
+                    <div className="bg-[#222] p-4 border-b border-white/10 animate-fadeIn overflow-y-auto max-h-[50vh]">
                         <h3 className="font-black italic text-[#28D160] uppercase mb-4 text-sm">Bulk Availability Generator</h3>
+
+                        {/* 1. Date & Time */}
                         <div className="grid grid-cols-4 gap-6 mb-4">
                             <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Date Range</label>
@@ -315,6 +335,58 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                 </div>
                             </div>
                         </div>
+
+                        {/* 2. Service Options (Populates Sessions) */}
+                        <div className="border-t border-white/5 pt-4 mb-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <label className="text-[10px] font-bold text-[#28D160] uppercase block">Service Type (Optional)</label>
+                                <div className="group relative">
+                                    <Info size={12} className="text-gray-500 cursor-help" />
+                                    <div className="absolute bottom-full left-0 w-48 bg-black border border-white/10 p-2 rounded text-[10px] text-gray-300 hidden group-hover:block z-50">
+                                        Selecting a service will generate actual <strong>Sessions</strong> on the schedule, not just generic availability.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-2">
+                                    <select
+                                        value={bulkConfig.selectedServiceId}
+                                        onChange={e => setBulkConfig({ ...bulkConfig, selectedServiceId: e.target.value })}
+                                        className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-[#28D160]"
+                                    >
+                                        <option value="">-- Generic Availability --</option>
+                                        {serviceTypes.map(st => (
+                                            <option key={st.id} value={st.id}>{st.title} ({st.category})</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                {bulkConfig.selectedServiceId && (
+                                    <>
+                                        <div>
+                                            <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Credit Cost</label>
+                                            <input
+                                                type="number" min="0"
+                                                value={bulkConfig.creditCost}
+                                                onChange={e => setBulkConfig({ ...bulkConfig, creditCost: parseInt(e.target.value) })}
+                                                className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-white outline-none focus:border-[#28D160]"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Capacity</label>
+                                            <input
+                                                type="number" min="1"
+                                                value={bulkConfig.capacity}
+                                                onChange={e => setBulkConfig({ ...bulkConfig, capacity: parseInt(e.target.value) })}
+                                                className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-white outline-none focus:border-[#28D160]"
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+
                         <div className="flex justify-end">
                             <button
                                 onClick={generateBulkSlots}
@@ -360,7 +432,6 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
 
                                         const isAvailable = displaySlots.some(s => {
                                             const sStart = new Date(s.start_time);
-                                            const sEnd = new Date(s.end_time);
                                             // Simple hour check
                                             return slotStart.getTime() === sStart.getTime();
                                         });
