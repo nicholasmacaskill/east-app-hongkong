@@ -219,9 +219,11 @@ function AppContent() {
   // Auto-redirect admin/sys-admin
   useEffect(() => {
     if (userProfile.role === 'admin' || userProfile.role === 'sys-admin') {
-      router.push('/sys-admin');
+      console.log("Admin detected. Force redirecting...");
+      // Use hard redirect to clear state/cache
+      window.location.href = '/sys-admin';
     }
-  }, [userProfile.role, router]);
+  }, [userProfile.role]);
 
   const handleSaveProfile = async (updatedData: UserProfileData) => {
     if (!currentUserId) return;
@@ -346,17 +348,33 @@ function AppContent() {
     <div className="min-h-screen bg-black text-white font-opensans select-none">
       <div className="max-w-md mx-auto bg-black min-h-screen relative border-x border-gray-900 shadow-2xl">
         <main>
+          {/* DEBUG STRIP - REMOVE LATER */}
+          <div className="bg-gray-900 text-[10px] text-gray-500 p-1 text-center">
+            Role: {userProfile.role} | ID: {currentUserId?.slice(0, 8)} | Meta: {userProfile.role}
+          </div>
 
 
           {activeTab === 'home' && (
-            <HomeScreen
-              onClassClick={handleClassClick}
-              onOpenSettings={() => setShowSettingsModal(true)}
-              bookedSessions={bookedSessions}
-              credits={userProfile.credits || 0}
-              subscriptionStatus={userProfile.subscription_status}
-              setTab={setActiveTab}
-            />
+            <>
+              <HomeScreen
+                onClassClick={handleClassClick}
+                onOpenSettings={() => setShowSettingsModal(true)}
+                bookedSessions={bookedSessions}
+                credits={userProfile.credits || 0}
+                subscriptionStatus={userProfile.subscription_status}
+                setTab={setActiveTab}
+              />
+
+              {/* Fail-safe Admin Link */}
+              {((userProfile.role as string) === 'admin' || (userProfile.role as string) === 'sys-admin') && (
+                <div className="bg-red-900/50 border border-red-500 p-4 m-4 rounded text-center">
+                  <p className="text-white font-bold mb-2">Admin Access Detected</p>
+                  <a href="/sys-admin" className="inline-block bg-red-600 text-white px-6 py-2 rounded font-black uppercase tracking-widest hover:bg-red-500 transition-colors">
+                    FORCE ENTER ADMIN PANEL
+                  </a>
+                </div>
+              )}
+            </>
           )}
 
           {activeTab === 'profile' && (
