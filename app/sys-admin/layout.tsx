@@ -32,6 +32,12 @@ export default function AdminLayout({
                 return;
             }
 
+            const metaRole = user.user_metadata?.role;
+            if (metaRole === 'admin' || metaRole === 'sys-admin') {
+                setAuthorized(true);
+                return;
+            }
+
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('role')
