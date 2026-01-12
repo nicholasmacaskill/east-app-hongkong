@@ -286,31 +286,7 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
                 <SettingsMenuItem
                     icon={CreditCard}
                     label="Top Up Credits"
-                    onClick={async () => {
-                        const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SkINl12ap1SCxToSkb1jrWV';
-                        if (!priceId) {
-                            addToast('Top Up not configured', 'error');
-                            return;
-                        }
-
-                        const { data: { user } } = await supabase.auth.getUser();
-                        if (!user) return;
-
-                        const { data: profile } = await supabase.from('profiles').select('contact_email').eq('id', user.id).single();
-                        const email = profile?.contact_email || user.email;
-
-                        try {
-                            const res = await fetch('/api/checkout', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ priceId, userId: user.id, userEmail: email })
-                            });
-                            const data = await res.json();
-                            if (data.url) window.location.href = data.url;
-                        } catch (e: any) {
-                            addToast(e.message, 'error');
-                        }
-                    }}
+                    onClick={() => router.push('/top-up')}
                 />
                 <SettingsSectionTitle title="Help" />
                 <SettingsMenuItem icon={FileText} label="FAQ's" onClick={() => router.push('/faq')} />

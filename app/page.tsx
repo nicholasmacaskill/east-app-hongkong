@@ -22,7 +22,7 @@ import ClassModal from '@/app/components/modals/ClassModal';
 import SettingsModal from '@/app/components/modals/SettingsModal';
 import NewsArticleModal from '@/app/components/modals/NewsArticleModal';
 
-import { ToastProvider } from '@/app/components/ui/Toast';
+import CoachDetailsModal from '@/app/components/modals/CoachDetailsModal';
 import type { UserRole, Tab } from './types';
 import { Session } from './types/session';
 
@@ -459,10 +459,8 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ToastProvider>
-      <Suspense fallback={<div className="bg-black h-screen text-white flex justify-center items-center font-montserrat font-black italic uppercase tracking-widest animate-pulse">Loading...</div>}>
-        <AppContent />
-      </Suspense>
-    </ToastProvider>
+    <Suspense fallback={<div className="bg-black h-screen text-white flex justify-center items-center font-montserrat font-black italic uppercase tracking-widest animate-pulse">Loading...</div>}>
+      <AppContent />
+    </Suspense>
   );
 }

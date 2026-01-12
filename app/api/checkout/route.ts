@@ -26,11 +26,32 @@ export async function POST(request: Request) {
     }
 
     // Determine mode based on Price ID (Top Up is one-time payment)
-    const TOPUP_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SkINl12ap1SCxToSkb1jrWV';
-    const isTopUp = priceId === TOPUP_PRICE_ID;
+    const TOPUP_RATES: Record<string, number> = {
+      // 500 Credits ($500)
+      'price_1SkINl12ap1SCxTolaVPqdzA': 500,
+      // 1000 Credits ($1000)
+      'price_1SkINl12ap1SCxToIyvikBgt': 1000,
+      // 2500 Credits ($2500)
+      'price_1SkINl12ap1SCxTodZWHrIQm': 2500,
+      // 5000 Credits ($5000)
+      'price_1SkINl12ap1SCxToJvTqg6wj': 5000,
+      // 10000 Credits ($10000)
+      'price_1SkINl12ap1SCxTotmD50PGA': 10000
+    };
+
+    // Check if provided ID is in our known Top Up list
+    // Fallback: Check environment variable just in case legacy env check is needed
+    const LEGACY_TOPUP_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP;
+    if (LEGACY_TOPUP_ID && !TOPUP_RATES[LEGACY_TOPUP_ID]) {
+      TOPUP_RATES[LEGACY_TOPUP_ID] = 1200; // Default legacy amount
+    }
+
+    const topUpAmount = TOPUP_RATES[priceId];
+    const isTopUp = !!topUpAmount;
+
     const mode = isTopUp ? 'payment' : 'subscription';
 
-    console.log("Session Mode:", mode);
+    console.log("Session Mode:", mode, "Credit Amount:", topUpAmount);
 
     // Default URLs if not provided
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -51,11 +72,11 @@ export async function POST(request: Request) {
       customer_email: userEmail,
 
       // Metadata allows us to match the payment to the user in the Webhook
-      // ✅ UPDATED: Now includes credit_amount for metadata-driven webhook
+      // ✅ UPDATED: Dynamic credit_amount from map
       metadata: {
         userId: userId,
         target_user_id: userId,
-        credit_amount: isTopUp ? '1200' : '0' // Default 1200 credits for standard top-up
+        credit_amount: isTopUp ? topUpAmount.toString() : '0'
       }
     });
 

@@ -4,6 +4,7 @@ import { Montserrat, Open_Sans } from "next/font/google";
 import { PHProvider } from './providers/PostHogProvider';
 import PostHogPageView from './components/PostHogPageView';
 import { Suspense } from 'react';
+import { ToastProvider } from '@/app/components/ui/Toast';
 
 const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat" });
 const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-opensans" });
@@ -25,7 +26,9 @@ export default function RootLayout({
           <Suspense fallback={null}>
             <PostHogPageView />
           </Suspense>
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </PHProvider>
       </body>
     </html>
