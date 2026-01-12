@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Plus, Search, Trash2, Edit2, Shield, X, Lock, Calendar } from 'lucide-react';
+import { ChevronLeft, Plus, Search, Trash2, Edit2, Shield, X, Lock, Calendar, LayoutGrid } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import AvailabilityModal from './AvailabilityModal';
 
@@ -9,6 +9,10 @@ export default function CoachManagement() {
     const [coaches, setCoaches] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Services State
+    const [allServices, setAllServices] = useState<any[]>([]);
+    const [coachServices, setCoachServices] = useState<Set<string>>(new Set());
 
     // Add Coach Form State
     const [showAddForm, setShowAddForm] = useState(false);
@@ -31,6 +35,7 @@ export default function CoachManagement() {
 
     useEffect(() => {
         fetchCoaches();
+        fetchServices();
     }, []);
 
     const fetchCoaches = async () => {
@@ -45,6 +50,11 @@ export default function CoachManagement() {
             setCoaches(data);
         }
         setLoading(false);
+    };
+
+    const fetchServices = async () => {
+        const { data } = await supabase.from('session_types').select('*').order('title');
+        if (data) setAllServices(data);
     };
 
     const handleAddCoach = async () => {
@@ -71,8 +81,6 @@ export default function CoachManagement() {
             if (!result.success) {
                 alert('Error adding coach: ' + result.error);
             } else {
-                // Determine the new coach object to set as selected
-                // Ideally the API should return the full object, but we can construct enough for the modal
                 const createdCoach = {
                     id: result.userId,
                     first_name: newCoach.first_name,
@@ -82,9 +90,8 @@ export default function CoachManagement() {
                 alert('Coach added successfully! You can now set their availability.');
                 setShowAddForm(false);
                 setNewCoach({ first_name: '', last_name: '', email: '', password: '', mobile: '', bio: '' });
-                fetchCoaches(); // Refresh list in background
+                fetchCoaches();
 
-                // Open availability immediately
                 setSelectedCoach(createdCoach);
                 setShowAvailability(true);
             }
@@ -94,7 +101,7 @@ export default function CoachManagement() {
         }
     };
 
-    const handleEditClick = (coach: any) => {
+    const handleEditClick = async (coach: any) => {
         setEditingCoach({
             id: coach.id,
             first_name: coach.first_name || '',
@@ -102,9 +109,28 @@ export default function CoachManagement() {
             email: coach.contact_email || '',
             mobile: coach.mobile || '',
             bio: coach.bio || '',
-            password: '' // Placeholder
+            password: ''
         });
+
+        // Fetch assigned services
+        const { data } = await supabase
+            .from('coach_services')
+            .select('session_type_id')
+            .eq('coach_id', coach.id);
+
+        const assignedIds = new Set((data || []).map((row: any) => row.session_type_id));
+        setCoachServices(assignedIds);
+
         setShowEditForm(true);
+    };
+
+    const toggleService = (serviceId: string) => {
+        setCoachServices(prev => {
+            const next = new Set(prev);
+            if (next.has(serviceId)) next.delete(serviceId);
+            else next.add(serviceId);
+            return next;
+        });
     };
 
     const handleDeleteCoach = async (coachId: string, coachName: string) => {
@@ -128,7 +154,7 @@ export default function CoachManagement() {
             }
 
             alert(`${coachName} has been deleted successfully`);
-            fetchCoaches(); // Refresh list
+            fetchCoaches();
 
         } catch (error: any) {
             alert('Error deleting coach: ' + error.message);
@@ -139,6 +165,7 @@ export default function CoachManagement() {
         if (!editingCoach) return;
 
         try {
+            // 1. Update Profile
             const response = await fetch('/api/admin/update-coach', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -154,16 +181,28 @@ export default function CoachManagement() {
             });
 
             const result = await response.json();
-            if (!result.success) {
-                alert('Error updating coach: ' + result.error);
-            } else {
-                alert('Coach updated successfully.');
-                setShowEditForm(false);
-                setEditingCoach(null);
-                fetchCoaches();
+            if (!result.success) throw new Error(result.error);
+
+            // 2. Update Services (Delete All -> Insert New)
+            await supabase.from('coach_services').delete().eq('coach_id', editingCoach.id);
+
+            const serviceInserts = Array.from(coachServices).map(svcId => ({
+                coach_id: editingCoach.id,
+                session_type_id: svcId
+            }));
+
+            if (serviceInserts.length > 0) {
+                const { error: svcError } = await supabase.from('coach_services').insert(serviceInserts);
+                if (svcError) console.error("Error updating services:", svcError);
             }
-        } catch (err) {
-            alert('Failed to connect to server.');
+
+            alert('Coach updated successfully.');
+            setShowEditForm(false);
+            setEditingCoach(null);
+            fetchCoaches();
+
+        } catch (err: any) {
+            alert('Error updating coach: ' + err.message);
             console.error(err);
         }
     };
@@ -320,6 +359,26 @@ export default function CoachManagement() {
                                     className="w-full bg-black/50 border border-white/10 p-2 rounded text-white text-sm outline-none focus:border-[#28D160]"
                                 />
                             </div>
+
+                            {/* Service Assignment */}
+                            <div className="border-t border-white/10 pt-4">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase mb-2 block flex items-center gap-1">
+                                    <LayoutGrid size={12} /> Assigned Services
+                                </label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {allServices.map(svc => (
+                                        <div
+                                            key={svc.id}
+                                            onClick={() => toggleService(svc.id)}
+                                            className={`p-2 rounded border cursor-pointer text-xs font-bold transition-colors flex items-center gap-2 ${coachServices.has(svc.id) ? 'bg-[#28D160]/20 border-[#28D160] text-[#28D160]' : 'bg-black/30 border-white/10 text-gray-500 hover:border-white/30'}`}
+                                        >
+                                            <div className={`w-3 h-3 rounded-full border ${coachServices.has(svc.id) ? 'bg-[#28D160] border-[#28D160]' : 'border-gray-600'}`}></div>
+                                            {svc.title}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
                             <div className="bg-red-900/10 p-4 rounded-xl border border-red-500/20">
                                 <label className="text-[10px] font-bold text-red-400 uppercase flex items-center gap-1 mb-1">
                                     <Lock size={12} /> Reset Password
