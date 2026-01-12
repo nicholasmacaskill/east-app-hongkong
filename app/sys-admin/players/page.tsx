@@ -105,6 +105,34 @@ export default function PlayerManagement() {
         setShowEditForm(true);
     };
 
+    const handleDeletePlayer = async (playerId: string, playerName: string) => {
+        const confirmed = window.confirm(
+            `Are you sure you want to delete ${playerName}?\n\nThis action cannot be undone and will remove:\n• Player profile\n• All bookings and registrations\n• Auth account`
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch('/api/admin/delete-player', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: playerId })
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.error);
+            }
+
+            alert(`${playerName} has been deleted successfully`);
+            fetchPlayers(); // Refresh list
+
+        } catch (error: any) {
+            alert('Error deleting player: ' + error.message);
+        }
+    };
+
     const handleUpdatePlayer = async () => {
         if (!editingPlayer || !editingPlayer.id) return;
 
@@ -431,6 +459,12 @@ export default function PlayerManagement() {
                                         <div className="flex gap-3 items-center mt-3">
                                             <button onClick={() => handleEditClick(player)} className="text-[10px] font-black italic text-gray-400 uppercase hover:text-[#28D160] transition-colors flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md">
                                                 <Edit2 size={12} /> Account
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeletePlayer(player.id, `${player.first_name} ${player.last_name}`)}
+                                                className="text-[10px] font-black italic text-gray-400 uppercase hover:text-red-500 transition-colors flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-md"
+                                            >
+                                                <Trash2 size={12} /> Delete
                                             </button>
                                             <div className="h-3 w-px bg-white/10" />
                                             <div className="text-[10px] font-black text-white uppercase italic">

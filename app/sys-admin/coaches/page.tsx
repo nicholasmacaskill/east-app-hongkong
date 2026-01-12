@@ -107,6 +107,34 @@ export default function CoachManagement() {
         setShowEditForm(true);
     };
 
+    const handleDeleteCoach = async (coachId: string, coachName: string) => {
+        const confirmed = window.confirm(
+            `Are you sure you want to delete ${coachName}?\n\nThis action cannot be undone and will remove:\n• Coach profile\n• Availability settings\n• Auth account`
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch('/api/admin/delete-coach', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: coachId })
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.error);
+            }
+
+            alert(`${coachName} has been deleted successfully`);
+            fetchCoaches(); // Refresh list
+
+        } catch (error: any) {
+            alert('Error deleting coach: ' + error.message);
+        }
+    };
+
     const handleUpdateCoach = async () => {
         if (!editingCoach) return;
 
@@ -350,6 +378,12 @@ export default function CoachManagement() {
                                     </button>
                                     <button onClick={() => { setSelectedCoach(coach); setShowAvailability(true); }} className="text-xs font-bold text-blue-400 uppercase hover:text-white transition-colors flex items-center gap-1">
                                         <Calendar size={12} /> Availability
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteCoach(coach.id, `${coach.first_name} ${coach.last_name}`)}
+                                        className="text-xs font-bold text-gray-400 uppercase hover:text-red-500 transition-colors flex items-center gap-1"
+                                    >
+                                        <Trash2 size={12} /> Delete
                                     </button>
                                 </div>
                             </div>
