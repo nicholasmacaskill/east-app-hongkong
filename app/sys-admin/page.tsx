@@ -117,6 +117,32 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 </Link>
+
+                {/* News Management Card */}
+                <Link href="/sys-admin/news" className="group">
+                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
+                        <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <Calendar size={120} /> {/* Using Calendar as Newspaper icon proxy or change to proper icon if available */}
+                        </div>
+
+                        <div className="relative z-10 flex flex-col h-full gap-4">
+                            <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                                <Calendar size={24} />
+                            </div>
+
+                            <div>
+                                <h2 className="text-xl font-black italic uppercase mb-2">Manage News</h2>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                    Publish breaking news, announcements, and updates to the Home Screen.
+                                </p>
+                            </div>
+
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
+                                Open News Editor <ArrowRight size={14} />
+                            </div>
+                        </div>
+                    </div>
+                </Link>
             </div>
         </div>
     );

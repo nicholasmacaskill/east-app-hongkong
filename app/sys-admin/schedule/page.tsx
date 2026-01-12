@@ -298,7 +298,10 @@ export default function MasterSchedule() {
                                         onChange={e => setEditingSession({ ...editingSession, category: e.target.value })}
                                         className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-sm uppercase font-bold"
                                     >
-                                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                        <option value="FACILITY">Open Gym (Facility)</option>
+                                        <option value="PRIVATE">Private Lesson</option>
+                                        <option value="CLASS">Class</option>
+                                        <option value="EVENT">Special Event</option>
                                     </select>
                                 </div>
                                 <div>
