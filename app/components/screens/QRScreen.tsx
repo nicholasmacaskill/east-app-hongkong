@@ -2,59 +2,10 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { QrCode, User as UserIcon } from 'lucide-react';
-import { supabase } from '@/app/lib/supabase';
 
 export default function QRScreen({ credits, currentUserId, subscriptionStatus }: { credits: number, currentUserId: string | null, subscriptionStatus?: string }) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = React.useState(false);
-
-  const handleTopUp = async () => {
-    if (!currentUserId || isLoading) return;
-    setIsLoading(true);
-
-    try {
-      const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP || 'price_1SkINl12ap1SCxToSkb1jrWV';
-      console.log("DEBUG: Using Price ID:", priceId);
-      alert(`DEBUG: Price ID is ${priceId}`); // Temporary debug
-
-      if (!priceId) {
-        alert("Configuration Error: Missing Top Up Price ID. Please check .env.local.");
-        setIsLoading(false);
-        return;
-      }
-
-      // Fetch user email
-      const { data: profile } = await supabase.from('profiles').select('contact_email').eq('id', currentUserId).single();
-      const { data: { user } } = await supabase.auth.getUser();
-      const email = profile?.contact_email || user?.email;
-
-      const baseUrl = window.location.origin;
-
-      const res = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          priceId,
-          userId: currentUserId,
-          userEmail: email,
-          successUrl: `${baseUrl}/?success=true`,
-          cancelUrl: `${baseUrl}/?canceled=true`
-        })
-      });
-
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert(`Checkout Failed: ${data.error || 'Unknown error'}`);
-      }
-    } catch (e: any) {
-      console.error(e);
-      alert(`Top Up Failed: ${e.message || 'Network error'}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // handleTopUp logic replaced by direct router.push('/top-up')
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 animate-fadeIn pb-24 relative">
@@ -101,11 +52,10 @@ export default function QRScreen({ credits, currentUserId, subscriptionStatus }:
             )}
 
             <button
-              onClick={handleTopUp}
-              disabled={isLoading}
-              className="w-full bg-east-light text-black font-montserrat font-black italic text-[12px] py-4 rounded-full uppercase tracking-widest hover:bg-white transition-all shadow-lg active:scale-95 disabled:opacity-50"
+              onClick={() => router.push('/top-up')}
+              className="w-full bg-east-light text-black font-montserrat font-black italic text-lg py-4 rounded-full uppercase tracking-wider shadow-lg hover:scale-[1.02] active:scale-95 transition-all mt-4"
             >
-              {isLoading ? 'WORKING...' : 'TOP UP CREDITS'}
+              Top Up Credits
             </button>
           </div>
 
