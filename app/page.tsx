@@ -123,7 +123,9 @@ function AppContent() {
               subscription_status: profileData.subscription_status
             });
           } else {
-            console.log("No profile found for user, using Auth fallback.");
+            console.log("⚠️ No profile found. Attempting auto-repair...");
+
+            // 1. Set temporary UI state from metadata
             const metadataRole = user.user_metadata?.role as UserRole;
             if (metadataRole) {
               setUserProfile(prev => ({
@@ -131,10 +133,23 @@ function AppContent() {
                 email: user.email || '',
                 role: metadataRole,
                 id: user.id,
-                first_name: user.user_metadata?.first_name || user.user_metadata?.full_name?.split(' ')[0] || 'Member',
-                last_name: user.user_metadata?.last_name || user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || 'User',
+                first_name: user.user_metadata?.first_name || 'Member',
+                last_name: user.user_metadata?.last_name || 'User',
                 subscription_status: 'inactive'
               }));
+            }
+
+            // 2. Call Repair API
+            try {
+              const repairRes = await fetch('/api/user/repair-profile', { method: 'POST' });
+              if (repairRes.ok) {
+                console.log("✅ Profile repaired! Reloading...");
+                setRefreshKey(prev => prev + 1); // Trigger re-fetch
+              } else {
+                console.error("❌ Repair failed:", await repairRes.text());
+              }
+            } catch (repairErr) {
+              console.error("❌ Repair error:", repairErr);
             }
           }
 
