@@ -348,10 +348,7 @@ function AppContent() {
     <div className="min-h-screen bg-black text-white font-opensans select-none">
       <div className="max-w-md mx-auto bg-black min-h-screen relative border-x border-gray-900 shadow-2xl">
         <main>
-          {/* DEBUG STRIP - REMOVE LATER */}
-          <div className="bg-gray-900 text-[10px] text-gray-500 p-1 text-center">
-            Role: {userProfile.role} | ID: {currentUserId?.slice(0, 8)} | Meta: {userProfile.role}
-          </div>
+
 
 
           {activeTab === 'home' && (
