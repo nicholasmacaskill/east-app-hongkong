@@ -9,6 +9,8 @@ export interface Session {
     coach_image_url?: string; // New field
     description?: string;
     credit_cost?: number;
+    session_type_id?: string;
+    capacity?: number;
     facility_id?: string;
     facility?: {
         id: string;

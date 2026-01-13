@@ -174,9 +174,11 @@ export default function HomeScreen({
 
     // Note: "Private" sessions might be generically named "Private Lesson", so we might need looser matching or just show all their private slots.
     // For now, let's show ALL 'PRIVATE' category slots for this coach if we clicked a Private service.
+    // IMPROVEMENT: Filter by session_type_id if available to distinguish between Golf vs Shooting
     const coachPrivateSlots = sessions.filter(s =>
       s.instructor!.toLowerCase().includes(coach.first_name.toLowerCase()) &&
-      s.category === 'PRIVATE'
+      s.category === 'PRIVATE' &&
+      (selectedService ? s.session_type_id === selectedService.id : true)
     );
 
     if (coachPrivateSlots.length === 0) {

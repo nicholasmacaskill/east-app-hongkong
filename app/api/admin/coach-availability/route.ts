@@ -78,8 +78,8 @@ export async function POST(request: Request) {
                         coach_image_url: coachProfile?.avatar_url,
                         description: `Booked via Coach Availability`,
                         credit_cost: slot.credit_cost || 10,
-                        // Note: capacity isn't in sessions schema yet? Assuming default logic or it's implicitly 1 for now if PRIVATE.
-                        // If it's a CLASS, we might need a capacity column upgrade, but for now we follow schema.
+                        session_type_id: slot.session_type_id,
+                        capacity: slot.capacity || 1
                     });
 
                 } else {
