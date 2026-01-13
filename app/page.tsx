@@ -22,7 +22,7 @@ import ClassModal from '@/app/components/modals/ClassModal';
 import SettingsModal from '@/app/components/modals/SettingsModal';
 import NewsArticleModal from '@/app/components/modals/NewsArticleModal';
 
-import CoachDetailsModal from '@/app/components/modals/CoachDetailsModal';
+// 25: deleted
 import type { UserRole, Tab } from './types';
 import { Session } from './types/session';
 

@@ -27,7 +27,7 @@ export async function DELETE(request: Request) {
     // Calcluate Refund Eligibility
     const supabaseAdmin = getSupabaseAdmin();
 
-    const supabaseAdmin = getSupabaseAdmin();
+    // 31: deleted
 
     // 1. Fetch Session Details (Start/End) to find linked bookings
     const { data: mainSession, error: sessError } = await supabaseAdmin
@@ -63,7 +63,7 @@ export async function DELETE(request: Request) {
     // 3. Process Cancellation for EACH linked session
     for (const targetSesId of sessionsToCancel) {
 
-      // A. Calculate Refund Validity (Time check)
+      // A. Calculate Refund Validity
       const startTime = new Date(mainSession.start_time).getTime();
       const now = Date.now();
       const hoursUntilStart = (startTime - now) / (1000 * 60 * 60);
@@ -110,28 +110,27 @@ export async function DELETE(request: Request) {
       }
     }
 
-    // Optional: Send Email if successful
-    // We can fetch profile here if we want to send email, 
-    // or we can rely on DB triggers (better) or keep it simple for now.
-    // For now, retaining the email logic would require fetching profile again.
-    // Let's keep it simple and reliable first.
+    const overallSuccess = cancelResults.some(r => r.success);
+    const successMessages = cancelResults.filter(r => r.success).map(r => r.message).join(' | ');
+    const totalRefund = cancelResults.reduce((sum, r) => sum + (r.refund || 0), 0);
 
-    // Attempt to send email asynchronously (non-blocking)
-    if (result.success) {
+    // Optional: Send Email if successful (Async)
+    if (overallSuccess) {
       (async () => {
         try {
-          const supabaseAdmin = getSupabaseAdmin();
-          const { data: profile } = await supabaseAdmin.from('profiles').select('contact_email, first_name').eq('id', userId).single();
-          const { data: session } = await supabaseAdmin.from('sessions').select('title, start_time').eq('id', sessionId).single();
+          const supabaseAdminAsync = getSupabaseAdmin();
+          const { data: profile } = await supabaseAdminAsync.from('profiles').select('contact_email, first_name').eq('id', userId).single();
+          const { data: session } = await supabaseAdminAsync.from('sessions').select('title, start_time').eq('id', sessionId).single();
           if (profile?.contact_email && session) {
             await sendEmail({
               to: profile.contact_email,
               subject: `Cancellation Confirmed: ${session.title}`,
               html: `
-                          <p>Hi ${profile.first_name || 'Member'},</p>
-                          <p>Your booking for <strong>${session.title}</strong> has been cancelled.</p>
-                          <p>${result.message}</p>
-                        `
+                <p>Hi ${profile.first_name || 'Member'},</p>
+                <p>Your booking for <strong>${session.title}</strong> has been cancelled.</p>
+                <p>${successMessages}</p>
+                <p>Refunded: ${totalRefund} Credits</p>
+              `
             });
           }
         } catch (err) { console.error("Email error", err); }
@@ -139,10 +138,10 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({
-      success: true,
-      message: result.message,
-      refundAmount: result.refund_amount,
-      newCredits: 0 // Client should refetch profile to get actual new credits
+      success: overallSuccess,
+      message: successMessages || 'Cancellation processed',
+      refundAmount: totalRefund,
+      details: cancelResults
     });
 
   } catch (e) {
