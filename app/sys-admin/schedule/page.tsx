@@ -94,7 +94,9 @@ export default function MasterSchedule() {
                 end_time: end,
                 total_facility_bays: 0,
                 max_capacity: 1,
-                credit_cost: 100
+                credit_cost: 100,
+                session_type_id: null,
+                lockInstructor: true
             });
             setShowModal(true);
         }
@@ -163,7 +165,7 @@ export default function MasterSchedule() {
 
     const handleSessionClick = (session: Session) => {
         setModalAction('EDIT');
-        setEditingSession({ ...session });
+        setEditingSession({ ...session, lockInstructor: !!session.instructor });
         setShowModal(true);
     };
 
@@ -174,13 +176,16 @@ export default function MasterSchedule() {
         }
 
         try {
+            // Strip UI-only helper fields before sending to API
+            const { lockInstructor, ...cleanSessionData } = editingSession;
+
             const res = await fetch('/api/admin/sessions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: modalAction,
                     id: editingSession.id,
-                    sessionData: editingSession
+                    sessionData: cleanSessionData
                 })
             });
             const data = await res.json();
@@ -408,7 +413,8 @@ export default function MasterSchedule() {
                                     <select
                                         value={editingSession.instructor}
                                         onChange={e => setEditingSession({ ...editingSession, instructor: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-xs font-bold"
+                                        disabled={editingSession.lockInstructor}
+                                        className={`w-full bg-black/50 border border-white/10 p-3 rounded-xl text-xs font-bold outline-none focus:border-[#28D160] ${editingSession.lockInstructor ? 'opacity-50 cursor-not-allowed border-east-light/30' : ''}`}
                                     >
                                         <option value="">No Coach (Staff)</option>
                                         {coaches.filter(c => {
@@ -420,7 +426,12 @@ export default function MasterSchedule() {
                                             </option>
                                         ))}
                                     </select>
-                                    {editingSession.session_type_id && editingSession.category === 'PRIVATE' && (
+                                    {editingSession.lockInstructor && (
+                                        <p className="text-[7px] text-[#28D160] mt-1 uppercase font-black italic flex items-center gap-1">
+                                            <Info size={8} /> Coach is locked for this entry
+                                        </p>
+                                    )}
+                                    {!editingSession.lockInstructor && editingSession.session_type_id && editingSession.category === 'PRIVATE' && (
                                         <p className="text-[7px] text-gray-500 mt-1 uppercase font-bold">Showing coaches qualified for this service</p>
                                     )}
                                 </div>

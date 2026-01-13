@@ -213,6 +213,27 @@ export default function HomeScreen({
 
       <div className="relative z-10 px-5 space-y-10 pt-6">
 
+        {/* Facility Booking */}
+        <div>
+          <SectionHeader title="Facilities" />
+          {loading ? (
+            <div className="grid grid-cols-3 gap-3">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="aspect-square rounded-2xl" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-3">
+              {facilitiesUnique.map((fac) => (
+                <div key={fac.id} onClick={() => handleItemClick(fac, 'title')} className="flex flex-col gap-2 cursor-pointer group active:scale-95 transition-transform duration-200">
+                  <div className="aspect-square rounded-2xl overflow-hidden border border-gray-800 bg-[#0a0a0a] relative shadow-lg group-hover:border-east-light transition-colors">
+                    <img src={fac.image_url} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" alt={fac.title} />
+                  </div>
+                  <span className="font-montserrat font-bold italic text-[9px] uppercase text-center text-gray-400 group-hover:text-white transition-colors">{fac.title}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Breaking News */}
         <div>
           <SectionHeader title="Breaking News" />
@@ -231,27 +252,6 @@ export default function HomeScreen({
                     <h3 className="font-montserrat font-black italic text-xl leading-none mb-1 text-white uppercase">{item.title}</h3>
                     <p className="font-opensans text-[10px] text-gray-300 line-clamp-2 leading-relaxed">{item.description}</p>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Facility Booking */}
-        <div>
-          <SectionHeader title="Facilities" />
-          {loading ? (
-            <div className="grid grid-cols-3 gap-3">
-              {[1, 2, 3].map(i => <Skeleton key={i} className="aspect-square rounded-2xl" />)}
-            </div>
-          ) : (
-            <div className="grid grid-cols-3 gap-3">
-              {facilitiesUnique.map((fac) => (
-                <div key={fac.id} onClick={() => handleItemClick(fac, 'title')} className="flex flex-col gap-2 cursor-pointer group active:scale-95 transition-transform duration-200">
-                  <div className="aspect-square rounded-2xl overflow-hidden border border-gray-800 bg-[#0a0a0a] relative shadow-lg group-hover:border-east-light transition-colors">
-                    <img src={fac.image_url} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" alt={fac.title} />
-                  </div>
-                  <span className="font-montserrat font-bold italic text-[9px] uppercase text-center text-gray-400 group-hover:text-white transition-colors">{fac.title}</span>
                 </div>
               ))}
             </div>
