@@ -47,7 +47,12 @@ export default function CoachManagement() {
             .order('created_at', { ascending: false });
 
         if (data) {
-            setCoaches(data);
+            const normalized = data.map(c => ({
+                ...c,
+                first_name: c.first_name?.trim() || '',
+                last_name: c.last_name?.trim() || ''
+            }));
+            setCoaches(normalized);
         }
         setLoading(false);
     };

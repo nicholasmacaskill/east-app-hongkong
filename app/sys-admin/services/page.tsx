@@ -20,6 +20,9 @@ export default function ManageServicesPage() {
 
     const [loading, setLoading] = useState(true);
     const [services, setServices] = useState<SessionType[]>([]);
+    const [allCoaches, setAllCoaches] = useState<any[]>([]);
+    const [selectedCoachIds, setSelectedCoachIds] = useState<string[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
 
     // Edit/Create State
     const [isEditing, setIsEditing] = useState(false);
@@ -31,17 +34,28 @@ export default function ManageServicesPage() {
 
     const fetchServices = async () => {
         setLoading(true);
-        const { data, error } = await supabase
+        // 1. Fetch Services
+        const { data: svcData, error: svcError } = await supabase
             .from('session_types')
             .select('*')
             .order('title');
 
-        if (error) {
-            console.error('Error fetching services:', error);
+        if (svcError) {
+            console.error('Error fetching services:', svcError);
             addToast("Failed to load services", "error");
         } else {
-            setServices((data as any) || []);
+            setServices((svcData as any) || []);
         }
+
+        // 2. Fetch Coaches
+        const { data: coachData } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, avatar_url')
+            .eq('role', 'coach')
+            .order('first_name');
+
+        if (coachData) setAllCoaches(coachData);
+
         setLoading(false);
     };
 
@@ -65,21 +79,23 @@ export default function ManageServicesPage() {
             console.log("Sending payload:", payload);
 
             let error;
-            if (currentService.id) {
+            let serviceId = currentService.id;
+
+            if (serviceId) {
                 // Update
                 const { error: updateError } = await supabase
                     .from('session_types')
                     .update(payload)
-                    .eq('id', currentService.id);
+                    .eq('id', serviceId);
                 error = updateError;
             } else {
                 // Insert
-                console.log("Inserting new service...");
-                const { data, error: insertError } = await supabase
+                const { data: newData, error: insertError } = await supabase
                     .from('session_types')
                     .insert([payload])
                     .select();
-                console.log("Insert response:", { data, insertError });
+
+                if (newData && newData[0]) serviceId = newData[0].id;
                 error = insertError;
             }
 
@@ -87,10 +103,25 @@ export default function ManageServicesPage() {
                 console.error('Error saving service:', error);
                 addToast(`Failed to save: ${error.message || JSON.stringify(error)}`, "error");
             } else {
-                console.log("Save successful");
+                // SYNC COACH SERVICES
+                if (serviceId) {
+                    // 1. Delete existing
+                    await supabase.from('coach_services').delete().eq('session_type_id', serviceId);
+
+                    // 2. Insert new ones
+                    if (selectedCoachIds.length > 0) {
+                        const coachPayloads = selectedCoachIds.map(cid => ({
+                            coach_id: cid,
+                            session_type_id: serviceId
+                        }));
+                        await supabase.from('coach_services').insert(coachPayloads);
+                    }
+                }
+
                 addToast("Service saved successfully", "success");
                 setIsEditing(false);
                 setCurrentService({});
+                setSelectedCoachIds([]);
                 fetchServices();
             }
         } catch (e: any) {
@@ -116,13 +147,23 @@ export default function ManageServicesPage() {
         }
     };
 
-    const openEdit = (service: SessionType) => {
+    const openEdit = async (service: SessionType) => {
         setCurrentService(service);
+        // Fetch existing coach assignments
+        const { data } = await supabase
+            .from('coach_services')
+            .select('coach_id')
+            .eq('session_type_id', service.id);
+
+        if (data) setSelectedCoachIds(data.map(d => d.coach_id));
+        else setSelectedCoachIds([]);
+
         setIsEditing(true);
     };
 
     const openNew = () => {
         setCurrentService({ category: 'CLASS' }); // Default
+        setSelectedCoachIds([]);
         setIsEditing(true);
     };
 
@@ -244,16 +285,59 @@ export default function ManageServicesPage() {
                                 />
                                 {currentService.image_url && (
                                     <div className="mt-2 text-center">
-                                        <img src={currentService.image_url} alt="Preview" className="h-32 mx-auto rounded-lg object-cover" />
+                                        <img src={currentService.image_url} alt="Preview" className="h-20 mx-auto rounded-lg object-cover" />
                                     </div>
                                 )}
                             </div>
 
+                            {/* Coach Selection */}
+                            <div className="border-t border-white/5 pt-4">
+                                <div className="flex justify-between items-center mb-2">
+                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Assign Coaches</label>
+                                    <span className="text-[10px] text-[#28D160] font-black uppercase">{selectedCoachIds.length} Selected</span>
+                                </div>
+
+                                <input
+                                    type="text"
+                                    placeholder="Search coaches..."
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                    className="w-full bg-black border border-white/10 rounded-lg p-2 text-xs mb-3 focus:border-[#28D160] outline-none"
+                                />
+
+                                <div className="max-h-40 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
+                                    {allCoaches
+                                        .filter(c => `${c.first_name} ${c.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()))
+                                        .map(coach => {
+                                            const isSelected = selectedCoachIds.includes(coach.id);
+                                            return (
+                                                <button
+                                                    key={coach.id}
+                                                    onClick={() => {
+                                                        if (isSelected) setSelectedCoachIds(selectedCoachIds.filter(id => id !== coach.id));
+                                                        else setSelectedCoachIds([...selectedCoachIds, coach.id]);
+                                                    }}
+                                                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors border ${isSelected ? 'bg-[#28D160]/10 border-[#28D160]/30' : 'bg-black/40 border-transparent hover:bg-white/5'}`}
+                                                >
+                                                    <div className="w-6 h-6 rounded-full bg-gray-800 overflow-hidden flex-shrink-0">
+                                                        {coach.avatar_url ? <img src={coach.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-east-light/20" />}
+                                                    </div>
+                                                    <span className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-gray-400'}`}>
+                                                        {coach.first_name} {coach.last_name}
+                                                    </span>
+                                                    {isSelected && <div className="ml-auto w-2 h-2 bg-[#28D160] rounded-full shadow-[0_0_8px_#28D160]" />}
+                                                </button>
+                                            );
+                                        })
+                                    }
+                                </div>
+                            </div>
+
                             <button
                                 onClick={handleSave}
-                                className="w-full bg-[#28D160] text-black font-bold uppercase py-4 rounded-xl mt-4 hover:bg-[#20aa4f] transition-colors"
+                                className="w-full bg-[#28D160] text-black font-bold uppercase py-4 rounded-xl mt-4 hover:bg-[#20aa4f] transition-colors shadow-lg active:scale-95 transition-transform"
                             >
-                                Save Service
+                                {currentService.id ? 'Update Service' : 'Create Service'}
                             </button>
                         </div>
                     </div>

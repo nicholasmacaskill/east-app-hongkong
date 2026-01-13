@@ -140,7 +140,14 @@ export default function MasterSchedule() {
 
     const fetchCoaches = async () => {
         const { data } = await supabase.from('profiles').select('id, first_name, last_name').eq('role', 'coach');
-        setCoaches(data || []);
+        if (data) {
+            const normalized = data.map(c => ({
+                ...c,
+                first_name: c.first_name?.trim() || '',
+                last_name: c.last_name?.trim() || ''
+            }));
+            setCoaches(normalized);
+        }
     };
 
     const handleCellClick = (timeSlot: string) => {
@@ -418,6 +425,10 @@ export default function MasterSchedule() {
                                     >
                                         <option value="">No Coach (Staff)</option>
                                         {coaches.filter(c => {
+                                            const fullName = `${c.first_name} ${c.last_name}`;
+                                            // Always show the locked coach to prevent reset
+                                            if (editingSession.lockInstructor && editingSession.instructor === fullName) return true;
+
                                             if (!editingSession.session_type_id || editingSession.category !== 'PRIVATE') return true;
                                             return coachServices.some(cs => cs.coach_id === c.id && cs.session_type_id === editingSession.session_type_id);
                                         }).map(c => (
