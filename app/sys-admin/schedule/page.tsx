@@ -32,21 +32,7 @@ interface Coach {
     last_name: string;
 }
 
-// Fixed Resources for Grid
-const RESOURCES = [
-    { id: 'bay_1', name: 'The Blue Bay', type: 'facility' },
-    { id: 'bay_2', name: 'Shooting Bay', type: 'facility' },
-    { id: 'bay_3', name: 'Trackman 1', type: 'facility' },
-    { id: 'bay_4', name: 'Trackman 2', type: 'facility' },
-    { id: 'coach_col', name: 'Coach Tracking', type: 'coach' }, // Visualization of coach sessions
-];
-
 const CATEGORIES = ['FACILITY', 'PRIVATE', 'CLASS', 'EVENT']; // Updated to match Enum values for safety
-
-const TIME_SLOTS = Array.from({ length: 15 }, (_, i) => {
-    const hour = i + 8;
-    return `${hour < 10 ? '0' : ''}${hour}:00`;
-});
 
 // ... (Rest of file unchanged until Modal)
 
@@ -63,11 +49,13 @@ export default function MasterSchedule() {
     const hasAutoOpened = React.useRef(false);
 
     const [sessions, setSessions] = useState<Session[]>([]);
+    const [availability, setAvailability] = useState<any[]>([]);
     const [coaches, setCoaches] = useState<Coach[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const [coachServices, setCoachServices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [activeCategory, setActiveCategory] = useState<string>('ALL');
 
     // UI States
     const [showModal, setShowModal] = useState(false);
@@ -126,15 +114,31 @@ export default function MasterSchedule() {
         const endOfDay = new Date(selectedDate);
         endOfDay.setHours(23, 59, 59, 999);
 
-        const { data, error } = await supabase
+        // 1. Fetch Sessions
+        const { data: sessData, error: sessError } = await supabase
             .from('sessions')
             .select('*')
             .gte('start_time', startOfDay.toISOString())
             .lte('start_time', endOfDay.toISOString())
             .order('start_time');
 
-        if (error) console.error('Error:', error);
-        else setSessions(data || []);
+        if (sessError) console.error('Error fetching sessions:', sessError);
+        else setSessions(sessData || []);
+
+        // 2. Fetch Availability (Open Slots)
+        const { data: availData, error: availError } = await supabase
+            .from('availability')
+            .select(`
+                *,
+                profiles:coach_id ( first_name, last_name, avatar_url )
+            `)
+            .gte('start_time', startOfDay.toISOString())
+            .lte('start_time', endOfDay.toISOString())
+            .eq('status', 'available');
+
+        if (availError) console.error('Error fetching availability:', availError);
+        else setAvailability(availData || []);
+
         setLoading(false);
     };
 
@@ -228,34 +232,6 @@ export default function MasterSchedule() {
         }
     };
 
-    const getCellContent = (resourceId: string, timeSlot: string) => {
-        const slotStart = new Date(`${selectedDate}T${timeSlot}:00`);
-        const slotEnd = new Date(slotStart.getTime() + 60 * 60 * 1000);
-
-        const activeSessions = sessions.filter(s => {
-            const sessStart = new Date(s.start_time);
-            const sessEnd = new Date(s.end_time);
-            return sessStart < slotEnd && sessEnd > slotStart;
-        });
-
-        if (activeSessions.length === 0) return null;
-
-        for (const session of activeSessions) {
-            // Coach Column Visualization (shows ANY session with an instructor)
-            if (resourceId === 'coach_col' && session.instructor) {
-                return { session, type: 'instructor', title: session.instructor, color: 'bg-blue-600' };
-            }
-
-            // Facility Bays
-            if (resourceId.startsWith('bay_') && session.total_facility_bays > 0) {
-                const bayNum = parseInt(resourceId.replace('bay_', ''));
-                if (bayNum <= session.total_facility_bays) {
-                    return { session, type: 'facility', title: session.title, color: 'bg-[#28D160] text-black' };
-                }
-            }
-        }
-        return null;
-    };
 
     return (
         <div className="flex flex-col gap-6 animate-fadeIn pb-20 min-h-screen bg-black text-white p-6 font-montserrat select-none">
@@ -287,52 +263,137 @@ export default function MasterSchedule() {
                 </div>
             </div>
 
-            {/* Grid */}
-            <div className="flex-1 overflow-x-auto border border-white/10 rounded-2xl bg-[#1e1e1e] shadow-2xl">
-                <div className="min-w-[1000px]">
-                    {/* Header Row */}
-                    <div className="flex border-b border-white/10 sticky top-0 bg-[#1e1e1e] z-10">
-                        <div className="w-20 p-4 border-r border-white/10 font-bold text-xs text-gray-500 uppercase tracking-wider bg-[#151515]">Time</div>
-                        {RESOURCES.map(resource => (
-                            <div key={resource.id} className="flex-1 p-4 border-r border-white/10 min-w-[120px] text-center bg-[#151515]">
-                                <span className={`text-[10px] font-black uppercase italic tracking-widest ${resource.type === 'coach' ? 'text-blue-400' : 'text-[#28D160]'}`}>
-                                    {resource.name}
-                                </span>
-                            </div>
-                        ))}
+            {/* Category Toggles */}
+            <div className="flex overflow-x-auto no-scrollbar gap-2 pb-2">
+                {['ALL', 'PRIVATE', 'FACILITY', 'CLASS', 'EVENT'].map(cat => (
+                    <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${activeCategory === cat ? 'bg-[#28D160] border-[#28D160] text-black shadow-lg shadow-[#28D160]/20' : 'bg-[#1e1e1e] border-white/5 text-gray-500 hover:border-white/20'}`}
+                    >
+                        {cat === 'ALL' ? 'Everything' : cat.replace('_', ' ')}
+                    </button>
+                ))}
+            </div>
+
+            {/* Timeline View */}
+            <div className="flex-1 space-y-4">
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20 opacity-50">
+                        <RefreshCw size={48} className="animate-spin mb-4" />
+                        <p className="font-bold uppercase tracking-widest text-xs">Syncing Schedule...</p>
                     </div>
+                ) : (() => {
+                    // Merge and Filter Items
+                    const mergedItems = [
+                        ...sessions.map(s => ({ ...s, type: 'session' })),
+                        ...availability.map(a => ({
+                            id: a.id,
+                            title: 'Open Slot',
+                            category: 'PRIVATE',
+                            instructor: `${a.profiles?.first_name} ${a.profiles?.last_name || ''}`.trim(),
+                            start_time: a.start_time,
+                            end_time: a.end_time,
+                            type: 'slot',
+                            coach_id: a.coach_id
+                        }))
+                    ].filter(item => {
+                        if (activeCategory === 'ALL') return true;
+                        return item.category === activeCategory;
+                    }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
-                    {/* Time Slots */}
-                    {TIME_SLOTS.map(time => (
-                        <div key={time} className="flex border-b border-white/5 hover:bg-white/5 transition-colors group h-20">
-                            <div className="w-20 p-3 border-r border-white/10 flex items-center justify-center text-[10px] font-black text-gray-500 bg-[#1e1e1e] group-hover:bg-[#252525] sticky left-0 z-10">
-                                {time}
+                    if (mergedItems.length === 0) {
+                        return (
+                            <div className="text-center py-20 bg-[#1e1e1e] rounded-3xl border border-dashed border-white/10">
+                                <Plus size={48} className="mx-auto mb-4 text-gray-700" />
+                                <h3 className="text-xl font-black italic uppercase text-gray-500">No {activeCategory !== 'ALL' ? activeCategory.toLowerCase() : ''} items scheduled</h3>
+                                <button
+                                    onClick={() => handleCellClick("09:00")}
+                                    className="mt-4 bg-[#28D160]/10 text-[#28D160] px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest hover:bg-[#28D160]/20 transition-colors"
+                                >
+                                    Add First Entry
+                                </button>
                             </div>
+                        );
+                    }
 
-                            {RESOURCES.map(resource => {
-                                const content = getCellContent(resource.id, time);
-                                return (
-                                    <div
-                                        key={`${resource.id}-${time}`}
-                                        className="flex-1 border-r border-white/5 min-w-[120px] relative p-1 cursor-crosshair group/cell"
-                                        onClick={() => content ? handleSessionClick(content.session) : handleCellClick(time)}
-                                    >
-                                        {content ? (
-                                            <div className={`w-full h-full rounded-lg ${content.color} p-2 text-xs flex flex-col justify-center shadow-lg transition-transform hover:scale-[1.02] active:scale-95`}>
-                                                <span className="font-black uppercase tracking-tight leading-tight line-clamp-1">{content.title}</span>
-                                                <span className="text-[8px] opacity-70 uppercase font-bold tracking-widest mt-0.5">{content.type === 'instructor' ? 'Coach' : 'Facility'}</span>
-                                            </div>
-                                        ) : (
-                                            <div className="w-full h-full opacity-0 group-hover/cell:opacity-100 flex items-center justify-center transition-opacity">
-                                                <Plus size={16} className="text-[#28D160]" />
+                    return mergedItems.map((item: any, idx) => {
+                        const isSlot = item.type === 'slot';
+                        const startTime = new Date(item.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+                        const duration = Math.round((new Date(item.end_time).getTime() - new Date(item.start_time).getTime()) / 60000);
+
+                        return (
+                            <div
+                                key={item.id || idx}
+                                onClick={() => {
+                                    if (isSlot) {
+                                        setModalAction('CREATE');
+                                        setEditingSession({
+                                            title: `${item.instructor} - Session`,
+                                            category: 'PRIVATE',
+                                            instructor: item.instructor,
+                                            start_time: item.start_time,
+                                            end_time: item.end_time,
+                                            total_facility_bays: 0,
+                                            max_capacity: 1,
+                                            credit_cost: 100,
+                                            session_type_id: null,
+                                            lockInstructor: true
+                                        });
+                                        setShowModal(true);
+                                    } else {
+                                        handleSessionClick(item);
+                                    }
+                                }}
+                                className={`group flex gap-4 p-4 rounded-2xl transition-all cursor-pointer border ${isSlot ? 'bg-black/20 border-white/5 border-dashed hover:border-[#28D160]/30' : 'bg-[#1e1e1e] border-white/10 hover:border-[#28D160] hover:shadow-xl hover:shadow-[#28D160]/5'}`}
+                            >
+                                {/* Time Column */}
+                                <div className="flex flex-col items-center justify-center min-w-[70px] border-r border-white/5 pr-4">
+                                    <span className={`text-lg font-black italic leading-none ${isSlot ? 'text-gray-600' : 'text-white'}`}>{startTime}</span>
+                                    <span className="text-[9px] font-bold text-gray-600 uppercase mt-1">{duration} MIN</span>
+                                </div>
+
+                                {/* Info Column */}
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-start mb-1">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className={`font-black uppercase tracking-tight text-sm ${isSlot ? 'text-gray-600 italic' : 'text-white'}`}>
+                                                {item.title}
+                                            </h3>
+                                            {isSlot ? (
+                                                <span className="bg-white/5 text-gray-500 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter">Available</span>
+                                            ) : (
+                                                <span className={`${item.category === 'FACILITY' ? 'bg-[#28D160]/10 text-[#28D160]' : 'bg-blue-500/10 text-blue-400'} text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter`}>
+                                                    {item.category}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {!isSlot && (
+                                            <div className="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                                                <Info size={12} />
+                                                <span className="text-[10px] font-bold uppercase tracking-widest">{item.total_facility_bays > 0 ? `${item.total_facility_bays} Bays` : 'No Bays'}</span>
                                             </div>
                                         )}
                                     </div>
-                                );
-                            })}
-                        </div>
-                    ))}
-                </div>
+
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <User size={12} className={isSlot ? 'text-gray-700' : 'text-[#28D160]'} />
+                                            <span className={`text-[10px] font-bold uppercase tracking-widest ${isSlot ? 'text-gray-600' : 'text-gray-300'}`}>
+                                                {item.instructor || 'Unassigned'}
+                                            </span>
+                                        </div>
+                                        {!isSlot && (
+                                            <span className="text-[10px] font-black italic text-[#28D160]">
+                                                {item.credit_cost} <span className="text-[8px] not-italic text-gray-600">CREDITS</span>
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    });
+                })()}
             </div>
 
             {/* Session Editor Modal */}
