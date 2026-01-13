@@ -17,6 +17,13 @@ interface Session {
     total_facility_bays: number;
     max_capacity: number;
     credit_cost: number;
+    session_type_id?: string;
+}
+
+interface Service {
+    id: string;
+    title: string;
+    category: string;
 }
 
 interface Coach {
@@ -35,13 +42,6 @@ const RESOURCES = [
 ];
 
 const CATEGORIES = ['FACILITY', 'PRIVATE', 'CLASS', 'EVENT']; // Updated to match Enum values for safety
-const LESSON_PRESETS = [
-    'Hyrox',
-    'EAST60',
-    'Shooting (Senior)',
-    'Shooting (Junior)',
-    'Personal Training'
-];
 
 const TIME_SLOTS = Array.from({ length: 15 }, (_, i) => {
     const hour = i + 8;
@@ -64,6 +64,8 @@ export default function MasterSchedule() {
 
     const [sessions, setSessions] = useState<Session[]>([]);
     const [coaches, setCoaches] = useState<Coach[]>([]);
+    const [services, setServices] = useState<Service[]>([]);
+    const [coachServices, setCoachServices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -101,7 +103,19 @@ export default function MasterSchedule() {
     useEffect(() => {
         fetchSchedule();
         fetchCoaches();
+        fetchServices();
+        fetchCoachServices();
     }, [selectedDate]);
+
+    const fetchServices = async () => {
+        const { data } = await supabase.from('session_types').select('*').order('title');
+        setServices(data || []);
+    };
+
+    const fetchCoachServices = async () => {
+        const { data } = await supabase.from('coach_services').select('*');
+        setCoachServices(data || []);
+    };
 
     const fetchSchedule = async () => {
         setLoading(true);
@@ -141,7 +155,8 @@ export default function MasterSchedule() {
             end_time: end,
             total_facility_bays: 1,
             max_capacity: 4,
-            credit_cost: 100 // Default cost
+            credit_cost: 100, // Default cost
+            session_type_id: ''
         });
         setShowModal(true);
     };
@@ -325,28 +340,45 @@ export default function MasterSchedule() {
                         </div>
 
                         <div className="space-y-5">
-                            {/* Title & Type */}
+                            {/* Service Selection */}
                             <div className="space-y-4 bg-black/20 p-4 rounded-2xl border border-white/5">
-                                {/* Quick Fill Preset */}
                                 <div>
                                     <label className="text-[10px] font-black text-[#28D160] uppercase tracking-widest ml-1 mb-1 block">
-                                        Quick Fill Title
+                                        Select Service Type
                                     </label>
-                                    <div className="flex gap-2 flex-wrap">
-                                        {LESSON_PRESETS.map(preset => (
-                                            <button
-                                                key={preset}
-                                                onClick={() => setEditingSession({ ...editingSession, title: preset })}
-                                                className="px-3 py-1 bg-white/5 hover:bg-[#28D160] hover:text-black border border-white/10 rounded-full text-[10px] font-bold uppercase transition-all"
-                                            >
-                                                {preset}
-                                            </button>
-                                        ))}
-                                    </div>
+                                    <select
+                                        value={editingSession.session_type_id || ''}
+                                        onChange={e => {
+                                            const svc = services.find(s => s.id === e.target.value);
+                                            if (svc) {
+                                                setEditingSession({
+                                                    ...editingSession,
+                                                    session_type_id: svc.id,
+                                                    category: svc.category,
+                                                    title: svc.title
+                                                });
+                                            } else {
+                                                setEditingSession({ ...editingSession, session_type_id: '', category: 'FACILITY' });
+                                            }
+                                        }}
+                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-sm font-bold"
+                                    >
+                                        <option value="">-- CUSTOM / FACILITY --</option>
+                                        <optgroup label="CLASSES">
+                                            {services.filter(s => s.category === 'CLASS').map(s => (
+                                                <option key={s.id} value={s.id}>{s.title}</option>
+                                            ))}
+                                        </optgroup>
+                                        <optgroup label="PRIVATE LESSONS">
+                                            {services.filter(s => s.category === 'PRIVATE').map(s => (
+                                                <option key={s.id} value={s.id}>{s.title}</option>
+                                            ))}
+                                        </optgroup>
+                                    </select>
                                 </div>
 
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Session Title</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Public Display Title</label>
                                     <input
                                         value={editingSession.title}
                                         onChange={e => setEditingSession({ ...editingSession, title: e.target.value })}
@@ -359,11 +391,11 @@ export default function MasterSchedule() {
                             {/* Category & Instructor */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Category</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Category Override</label>
                                     <select
                                         value={editingSession.category}
                                         onChange={e => setEditingSession({ ...editingSession, category: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-sm uppercase font-bold"
+                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-[10px] uppercase font-bold"
                                     >
                                         <option value="FACILITY">Open Gym (Facility)</option>
                                         <option value="PRIVATE">Private Lesson</option>
@@ -372,19 +404,25 @@ export default function MasterSchedule() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Instructor</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Assign Coach</label>
                                     <select
                                         value={editingSession.instructor}
                                         onChange={e => setEditingSession({ ...editingSession, instructor: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-sm font-bold"
+                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-xs font-bold"
                                     >
-                                        <option value="">None</option>
-                                        {coaches.map(c => (
+                                        <option value="">No Coach (Staff)</option>
+                                        {coaches.filter(c => {
+                                            if (!editingSession.session_type_id || editingSession.category !== 'PRIVATE') return true;
+                                            return coachServices.some(cs => cs.coach_id === c.id && cs.session_type_id === editingSession.session_type_id);
+                                        }).map(c => (
                                             <option key={c.id} value={`${c.first_name} ${c.last_name}`}>
                                                 {c.first_name} {c.last_name}
                                             </option>
                                         ))}
                                     </select>
+                                    {editingSession.session_type_id && editingSession.category === 'PRIVATE' && (
+                                        <p className="text-[7px] text-gray-500 mt-1 uppercase font-bold">Showing coaches qualified for this service</p>
+                                    )}
                                 </div>
                             </div>
 
