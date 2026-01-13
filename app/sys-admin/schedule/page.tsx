@@ -156,7 +156,7 @@ export default function MasterSchedule() {
             total_facility_bays: 1,
             max_capacity: 4,
             credit_cost: 100, // Default cost
-            session_type_id: ''
+            session_type_id: null
         });
         setShowModal(true);
     };
@@ -358,7 +358,7 @@ export default function MasterSchedule() {
                                                     title: svc.title
                                                 });
                                             } else {
-                                                setEditingSession({ ...editingSession, session_type_id: '', category: 'FACILITY' });
+                                                setEditingSession({ ...editingSession, session_type_id: null, category: 'FACILITY' });
                                             }
                                         }}
                                         className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-sm font-bold"
