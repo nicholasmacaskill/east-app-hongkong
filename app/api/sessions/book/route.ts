@@ -3,6 +3,27 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { sendEmail } from '@/app/lib/email';
+import { createClient } from '@supabase/supabase-js';
+
+// Helper to verify user against Supabase Auth
+async function verifyUser(request: Request, claimedUserId: string): Promise<boolean> {
+  // 1. Get Token
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader) return false;
+
+  const token = authHeader.replace('Bearer ', '');
+
+  // 2. Create restricted client
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  // 3. Verify
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+
+  if (error || !user) return false;
+  return user.id === claimedUserId;
+}
 
 // Helper: Dynamic Coach Pricing
 function getCoachCost(tier: string, origin: string): number {
@@ -71,6 +92,14 @@ export async function POST(request: Request) {
   // If nothing provided, default to booking the user themselves
   if (targets.length === 0) targets.push(userId);
 
+  // SECURITY CHECK
+  const isVerified = await verifyUser(request, userId);
+  if (!isVerified) {
+    console.warn(`[SECURITY WARNING] User ${userId} failed auth check from IP ${request.headers.get('x-forwarded-for') || 'unknown'}`);
+    // TODO: Strict security enforced
+    return NextResponse.json({ error: 'Unauthorized: ID mismatch' }, { status: 401 });
+  }
+
   console.log(`[BOOKING] Origin: ${origin}, User: ${userId}, Session: ${sessionId}, Targets:`, targets, `Coach: ${coachId}, Tier: ${coachTier}`);
 
   const results = [];
@@ -129,22 +158,23 @@ export async function POST(request: Request) {
 
 
     // ==========================
-    // VALIDATION: Origin Logic
+    // VALIDATION: Capacity & Availability
     // ==========================
+
+    // 1. Check General Capacity (Registrations vs Max Capacity)
+    const { count: currentBookings } = await supabaseAdmin
+      .from('registrations')
+      .select('*', { count: 'exact', head: true })
+      .eq('session_id', sessionId);
+
+    const maxUsers = mainSession.max_capacity || 999;
+
+    if (currentBookings !== null && currentBookings >= maxUsers) {
+      return NextResponse.json({ error: 'Capacity Met', code: 'CAPACITY_MET' }, { status: 400 });
+    }
+
     if (origin === 'facilities') {
-      // 1. "Facilities": Verify Bay session_id availability
-      const { count: bayBookings } = await supabaseAdmin
-        .from('registrations')
-        .select('*', { count: 'exact', head: true })
-        .eq('session_id', sessionId);
-
-      const maxBays = mainSession.max_capacity || 999;
-
-      if (bayBookings && bayBookings >= maxBays) {
-        return NextResponse.json({ error: 'Facility fully booked' }, { status: 400 });
-      }
-
-      // 2. If coach attached, verify coach availability
+      // If coach attached, verify coach availability
       if (coachId) {
         const { data: coachAvailability, error: availErr } = await supabaseAdmin
           .from('availability')
@@ -159,7 +189,7 @@ export async function POST(request: Request) {
       }
 
     } else if (origin === 'coaches' && coachId) {
-      // "Our Coaches": Bypass Bay Checks. Validate Coach Only.
+      // "Our Coaches": Validate Coach Only.
       const { data: coachAvailability, error: availErr } = await supabaseAdmin
         .from('availability')
         .select('*')

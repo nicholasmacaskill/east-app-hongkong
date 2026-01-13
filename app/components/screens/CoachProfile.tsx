@@ -533,11 +533,15 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
             {
                 selectedSession && (
                     <ClassModal
-                        sessions={[selectedSession]}
+                        sessions={upcomingSessions}
                         currentUserId={currentUserId || null}
                         bookedSessions={bookedSessionIds.map(id => ({ id } as Session))}
                         onClose={() => setSelectedSession(null)}
                         onScheduleChange={() => setRefreshKey(prev => prev + 1)}
+                        origin="coaches"
+                        coachBio={profileData.bio}
+                        coachName={`${profileData.first_name} ${profileData.last_name}`}
+                        initialSessionId={selectedSession.id}
                     />
                 )
             }

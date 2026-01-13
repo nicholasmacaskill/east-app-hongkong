@@ -27,71 +27,87 @@ export async function DELETE(request: Request) {
     // Calcluate Refund Eligibility
     const supabaseAdmin = getSupabaseAdmin();
 
-    // 1. Fetch Session Start Time
-    const { data: sessionData, error: sessError } = await supabaseAdmin
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // 1. Fetch Session Details (Start/End) to find linked bookings
+    const { data: mainSession, error: sessError } = await supabaseAdmin
       .from('sessions')
-      .select('start_time')
+      .select('start_time, end_time, title')
       .eq('id', sessionId)
       .single();
 
-    if (sessError || !sessionData) {
+    if (sessError || !mainSession) {
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    // 2. Calculate Hours until Start
-    const startTime = new Date(sessionData.start_time).getTime();
-    const now = Date.now();
-    const hoursUntilStart = (startTime - now) / (1000 * 60 * 60);
-
-    let refundMultiplier = 1; // Default 100%
-    let policyMessage = "Cancellation processed.";
-
-    if (hoursUntilStart < 24) {
-      refundMultiplier = 0;
-      policyMessage = "Late cancellation (< 24 hours). No credits refunded.";
-    } else if (hoursUntilStart < 48) {
-      refundMultiplier = 0.5;
-      policyMessage = "Cancellation within 48 hours. 50% credits refunded.";
-    }
-
-    // 3. Fetch current paid amount to calculate refund
-    const { data: reg } = await supabaseAdmin
+    // 2. Find ALL Linked Sessions (Same User, Same Time)
+    // This catches "Facility" + "Private Coach" booked together
+    const { data: linkedBookings } = await supabaseAdmin
       .from('registrations')
-      .select('credits_paid')
+      .select('session_id, sessions!inner(start_time, end_time)')
       .eq('user_id', userId)
-      .eq('session_id', sessionId)
-      .single();
+      .eq('sessions.start_time', mainSession.start_time)
+      .eq('sessions.end_time', mainSession.end_time);
 
-    if (reg) {
-      const originalPaid = reg.credits_paid || 0;
-      const refundAmount = Math.floor(originalPaid * refundMultiplier);
+    // Collect IDs (Default to just the requested one if query fails / returns empty)
+    const distinctIds = new Set<number>([sessionId]);
+    if (linkedBookings) {
+      linkedBookings.forEach(r => distinctIds.add(r.session_id));
+    }
+    const sessionsToCancel = Array.from(distinctIds);
 
-      console.log(`[CANCEL] Hours: ${hoursUntilStart.toFixed(1)}, Multiplier: ${refundMultiplier}, Original: ${originalPaid}, Refund: ${refundAmount}`);
+    console.log(`[CANCEL] Found Linked Sessions for User ${userId}:`, sessionsToCancel);
 
-      // 4. Update registrations table with the CALCULATED refund amount
-      // This effectively passes the argument to the RPC which reads this column
-      if (originalPaid !== refundAmount) {
-        await supabaseAdmin
-          .from('registrations')
-          .update({ credits_paid: refundAmount })
-          .eq('user_id', userId)
-          .eq('session_id', sessionId);
+    const cancelResults = [];
+
+    // 3. Process Cancellation for EACH linked session
+    for (const targetSesId of sessionsToCancel) {
+
+      // A. Calculate Refund Validity (Time check)
+      const startTime = new Date(mainSession.start_time).getTime();
+      const now = Date.now();
+      const hoursUntilStart = (startTime - now) / (1000 * 60 * 60);
+
+      let refundMultiplier = 1;
+      if (hoursUntilStart < 24) refundMultiplier = 0;
+      else if (hoursUntilStart < 48) refundMultiplier = 0.5;
+
+      // B. Check PAID amount for THIS specific session
+      const { data: reg } = await supabaseAdmin
+        .from('registrations')
+        .select('credits_paid')
+        .eq('user_id', userId)
+        .eq('session_id', targetSesId)
+        .single();
+
+      if (reg) {
+        const originalPaid = reg.credits_paid || 0;
+        const refundAmount = Math.floor(originalPaid * refundMultiplier);
+
+        console.log(`[CANCEL] ID ${targetSesId}: Paid ${originalPaid}, Refund ${refundAmount} (Mult: ${refundMultiplier})`);
+
+        // Apply calculated refund if different (updates DB for RPC to read)
+        if (originalPaid !== refundAmount) {
+          await supabaseAdmin
+            .from('registrations')
+            .update({ credits_paid: refundAmount })
+            .eq('user_id', userId)
+            .eq('session_id', targetSesId);
+        }
       }
-    }
 
-    // 5. Call RPC to Process Delete & Refund
-    const { data: result, error } = await supabaseAdmin.rpc('cancel_session_and_refund', {
-      p_user_id: userId,
-      p_session_id: sessionId
-    });
+      // C. Execute Cancellation RPC
+      const { data: result, error } = await supabaseAdmin.rpc('cancel_session_and_refund', {
+        p_user_id: userId,
+        p_session_id: targetSesId
+      });
 
-    if (error) {
-      console.error('RPC Error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    if (!result.success) {
-      return NextResponse.json({ error: result.message }, { status: 400 });
+      if (error) {
+        console.error(`[CANCEL] Failed for ${targetSesId}:`, error);
+        cancelResults.push({ id: targetSesId, success: false, message: error.message });
+      } else {
+        cancelResults.push({ id: targetSesId, success: result.success, message: result.message, refund: result.refund_amount });
+      }
     }
 
     // Optional: Send Email if successful

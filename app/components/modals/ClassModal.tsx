@@ -14,6 +14,9 @@ interface ClassModalProps {
     onShare?: (session: Session) => void;
     initialAttendeeId?: string | null;
     origin?: 'facilities' | 'coaches'; // NEW
+    coachBio?: string;
+    coachName?: string;
+    initialSessionId?: number;
 }
 
 export default function ClassModal({
@@ -24,7 +27,10 @@ export default function ClassModal({
     bookedSessions,
     onShare,
     initialAttendeeId,
-    origin = 'facilities'
+    origin = 'facilities',
+    coachBio,
+    coachName,
+    initialSessionId
 }: ClassModalProps) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
@@ -37,6 +43,8 @@ export default function ClassModal({
     const [availableCoaches, setAvailableCoaches] = useState<any[]>([]);
     const [selectedCoachId, setSelectedCoachId] = useState<string | null>(null);
     const [isLoadingCoaches, setIsLoadingCoaches] = useState(false);
+    const [currentRegistrations, setCurrentRegistrations] = useState<number>(0);
+    const [isLoadingCapacity, setIsLoadingCapacity] = useState(false);
 
     // Fetch children on mount
     useEffect(() => {
@@ -87,8 +95,8 @@ export default function ClassModal({
     let modalSubHeader = `INSTRUCTOR: ${displaySession.instructor}`;
 
     if (origin === 'coaches') {
-        modalHeaderTitle = "BOOK COACH";
-        modalSubHeader = displaySession.instructor;
+        modalHeaderTitle = coachName || displaySession.instructor;
+        modalSubHeader = "PRIVATE COACH";
     } else if (origin === 'facilities') {
         if (selectedCoachId) {
             modalHeaderTitle = "BOOK PRIVATE LESSON";
@@ -109,10 +117,12 @@ export default function ClassModal({
 
     // Auto-select session
     useEffect(() => {
-        if (sessions.length === 1) {
+        if (initialSessionId) {
+            setSelectedSessionId(initialSessionId);
+        } else if (sessions.length === 1) {
             setSelectedSessionId(sessions[0].id);
         }
-    }, [sessions]);
+    }, [sessions, initialSessionId]);
 
     // Helpers
     const selectedSession = sessions.find(s => s.id === selectedSessionId);
@@ -164,9 +174,16 @@ export default function ClassModal({
 
         setIsProcessing(true);
         try {
+            // Get Auth Token for Security
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
             const res = await fetch('/api/sessions/book', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
                 body: JSON.stringify({
                     userId: currentUserId,
                     sessionId: selectedSessionId,
@@ -303,7 +320,30 @@ export default function ClassModal({
         }
     };
 
-    // Fetch available coaches for the selected facility slot
+    // Fetch capacity for selected session
+    useEffect(() => {
+        if (selectedSessionId) {
+            const fetchCapacity = async () => {
+                setIsLoadingCapacity(true);
+                try {
+                    const { count, error } = await supabase
+                        .from('registrations')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('session_id', selectedSessionId);
+
+                    if (!error) {
+                        setCurrentRegistrations(count || 0);
+                    }
+                } catch (e) {
+                    console.error("Error fetching capacity:", e);
+                } finally {
+                    setIsLoadingCapacity(false);
+                }
+            };
+            fetchCapacity();
+        }
+    }, [selectedSessionId]);
+
     useEffect(() => {
         if (selectedSessionId && displaySession.category === 'FACILITY') {
             const sess = sessions.find(s => s.id === selectedSessionId);
@@ -368,7 +408,15 @@ export default function ClassModal({
                             {/* Details */}
                             <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{modalHeaderTitle}</h2>
                             {!isNews && <p className="font-montserrat font-bold text-[10px] mb-4 uppercase text-gray-500 tracking-wider">{modalSubHeader}</p>}
-                            <p className="font-opensans text-xs font-bold leading-relaxed mb-6 text-gray-800">{displaySession.description}</p>
+
+                            {/* Coach Bio or Description */}
+                            {origin === 'coaches' && coachBio ? (
+                                <div className="mb-6">
+                                    <p className="font-opensans text-xs font-bold leading-relaxed text-gray-800 italic">"{coachBio}"</p>
+                                </div>
+                            ) : (
+                                <p className="font-opensans text-xs font-bold leading-relaxed mb-6 text-gray-800">{displaySession.description}</p>
+                            )}
 
                             {/* Image */}
                             {(displaySession.image_url || displaySession.coach_image_url) && (
@@ -521,6 +569,13 @@ export default function ClassModal({
                                                 const isSelected = selectedSessionId === sess.id;
                                                 const dateObj = new Date(sess.start_time);
                                                 const sessionCost = (sess as any).credit_cost || 10;
+
+                                                // Check for "Total Paid" logic (Facility + Coach)
+                                                // Find all my bookings that start at this EXACT time
+                                                const myBookingsAtTime = bookedSessions.filter(b => new Date(b.start_time).getTime() === dateObj.getTime());
+                                                const isBooked = myBookingsAtTime.some(b => b.id === sess.id);
+                                                const totalPaid = myBookingsAtTime.reduce((sum, b) => sum + (b.credit_cost || 0), 0);
+
                                                 return (
                                                     <button key={sess.id} onClick={() => setSelectedSessionId(sess.id)} className={`w-full py-3 px-4 rounded-lg border transition-all relative flex items-center justify-between ${isSelected ? 'bg-east-light text-black border-east-light shadow-md scale-[1.01]' : 'bg-white text-gray-600 border-gray-300 hover:border-east-light hover:text-black'}`}>
                                                         <div className="flex flex-col items-start">
@@ -529,7 +584,9 @@ export default function ClassModal({
                                                                 {dateObj.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} <span className="mx-1 opacity-50">@</span> {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(/^0/, '')}
                                                             </span>
                                                         </div>
-                                                        <span className={`text-xs font-bold ${isSelected ? 'text-black' : 'text-east-dark'}`}>{sessionCost} Credits</span>
+                                                        <span className={`text-xs font-bold ${isSelected ? 'text-black' : (isBooked ? 'text-green-600' : 'text-east-dark')}`}>
+                                                            {isBooked ? `PAID: ${totalPaid}` : `${sessionCost} Credits`}
+                                                        </span>
                                                     </button>
                                                 );
                                             })}
@@ -592,9 +649,18 @@ export default function ClassModal({
                                         {isProcessing ? 'CANCELLING...' : 'CANCEL SELECTION'}
                                     </button>
                                 ) : (
-                                    <button onClick={handleBookSession} disabled={isProcessing || !selectedSessionId || selectedAttendeeIds.length === 0} className="bg-black text-white text-xs font-black italic px-6 py-3 rounded-full uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg disabled:opacity-50">
-                                        {isProcessing ? 'PROCESSING...' : (!selectedSessionId ? 'SELECT OPTION' : `PAY ${totalCost} CREDITS`)}
-                                    </button>
+                                    (() => {
+                                        const isFull = currentRegistrations >= (selectedSession?.max_capacity || 999);
+                                        return (
+                                            <button
+                                                onClick={handleBookSession}
+                                                disabled={isProcessing || !selectedSessionId || selectedAttendeeIds.length === 0 || isFull}
+                                                className={`text-xs font-black italic px-6 py-3 rounded-full uppercase tracking-widest transition-all shadow-lg disabled:opacity-50 ${isFull ? 'bg-gray-600 text-gray-300' : 'bg-black text-white hover:bg-gray-800'}`}
+                                            >
+                                                {isProcessing ? 'PROCESSING...' : (!selectedSessionId ? 'SELECT OPTION' : isFull ? 'CAPACITY MET' : `PAY ${totalCost} CREDITS`)}
+                                            </button>
+                                        );
+                                    })()
                                 )}
                             </div>
                         )}
