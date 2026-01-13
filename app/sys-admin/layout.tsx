@@ -81,7 +81,7 @@ export default function AdminLayout({
                             <AdminNavLink href="/sys-admin" icon={Home} label="Admin Home" />
                             <AdminNavLink href="/sys-admin/qr" icon={QrCode} label="QR Codes" />
                             <AdminNavLink href="/sys-admin/news" icon={Newspaper} label="News" />
-                            <AdminNavLink href="/sys-admin/events" icon={Calendar} label="Events" />
+                            <AdminNavLink href="/sys-admin/schedule?category=EVENT" icon={Calendar} label="Events" />
                         </div>
                         <AdminLogoutButton />
                     </div>

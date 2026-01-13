@@ -2,7 +2,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
-import { ChevronLeft, Calendar, User, LayoutGrid, RefreshCw, Plus, X, Trash2, Save, Clock, Info, DollarSign } from 'lucide-react';
+import { ChevronLeft, Calendar, User, LayoutGrid, RefreshCw, Plus, X, Trash2, Save, Clock, Info, DollarSign, Upload } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -10,6 +10,8 @@ import Link from 'next/link';
 interface Session {
     id?: number;
     title: string;
+    description?: string;
+    image_url?: string;
     start_time: string;
     end_time: string;
     category: string;
@@ -55,12 +57,15 @@ export default function MasterSchedule() {
     const [coachServices, setCoachServices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-    const [activeCategory, setActiveCategory] = useState<string>('ALL');
+    const [activeCategory, setActiveCategory] = useState<string>(searchParams?.get('category')?.toUpperCase() || 'ALL');
 
     // UI States
     const [showModal, setShowModal] = useState(false);
     const [modalAction, setModalAction] = useState<'CREATE' | 'EDIT'>('CREATE');
     const [editingSession, setEditingSession] = useState<any>(null);
+    const [recurring, setRecurring] = useState(false);
+    const [repeatDays, setRepeatDays] = useState<number[]>([]); // 0-6 (Sun-Sat)
+    const [repeatWeeks, setRepeatWeeks] = useState(4);
 
     useEffect(() => {
         if (autoInstructor && !hasAutoOpened.current) {
@@ -95,7 +100,7 @@ export default function MasterSchedule() {
         fetchCoaches();
         fetchServices();
         fetchCoachServices();
-    }, [selectedDate]);
+    }, [selectedDate, activeCategory]);
 
     const fetchServices = async () => {
         const { data } = await supabase.from('session_types').select('*').order('title');
@@ -115,17 +120,23 @@ export default function MasterSchedule() {
         endOfDay.setHours(23, 59, 59, 999);
 
         // 1. Fetch Sessions
-        const { data: sessData, error: sessError } = await supabase
-            .from('sessions')
-            .select('*')
-            .gte('start_time', startOfDay.toISOString())
-            .lte('start_time', endOfDay.toISOString())
-            .order('start_time');
+        let query = supabase.from('sessions').select('*');
+
+        if (activeCategory === 'EVENT') {
+            // For Events, we show all UPCOMING events across all dates
+            const now = new Date();
+            query = query.gte('start_time', now.toISOString()).eq('category', 'EVENT');
+        } else {
+            // For others, we stick to the selected date
+            query = query.gte('start_time', startOfDay.toISOString()).lte('start_time', endOfDay.toISOString());
+        }
+
+        const { data: sessData, error: sessError } = await query.order('start_time');
 
         if (sessError) console.error('Error fetching sessions:', sessError);
         else setSessions(sessData || []);
 
-        // 2. Fetch Availability (Open Slots)
+        // 2. Fetch Availability (Open Slots) - Restricted to the selected date
         const { data: availData, error: availError } = await supabase
             .from('availability')
             .select(`
@@ -169,7 +180,9 @@ export default function MasterSchedule() {
             total_facility_bays: 1,
             max_capacity: 4,
             credit_cost: 100, // Default cost
-            session_type_id: null
+            session_type_id: null,
+            description: '',
+            image_url: ''
         });
         setShowModal(true);
     };
@@ -187,8 +200,35 @@ export default function MasterSchedule() {
         }
 
         try {
-            // Strip UI-only helper fields before sending to API
             const { lockInstructor, ...cleanSessionData } = editingSession;
+            let sessionsToCreate = [cleanSessionData];
+
+            if (recurring && modalAction === 'CREATE') {
+                const start = new Date(cleanSessionData.start_time);
+                const end = new Date(cleanSessionData.end_time);
+                sessionsToCreate = [];
+
+                for (let w = 0; w < repeatWeeks; w++) {
+                    for (const day of repeatDays) {
+                        // Find the target day in the current week loop
+                        const targetDate = new Date(start);
+                        targetDate.setDate(start.getDate() + (w * 7) + (day - start.getDay()));
+
+                        // Skip if it is in the past compared to the first start time
+                        if (targetDate < start && w === 0) continue;
+
+                        const diff = targetDate.getTime() - start.getTime();
+                        const newStart = new Date(start.getTime() + diff);
+                        const newEnd = new Date(end.getTime() + diff);
+
+                        sessionsToCreate.push({
+                            ...cleanSessionData,
+                            start_time: newStart.toISOString(),
+                            end_time: newEnd.toISOString()
+                        });
+                    }
+                }
+            }
 
             const res = await fetch('/api/admin/sessions', {
                 method: 'POST',
@@ -196,12 +236,15 @@ export default function MasterSchedule() {
                 body: JSON.stringify({
                     action: modalAction,
                     id: editingSession.id,
-                    sessionData: cleanSessionData
+                    // If creating, we might send an array (the API handles single insert currently, but `.insert([sessionData])` works for arrays too)
+                    sessionData: sessionsToCreate.length > 1 ? sessionsToCreate : sessionsToCreate[0]
                 })
             });
             const data = await res.json();
             if (data.success) {
                 setShowModal(false);
+                setRecurring(false);
+                setRepeatDays([]);
                 fetchSchedule();
             } else {
                 alert(data.error);
@@ -302,7 +345,17 @@ export default function MasterSchedule() {
                         return item.category === activeCategory;
                     }).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
-                    if (mergedItems.length === 0) {
+                    const sortedItems = mergedItems.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+
+                    // Group by Date for Multi-Day events or clear timeline
+                    const grouped = sortedItems.reduce((acc: any, item: any) => {
+                        const dateKey = new Date(item.start_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                        if (!acc[dateKey]) acc[dateKey] = [];
+                        acc[dateKey].push(item);
+                        return acc;
+                    }, {});
+
+                    if (sortedItems.length === 0) {
                         return (
                             <div className="text-center py-20 bg-[#1e1e1e] rounded-3xl border border-dashed border-white/10">
                                 <Plus size={48} className="mx-auto mb-4 text-gray-700" />
@@ -317,82 +370,95 @@ export default function MasterSchedule() {
                         );
                     }
 
-                    return mergedItems.map((item: any, idx) => {
-                        const isSlot = item.type === 'slot';
-                        const startTime = new Date(item.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
-                        const duration = Math.round((new Date(item.end_time).getTime() - new Date(item.start_time).getTime()) / 60000);
-
-                        return (
-                            <div
-                                key={item.id || idx}
-                                onClick={() => {
-                                    if (isSlot) {
-                                        setModalAction('CREATE');
-                                        setEditingSession({
-                                            title: `${item.instructor} - Session`,
-                                            category: 'PRIVATE',
-                                            instructor: item.instructor,
-                                            start_time: item.start_time,
-                                            end_time: item.end_time,
-                                            total_facility_bays: 0,
-                                            max_capacity: 1,
-                                            credit_cost: 100,
-                                            session_type_id: null,
-                                            lockInstructor: true
-                                        });
-                                        setShowModal(true);
-                                    } else {
-                                        handleSessionClick(item);
-                                    }
-                                }}
-                                className={`group flex gap-4 p-4 rounded-2xl transition-all cursor-pointer border ${isSlot ? 'bg-black/20 border-white/5 border-dashed hover:border-[#28D160]/30' : 'bg-[#1e1e1e] border-white/10 hover:border-[#28D160] hover:shadow-xl hover:shadow-[#28D160]/5'}`}
-                            >
-                                {/* Time Column */}
-                                <div className="flex flex-col items-center justify-center min-w-[70px] border-r border-white/5 pr-4">
-                                    <span className={`text-lg font-black italic leading-none ${isSlot ? 'text-gray-600' : 'text-white'}`}>{startTime}</span>
-                                    <span className="text-[9px] font-bold text-gray-600 uppercase mt-1">{duration} MIN</span>
-                                </div>
-
-                                {/* Info Column */}
-                                <div className="flex-1">
-                                    <div className="flex justify-between items-start mb-1">
-                                        <div className="flex items-center gap-2">
-                                            <h3 className={`font-black uppercase tracking-tight text-sm ${isSlot ? 'text-gray-600 italic' : 'text-white'}`}>
-                                                {item.title}
-                                            </h3>
-                                            {isSlot ? (
-                                                <span className="bg-white/5 text-gray-500 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter">Available</span>
-                                            ) : (
-                                                <span className={`${item.category === 'FACILITY' ? 'bg-[#28D160]/10 text-[#28D160]' : 'bg-blue-500/10 text-blue-400'} text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter`}>
-                                                    {item.category}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {!isSlot && (
-                                            <div className="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
-                                                <Info size={12} />
-                                                <span className="text-[10px] font-bold uppercase tracking-widest">{item.total_facility_bays > 0 ? `${item.total_facility_bays} Bays` : 'No Bays'}</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <User size={12} className={isSlot ? 'text-gray-700' : 'text-[#28D160]'} />
-                                            <span className={`text-[10px] font-bold uppercase tracking-widest ${isSlot ? 'text-gray-600' : 'text-gray-300'}`}>
-                                                {item.instructor || 'Unassigned'}
-                                            </span>
-                                        </div>
-                                        {!isSlot && (
-                                            <span className="text-[10px] font-black italic text-[#28D160]">
-                                                {item.credit_cost} <span className="text-[8px] not-italic text-gray-600">CREDITS</span>
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
+                    return Object.entries(grouped).map(([date, dayItems]: [string, any]) => (
+                        <div key={date} className="animate-fadeIn pb-6">
+                            <div className="flex items-center gap-4 mb-4 sticky top-0 z-10 py-2 bg-black/50 backdrop-blur-xl">
+                                <h2 className="text-xl font-black italic uppercase text-white/50">{date}</h2>
+                                <div className="h-px bg-white/10 flex-1" />
                             </div>
-                        );
-                    });
+
+                            <div className="space-y-3">
+                                {dayItems.map((item: any, idx: number) => {
+                                    const isSlot = item.type === 'slot';
+                                    const startTime = new Date(item.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+                                    const duration = Math.round((new Date(item.end_time).getTime() - new Date(item.start_time).getTime()) / 60000);
+
+                                    return (
+                                        <div
+                                            key={item.id || idx}
+                                            onClick={() => {
+                                                if (isSlot) {
+                                                    setModalAction('CREATE');
+                                                    setEditingSession({
+                                                        title: `${item.instructor} - Session`,
+                                                        category: 'PRIVATE',
+                                                        instructor: item.instructor,
+                                                        start_time: item.start_time,
+                                                        end_time: item.end_time,
+                                                        total_facility_bays: 0,
+                                                        max_capacity: 1,
+                                                        credit_cost: 100,
+                                                        session_type_id: null,
+                                                        lockInstructor: true,
+                                                        description: '',
+                                                        image_url: ''
+                                                    });
+                                                    setShowModal(true);
+                                                } else {
+                                                    handleSessionClick(item);
+                                                }
+                                            }}
+                                            className={`group flex gap-4 p-4 rounded-2xl transition-all cursor-pointer border ${isSlot ? 'bg-black/20 border-white/5 border-dashed hover:border-[#28D160]/30' : 'bg-[#1e1e1e] border-white/10 hover:border-[#28D160] hover:shadow-xl hover:shadow-[#28D160]/5'}`}
+                                        >
+                                            {/* Time Column */}
+                                            <div className="flex flex-col items-center justify-center min-w-[70px] border-r border-white/5 pr-4">
+                                                <span className={`text-lg font-black italic leading-none ${isSlot ? 'text-gray-600' : 'text-white'}`}>{startTime}</span>
+                                                <span className="text-[9px] font-bold text-gray-600 uppercase mt-1">{duration} MIN</span>
+                                            </div>
+
+                                            {/* Info Column */}
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <h3 className={`font-black uppercase tracking-tight text-sm ${isSlot ? 'text-gray-600 italic' : 'text-white'}`}>
+                                                            {item.title}
+                                                        </h3>
+                                                        {isSlot ? (
+                                                            <span className="bg-white/5 text-gray-500 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter">Available</span>
+                                                        ) : (
+                                                            <span className={`${item.category === 'FACILITY' ? 'bg-[#28D160]/10 text-[#28D160]' : 'bg-blue-500/10 text-blue-400'} text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter`}>
+                                                                {item.category}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {!isSlot && (
+                                                        <div className="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity">
+                                                            <Info size={12} />
+                                                            <span className="text-[10px] font-bold uppercase tracking-widest">{item.total_facility_bays > 0 ? `${item.total_facility_bays} Bays` : 'No Bays'}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <User size={12} className={isSlot ? 'text-gray-700' : 'text-[#28D160]'} />
+                                                        <span className={`text-[10px] font-bold uppercase tracking-widest ${isSlot ? 'text-gray-600' : 'text-gray-300'}`}>
+                                                            {item.instructor || 'Unassigned'}
+                                                        </span>
+                                                    </div>
+                                                    {!isSlot && (
+                                                        <span className="text-[10px] font-black italic text-[#28D160]">
+                                                            {item.credit_cost} <span className="text-[8px] not-italic text-gray-600">CREDITS</span>
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ));
                 })()}
             </div>
 
@@ -456,8 +522,40 @@ export default function MasterSchedule() {
                                         value={editingSession.title}
                                         onChange={e => setEditingSession({ ...editingSession, title: e.target.value })}
                                         placeholder="e.g. U14 Shooting Drills"
-                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] transition-colors"
+                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] transition-colors font-bold"
                                     />
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block flex items-center gap-1">
+                                        <Info size={10} /> Description
+                                    </label>
+                                    <textarea
+                                        value={editingSession.description || ''}
+                                        onChange={e => setEditingSession({ ...editingSession, description: e.target.value })}
+                                        placeholder="Event details, location, etc."
+                                        rows={3}
+                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-sm"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block flex items-center gap-1">
+                                        <Upload size={10} /> Promo Image URL
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            value={editingSession.image_url || ''}
+                                            onChange={e => setEditingSession({ ...editingSession, image_url: e.target.value })}
+                                            placeholder="https://..."
+                                            className="flex-1 bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-xs"
+                                        />
+                                        {editingSession.image_url && (
+                                            <div className="w-12 h-12 rounded-lg border border-white/10 overflow-hidden shrink-0">
+                                                <img src={editingSession.image_url} className="w-full h-full object-cover" />
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -570,6 +668,59 @@ export default function MasterSchedule() {
                                     />
                                 </div>
                             </div>
+
+                            {/* Recurring Options */}
+                            {modalAction === 'CREATE' && (
+                                <div className="space-y-4 bg-black/20 p-4 rounded-2xl border border-white/5">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                            <RefreshCw size={12} /> Repeat Session
+                                        </label>
+                                        <button
+                                            onClick={() => setRecurring(!recurring)}
+                                            className={`w-10 h-5 rounded-full transition-colors relative ${recurring ? 'bg-[#28D160]' : 'bg-white/10'}`}
+                                        >
+                                            <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${recurring ? 'right-1' : 'left-1'}`} />
+                                        </button>
+                                    </div>
+
+                                    {recurring && (
+                                        <div className="space-y-4 animate-fadeIn">
+                                            <div className="flex justify-between gap-1">
+                                                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => {
+                                                            if (repeatDays.includes(i)) {
+                                                                setRepeatDays(repeatDays.filter(d => d !== i));
+                                                            } else {
+                                                                setRepeatDays([...repeatDays, i]);
+                                                            }
+                                                        }}
+                                                        className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all border ${repeatDays.includes(i) ? 'bg-[#28D160] border-[#28D160] text-black shadow-lg shadow-[#28D160]/20' : 'bg-black/50 border-white/10 text-gray-600'}`}
+                                                    >
+                                                        {day}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <div>
+                                                <label className="text-[7px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1 block text-center">Repeat for (Weeks)</label>
+                                                <div className="flex items-center justify-center gap-4">
+                                                    {[1, 2, 4, 8, 12].map(w => (
+                                                        <button
+                                                            key={w}
+                                                            onClick={() => setRepeatWeeks(w)}
+                                                            className={`text-[10px] font-black px-3 py-1 rounded-full transition-all ${repeatWeeks === w ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}
+                                                        >
+                                                            {w}W
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="flex gap-4 mt-8">
                                 <button
