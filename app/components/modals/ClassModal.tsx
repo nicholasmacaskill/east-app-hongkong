@@ -94,28 +94,36 @@ export default function ClassModal({
     const uniqueInstructors = new Set(sessions.map(s => s.instructor));
     const isCoachView = uniqueInstructors.size === 1 && uniqueTitles.size > 1;
 
+    // Derived Header Info
+    const currentInstructor = filterInstructor || (uniqueInstructors.size === 1 ? Array.from(uniqueInstructors)[0] : null);
+
     // Dynamic Header Logic
     let modalHeaderTitle = displaySession.title;
     let modalSubHeader = `INSTRUCTOR: ${displaySession.instructor}`;
 
+    if (viewMode === 'COACH_SELECT') {
+        modalHeaderTitle = displaySession.title;
+        modalSubHeader = "SELECT INSTRUCTOR";
+    } else if (currentInstructor) {
+        modalHeaderTitle = currentInstructor;
+        modalSubHeader = displaySession.title;
+    }
+
     if (origin === 'coaches') {
-        modalHeaderTitle = coachName || displaySession.instructor;
+        modalHeaderTitle = coachName || currentInstructor || displaySession.instructor;
         modalSubHeader = "PRIVATE COACH";
     } else if (origin === 'facilities') {
         if (selectedCoachId) {
             modalHeaderTitle = "BOOK PRIVATE LESSON";
             modalSubHeader = "FACILITY + COACH";
+        } else if (viewMode === 'COACH_SELECT') {
+            modalHeaderTitle = "BOOK FACILITY";
+            modalSubHeader = "SELECT INSTRUCTOR";
+        } else if (filterInstructor) {
+            modalHeaderTitle = filterInstructor;
+            modalSubHeader = "BOOK FACILITY";
         } else {
             modalHeaderTitle = "BOOK FACILITY";
-        }
-    } else {
-        // Fallback / Standard Class
-        if (isCoachView) {
-            modalHeaderTitle = displaySession.instructor;
-            modalSubHeader = 'PRIVATE COACH';
-        } else if (isPrivate) {
-            modalHeaderTitle = 'PRIVATE LESSON';
-            modalSubHeader = 'PRIVATE LESSON';
         }
     }
 
@@ -152,16 +160,17 @@ export default function ClassModal({
     // If ALL selected are booked, show CANCEL button.
     const allSelectedAreBooked = selectedAttendeeIds.length > 0 && selectedAttendeeIds.every(id => getBookedStatus(id));
 
+    const filteredSessions = sessions.filter(s => !filterInstructor || s.instructor === filterInstructor);
+
     // Determine Logic for Coach Selection
-    // If we have > 1 unique instructor AND category is PRIVATE, we might want to start in COACH_SELECT
+    // If we have > 1 unique instructor, we might want to start in COACH_SELECT
     // UNLESS origin is 'coaches' (which means we already picked one)
     useEffect(() => {
         if (!sessions || sessions.length === 0) return;
 
-        const isPrivate = sessions[0].category === 'PRIVATE';
-        const unique = new Set(sessions.map(s => s.instructor));
+        const unique = new Set(sessions.filter(s => !!s.instructor).map(s => s.instructor));
 
-        if (origin !== 'coaches' && isPrivate && unique.size > 1) {
+        if (origin !== 'coaches' && unique.size > 1) {
             setViewMode('COACH_SELECT');
             setFilterInstructor(null);
         } else {
@@ -169,6 +178,13 @@ export default function ClassModal({
             setFilterInstructor(null);
         }
     }, [sessions, origin]);
+
+    // Auto-select session when filtered or single
+    useEffect(() => {
+        if (filteredSessions.length === 1) {
+            setSelectedSessionId(filteredSessions[0].id);
+        }
+    }, [filteredSessions]);
 
     // Toggle Selection
     const toggleAttendee = (id: string) => {
@@ -547,26 +563,23 @@ export default function ClassModal({
                                                 <div className="flex flex-col gap-4">
                                                     {/* Date Tabs (Next 7 Days) */}
                                                     <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-                                                        {Array.from(new Set(sessions.map(s => new Date(s.start_time).toDateString()))).slice(0, 7).map((dateStr) => {
+                                                        {Array.from(new Set(filteredSessions.map(s => new Date(s.start_time).toDateString()))).slice(0, 7).map((dateStr) => {
                                                             const date = new Date(dateStr);
                                                             // Check if there are any slots on this day
-                                                            const daySessions = sessions.filter(s => new Date(s.start_time).toDateString() === dateStr);
+                                                            const daySessions = filteredSessions.filter(s => new Date(s.start_time).toDateString() === dateStr);
                                                             if (daySessions.length === 0) return null;
 
                                                             // Determine the currently viewed date.
                                                             // If a session is selected, use its date. Otherwise, default to the first available date.
                                                             const currentViewDateStr = selectedSessionId
-                                                                ? new Date(sessions.find(s => s.id === selectedSessionId)?.start_time || '').toDateString()
-                                                                : new Date(sessions[0]?.start_time || '').toDateString();
+                                                                ? new Date(filteredSessions.find(s => s.id === selectedSessionId)?.start_time || '').toDateString()
+                                                                : new Date(filteredSessions[0]?.start_time || '').toDateString();
 
                                                             const isSelectedDate = currentViewDateStr === dateStr;
 
                                                             return (
                                                                 <button
                                                                     key={dateStr}
-                                                                    // When a date tab is clicked, we want to show sessions for that date.
-                                                                    // If there's no `viewDate` state, we can simulate by selecting the first session of that day.
-                                                                    // This is a workaround for not being able to add `viewDate` state directly in this block.
                                                                     onClick={() => {
                                                                         const firstSessionOfThisDay = daySessions[0];
                                                                         if (firstSessionOfThisDay) {
@@ -587,16 +600,16 @@ export default function ClassModal({
 
                                                     <div className="flex flex-col gap-4">
                                                         {/* Group sessions by Date */}
-                                                        {Array.from(new Set(sessions.map(s => new Date(s.start_time).toDateString()))).slice(0, 7).map(dateStr => {
-                                                            const daySessions = sessions
+                                                        {Array.from(new Set(filteredSessions.map(s => new Date(s.start_time).toDateString()))).slice(0, 7).map(dateStr => {
+                                                            const daySessions = filteredSessions
                                                                 .filter(s => new Date(s.start_time).toDateString() === dateStr);
 
                                                             if (daySessions.length === 0) return null;
 
                                                             // Determine the currently viewed date for filtering the displayed times.
                                                             const currentViewDateStr = selectedSessionId
-                                                                ? new Date(sessions.find(s => s.id === selectedSessionId)?.start_time || '').toDateString()
-                                                                : new Date(sessions[0]?.start_time || '').toDateString();
+                                                                ? new Date(filteredSessions.find(s => s.id === selectedSessionId)?.start_time || '').toDateString()
+                                                                : new Date(filteredSessions[0]?.start_time || '').toDateString();
 
                                                             // Only render sessions for the currently selected/viewed date tab
                                                             if (dateStr !== currentViewDateStr) return null;
@@ -632,8 +645,7 @@ export default function ClassModal({
                                             ) : (
                                                 /* NORMAL LIST (Classes / Private) - FILTERED BY INSTRUCTOR */
                                                 <div className="flex flex-col gap-2">
-                                                    {sessions
-                                                        .filter(s => !filterInstructor || s.instructor === filterInstructor)
+                                                    {filteredSessions
                                                         .map((sess) => {
                                                             const isSelected = selectedSessionId === sess.id;
                                                             const dateObj = new Date(sess.start_time);
@@ -648,7 +660,10 @@ export default function ClassModal({
                                                             return (
                                                                 <button key={sess.id} onClick={() => setSelectedSessionId(sess.id)} className={`w-full py-3 px-4 rounded-lg border transition-all relative flex items-center justify-between ${isSelected ? 'bg-east-light text-black border-east-light shadow-md scale-[1.01]' : 'bg-white text-gray-600 border-gray-300 hover:border-east-light hover:text-black'}`}>
                                                                     <div className="flex flex-col items-start">
-                                                                        {isPrivate && <span className="font-black italic uppercase text-xs text-east-dark mb-0.5">{isCoachView ? sess.title : sess.instructor}</span>}
+                                                                        {uniqueInstructors.size > 1 && (
+                                                                            <span className="font-black italic uppercase text-xs text-east-dark mb-0.5">{sess.instructor}</span>
+                                                                        )}
+                                                                        {isPrivate && isCoachView && <span className="font-black italic uppercase text-xs text-east-dark mb-0.5">{sess.title}</span>}
                                                                         <span className="font-bold uppercase text-xs tracking-wide">
                                                                             {dateObj.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} <span className="mx-1 opacity-50">@</span> {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(/^0/, '')}
                                                                         </span>
