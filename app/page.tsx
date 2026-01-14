@@ -66,6 +66,9 @@ function AppContent() {
   const [showNewsModal, setShowNewsModal] = useState(false);
   const [selectedSessions, setSelectedSessions] = useState<Session[]>([]);
   const [selectedServiceDescription, setSelectedServiceDescription] = useState<string | null>(null);
+  const [selectedCoachName, setSelectedCoachName] = useState<string | null>(null);
+  const [selectedCoachBio, setSelectedCoachBio] = useState<string | null>(null);
+  const [selectedOrigin, setSelectedOrigin] = useState<'facilities' | 'coaches'>('facilities');
   const [selectedNews, setSelectedNews] = useState<Session | null>(null);
   const [bookedSessions, setBookedSessions] = useState<Session[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -254,7 +257,13 @@ function AppContent() {
     }
   };
 
-  const handleClassClick = (s: Session[], description?: string | null) => {
+  const handleClassClick = (
+    s: Session[],
+    description?: string | null,
+    origin: 'facilities' | 'coaches' = 'facilities',
+    coachName?: string | null,
+    coachBio?: string | null
+  ) => {
     if (s.length === 1 && s[0].category === 'NEWS') {
       setSelectedNews(s[0]);
       setShowNewsModal(true);
@@ -262,6 +271,9 @@ function AppContent() {
     }
     setSelectedSessions(s);
     setSelectedServiceDescription(description || null);
+    setSelectedOrigin(origin);
+    setSelectedCoachName(coachName || null);
+    setSelectedCoachBio(coachBio || null);
     setShowClassModal(true);
   };
 
@@ -444,9 +456,15 @@ function AppContent() {
             onClose={() => {
               setShowClassModal(false);
               setSelectedServiceDescription(null);
+              setSelectedCoachName(null);
+              setSelectedCoachBio(null);
+              setSelectedOrigin('facilities');
             }}
             onScheduleChange={() => setRefreshKey(k => k + 1)}
             serviceDescription={selectedServiceDescription}
+            origin={selectedOrigin}
+            coachName={selectedCoachName || undefined}
+            coachBio={selectedCoachBio || undefined}
           />
         )}
 

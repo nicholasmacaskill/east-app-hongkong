@@ -22,7 +22,13 @@ interface ServiceType {
 }
 
 interface HomeScreenProps {
-  onClassClick: (sessions: Session[], description?: string | null) => void;
+  onClassClick: (
+    sessions: Session[],
+    description?: string | null,
+    origin?: 'facilities' | 'coaches',
+    coachName?: string | null,
+    coachBio?: string | null
+  ) => void;
   onOpenSettings: () => void;
   bookedSessions: Session[];
   credits: number;
@@ -286,13 +292,19 @@ export default function HomeScreen({
             <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
               {coaches.map((coach) => (
                 <div key={coach.id} onClick={() => {
-                  // Fallback: Click coach directly -> View their private slots
+                  // Unified Flow: Click coach directly -> View ALL their private slots
                   const coachSessions = sessions.filter(s =>
                     s.category === 'PRIVATE' &&
                     s.instructor?.toLowerCase().includes(coach.first_name.toLowerCase())
                   );
                   if (coachSessions.length > 0) {
-                    onClassClick(coachSessions);
+                    onClassClick(
+                      coachSessions,
+                      null,
+                      'coaches',
+                      `${coach.first_name} ${coach.last_name}`,
+                      coach.bio
+                    );
                   } else {
                     alert(`${coach.first_name} ${coach.last_name} has no available sessions at the moment.`);
                   }

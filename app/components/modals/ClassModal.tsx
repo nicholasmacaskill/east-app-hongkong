@@ -49,8 +49,9 @@ export default function ClassModal({
     const [isLoadingCapacity, setIsLoadingCapacity] = useState(false);
 
     // NEW: Manual Coach Hierarchy Flow
-    const [viewMode, setViewMode] = useState<'COACH_SELECT' | 'SESSION_SELECT'>('SESSION_SELECT');
+    const [viewMode, setViewMode] = useState<'COACH_SELECT' | 'SESSION_SELECT' | 'SERVICE_SELECT'>('SESSION_SELECT');
     const [filterInstructor, setFilterInstructor] = useState<string | null>(null);
+    const [filterTitle, setFilterTitle] = useState<string | null>(null);
 
     // Fetch children on mount
     useEffect(() => {
@@ -98,6 +99,12 @@ export default function ClassModal({
 
     // Dynamic Header Logic (Gradient Bar)
     let modalHeaderTitle = displaySession.title;
+    if (origin === 'coaches' && coachName) {
+        modalHeaderTitle = coachName;
+    }
+    if (filterTitle) {
+        modalHeaderTitle = filterTitle;
+    }
 
     if (showTopUp) {
         modalHeaderTitle = "TOP UP NEEDED";
@@ -136,22 +143,29 @@ export default function ClassModal({
     // If ALL selected are booked, show CANCEL button.
     const allSelectedAreBooked = selectedAttendeeIds.length > 0 && selectedAttendeeIds.every(id => getBookedStatus(id));
 
-    const filteredSessions = sessions.filter(s => !filterInstructor || s.instructor === filterInstructor);
+    const filteredSessions = sessions.filter(s =>
+        (!filterInstructor || s.instructor === filterInstructor) &&
+        (!filterTitle || s.title === filterTitle)
+    );
 
-    // Determine Logic for Coach Selection
-    // If we have > 1 unique instructor, we might want to start in COACH_SELECT
-    // UNLESS origin is 'coaches' (which means we already picked one)
     useEffect(() => {
         if (!sessions || sessions.length === 0) return;
 
-        const unique = new Set(sessions.filter(s => !!s.instructor).map(s => s.instructor));
+        const uniqueInstructorsSet = new Set(sessions.filter(s => !!s.instructor).map(s => s.instructor));
+        const uniqueTitlesSet = new Set(sessions.map(s => s.title));
 
-        if (origin !== 'coaches' && unique.size > 1) {
+        if (origin === 'coaches' && uniqueTitlesSet.size > 1) {
+            setViewMode('SERVICE_SELECT');
+            setFilterTitle(null);
+            setFilterInstructor(null);
+        } else if (origin !== 'coaches' && uniqueInstructorsSet.size > 1) {
             setViewMode('COACH_SELECT');
             setFilterInstructor(null);
+            setFilterTitle(null);
         } else {
             setViewMode('SESSION_SELECT');
             setFilterInstructor(null);
+            setFilterTitle(null);
         }
     }, [sessions, origin]);
 
@@ -420,7 +434,7 @@ export default function ClassModal({
                         {/* Custom Header for Coach Select Mode */}
                         {viewMode === 'COACH_SELECT' ? (
                             <div className="overflow-y-auto p-6 text-black hide-scrollbar">
-                                <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{displaySession.title}</h2>
+                                <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{modalHeaderTitle}</h2>
                                 <p className="font-opensans text-[10px] font-bold text-gray-800 mb-6 leading-relaxed opacity-70">
                                     {serviceDescription || displaySession.description}
                                 </p>
@@ -429,7 +443,7 @@ export default function ClassModal({
                                     <h3 className="font-montserrat font-black italic text-sm mb-4 uppercase text-gray-400 tracking-tight">SELECT INSTRUCTOR:</h3>
 
                                     <div className="grid grid-cols-3 gap-3">
-                                        {Array.from(uniqueInstructors).map(instructorName => {
+                                        {Array.from(uniqueInstructors).filter(i => !!i).map(instructorName => {
                                             // Find a session example to get the image
                                             const exampleSession = sessions.find(s => s.instructor === instructorName);
                                             const imgUrl = exampleSession?.coach_image_url || exampleSession?.image_url;
@@ -456,6 +470,43 @@ export default function ClassModal({
                                     </div>
                                 </div>
                             </div>
+                        ) : viewMode === 'SERVICE_SELECT' ? (
+                            <div className="overflow-y-auto p-6 text-black hide-scrollbar">
+                                <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{coachName || "Coach"}</h2>
+                                <p className="font-opensans text-xs font-bold leading-relaxed mb-6 text-gray-800 italic">
+                                    {coachBio ? `"${coachBio}"` : "Choose a service to see availability."}
+                                </p>
+
+                                <div className="border-t border-gray-100 pt-6">
+                                    <h3 className="font-montserrat font-black italic text-sm mb-4 uppercase text-gray-400 tracking-tight">SELECT SERVICE:</h3>
+
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {Array.from(uniqueTitles).map(title => {
+                                            const exampleSession = sessions.find(s => s.title === title);
+                                            const imgUrl = exampleSession?.image_url;
+
+                                            return (
+                                                <button
+                                                    key={title}
+                                                    onClick={() => {
+                                                        setFilterTitle(title);
+                                                        setViewMode('SESSION_SELECT');
+                                                    }}
+                                                    className="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-black hover:shadow-lg transition-all group bg-white"
+                                                >
+                                                    <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-gray-100 group-hover:border-east-light transition-colors">
+                                                        <img src={imgUrl || 'https://placehold.co/100'} className="w-full h-full object-cover" alt={title} />
+                                                    </div>
+                                                    <div className="text-center overflow-hidden w-full">
+                                                        <h3 className="font-black italic uppercase text-[8px] leading-tight truncate px-1">{title}</h3>
+                                                        <span className="text-[6px] font-bold text-gray-400 uppercase tracking-wider">SELECT</span>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
                         ) : (
                             /* --- SESSION SELECTION VIEW --- */
                             <>
@@ -467,11 +518,16 @@ export default function ClassModal({
                                             <ChevronLeft size={12} /> Back to Instructors
                                         </button>
                                     )}
+                                    {filterTitle && uniqueTitles.size > 1 && origin === 'coaches' && (
+                                        <button onClick={() => setViewMode('SERVICE_SELECT')} className="mb-4 flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-black transition-colors">
+                                            <ChevronLeft size={12} /> Back to Services
+                                        </button>
+                                    )}
 
                                     {/* Details */}
                                     <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{modalHeaderTitle}</h2>
                                     <p className="font-montserrat font-bold text-[10px] mb-4 uppercase text-gray-500 tracking-wider">
-                                        INSTRUCTOR: {filterInstructor || 'VARIOUS'}
+                                        INSTRUCTOR: {filterInstructor || (origin === 'coaches' ? coachName : 'VARIOUS')}
                                     </p>
 
                                     {/* Coach Bio or Description */}
@@ -489,9 +545,13 @@ export default function ClassModal({
                                         If we filtered by instructor, user just saw the face. Maybe skip large hero image to save space?
                                         Let's keep it for context if it's the specific session image) 
                                     */}
-                                    {(!filterInstructor) && (displaySession.image_url || displaySession.coach_image_url) && (
+                                    {(!filterInstructor || filterTitle) && (displaySession.image_url || displaySession.coach_image_url) && (
                                         <div className="w-full aspect-video rounded-xl overflow-hidden bg-gray-100 mb-6 shadow-inner border border-gray-200">
-                                            <img src={isCoachView ? (displaySession.coach_image_url || displaySession.image_url) : displaySession.image_url} className="w-full h-full object-cover" alt={displaySession.title} />
+                                            <img
+                                                src={isCoachView ? (displaySession.coach_image_url || displaySession.image_url) : (filteredSessions[0]?.image_url || displaySession.image_url)}
+                                                className="w-full h-full object-cover"
+                                                alt={modalHeaderTitle}
+                                            />
                                         </div>
                                     )}
 
