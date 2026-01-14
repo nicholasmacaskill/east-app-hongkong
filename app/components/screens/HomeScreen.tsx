@@ -162,8 +162,11 @@ export default function HomeScreen({
     const allSlots = sessions.filter(s => s[groupByKey] === item[groupByKey] && s.category === item.category);
     allSlots.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
-    // Find matching service description
-    const service = allServices.find((svc: ServiceType) => svc.title.toLowerCase().trim() === item.title.toLowerCase().trim());
+    // Find matching service description - prioritise session_type_id matches
+    const service = allServices.find((svc: ServiceType) =>
+      (item.session_type_id && svc.id === item.session_type_id) ||
+      svc.title.toLowerCase().trim() === item.title.toLowerCase().trim()
+    );
     onClassClick(allSlots, service?.description);
   };
 
