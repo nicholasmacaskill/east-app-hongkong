@@ -6,7 +6,6 @@ import { Plus } from 'lucide-react';
 import Link from 'next/link';
 import AppHeader from '../AppHeader';
 import Skeleton from '../ui/Skeleton';
-import CoachSelectionModal from '../modals/CoachSelectionModal';
 
 const SectionHeader = ({ title, className = "" }: { title: string, className?: string }) => (
   <h2 className={`font-montserrat font-black italic text-2xl uppercase text-white mb-4 tracking-tight ${className}`}>
@@ -45,9 +44,7 @@ export default function HomeScreen({
   const [loading, setLoading] = useState(true);
 
   // Modal State
-  const [showCoachModal, setShowCoachModal] = useState(false);
-  const [selectedService, setSelectedService] = useState<ServiceType | null>(null);
-  const [availableCoaches, setAvailableCoaches] = useState<any[]>([]);
+  // No longer using CoachSelectionModal
 
   useEffect(() => {
     const loadData = async () => {
@@ -132,70 +129,34 @@ export default function HomeScreen({
       // We filter the already fetched 'sessions' by title matching the service title
       // NOTE: Ideally we should match by ID, but legacy sessions table doesn't have session_type_id yet.
       // Using Title matching for v1 transition.
-      const matchingSessions = sessions.filter(s =>
+      const matching = sessions.filter(s =>
         s.category === 'CLASS' &&
-        s.title.toLowerCase().trim() === service.title.toLowerCase().trim()
+        (s.session_type_id === service.id || s.title.toLowerCase().trim() === service.title.toLowerCase().trim())
       );
 
-      if (matchingSessions.length === 0) {
+      if (matching.length === 0) {
         alert(`No upcoming sessions scheduled for ${service.title} yet.`);
       } else {
-        matchingSessions.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-        onClassClick(matchingSessions);
+        matching.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+        onClassClick(matching, service.description);
       }
 
     } else if (service.category === 'PRIVATE') {
-      // 1. Find coaches who perform this service
-      const { supabase } = await import('@/app/lib/supabase');
-      const { data: links } = await supabase
-        .from('coach_services')
-        .select('coach_id')
-        .eq('session_type_id', service.id);
+      const matching = sessions.filter(s =>
+        s.category === 'PRIVATE' &&
+        (s.session_type_id === service.id || s.title.toLowerCase().trim() === service.title.toLowerCase().trim())
+      );
 
-      if (!links || links.length === 0) {
-        alert(`No coaches currently assigned to ${service.title}.`);
-        return;
+      if (matching.length === 0) {
+        alert(`No upcoming private slots for ${service.title} yet.`);
+      } else {
+        matching.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+        onClassClick(matching, service.description);
       }
-
-      const coachIds = new Set(links.map(l => l.coach_id));
-      const eligibleCoaches = coaches.filter(c => coachIds.has(c.id));
-
-      setAvailableCoaches(eligibleCoaches);
-      setSelectedService(service);
-      setShowCoachModal(true);
     }
   };
 
-  const handleCoachSelect = (coach: any) => {
-    if (!selectedService) return;
-
-    // Filter sessions by this coach AND service type ID
-    const matchingSessions = sessions.filter(s => {
-      const isCoachMatch = s.instructor?.toLowerCase().includes(coach.first_name.toLowerCase());
-      const isServiceMatch = s.session_type_id === selectedService.id;
-      // Fallback for legacy data/safety: check title match if ID is missing
-      const isTitleFallback = !s.session_type_id && s.title.toLowerCase().trim() === selectedService.title.toLowerCase().trim();
-
-      return isCoachMatch && (isServiceMatch || isTitleFallback);
-    });
-
-    // Note: "Private" sessions might be generically named "Private Lesson", so we might need looser matching or just show all their private slots.
-    // For now, let's show ALL 'PRIVATE' category slots for this coach if we clicked a Private service.
-    // IMPROVEMENT: Filter by session_type_id if available to distinguish between Golf vs Shooting
-    const coachPrivateSlots = sessions.filter(s =>
-      s.instructor!.toLowerCase().includes(coach.first_name.toLowerCase()) &&
-      s.category === 'PRIVATE' &&
-      (selectedService ? s.session_type_id === selectedService.id : true)
-    );
-
-    if (coachPrivateSlots.length === 0) {
-      alert(`${coach.first_name} has no available slots at the moment.`);
-    } else {
-      coachPrivateSlots.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-      onClassClick(coachPrivateSlots, selectedService.description);
-      setShowCoachModal(false);
-    }
-  };
+  // handleCoachSelect is no longer needed
 
   const handleItemClick = (item: Session, groupByKey: 'title' | 'instructor') => {
     const allSlots = sessions.filter(s => s[groupByKey] === item[groupByKey] && s.category === item.category);
@@ -368,15 +329,7 @@ export default function HomeScreen({
 
       </div>
 
-      {/* Render Coach Selection Modal */}
-      {showCoachModal && selectedService && (
-        <CoachSelectionModal
-          serviceTitle={selectedService.title}
-          coaches={availableCoaches}
-          onSelect={handleCoachSelect}
-          onClose={() => { setShowCoachModal(false); setSelectedService(null); }}
-        />
-      )}
+      {/* CoachSelectionModal removed for unified ClassModal flow */}
 
     </div >
   );
