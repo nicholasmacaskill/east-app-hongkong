@@ -94,37 +94,11 @@ export default function ClassModal({
     const uniqueInstructors = new Set(sessions.map(s => s.instructor));
     const isCoachView = uniqueInstructors.size === 1 && uniqueTitles.size > 1;
 
-    // Derived Header Info
-    const currentInstructor = filterInstructor || (uniqueInstructors.size === 1 ? Array.from(uniqueInstructors)[0] : null);
-
-    // Dynamic Header Logic
+    // Dynamic Header Logic (Gradient Bar)
     let modalHeaderTitle = displaySession.title;
-    let modalSubHeader = `INSTRUCTOR: ${displaySession.instructor}`;
 
-    if (viewMode === 'COACH_SELECT') {
-        modalHeaderTitle = displaySession.title;
-        modalSubHeader = "SELECT INSTRUCTOR";
-    } else if (currentInstructor) {
-        modalHeaderTitle = currentInstructor;
-        modalSubHeader = displaySession.title;
-    }
-
-    if (origin === 'coaches') {
-        modalHeaderTitle = coachName || currentInstructor || displaySession.instructor;
-        modalSubHeader = "PRIVATE COACH";
-    } else if (origin === 'facilities') {
-        if (selectedCoachId) {
-            modalHeaderTitle = "BOOK PRIVATE LESSON";
-            modalSubHeader = "FACILITY + COACH";
-        } else if (viewMode === 'COACH_SELECT') {
-            modalHeaderTitle = "BOOK FACILITY";
-            modalSubHeader = "SELECT INSTRUCTOR";
-        } else if (filterInstructor) {
-            modalHeaderTitle = filterInstructor;
-            modalSubHeader = "BOOK FACILITY";
-        } else {
-            modalHeaderTitle = "BOOK FACILITY";
-        }
+    if (showTopUp) {
+        modalHeaderTitle = "TOP UP NEEDED";
     }
 
     // Auto-select session
@@ -444,36 +418,38 @@ export default function ClassModal({
                         {/* Custom Header for Coach Select Mode */}
                         {viewMode === 'COACH_SELECT' ? (
                             <div className="overflow-y-auto p-6 text-black hide-scrollbar">
-                                <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">SELECT INSTRUCTOR</h2>
-                                <p className="font-montserrat font-bold text-[10px] mb-6 uppercase text-gray-500 tracking-wider">CHOOSE YOUR PREFERRED COACH</p>
+                                <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{displaySession.title}</h2>
+                                <p className="font-opensans text-[10px] font-bold text-gray-800 mb-6 leading-relaxed opacity-70">{displaySession.description}</p>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    {Array.from(uniqueInstructors).map(instructorName => {
-                                        // Find a session example to get the image
-                                        const exampleSession = sessions.find(s => s.instructor === instructorName);
-                                        const imgUrl = exampleSession?.coach_image_url || exampleSession?.image_url;
+                                <div className="border-t border-gray-100 pt-6">
+                                    <h3 className="font-montserrat font-black italic text-sm mb-4 uppercase text-gray-400 tracking-tight">SELECT INSTRUCTOR:</h3>
 
-                                        return (
-                                            <button
-                                                key={instructorName}
-                                                onClick={() => {
-                                                    setFilterInstructor(instructorName);
-                                                    setViewMode('SESSION_SELECT');
-                                                    // Auto-select first session of this instructor?
-                                                    // setSelectedSessionId(null);
-                                                }}
-                                                className="flex flex-col items-center gap-3 p-4 rounded-2xl border border-gray-200 hover:border-black hover:shadow-xl transition-all group bg-white"
-                                            >
-                                                <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-100 group-hover:border-east-light transition-colors">
-                                                    <img src={imgUrl || 'https://placehold.co/200'} className="w-full h-full object-cover" alt={instructorName} />
-                                                </div>
-                                                <div className="text-center">
-                                                    <h3 className="font-black italic uppercase text-sm leading-tight">{instructorName}</h3>
-                                                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">VIEW SCHEDULE</span>
-                                                </div>
-                                            </button>
-                                        );
-                                    })}
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {Array.from(uniqueInstructors).map(instructorName => {
+                                            // Find a session example to get the image
+                                            const exampleSession = sessions.find(s => s.instructor === instructorName);
+                                            const imgUrl = exampleSession?.coach_image_url || exampleSession?.image_url;
+
+                                            return (
+                                                <button
+                                                    key={instructorName}
+                                                    onClick={() => {
+                                                        setFilterInstructor(instructorName);
+                                                        setViewMode('SESSION_SELECT');
+                                                    }}
+                                                    className="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-black hover:shadow-lg transition-all group bg-white"
+                                                >
+                                                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-100 group-hover:border-east-light transition-colors">
+                                                        <img src={imgUrl || 'https://placehold.co/100'} className="w-full h-full object-cover" alt={instructorName} />
+                                                    </div>
+                                                    <div className="text-center overflow-hidden w-full">
+                                                        <h3 className="font-black italic uppercase text-[8px] leading-tight truncate px-1">{instructorName}</h3>
+                                                        <span className="text-[6px] font-bold text-gray-400 uppercase tracking-wider">CHOOSE</span>
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         ) : (
@@ -489,10 +465,10 @@ export default function ClassModal({
                                     )}
 
                                     {/* Details */}
-                                    <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{filterInstructor ? filterInstructor : modalHeaderTitle}</h2>
-                                    {!isNews && <p className="font-montserrat font-bold text-[10px] mb-4 uppercase text-gray-500 tracking-wider">
-                                        {filterInstructor ? 'PRIVATE COACH' : modalSubHeader}
-                                    </p>}
+                                    <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{modalHeaderTitle}</h2>
+                                    <p className="font-montserrat font-bold text-[10px] mb-4 uppercase text-gray-500 tracking-wider">
+                                        INSTRUCTOR: {filterInstructor || 'VARIOUS'}
+                                    </p>
 
                                     {/* Coach Bio or Description */}
                                     {origin === 'coaches' && coachBio ? (
