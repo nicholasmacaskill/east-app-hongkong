@@ -93,17 +93,22 @@ export default function ClassModal({
     const isNews = displaySession.category === 'NEWS';
     const isPrivate = displaySession.category === 'PRIVATE';
 
+    // Normalize Instructor Names: collapse whitespace and trim
+    const normalize = (name: string) => name?.replace(/\s+/g, ' ').trim() || '';
+
+    // Helpers
+    const selectedSession = sessions.find(s => s.id === selectedSessionId);
+    const creditCostPerPerson = selectedSession ? selectedSession.credit_cost || 10 : 10;
+    const COACH_ADDON_COST = 750; // Constant for now
+
     const uniqueTitles = new Set(sessions.map(s => s.title));
-    const uniqueInstructors = new Set(sessions.map(s => s.instructor));
+    const uniqueInstructors = new Set(sessions.map(s => normalize(s.instructor)));
     const isCoachView = uniqueInstructors.size === 1 && uniqueTitles.size > 1;
 
     // Dynamic Header Logic (Gradient Bar)
-    let modalHeaderTitle = displaySession.title;
-    if (origin === 'coaches' && coachName) {
+    let modalHeaderTitle = filterTitle || (selectedSession?.title) || displaySession.title;
+    if (origin === 'coaches' && coachName && !filterTitle) {
         modalHeaderTitle = coachName;
-    }
-    if (filterTitle) {
-        modalHeaderTitle = filterTitle;
     }
 
     if (showTopUp) {
@@ -118,11 +123,6 @@ export default function ClassModal({
             setSelectedSessionId(sessions[0].id);
         }
     }, [sessions, initialSessionId]);
-
-    // Helpers
-    const selectedSession = sessions.find(s => s.id === selectedSessionId);
-    const creditCostPerPerson = selectedSession ? selectedSession.credit_cost || 10 : 10;
-    const COACH_ADDON_COST = 750; // Constant for now
 
     // Check who is ALREADY booked for the SELECTED session
     // bookedSessions contains objects with session details AND attendee details (from my-schedule API)
@@ -151,8 +151,21 @@ export default function ClassModal({
     useEffect(() => {
         if (!sessions || sessions.length === 0) return;
 
-        const uniqueInstructorsSet = new Set(sessions.filter(s => !!s.instructor).map(s => s.instructor));
+        // Normalize Instructor Names: collapse whitespace and trim
+        const normalize = (name: string) => name?.replace(/\s+/g, ' ').trim() || '';
+
+        const uniqueInstructorsSet = new Set(
+            sessions
+                .filter(s => !!s.instructor)
+                .map(s => normalize(s.instructor))
+        );
         const uniqueTitlesSet = new Set(sessions.map(s => s.title));
+
+        // If we arrived with a specific session (e.g. from calendar), jump straight to it
+        if (initialSessionId) {
+            setViewMode('SESSION_SELECT');
+            return;
+        }
 
         if (origin === 'coaches' && uniqueTitlesSet.size > 1) {
             setViewMode('SERVICE_SELECT');
@@ -167,7 +180,7 @@ export default function ClassModal({
             setFilterInstructor(null);
             setFilterTitle(null);
         }
-    }, [sessions, origin]);
+    }, [sessions, origin, initialSessionId]);
 
     // Auto-select session when filtered or single
     useEffect(() => {
@@ -527,7 +540,7 @@ export default function ClassModal({
                                     {/* Details */}
                                     <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{modalHeaderTitle}</h2>
                                     <p className="font-montserrat font-bold text-[10px] mb-4 uppercase text-gray-500 tracking-wider">
-                                        INSTRUCTOR: {filterInstructor || (origin === 'coaches' ? coachName : 'VARIOUS')}
+                                        INSTRUCTOR: {selectedSession?.instructor || filterInstructor || (origin === 'coaches' ? coachName : 'VARIOUS')}
                                     </p>
 
                                     {/* Coach Bio or Description */}
@@ -721,8 +734,8 @@ export default function ClassModal({
                                         </div>
                                     )}
 
-                                    {/* ADD A COACH? (Only for Facilities) */}
-                                    {displaySession.category === 'FACILITY' && selectedSessionId && (
+                                    {/* ADD A COACH? (Only for Facilities, and hide if already booked) */}
+                                    {displaySession.category === 'FACILITY' && selectedSessionId && !allSelectedAreBooked && (
                                         <div className="mb-6 animate-fadeIn">
                                             <p className="font-montserrat font-bold text-[10px] mb-2 uppercase text-gray-400">ADD A COACH? (+{COACH_ADDON_COST} Credits)</p>
 

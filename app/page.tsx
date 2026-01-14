@@ -73,6 +73,8 @@ function AppContent() {
   const [bookedSessions, setBookedSessions] = useState<Session[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [myChildren, setMyChildren] = useState<any[]>([]);
+  const [selectedInitialSessionId, setSelectedInitialSessionId] = useState<number | null>(null);
+  const [selectedAttendeeId, setSelectedAttendeeId] = useState<string | null>(null);
 
   const [userProfile, setUserProfile] = useState<UserProfileData>(initialProfileData);
 
@@ -262,7 +264,9 @@ function AppContent() {
     description?: string | null,
     origin: 'facilities' | 'coaches' = 'facilities',
     coachName?: string | null,
-    coachBio?: string | null
+    coachBio?: string | null,
+    initialSessionId?: number | null,
+    attendeeId?: string | null
   ) => {
     if (s.length === 1 && s[0].category === 'NEWS') {
       setSelectedNews(s[0]);
@@ -274,6 +278,8 @@ function AppContent() {
     setSelectedOrigin(origin);
     setSelectedCoachName(coachName || null);
     setSelectedCoachBio(coachBio || null);
+    setSelectedInitialSessionId(initialSessionId || null);
+    setSelectedAttendeeId(attendeeId || null);
     setShowClassModal(true);
   };
 
@@ -437,7 +443,9 @@ function AppContent() {
               currentUserId={currentUserId}
               refreshKey={refreshKey}
               availability={userProfile.preferences?.availability || []}
-              onPreviewClick={(s) => { setSelectedSessions([s]); setShowClassModal(true); }}
+              onPreviewClick={(s) => {
+                handleClassClick([s], s.description, 'facilities', null, null, s.id, (s as any).attendee?.id);
+              }}
             />
           )}
 
@@ -459,12 +467,16 @@ function AppContent() {
               setSelectedCoachName(null);
               setSelectedCoachBio(null);
               setSelectedOrigin('facilities');
+              setSelectedInitialSessionId(null);
+              setSelectedAttendeeId(null);
             }}
             onScheduleChange={() => setRefreshKey(k => k + 1)}
             serviceDescription={selectedServiceDescription}
             origin={selectedOrigin}
             coachName={selectedCoachName || undefined}
             coachBio={selectedCoachBio || undefined}
+            initialSessionId={selectedInitialSessionId || undefined}
+            initialAttendeeId={selectedAttendeeId || undefined}
           />
         )}
 
