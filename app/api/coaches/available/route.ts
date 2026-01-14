@@ -26,9 +26,20 @@ export async function GET(request: Request) {
 
         if (coachError) throw coachError;
 
-        // 2. Get Conflicting Sessions
+        // 2. Get Explicitly Available Coaches from 'availability' table
+        // A coach is available if they have a record spanning THIS time slot
+        const { data: availableRecords, error: availErr } = await supabaseAdmin
+            .from('availability')
+            .select('coach_id')
+            .lte('start_time', startTime)
+            .gte('end_time', endTime)
+            .eq('status', 'available');
+
+        if (availErr) throw availErr;
+        const explicitlyAvailableIds = new Set(availableRecords?.map(r => r.coach_id) || []);
+
+        // 3. Get Conflicting Sessions
         // A session conflicts if it overlaps: (StartA < EndB) and (EndA > StartB)
-        // EXCLUDE 'NEWS' and 'EVENT' as they are often announcements, not actual bookings blocking the coach
         const { data: conflicts, error: conflictError } = await supabaseAdmin
             .from('sessions')
             .select('instructor')
@@ -39,22 +50,26 @@ export async function GET(request: Request) {
 
         if (conflictError) throw conflictError;
 
-        // 3. Filter
-        // Create a Set of busy instructor names
+        // 4. Filter
         const busyInstructors = new Set(conflicts?.map(s => s.instructor) || []);
-        console.log(`Busy Instructors during ${startTime}-${endTime}:`, Array.from(busyInstructors));
 
-        const availableCoaches = coaches?.filter(coach => {
+        const finalAvailableCoaches = coaches?.filter(coach => {
+            // Must be explicitly available in working hours
+            if (!explicitlyAvailableIds.has(coach.id)) return false;
+
             const fullName = `${coach.first_name} ${coach.last_name}`;
-            // If the coach's name appears in busy list, exclude them.
-            // Also exclude if name is empty (sanity check)
             if (!fullName.trim()) return false;
-            return !busyInstructors.has(fullName);
+
+            // Must NOT have a conflict (exact name match or first name match)
+            const isBusy = Array.from(busyInstructors).some(busyName =>
+                (busyName && busyName.toLowerCase() === fullName.toLowerCase()) ||
+                (busyName && busyName.toLowerCase() === coach.first_name.toLowerCase())
+            );
+
+            return !isBusy;
         });
 
-        // console.log(`Found ${availableCoaches?.length || 0} active coaches`);
-
-        return NextResponse.json(availableCoaches || []);
+        return NextResponse.json(finalAvailableCoaches || []);
 
     } catch (e: any) {
         console.error('Available Coaches API Error:', e);
