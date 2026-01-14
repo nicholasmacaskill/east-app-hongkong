@@ -65,6 +65,7 @@ function AppContent() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showNewsModal, setShowNewsModal] = useState(false);
   const [selectedSessions, setSelectedSessions] = useState<Session[]>([]);
+  const [selectedServiceDescription, setSelectedServiceDescription] = useState<string | null>(null);
   const [selectedNews, setSelectedNews] = useState<Session | null>(null);
   const [bookedSessions, setBookedSessions] = useState<Session[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -253,13 +254,14 @@ function AppContent() {
     }
   };
 
-  const handleClassClick = (s: Session[]) => {
+  const handleClassClick = (s: Session[], description?: string | null) => {
     if (s.length === 1 && s[0].category === 'NEWS') {
       setSelectedNews(s[0]);
       setShowNewsModal(true);
       return;
     }
     setSelectedSessions(s);
+    setSelectedServiceDescription(description || null);
     setShowClassModal(true);
   };
 
@@ -434,7 +436,19 @@ function AppContent() {
 
         <BottomNav activeTab={activeTab} setTab={setActiveTab} />
 
-        {showClassModal && <ClassModal sessions={selectedSessions} currentUserId={currentUserId} bookedSessions={bookedSessions} onClose={() => setShowClassModal(false)} onScheduleChange={() => setRefreshKey(k => k + 1)} />}
+        {showClassModal && (
+          <ClassModal
+            sessions={selectedSessions}
+            currentUserId={currentUserId}
+            bookedSessions={bookedSessions}
+            onClose={() => {
+              setShowClassModal(false);
+              setSelectedServiceDescription(null);
+            }}
+            onScheduleChange={() => setRefreshKey(k => k + 1)}
+            serviceDescription={selectedServiceDescription}
+          />
+        )}
 
         {showSettingsModal && (
           <SettingsModal

@@ -19,6 +19,16 @@ interface ServiceType {
   title: string;
   category: 'CLASS' | 'PRIVATE';
   image_url: string | null;
+  description: string | null;
+}
+
+interface HomeScreenProps {
+  onClassClick: (sessions: Session[], description?: string | null) => void;
+  onOpenSettings: () => void;
+  bookedSessions: Session[];
+  credits: number;
+  subscriptionStatus?: string;
+  setTab: (tab: any) => void;
 }
 
 export default function HomeScreen({
@@ -28,14 +38,7 @@ export default function HomeScreen({
   credits,
   subscriptionStatus, // NEW
   setTab
-}: {
-  onClassClick: (sessions: Session[]) => void,
-  onOpenSettings: () => void,
-  bookedSessions: Session[],
-  credits: number,
-  subscriptionStatus?: string, // NEW
-  setTab: (t: any) => void
-}) {
+}: HomeScreenProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [allServices, setAllServices] = useState<ServiceType[]>([]);
   const [coaches, setCoaches] = useState<any[]>([]);
@@ -61,9 +64,9 @@ export default function HomeScreen({
         // Fetch Services
         const { data: servicesData } = await supabase
           .from('session_types')
-          .select('*')
+          .select('id, title, category, image_url, description')
           .order('title');
-        if (servicesData) setAllServices(servicesData);
+        if (servicesData) setAllServices(servicesData as ServiceType[]);
 
         // Fetch coaches
         const { data: coachesData } = await supabase
@@ -189,7 +192,7 @@ export default function HomeScreen({
       alert(`${coach.first_name} has no available slots at the moment.`);
     } else {
       coachPrivateSlots.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-      onClassClick(coachPrivateSlots);
+      onClassClick(coachPrivateSlots, selectedService.description);
       setShowCoachModal(false);
     }
   };
@@ -197,7 +200,10 @@ export default function HomeScreen({
   const handleItemClick = (item: Session, groupByKey: 'title' | 'instructor') => {
     const allSlots = sessions.filter(s => s[groupByKey] === item[groupByKey] && s.category === item.category);
     allSlots.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-    onClassClick(allSlots);
+
+    // Find matching service description
+    const service = allServices.find((svc: ServiceType) => svc.title.toLowerCase().trim() === item.title.toLowerCase().trim());
+    onClassClick(allSlots, service?.description);
   };
 
   return (

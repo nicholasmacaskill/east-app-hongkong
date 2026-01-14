@@ -17,6 +17,7 @@ interface ClassModalProps {
     coachBio?: string;
     coachName?: string;
     initialSessionId?: number;
+    serviceDescription?: string | null;
 }
 
 export default function ClassModal({
@@ -30,7 +31,8 @@ export default function ClassModal({
     origin = 'facilities',
     coachBio,
     coachName,
-    initialSessionId
+    initialSessionId,
+    serviceDescription
 }: ClassModalProps) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
@@ -419,7 +421,9 @@ export default function ClassModal({
                         {viewMode === 'COACH_SELECT' ? (
                             <div className="overflow-y-auto p-6 text-black hide-scrollbar">
                                 <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{displaySession.title}</h2>
-                                <p className="font-opensans text-[10px] font-bold text-gray-800 mb-6 leading-relaxed opacity-70">{displaySession.description}</p>
+                                <p className="font-opensans text-[10px] font-bold text-gray-800 mb-6 leading-relaxed opacity-70">
+                                    {serviceDescription || displaySession.description}
+                                </p>
 
                                 <div className="border-t border-gray-100 pt-6">
                                     <h3 className="font-montserrat font-black italic text-sm mb-4 uppercase text-gray-400 tracking-tight">SELECT INSTRUCTOR:</h3>
@@ -476,7 +480,9 @@ export default function ClassModal({
                                             <p className="font-opensans text-xs font-bold leading-relaxed text-gray-800 italic">"{coachBio}"</p>
                                         </div>
                                     ) : (
-                                        <p className="font-opensans text-xs font-bold leading-relaxed mb-6 text-gray-800">{displaySession.description}</p>
+                                        <p className="font-opensans text-xs font-bold leading-relaxed mb-6 text-gray-800">
+                                            {serviceDescription || displaySession.description}
+                                        </p>
                                     )}
 
                                     {/* Image (Only show if NOT manually filtered, OR if layout demands it. 
@@ -636,7 +642,7 @@ export default function ClassModal({
                                                             return (
                                                                 <button key={sess.id} onClick={() => setSelectedSessionId(sess.id)} className={`w-full py-3 px-4 rounded-lg border transition-all relative flex items-center justify-between ${isSelected ? 'bg-east-light text-black border-east-light shadow-md scale-[1.01]' : 'bg-white text-gray-600 border-gray-300 hover:border-east-light hover:text-black'}`}>
                                                                     <div className="flex flex-col items-start">
-                                                                        {uniqueInstructors.size > 1 && (
+                                                                        {!filterInstructor && uniqueInstructors.size > 1 && (
                                                                             <span className="font-black italic uppercase text-xs text-east-dark mb-0.5">{sess.instructor}</span>
                                                                         )}
                                                                         {isPrivate && isCoachView && <span className="font-black italic uppercase text-xs text-east-dark mb-0.5">{sess.title}</span>}

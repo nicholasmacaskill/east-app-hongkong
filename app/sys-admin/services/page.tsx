@@ -12,6 +12,7 @@ interface SessionType {
     title: string;
     category: 'CLASS' | 'PRIVATE';
     image_url: string | null;
+    description: string | null;
 }
 
 export default function ManageServicesPage() {
@@ -73,7 +74,8 @@ export default function ManageServicesPage() {
             const payload = {
                 title: currentService.title,
                 category: currentService.category,
-                image_url: currentService.image_url || null
+                image_url: currentService.image_url || null,
+                description: currentService.description || null
             };
 
             console.log("Sending payload:", payload);
@@ -253,6 +255,16 @@ export default function ManageServicesPage() {
                                     onChange={e => setCurrentService({ ...currentService, title: e.target.value })}
                                     className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160]"
                                     placeholder="e.g. Golf, Hyrox"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Description</label>
+                                <textarea
+                                    value={currentService.description || ''}
+                                    onChange={e => setCurrentService({ ...currentService, description: e.target.value })}
+                                    className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160] min-h-[80px]"
+                                    placeholder="Describe this service for the booking modal..."
                                 />
                             </div>
 
