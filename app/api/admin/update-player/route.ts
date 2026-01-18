@@ -11,11 +11,18 @@ interface UpdateRequest {
     credits?: number;
     team?: string;
     position?: string;
+    role?: string;
+    parentId?: string;
+    mobile?: string;
+    bio?: string;
 }
 
 export async function POST(request: Request) {
     try {
-        const { userId, firstName, lastName, email, password, credits, team, position } = await request.json() as UpdateRequest;
+        const {
+            userId, firstName, lastName, email, password, credits,
+            team, position, role, parentId, mobile, bio
+        } = await request.json() as UpdateRequest;
 
         if (!userId) {
             return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
@@ -50,6 +57,10 @@ export async function POST(request: Request) {
         if (team !== undefined) profileUpdates.team = team;
         if (position !== undefined) profileUpdates.position = position;
         if (credits !== undefined) profileUpdates.credits = credits;
+        if (role) profileUpdates.role = role;
+        if (parentId !== undefined) profileUpdates.parent_id = parentId;
+        if (mobile !== undefined) profileUpdates.mobile = mobile;
+        if (bio !== undefined) profileUpdates.bio = bio;
 
         if (Object.keys(profileUpdates).length > 0) {
             const { error: profileError } = await supabaseAdmin
@@ -60,6 +71,21 @@ export async function POST(request: Request) {
             if (profileError) {
                 console.error('Profile update error:', profileError);
                 return NextResponse.json({ error: 'Failed to update profile: ' + profileError.message }, { status: 500 });
+            }
+
+            // 3. Sync player_relationships if parentId/role changed
+            if (parentId !== undefined || role === 'player') {
+                // If it's a player, ensure they have a relationship record if they have a parent
+                if (parentId) {
+                    await supabaseAdmin.from('player_relationships').delete().eq('player_id', userId);
+                    await supabaseAdmin.from('player_relationships').insert({
+                        player_id: userId,
+                        parent_id: parentId
+                    });
+                } else {
+                    // If parentId is null, remove relationship
+                    await supabaseAdmin.from('player_relationships').delete().eq('player_id', userId);
+                }
             }
         }
 

@@ -47,8 +47,8 @@ export async function middleware(request: NextRequest) {
             data: { user },
         } = await supabase.auth.getUser();
 
-        // 1. PROTECT ADMIN ROUTES
-        if (request.nextUrl.pathname.startsWith('/sys-admin')) {
+        // 1. PROTECT ADMIN ROUTES & APIs
+        if (request.nextUrl.pathname.startsWith('/sys-admin') || request.nextUrl.pathname.startsWith('/api/admin')) {
             if (!user) {
                 console.log("Middleware: No user found for /sys-admin request");
                 return NextResponse.redirect(new URL('/', request.url));
