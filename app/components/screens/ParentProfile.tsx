@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import { Edit2, CheckCircle2, ChevronRight, Users, Calendar, Heart, Award, Lock } from 'lucide-react';
+import { Edit2, CheckCircle2, ChevronRight, Users, Calendar, Heart, Award, Lock, Plus, X, Coins } from 'lucide-react';
+import { supabase } from '@/app/lib/supabase';
 
 interface ParentProfileProps {
    onOpenSettings: () => void;
@@ -27,7 +28,59 @@ export default function ParentProfile({
    const [showAddChild, setShowAddChild] = useState(false);
    const [newChild, setNewChild] = useState({ first: '', last: '', email: '', sport: '' });
    const [availability, setAvailability] = useState<string[]>([]);
+
    const [savingAvailability, setSavingAvailability] = useState(false);
+
+   // Transfer Logic
+   const [showTransferModal, setShowTransferModal] = useState(false);
+   const [transferTarget, setTransferTarget] = useState<{ id: string, name: string } | null>(null);
+   const [transferAmount, setTransferAmount] = useState(5);
+   const [isTransferring, setIsTransferring] = useState(false);
+
+   const handleOpenTransfer = (e: React.MouseEvent, child: any) => {
+      e.stopPropagation();
+      setTransferTarget({ id: child.id, name: child.first_name });
+      setTransferAmount(5);
+      setShowTransferModal(true);
+   };
+
+   const handleTransferCredits = async () => {
+      if (!transferTarget || transferAmount <= 0) return;
+
+      setIsTransferring(true);
+      try {
+         const { data: { session } } = await supabase.auth.getSession();
+         if (!session) throw new Error("Not authenticated");
+
+         const res = await fetch('/api/user/transfer-credits', {
+            method: 'POST',
+            headers: {
+               'Content-Type': 'application/json',
+               'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+               recipientId: transferTarget.id,
+               amount: transferAmount
+            })
+         });
+
+         const data = await res.json();
+         if (!data.success) {
+            throw new Error(data.error || 'Transfer failed');
+         }
+
+         alert('Credits transferred successfully!');
+         setShowTransferModal(false);
+         // Ideally triggers a refresh of the parent data, but for now we reload or rely on state update if parent fetches again?
+         // Since app/page.tsx handles the state, a reload is safest to update both balances
+         window.location.reload();
+
+      } catch (error: any) {
+         alert(error.message);
+      } finally {
+         setIsTransferring(false);
+      }
+   };
 
    // Mock logic for next 14 days
    const next14Days = Array.from({ length: 14 }, (_, i) => {
@@ -176,11 +229,17 @@ export default function ParentProfile({
                                        {isSelected && <div className="bg-east-light text-black text-[8px] font-black px-2 py-0.5 rounded-full uppercase italic">Selected</div>}
                                     </div>
                                     <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">{athlete.team || 'EAST SPORTS'}</p>
-                                    <div className="flex gap-2 mt-3">
-                                       <div className="h-1 flex-1 bg-white/10 rounded-full overflow-hidden">
-                                          <div className="h-full bg-east-light w-[70%]" />
+                                    <div className="flex items-center gap-4 mt-3">
+                                       <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5">
+                                          <Coins size={10} className="text-east-light" />
+                                          <span className="text-[10px] font-black text-white">{athlete.credits || 0} <span className="text-gray-500">CREDITS</span></span>
                                        </div>
-                                       <span className="text-[8px] font-bold text-east-light">70% XP</span>
+                                       <button
+                                          onClick={(e) => handleOpenTransfer(e, athlete)}
+                                          className="bg-east-light text-black text-[8px] font-black uppercase px-3 py-1.5 rounded-lg hover:bg-white transition-colors"
+                                       >
+                                          + Transfer
+                                       </button>
                                     </div>
                                  </div>
                                  <ChevronRight size={18} className={`transition-transform ${isSelected ? 'text-east-light rotate-90' : 'text-gray-600'}`} />
@@ -250,6 +309,59 @@ export default function ParentProfile({
                   </div>
                )
             }
+
+
+            {/* TRANSFER MODAL */}
+            {showTransferModal && transferTarget && (
+               <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-6 backdrop-blur-md">
+                  <div className="bg-[#1e1e1e] p-8 rounded-[2rem] w-full max-w-sm border border-white/10 relative shadow-2xl">
+                     <button
+                        onClick={() => setShowTransferModal(false)}
+                        className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors"
+                     >
+                        <X size={24} />
+                     </button>
+
+                     <div className="text-center mb-8">
+                        <div className="w-16 h-16 bg-east-light/10 text-east-light rounded-full flex items-center justify-center mx-auto mb-4 border border-east-light/20">
+                           <Coins size={32} />
+                        </div>
+                        <h3 className="font-black italic text-2xl text-white uppercase tracking-tighter">Transfer Credits</h3>
+                        <p className="text-gray-500 text-xs font-bold uppercase mt-2 tracking-wide">
+                           To <span className="text-white">{transferTarget.name}</span>
+                        </p>
+                     </div>
+
+                     <div className="space-y-6">
+                        <div>
+                           <label className="text-[10px] uppercase font-bold text-gray-500 mb-2 block text-center">Amount to Transfer</label>
+                           <div className="flex items-center justify-center gap-4">
+                              <button onClick={() => setTransferAmount(Math.max(1, transferAmount - 1))} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/20 text-white flex items-center justify-center font-black">-</button>
+                              <div className="w-24 text-center">
+                                 <span className="text-3xl font-black italic text-white">{transferAmount}</span>
+                              </div>
+                              <button onClick={() => setTransferAmount(transferAmount + 1)} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/20 text-white flex items-center justify-center font-black">+</button>
+                           </div>
+                        </div>
+
+                        <div className="bg-black/40 p-4 rounded-xl border border-white/5 text-center">
+                           <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest">New Parent Balance</p>
+                           <p className="text-white font-bold text-lg">
+                              {(profileData.credits || 0) - transferAmount} <span className="text-xs text-gray-600">CREDITS</span>
+                           </p>
+                        </div>
+
+                        <button
+                           onClick={handleTransferCredits}
+                           disabled={isTransferring || transferAmount > (profileData.credits || 0)}
+                           className="w-full bg-east-light text-black font-black uppercase py-4 rounded-xl text-sm hover:bg-white transition-all shadow-[0_0_20px_rgba(40,209,96,0.2)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                           {isTransferring ? 'Processing...' : 'Confirm Transfer'}
+                        </button>
+                     </div>
+                  </div>
+               </div>
+            )}
 
             {/* AVAILABILITY TAB */}
             {

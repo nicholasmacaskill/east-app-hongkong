@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle } from 'lucide-react';
+import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers } from 'lucide-react';
 
 interface Attendee {
     id: string;
@@ -28,6 +28,16 @@ export default function CoachDashboard({ currentUserId, userName }: { currentUse
     const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view'>('master_view');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [expandedDates, setExpandedDates] = useState<string[]>([]);
+
+    const toggleDate = (date: string) => {
+        setExpandedDates(prev =>
+            prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date]
+        );
+    };
+
+    const expandAll = () => setExpandedDates(Object.keys(groupedSessions));
+    const collapseAll = () => setExpandedDates([]);
 
     const fetchSchedule = async () => {
         try {
@@ -158,6 +168,19 @@ export default function CoachDashboard({ currentUserId, userName }: { currentUse
                 </div>
             </div>
 
+            {/* QUICK ACTIONS BAR */}
+            <div className="bg-[#121212] px-6 py-2 border-b border-white/5 flex justify-end gap-4 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-2">
+                    <button onClick={expandAll} className="text-[9px] font-black uppercase text-gray-500 hover:text-east-light transition-colors flex items-center gap-1">
+                        <ChevronDown size={12} /> Expand All
+                    </button>
+                    <div className="w-px h-3 bg-white/10" />
+                    <button onClick={collapseAll} className="text-[9px] font-black uppercase text-gray-500 hover:text-east-light transition-colors flex items-center gap-1">
+                        <ChevronUp size={12} /> Collapse All
+                    </button>
+                </div>
+            </div>
+
             {/* MAIN TIMELINE */}
             <div className="max-w-3xl mx-auto p-6 space-y-8 pb-24">
 
@@ -169,73 +192,85 @@ export default function CoachDashboard({ currentUserId, userName }: { currentUse
                     </div>
                 )}
 
-                {Object.entries(groupedSessions).map(([date, daySessions]) => (
-                    <div key={date} className="animate-fadeIn">
-                        {/* Date Header */}
-                        <div className="flex items-center gap-4 mb-4 sticky top-20 z-40 py-2 bg-[#0a0a0a]/50 backdrop-blur-xl pointer-events-none">
-                            <h2 className="text-2xl font-black italic uppercase text-white/50">{date}</h2>
-                            <div className="h-px bg-white/10 flex-1" />
-                        </div>
-
-                        {/* Sessions Grid */}
-                        <div className="space-y-3">
-                            {daySessions.map(session => (
-                                <div key={session.id} className={`bg-[#121212] rounded-r-xl p-4 flex gap-4 ${getStatusColor(session)} shadow-lg hover:bg-[#1a1a1a] transition-colors group relative overflow-hidden`}>
-
-                                    {/* Time Column */}
-                                    <div className="flex flex-col items-center justify-center min-w-[60px] border-r border-white/5 pr-4">
-                                        <span className="text-lg font-black italic leading-none">{new Date(session.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(' ', '').toLowerCase()}</span>
-                                        <span className="text-[9px] font-bold text-gray-600 uppercase mt-1">
-                                            {Math.round((new Date(session.end_time).getTime() - new Date(session.start_time).getTime()) / 60000)} MIN
-                                        </span>
-                                    </div>
-
-                                    {/* Info Column */}
-                                    <div className="flex-1">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <div className="flex items-center gap-2">
-                                                <h3 className={`font-bold text-sm uppercase tracking-wide ${session.type === 'slot' ? 'text-gray-500' : 'text-white'}`}>{session.title}</h3>
-                                                {getStatusBadge(session)}
-                                            </div>
-                                            <span className="text-[9px] font-bold text-gray-500 uppercase border border-white/10 px-1.5 py-0.5 rounded">{session.category}</span>
-                                        </div>
-
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <span className={`text-[10px] font-bold uppercase ${session.instructor.toLowerCase().includes(userName.toLowerCase()) ? 'text-east-light' : 'text-gray-500'}`}>
-                                                {session.instructor}
-                                            </span>
-                                        </div>
-
-                                        {/* Attendees Section */}
-                                        {session.attendees.length > 0 ? (
-                                            <div className="bg-black/40 rounded-lg p-2 border border-white/5">
-                                                <div className="flex items-center gap-2 mb-1.5 opacity-50">
-                                                    <Users size={10} />
-                                                    <span className="text-[9px] font-bold uppercase tracking-widest">Attending ({session.attendees.length})</span>
-                                                </div>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {session.attendees.map(a => (
-                                                        <div key={a.id} className="flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded select-all hover:bg-white/20 transition-colors cursor-default">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-east-light" />
-                                                            <span className="text-[10px] font-bold uppercase">{a.name}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            session.type !== 'slot' && (
-                                                <div className="text-[10px] font-bold text-gray-700 italic flex items-center gap-1 uppercase">
-                                                    <AlertCircle size={10} /> No registered athletes
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-
+                {Object.entries(groupedSessions).map(([date, daySessions]) => {
+                    const isExpanded = expandedDates.includes(date);
+                    return (
+                        <div key={date} className="animate-fadeIn">
+                            {/* Date Header (Clickable Accordion) */}
+                            <button
+                                onClick={() => toggleDate(date)}
+                                className="w-full flex items-center gap-4 mb-4 sticky top-20 z-40 py-2 bg-[#0a0a0a]/50 backdrop-blur-xl group/header"
+                            >
+                                <div className={`p-1.5 rounded-lg border transition-all ${isExpanded ? 'bg-east-light border-east-light text-black' : 'bg-white/5 border-white/10 text-gray-500 group-hover/header:border-east-light'}`}>
+                                    {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                 </div>
-                            ))}
+                                <h2 className={`text-2xl font-black italic uppercase transition-colors ${isExpanded ? 'text-white' : 'text-white/30 group-hover/header:text-white/50'}`}>{date}</h2>
+                                <div className={`h-px flex-1 transition-all ${isExpanded ? 'bg-east-light/30' : 'bg-white/10'}`} />
+                                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{daySessions.length} {daySessions.length === 1 ? 'ITEM' : 'ITEMS'}</span>
+                            </button>
+
+                            {/* Sessions Grid (Conditional) */}
+                            {isExpanded && (
+                                <div className="space-y-3 animate-slideDown">
+                                    {daySessions.map(session => (
+                                        <div key={session.id} className={`bg-[#121212] rounded-r-xl p-4 flex gap-4 ${getStatusColor(session)} shadow-lg hover:bg-[#1a1a1a] transition-colors group relative overflow-hidden`}>
+
+                                            {/* Time Column */}
+                                            <div className="flex flex-col items-center justify-center min-w-[60px] border-r border-white/5 pr-4">
+                                                <span className="text-lg font-black italic leading-none">{new Date(session.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(' ', '').toLowerCase()}</span>
+                                                <span className="text-[9px] font-bold text-gray-600 uppercase mt-1">
+                                                    {Math.round((new Date(session.end_time).getTime() - new Date(session.start_time).getTime()) / 60000)} MIN
+                                                </span>
+                                            </div>
+
+                                            {/* Info Column */}
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <h3 className={`font-bold text-sm uppercase tracking-wide ${session.type === 'slot' ? 'text-gray-500' : 'text-white'}`}>{session.title}</h3>
+                                                        {getStatusBadge(session)}
+                                                    </div>
+                                                    <span className="text-[9px] font-bold text-gray-500 uppercase border border-white/10 px-1.5 py-0.5 rounded">{session.category}</span>
+                                                </div>
+
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <span className={`text-[10px] font-bold uppercase ${session.instructor.toLowerCase().includes(userName.toLowerCase()) ? 'text-east-light' : 'text-gray-500'}`}>
+                                                        {session.instructor}
+                                                    </span>
+                                                </div>
+
+                                                {/* Attendees Section */}
+                                                {session.attendees.length > 0 ? (
+                                                    <div className="bg-black/40 rounded-lg p-2 border border-white/5">
+                                                        <div className="flex items-center gap-2 mb-1.5 opacity-50">
+                                                            <Users size={10} />
+                                                            <span className="text-[9px] font-bold uppercase tracking-widest">Attending ({session.attendees.length})</span>
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {session.attendees.map(a => (
+                                                                <div key={a.id} className="flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded select-all hover:bg-white/20 transition-colors cursor-default">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-east-light" />
+                                                                    <span className="text-[10px] font-bold uppercase">{a.name}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    session.type !== 'slot' && (
+                                                        <div className="text-[10px] font-bold text-gray-700 italic flex items-center gap-1 uppercase">
+                                                            <AlertCircle size={10} /> No registered athletes
+                                                        </div>
+                                                    )
+                                                )}
+                                            </div>
+
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
 
             </div>
         </div>

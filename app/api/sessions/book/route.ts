@@ -262,21 +262,7 @@ export async function POST(request: Request) {
           facilitySuccess = false;
         } else {
           console.log(`[BOOKING] Success confirmed.`);
-
-          // CRITICAL FIX: Manually record credits_paid because DB function defaults to 0
-          // This ensures refunds work correctly (Reading credits_paid column)
-          const cost = mainSession.credit_cost || 0;
-          if (cost > 0) {
-            const { error: patchError } = await supabaseAdmin
-              .from('registrations')
-              .update({ credits_paid: cost })
-              .eq('user_id', targetId)
-              .eq('session_id', sessionId);
-
-            if (patchError) console.error("Failed to patch credits_paid:", patchError);
-            else console.log(`[BOOKING] patched credits_paid to ${cost}`);
-          }
-
+          // ✅ No manual patch needed - RPC now stores credits_paid automatically
           results.push({ attendeeId: targetId, type: 'facility', success: true, message: result.message });
         }
       } else {

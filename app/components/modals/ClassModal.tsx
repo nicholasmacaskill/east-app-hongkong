@@ -419,7 +419,7 @@ export default function ClassModal({
                 {/* Header */}
                 <div className="bg-gradient-to-r from-east-light to-east-dark p-4 flex justify-between items-center shrink-0">
                     <h2 className="font-montserrat font-black italic text-xl text-white uppercase truncate pr-2">
-                        {showTopUp ? 'TOP UP NEEDED' : modalHeaderTitle}
+                        {showTopUp ? 'TOP UP NEEDED' : (origin === 'coaches' ? 'BOOK COACH' : modalHeaderTitle)}
                     </h2>
                     <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors">
                         <X className="text-white" size={24} />
@@ -539,9 +539,11 @@ export default function ClassModal({
 
                                     {/* Details */}
                                     <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{modalHeaderTitle}</h2>
-                                    <p className="font-montserrat font-bold text-[10px] mb-4 uppercase text-gray-500 tracking-wider">
-                                        INSTRUCTOR: {selectedSession?.instructor || filterInstructor || (origin === 'coaches' ? coachName : 'VARIOUS')}
-                                    </p>
+                                    {origin !== 'coaches' && (
+                                        <p className="font-montserrat font-bold text-[10px] mb-4 uppercase text-gray-500 tracking-wider">
+                                            INSTRUCTOR: {selectedSession?.instructor || filterInstructor || 'VARIOUS'}
+                                        </p>
+                                    )}
 
                                     {/* Coach Bio or Description */}
                                     {origin === 'coaches' && coachBio ? (

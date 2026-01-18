@@ -58,7 +58,7 @@ export async function POST(request: Request) {
         if (position !== undefined) profileUpdates.position = position;
         if (credits !== undefined) profileUpdates.credits = credits;
         if (role) profileUpdates.role = role;
-        if (parentId !== undefined) profileUpdates.parent_id = parentId;
+        if (parentId !== undefined) profileUpdates.parent_id = parentId === '' ? null : parentId;
         if (mobile !== undefined) profileUpdates.mobile = mobile;
         if (bio !== undefined) profileUpdates.bio = bio;
 
@@ -77,14 +77,14 @@ export async function POST(request: Request) {
             if (parentId !== undefined || role === 'player') {
                 // If it's a player, ensure they have a relationship record if they have a parent
                 if (parentId) {
-                    await supabaseAdmin.from('player_relationships').delete().eq('player_id', userId);
+                    await supabaseAdmin.from('player_relationships').delete().eq('child_id', userId);
                     await supabaseAdmin.from('player_relationships').insert({
-                        player_id: userId,
+                        child_id: userId,
                         parent_id: parentId
                     });
                 } else {
                     // If parentId is null, remove relationship
-                    await supabaseAdmin.from('player_relationships').delete().eq('player_id', userId);
+                    await supabaseAdmin.from('player_relationships').delete().eq('child_id', userId);
                 }
             }
         }

@@ -10,7 +10,7 @@ import { useToast } from '@/app/components/ui/Toast';
 interface SessionType {
     id: string;
     title: string;
-    category: 'CLASS' | 'PRIVATE';
+    category: 'CLASS' | 'PRIVATE' | 'FACILITY';
     image_url: string | null;
     description: string | null;
 }
@@ -214,7 +214,10 @@ export default function ManageServicesPage() {
                             </div>
                             <div className="flex-1">
                                 <h3 className="font-bold text-lg">{service.title}</h3>
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded text-black uppercase ${service.category === 'CLASS' ? 'bg-blue-400' : 'bg-purple-400'}`}>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded text-black uppercase ${service.category === 'CLASS' ? 'bg-blue-400' :
+                                        service.category === 'PRIVATE' ? 'bg-purple-400' :
+                                            'bg-[#28D160]'
+                                    }`}>
                                     {service.category}
                                 </span>
                             </div>
@@ -270,18 +273,24 @@ export default function ManageServicesPage() {
 
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Category</label>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="grid grid-cols-3 gap-2">
                                     <button
                                         onClick={() => setCurrentService({ ...currentService, category: 'CLASS' })}
-                                        className={`p-3 rounded-lg border font-bold text-sm transition-colors ${currentService.category === 'CLASS' ? 'bg-blue-500/20 border-blue-500 text-blue-500' : 'bg-black border-white/10 text-gray-500 hover:border-white/30'}`}
+                                        className={`p-3 rounded-lg border font-bold text-[10px] transition-colors ${currentService.category === 'CLASS' ? 'bg-blue-500/20 border-blue-500 text-blue-500' : 'bg-black border-white/10 text-gray-500 hover:border-white/30'}`}
                                     >
                                         CLASS
                                     </button>
                                     <button
                                         onClick={() => setCurrentService({ ...currentService, category: 'PRIVATE' })}
-                                        className={`p-3 rounded-lg border font-bold text-sm transition-colors ${currentService.category === 'PRIVATE' ? 'bg-purple-500/20 border-purple-500 text-purple-500' : 'bg-black border-white/10 text-gray-500 hover:border-white/30'}`}
+                                        className={`p-3 rounded-lg border font-bold text-[10px] transition-colors ${currentService.category === 'PRIVATE' ? 'bg-purple-500/20 border-purple-500 text-purple-500' : 'bg-black border-white/10 text-gray-500 hover:border-white/30'}`}
                                     >
                                         PRIVATE
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentService({ ...currentService, category: 'FACILITY' })}
+                                        className={`p-3 rounded-lg border font-bold text-[10px] transition-colors ${currentService.category === 'FACILITY' ? 'bg-[#28D160]/20 border-[#28D160] text-[#28D160]' : 'bg-black border-white/10 text-gray-500 hover:border-white/30'}`}
+                                    >
+                                        FACILITY
                                     </button>
                                 </div>
                             </div>

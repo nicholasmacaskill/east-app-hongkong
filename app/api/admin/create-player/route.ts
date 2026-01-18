@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         // 3. Sync player_relationships if linking to parent
         if (role === 'player' && parentId) {
             await supabaseAdmin.from('player_relationships').upsert({
-                player_id: userId,
+                child_id: userId,
                 parent_id: parentId
             });
         }

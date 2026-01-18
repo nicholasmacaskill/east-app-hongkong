@@ -1,6 +1,6 @@
 // ... imports ...
 import React, { useState, useEffect } from 'react';
-import { Edit2, Trophy, Target, Shield, Users, Activity, Award, ChevronRight, Camera } from 'lucide-react';
+import { Edit2, Trophy, Target, Shield, Users, Activity, Award, ChevronRight, Camera, Coins } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 // Removed: useGallery, Lightbox, ImageIcon
 
@@ -148,14 +148,17 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
             <div className="grid grid-cols-3 w-full gap-2">
               {[
+                { l: 'CREDITS\nAVAILABLE', v: profileData.credits || 0, icon: Coins },
                 { l: 'TOP SCORER\n(TEAM)', icon: Award },
-                { l: 'TOP SCORER\n(LEAGUE)', icon: Award },
                 { l: 'MOST SHOTS\n(TEAM)', icon: Award },
-              ].map((badge, i) => (
+              ].map((badge: any, i) => (
                 <div key={i} className="flex flex-col items-center p-3 bg-white/5 rounded-xl border border-white/10 group hover:border-east-light/50 transition-colors">
                   <div className="w-10 h-10 rounded-full border border-east-light/30 bg-black/40 flex items-center justify-center mb-2 shadow-lg group-hover:scale-110 transition-transform p-1">
                     <badge.icon size={20} className="text-white drop-shadow-md" />
                   </div>
+                  {badge.v !== undefined && (
+                    <span className="font-black text-lg text-white italic leading-none mb-1">{badge.v}</span>
+                  )}
                   <span className="text-[7px] font-black uppercase text-center leading-tight text-gray-400 whitespace-pre-line group-hover:text-white transition-colors">{badge.l}</span>
                 </div>
               ))}

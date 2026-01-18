@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS public.session_types (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     title TEXT NOT NULL,
-    category TEXT NOT NULL CHECK (category IN ('CLASS', 'PRIVATE')),
+    category TEXT NOT NULL CHECK (category IN ('CLASS', 'PRIVATE', 'FACILITY')),
     image_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );

@@ -271,50 +271,54 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
 
                 {/* Bulk Tool Panel */}
                 {showBulkTool && (
-                    <div className="bg-[#222] p-4 border-b border-white/10 animate-fadeIn overflow-y-auto max-h-[50vh]">
-                        <h3 className="font-black italic text-[#28D160] uppercase mb-4 text-sm">Bulk Availability Generator</h3>
+                    <div className="bg-[#1a1a1a] p-5 border-b border-white/10 animate-fadeIn">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-black italic text-[#28D160] uppercase text-sm">Bulk Availability Generator</h3>
+                        </div>
 
-                        {/* 1. Date & Time */}
-                        <div className="grid grid-cols-4 gap-6 mb-4">
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Date Range</label>
-                                <div className="flex gap-2">
+                        {/* 1. Date, Time & Days */}
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
+                            <div className="md:col-span-4">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Date Range</label>
+                                <div className="flex gap-2 items-center">
                                     <input
                                         type="date"
                                         value={bulkConfig.startDate}
                                         onChange={e => setBulkConfig({ ...bulkConfig, startDate: e.target.value })}
-                                        className="bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-white outline-none focus:border-[#28D160] w-full"
+                                        className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] w-full"
                                     />
-                                    <span className="text-gray-500">-</span>
+                                    <span className="text-gray-500">—</span>
                                     <input
                                         type="date"
                                         value={bulkConfig.endDate}
                                         onChange={e => setBulkConfig({ ...bulkConfig, endDate: e.target.value })}
-                                        className="bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-white outline-none focus:border-[#28D160] w-full"
+                                        className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] w-full"
                                     />
                                 </div>
                             </div>
-                            <div>
-                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Time Range (24h)</label>
+
+                            <div className="md:col-span-3">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Hours (24h)</label>
                                 <div className="flex gap-2 items-center">
                                     <input
                                         type="number" min="0" max="23"
                                         value={bulkConfig.startHour}
                                         onChange={e => setBulkConfig({ ...bulkConfig, startHour: parseInt(e.target.value) })}
-                                        className="bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-white outline-none focus:border-[#28D160] w-16"
+                                        className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] w-full text-center"
                                     />
-                                    <span className="text-gray-500 text-xs">to</span>
+                                    <span className="text-gray-500 text-[10px] font-bold">TO</span>
                                     <input
                                         type="number" min="0" max="24"
                                         value={bulkConfig.endHour}
                                         onChange={e => setBulkConfig({ ...bulkConfig, endHour: parseInt(e.target.value) })}
-                                        className="bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-white outline-none focus:border-[#28D160] w-16"
+                                        className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] w-full text-center"
                                     />
                                 </div>
                             </div>
-                            <div className="col-span-2">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Days of Week</label>
-                                <div className="flex gap-2">
+
+                            <div className="md:col-span-5">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Days of Week</label>
+                                <div className="flex gap-1">
                                     {DAYS.map((d, i) => (
                                         <button
                                             key={d}
@@ -325,8 +329,8 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                                 setBulkConfig({ ...bulkConfig, selectedDays: newDays });
                                             }}
                                             className={`
-                                                w-8 h-8 rounded flex items-center justify-center text-[10px] font-bold uppercase transition-colors
-                                                ${bulkConfig.selectedDays.includes(i) ? 'bg-[#28D160] text-black' : 'bg-black/40 text-gray-500 hover:bg-white/10 hover:text-white'}
+                                                flex-1 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase transition-all
+                                                ${bulkConfig.selectedDays.includes(i) ? 'bg-[#28D160] text-black shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-black/40 text-gray-500 hover:bg-white/10 hover:text-white'}
                                             `}
                                         >
                                             {d.charAt(0)}
@@ -336,64 +340,55 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                             </div>
                         </div>
 
-                        {/* 2. Service Options (Populates Sessions) */}
-                        <div className="border-t border-white/5 pt-4 mb-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <label className="text-[10px] font-bold text-[#28D160] uppercase block">Service Type (Optional)</label>
-                                <div className="group relative">
-                                    <Info size={12} className="text-gray-500 cursor-help" />
-                                    <div className="absolute bottom-full left-0 w-48 bg-black border border-white/10 p-2 rounded text-[10px] text-gray-300 hidden group-hover:block z-50">
-                                        Selecting a service will generate actual <strong>Sessions</strong> on the schedule, not just generic availability.
-                                    </div>
+                        {/* 2. Service Options */}
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end border-t border-white/5 pt-6">
+                            <div className="md:col-span-5">
+                                <div className="flex items-center gap-2 mb-1.5">
+                                    <label className="text-[10px] font-bold text-[#28D160] uppercase block">Service Type (Optional)</label>
+                                    <Info size={10} className="text-gray-500" />
                                 </div>
+                                <select
+                                    value={bulkConfig.selectedServiceId}
+                                    onChange={e => setBulkConfig({ ...bulkConfig, selectedServiceId: e.target.value })}
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160]"
+                                >
+                                    <option value="">-- Generic Availability --</option>
+                                    {serviceTypes.map(st => (
+                                        <option key={st.id} value={st.id}>{st.title} ({st.category})</option>
+                                    ))}
+                                </select>
                             </div>
 
-                            <div className="grid grid-cols-4 gap-4">
-                                <div className="col-span-2">
-                                    <select
-                                        value={bulkConfig.selectedServiceId}
-                                        onChange={e => setBulkConfig({ ...bulkConfig, selectedServiceId: e.target.value })}
-                                        className="w-full bg-black/40 border border-white/10 rounded px-2 py-1.5 text-xs text-white outline-none focus:border-[#28D160]"
-                                    >
-                                        <option value="">-- Generic Availability --</option>
-                                        {serviceTypes.map(st => (
-                                            <option key={st.id} value={st.id}>{st.title} ({st.category})</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                {bulkConfig.selectedServiceId && (
-                                    <>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Credit Cost</label>
-                                            <input
-                                                type="number" min="0"
-                                                value={bulkConfig.creditCost}
-                                                onChange={e => setBulkConfig({ ...bulkConfig, creditCost: parseInt(e.target.value) })}
-                                                className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-white outline-none focus:border-[#28D160]"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Capacity</label>
-                                            <input
-                                                type="number" min="1"
-                                                value={bulkConfig.capacity}
-                                                onChange={e => setBulkConfig({ ...bulkConfig, capacity: parseInt(e.target.value) })}
-                                                className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-xs text-white outline-none focus:border-[#28D160]"
-                                            />
-                                        </div>
-                                    </>
-                                )}
+                            <div className="md:col-span-2">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Credit Cost</label>
+                                <input
+                                    type="number" min="0"
+                                    disabled={!bulkConfig.selectedServiceId}
+                                    value={bulkConfig.creditCost}
+                                    onChange={e => setBulkConfig({ ...bulkConfig, creditCost: parseInt(e.target.value) })}
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] disabled:opacity-20"
+                                />
                             </div>
-                        </div>
 
+                            <div className="md:col-span-2">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Capacity</label>
+                                <input
+                                    type="number" min="1"
+                                    disabled={!bulkConfig.selectedServiceId}
+                                    value={bulkConfig.capacity}
+                                    onChange={e => setBulkConfig({ ...bulkConfig, capacity: parseInt(e.target.value) })}
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] disabled:opacity-20"
+                                />
+                            </div>
 
-                        <div className="flex justify-end">
-                            <button
-                                onClick={generateBulkSlots}
-                                className="bg-[#28D160] text-black font-black uppercase text-xs px-6 py-2 rounded-lg hover:bg-white transition-colors"
-                            >
-                                Generate Slots
-                            </button>
+                            <div className="md:col-span-3">
+                                <button
+                                    onClick={generateBulkSlots}
+                                    className="w-full bg-[#28D160] text-black font-black uppercase text-xs py-2.5 rounded-xl hover:bg-white transition-all shadow-lg active:scale-95"
+                                >
+                                    Generate Slots
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

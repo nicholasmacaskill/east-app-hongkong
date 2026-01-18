@@ -2,9 +2,10 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
-import { ChevronLeft, Calendar, User, LayoutGrid, RefreshCw, Plus, X, Trash2, Save, Clock, Info, DollarSign, Upload } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, User, LayoutGrid, RefreshCw, Plus, X, Trash2, Save, Clock, Info, DollarSign, Upload } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { format, addDays, subDays, startOfWeek, isSameDay } from 'date-fns';
 
 // Types
 interface Session {
@@ -46,7 +47,13 @@ export default function MasterSchedule() {
     const [coachServices, setCoachServices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [viewStartDate, setViewStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 })); // Monday
     const [activeCategory, setActiveCategory] = useState<string>(searchParams?.get('category')?.toUpperCase() || 'ALL');
+
+    const weekDays = Array.from({ length: 7 }, (_, i) => addDays(viewStartDate, i));
+
+    const handlePrevWeek = () => setViewStartDate(subDays(viewStartDate, 7));
+    const handleNextWeek = () => setViewStartDate(addDays(viewStartDate, 7));
 
     // UI States
     const [showModal, setShowModal] = useState(false);
@@ -243,14 +250,53 @@ export default function MasterSchedule() {
                         <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Global Facility Editor</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center bg-[#1e1e1e] rounded-lg px-3 py-2 gap-2 border border-white/10">
-                        <Calendar size={16} className="text-gray-400" />
-                        <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} className="bg-transparent outline-none text-xs font-bold uppercase tracking-widest text-white" />
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center bg-[#1e1e1e] rounded-xl px-2 py-1 border border-white/10">
+                        <button onClick={handlePrevWeek} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-500 hover:text-white">
+                            <ChevronLeft size={16} />
+                        </button>
+                        <div className="px-3 py-1 flex flex-col items-center min-w-[120px]">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[#28D160]">{format(new Date(selectedDate), 'MMMM yyyy')}</span>
+                        </div>
+                        <button onClick={handleNextWeek} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-500 hover:text-white">
+                            <ChevronRight size={16} />
+                        </button>
                     </div>
-                    <button onClick={fetchSchedule} className="p-2 bg-[#1e1e1e] rounded-lg hover:bg-white/10 transition-colors">
-                        <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                    <button onClick={fetchSchedule} className="p-3 bg-[#1e1e1e] rounded-xl hover:bg-white/10 transition-colors border border-white/5">
+                        <RefreshCw size={18} className={loading ? 'animate-spin text-[#28D160]' : 'text-gray-400'} />
                     </button>
+                </div>
+            </div>
+
+            {/* Weekly Date Strip */}
+            <div className="flex justify-between items-center bg-[#1e1e1e]/50 p-2 rounded-2xl border border-white/5">
+                <div className="grid grid-cols-7 gap-2 w-full">
+                    {weekDays.map((day, i) => {
+                        const dateStr = format(day, 'yyyy-MM-dd');
+                        const isSelected = dateStr === selectedDate;
+                        const isToday = isSameDay(day, new Date());
+
+                        return (
+                            <button
+                                key={i}
+                                onClick={() => setSelectedDate(dateStr)}
+                                className={`
+                                    flex flex-col items-center justify-center py-3 rounded-xl transition-all border
+                                    ${isSelected
+                                        ? 'bg-[#28D160] border-[#28D160] text-black shadow-lg shadow-[#28D160]/20 scale-105 z-10'
+                                        : 'bg-black/20 border-transparent text-gray-500 hover:border-white/10 hover:bg-white/5'}
+                                `}
+                            >
+                                <span className={`text-[8px] font-black uppercase tracking-tighter mb-1 ${isSelected ? 'text-black/60' : 'text-gray-600'}`}>
+                                    {format(day, 'EEE')}
+                                </span>
+                                <span className="text-sm font-black italic leading-none">
+                                    {format(day, 'd')}
+                                </span>
+                                {isToday && !isSelected && <div className="w-1 h-1 bg-[#28D160] rounded-full mt-1 animate-pulse" />}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -383,6 +429,7 @@ export default function MasterSchedule() {
                                         <option value="">-- CUSTOM / FACILITY --</option>
                                         <optgroup label="CLASSES">{services.filter(s => s.category === 'CLASS').map(s => <option key={s.id} value={s.id}>{s.title}</option>)}</optgroup>
                                         <optgroup label="PRIVATE LESSONS">{services.filter(s => s.category === 'PRIVATE').map(s => <option key={s.id} value={s.id}>{s.title}</option>)}</optgroup>
+                                        <optgroup label="FACILITIES">{services.filter(s => s.category === 'FACILITY').map(s => <option key={s.id} value={s.id}>{s.title}</option>)}</optgroup>
                                     </select>
                                 </div>
                                 <div>

@@ -17,8 +17,8 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Player Management Card */}
-                <Link href="/sys-admin/players" className="group">
+                {/* Unified People Directory Card */}
+                <Link href="/sys-admin/directory" className="group col-span-1 md:col-span-2">
                     <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Users size={120} />
@@ -30,20 +30,20 @@ export default function AdminDashboard() {
                             </div>
 
                             <div>
-                                <h2 className="text-xl font-black italic uppercase mb-2">Manage Parents & Players</h2>
+                                <h2 className="text-xl font-black italic uppercase mb-2">People Directory - Add players, coaches or parents</h2>
                                 <p className="text-gray-400 text-sm leading-relaxed">
-                                    Add new accounts, initialize profiles, manage family roles, and update team rosters.
+                                    Centralized management for the entire EAST community. Add coaches, initialize family profiles, top up credits, and manage team rosters from one place.
                                 </p>
                             </div>
 
                             <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
-                                Open Player Manager <ArrowRight size={14} />
+                                Open Unified Directory <ArrowRight size={14} />
                             </div>
                         </div>
                     </div>
                 </Link>
 
-                {/* Manage Services (New) */}
+                {/* Manage Services */}
                 <div onClick={() => router.push('/sys-admin/services')} className="bg-[#1a1a1a] p-6 rounded-2xl border border-white/5 hover:border-[#28D160] transition-colors cursor-pointer group relative overflow-hidden h-full">
                     <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                         <LayoutGrid size={120} />
@@ -61,32 +61,6 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 </div>
-
-                {/* Coach Management Card */}
-                <Link href="/sys-admin/coaches" className="group">
-                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
-                        <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <Users size={120} />
-                        </div>
-
-                        <div className="relative z-10 flex flex-col h-full gap-4">
-                            <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
-                                <Users size={24} />
-                            </div>
-
-                            <div>
-                                <h2 className="text-xl font-black italic uppercase mb-2">Manage Coaches</h2>
-                                <p className="text-gray-400 text-sm leading-relaxed">
-                                    Add/Edit coach profiles, contact info, and manage their individual availability rules.
-                                </p>
-                            </div>
-
-                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
-                                View Coach List <ArrowRight size={14} />
-                            </div>
-                        </div>
-                    </div>
-                </Link>
 
                 {/* Master Schedule Card */}
                 <Link href="/sys-admin/schedule" className="group">
@@ -144,7 +118,7 @@ export default function AdminDashboard() {
                 <Link href="/sys-admin/news" className="group">
                     <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <Calendar size={120} /> {/* Using Calendar as Newspaper icon proxy or change to proper icon if available */}
+                            <Calendar size={120} />
                         </div>
 
                         <div className="relative z-10 flex flex-col h-full gap-4">
