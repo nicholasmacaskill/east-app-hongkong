@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { email, firstName, lastName, team, position, role = 'player', parentId } = body;
+        const { email, firstName, lastName, team, position, role = 'player', parentId, password } = body;
 
         // Basic Validation
         if (!email || !firstName || !lastName) {
@@ -13,21 +13,42 @@ export async function POST(request: Request) {
 
         const supabaseAdmin = getSupabaseAdmin();
 
-        // 1. Invite User (Secure flow, user sets password)
-        const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-            data: {
-                role: role,
-                first_name: firstName,
-                last_name: lastName
+        let userId: string;
+
+        if (password) {
+            // 1. Create Auth User directly (Admin sets password)
+            const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
+                email: email,
+                password: password,
+                email_confirm: true,
+                user_metadata: {
+                    role: role,
+                    first_name: firstName,
+                    last_name: lastName
+                }
+            });
+
+            if (userError) {
+                console.error('Error creating auth user:', userError);
+                return NextResponse.json({ success: false, error: userError.message }, { status: 400 });
             }
-        });
+            userId = userData.user.id;
+        } else {
+            // 1. Invite User (Secure flow, user sets password)
+            const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+                data: {
+                    role: role,
+                    first_name: firstName,
+                    last_name: lastName
+                }
+            });
 
-        if (inviteError) {
-            console.error('Invite error:', inviteError);
-            return NextResponse.json({ success: false, error: inviteError.message }, { status: 400 });
+            if (inviteError) {
+                console.error('Invite error:', inviteError);
+                return NextResponse.json({ success: false, error: inviteError.message }, { status: 400 });
+            }
+            userId = inviteData.user.id;
         }
-
-        const userId = inviteData.user.id;
         const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
 
         // 2. Upsert Public Profile

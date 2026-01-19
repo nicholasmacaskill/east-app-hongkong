@@ -6,7 +6,7 @@ import { sendEmail, BASE_URL } from '@/app/lib/email';
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { email, firstName, lastName, mobile, bio } = body;
+        const { email, firstName, lastName, mobile, bio, password } = body;
 
         // Basic Validation
         if (!email || !firstName || !lastName) {
@@ -16,12 +16,13 @@ export async function POST(request: Request) {
         // Use shared admin client
         const supabaseAdmin = getSupabaseAdmin();
 
-        // 1. Create Auth User with random password (they will reset it)
-        const tempPassword = Math.random().toString(36).slice(-12) + "A1!";
+        // 1. Create Auth User
+        // Use provided password or generate random one
+        const finalPassword = password || (Math.random().toString(36).slice(-12) + "A1!");
 
         const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
             email: email,
-            password: tempPassword,
+            password: finalPassword,
             email_confirm: true,
             user_metadata: {
                 role: 'coach',

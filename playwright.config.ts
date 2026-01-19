@@ -70,7 +70,8 @@ export default defineConfig({
         'tests/family-management.spec.ts',
         'tests/coach-workflow.spec.ts',
         'tests/stripe-payments.spec.ts',
-        'tests/membership-tiers.spec.ts'
+        'tests/membership-tiers.spec.ts',
+        'tests/admin-user-creation.spec.ts'
       ],
     },
 

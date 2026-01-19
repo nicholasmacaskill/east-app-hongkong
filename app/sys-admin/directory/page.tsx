@@ -19,6 +19,7 @@ export default function DirectoryPage() {
         first_name: '',
         last_name: '',
         email: '',
+        password: '',
         role: 'player' as UserRole,
         team: '',
         position: '',
@@ -91,7 +92,8 @@ export default function DirectoryPage() {
                     position: newUser.position,
                     parentId: newUser.parentId,
                     mobile: newUser.mobile,
-                    bio: newUser.bio
+                    bio: newUser.bio,
+                    password: newUser.password
                 })
             });
 
@@ -109,7 +111,7 @@ export default function DirectoryPage() {
             });
 
             setShowAddForm(false);
-            setNewUser({ first_name: '', last_name: '', email: '', role: 'player', team: '', position: '', parentId: '', mobile: '', bio: '' });
+            setNewUser({ first_name: '', last_name: '', email: '', password: '', role: 'player', team: '', position: '', parentId: '', mobile: '', bio: '' });
             fetchProfiles();
 
         } catch (error: any) {
@@ -474,6 +476,17 @@ export default function DirectoryPage() {
                                             onChange={e => setNewUser({ ...newUser, email: e.target.value })}
                                             className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                             placeholder="user@example.com"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Set Password (Optional)</label>
+                                        <input
+                                            type="password"
+                                            value={newUser.password}
+                                            onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                            className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                            placeholder="User can login immediately"
                                         />
                                     </div>
 
