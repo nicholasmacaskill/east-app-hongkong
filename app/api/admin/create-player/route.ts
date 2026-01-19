@@ -15,40 +15,27 @@ export async function POST(request: Request) {
 
         let userId: string;
 
-        if (password) {
-            // 1. Create Auth User directly (Admin sets password)
-            const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
-                email: email,
-                password: password,
-                email_confirm: true,
-                user_metadata: {
-                    role: role,
-                    first_name: firstName,
-                    last_name: lastName
-                }
-            });
+        // ENFORCED: Immediate Login (No Email Confirmation)
+        // If password is provided, use it. If not, generate a random one (admin can reset later).
+        const finalPassword = password || Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10);
 
-            if (userError) {
-                console.error('Error creating auth user:', userError);
-                return NextResponse.json({ success: false, error: userError.message }, { status: 400 });
+        // 1. Create Auth User directly (Auto-confirm)
+        const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
+            email: email,
+            password: finalPassword,
+            email_confirm: true,
+            user_metadata: {
+                role: role,
+                first_name: firstName,
+                last_name: lastName
             }
-            userId = userData.user.id;
-        } else {
-            // 1. Invite User (Secure flow, user sets password)
-            const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-                data: {
-                    role: role,
-                    first_name: firstName,
-                    last_name: lastName
-                }
-            });
+        });
 
-            if (inviteError) {
-                console.error('Invite error:', inviteError);
-                return NextResponse.json({ success: false, error: inviteError.message }, { status: 400 });
-            }
-            userId = inviteData.user.id;
+        if (userError) {
+            console.error('Error creating auth user:', userError);
+            return NextResponse.json({ success: false, error: userError.message }, { status: 400 });
         }
+        userId = userData.user.id;
         const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
 
         // 2. Upsert Public Profile

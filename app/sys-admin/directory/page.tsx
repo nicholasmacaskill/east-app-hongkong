@@ -78,6 +78,9 @@ export default function DirectoryPage() {
             return;
         }
 
+        // Auto-generate password if missing so we can show it to Admin
+        const passwordToUse = newUser.password || Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+
         try {
             const apiEndpoint = newUser.role === 'coach' ? '/api/admin/create-coach' : '/api/admin/create-player';
             const response = await fetch(apiEndpoint, {
@@ -93,7 +96,7 @@ export default function DirectoryPage() {
                     parentId: newUser.parentId,
                     mobile: newUser.mobile,
                     bio: newUser.bio,
-                    password: newUser.password
+                    password: passwordToUse
                 })
             });
 
@@ -107,7 +110,8 @@ export default function DirectoryPage() {
                 id: data.userId,
                 name: `${newUser.first_name} ${newUser.last_name}`,
                 email: newUser.email,
-                role: newUser.role
+                role: newUser.role,
+                password: passwordToUse // Save to show in modal
             });
 
             setShowAddForm(false);
@@ -372,7 +376,7 @@ export default function DirectoryPage() {
 
                     <div
                         onClick={() => setActiveTab('coaches')}
-                        className={`bg-[#1e1e1e] border p-4 rounded-2xl hover:border-[#28D160]/50 cursor-pointer transition-all group ${activeTab === 'coaches' ? 'border-[#28D160]/30 ring-1 ring-[#28D160]/20' : 'border-white/5'}`}
+                        className={`bg-[#1e1e1e] border p-4 rounded-2xl hover:border-[#28D160]/50 cursor-pointer transition-all group ${activeTab === 'coaches' ? 'border-[#28D160]/30 ring-1 ring-purple-500/20' : 'border-white/5'}`}
                     >
                         <div className="flex items-center justify-between mb-2">
                             <Star className="text-[#28D160] group-hover:scale-110 transition-transform" size={20} />
@@ -403,6 +407,7 @@ export default function DirectoryPage() {
                     ))}
                 </div>
 
+
                 {/* Success / Invite Modal */}
                 {
                     createdUser && (
@@ -416,25 +421,33 @@ export default function DirectoryPage() {
                                 </button>
 
                                 <div className="w-16 h-16 bg-[#28D160] rounded-full flex items-center justify-center mb-6 text-black">
-                                    <Shield size={32} />
+                                    <Check size={32} />
                                 </div>
 
-                                <h2 className="font-black italic text-2xl uppercase mb-2 text-white">Invite Sent!</h2>
-                                <p className="text-gray-400 text-sm mb-8">An automated invite has been sent to {createdUser.email}.</p>
+                                <h2 className="font-black italic text-2xl uppercase mb-2 text-white">User Created!</h2>
+                                <p className="text-gray-400 text-sm mb-8">Account is active immediately.</p>
 
-                                <div className="bg-black/40 w-full p-5 rounded-2xl border border-white/5 text-left mb-8">
-                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Name</p>
-                                    <p className="font-bold text-white mb-4 text-lg">{createdUser.name}</p>
-
-                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Account Role</p>
-                                    <p className="font-black italic text-[#28D160] uppercase">{createdUser.role}</p>
+                                <div className="bg-black/40 w-full p-5 rounded-2xl border border-white/5 text-left mb-8 space-y-4">
+                                    <div>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Name</p>
+                                        <p className="font-bold text-white text-lg">{createdUser.name}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Email (Login)</p>
+                                        <p className="font-bold text-white text-lg">{createdUser.email}</p>
+                                    </div>
+                                    <div className="bg-[#28D160]/10 p-3 rounded-xl border border-[#28D160]/30">
+                                        <p className="text-[10px] text-[#28D160] font-bold uppercase tracking-widest mb-1">Password</p>
+                                        <p className="font-mono font-bold text-white text-xl tracking-wider select-all">{createdUser.password}</p>
+                                        <p className="text-[9px] text-gray-500 mt-1 italic">* Share this with the user securely</p>
+                                    </div>
                                 </div>
 
                                 <button
                                     onClick={() => setCreatedUser(null)}
                                     className="w-full bg-[#28D160] text-black font-black italic py-4 rounded-xl uppercase hover:bg-white transition-all tracking-widest shadow-lg active:scale-95"
                                 >
-                                    Confirm
+                                    Done
                                 </button>
                             </div>
                         </div>
@@ -470,7 +483,7 @@ export default function DirectoryPage() {
                                     </div>
 
                                     <div>
-                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Email (Invite Link)</label>
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Email (Login ID)</label>
                                         <input
                                             value={newUser.email}
                                             onChange={e => setNewUser({ ...newUser, email: e.target.value })}
@@ -553,7 +566,7 @@ export default function DirectoryPage() {
                                     )}
 
                                     <div className="flex gap-2 mt-4">
-                                        <button onClick={handleAddUser} className="flex-1 bg-[#28D160] text-black font-black italic py-3 rounded-xl uppercase text-xs hover:bg-white transition-all shadow-lg active:scale-95">Send Invite</button>
+                                        <button onClick={handleAddUser} className="flex-1 bg-[#28D160] text-black font-black italic py-3 rounded-xl uppercase text-xs hover:bg-white transition-all shadow-lg active:scale-95">Create User</button>
                                         <button onClick={() => setShowAddForm(false)} className="flex-1 bg-white/10 text-white font-bold py-3 rounded-xl uppercase text-xs hover:bg-white/20 transition-all">Cancel</button>
                                     </div>
                                 </div>
@@ -925,13 +938,15 @@ export default function DirectoryPage() {
                 </div>
 
                 {/* Availability Modal */}
-                {showAvailability && selectedCoach && (
-                    <AvailabilityModal
-                        coach={selectedCoach}
-                        onClose={() => { setShowAvailability(false); setSelectedCoach(null); }}
-                    />
-                )}
-            </div>
-        </div>
+                {
+                    showAvailability && selectedCoach && (
+                        <AvailabilityModal
+                            coach={selectedCoach}
+                            onClose={() => { setShowAvailability(false); setSelectedCoach(null); }}
+                        />
+                    )
+                }
+            </div >
+        </div >
     );
 }
