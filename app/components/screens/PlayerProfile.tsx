@@ -1,6 +1,5 @@
-// ... imports ...
 import React, { useState, useEffect } from 'react';
-import { Edit2, Trophy, Target, Shield, Users, Activity, Award, ChevronRight, Camera, Coins, Settings } from 'lucide-react';
+import { Edit2, Activity, Award, Camera, Coins } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import UploadGolfStatsModal from '../modals/UploadGolfStatsModal';
 
@@ -19,35 +18,32 @@ interface PlayerStats {
   assists_season: number; assists_total: number;
 }
 
-interface PlayerProfileProps {
+export interface PlayerProfileProps {
   onOpenSettings: () => void;
   profileData: any;
   stats?: PlayerStats;
   isReadOnly?: boolean;
   onRefresh?: () => void;
+  onShowHistory?: () => void;
 }
 
-export default function PlayerProfile({ onOpenSettings, profileData, stats: initialStats, isReadOnly = false, onRefresh }: PlayerProfileProps) {
+export default function PlayerProfile({ onOpenSettings, profileData, stats: initialStats, isReadOnly = false, onRefresh, onShowHistory }: PlayerProfileProps) {
   const [activeTab, setActiveTab] = useState<'streaks' | 'full_stats'>('streaks');
   const [stats, setStats] = useState<PlayerStats | null>(initialStats || null);
+
   // Removed gallery state and refs
   const avatarInputRef = React.useRef<HTMLInputElement>(null);
-
-  // Removed displayGallery and useGallery hook replacement
-
-  // Safety Check
-  if (!profileData) return <div className="min-h-screen bg-black flex items-center justify-center text-white font-montserrat font-bold animate-pulse uppercase tracking-widest">Loading Player Profile...</div>;
 
   const [showStatsModal, setShowStatsModal] = useState(false);
 
   // Determine sport from bio or props
-  const sport = profileData.bio?.toUpperCase().includes('GOLF') ? 'GOLF' :
-    profileData.bio?.toUpperCase().includes('HOCKEY') ? 'HOCKEY' :
-      profileData.bio?.toUpperCase().includes('HYROX') ? 'HYROX' : 'GENERAL';
+  const sport = profileData?.bio?.toUpperCase().includes('GOLF') ? 'GOLF' :
+    profileData?.bio?.toUpperCase().includes('HOCKEY') ? 'HOCKEY' :
+      profileData?.bio?.toUpperCase().includes('HYROX') ? 'HYROX' : 'GENERAL';
 
   useEffect(() => {
     const fetchStats = async () => {
-      if (!profileData.id) return;
+      if (!profileData?.id) return;
 
       try {
         // Fetch from players_stats first (Modern flexible approach)
@@ -104,14 +100,12 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
     };
 
     fetchStats();
-  }, [profileData.id, sport, initialStats]);
+  }, [profileData?.id, sport, initialStats]);
 
-  // Removed handleGalleryUpload
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
-    // Removed setUploadingGallery(true)
 
     const fileExt = file.name.split('.').pop();
     const fileName = `avatar-${profileData.id}-${Date.now()}.${fileExt}`;
@@ -121,7 +115,6 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
     if (uploadError) {
       alert('Avatar upload failed');
-      // Removed setUploadingGallery(false)
       return;
     }
 
@@ -135,8 +128,10 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
       alert('Avatar updated!');
       window.location.reload();
     }
-    // Removed setUploadingGallery(false)
   };
+
+  // Safety Check
+  if (!profileData) return <div className="min-h-screen bg-black flex items-center justify-center text-white font-montserrat font-bold animate-pulse uppercase tracking-widest">Loading Player Profile...</div>;
 
   return (
     <div className="animate-fadeIn bg-black min-h-screen pb-24 relative overflow-hidden font-montserrat">
@@ -215,11 +210,15 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
             <div className="grid grid-cols-3 w-full gap-2">
               {[
-                { l: 'CREDITS\nAVAILABLE', v: profileData.credits || 0, icon: Coins },
+                { l: 'CREDITS\nAVAILABLE', v: profileData.credits || 0, icon: Coins, action: onShowHistory },
                 { l: 'TOP SCORER\n(TEAM)', icon: Award },
                 { l: 'MOST SHOTS\n(TEAM)', icon: Award },
               ].map((badge: any, i) => (
-                <div key={i} className="flex flex-col items-center p-3 bg-white/5 rounded-xl border border-white/10 group hover:border-east-light/50 transition-colors">
+                <div
+                  key={i}
+                  onClick={badge.action}
+                  className={`flex flex-col items-center p-3 bg-white/5 rounded-xl border border-white/10 group hover:border-east-light/50 transition-colors ${badge.action ? 'cursor-pointer' : ''}`}
+                >
                   <div className="w-10 h-10 rounded-full border border-east-light/30 bg-black/40 flex items-center justify-center mb-2 shadow-lg group-hover:scale-110 transition-transform p-1">
                     <badge.icon size={20} className="text-white drop-shadow-md" />
                   </div>

@@ -263,12 +263,13 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
 
 // Removed: PreferencesScreen component (preferences managed via ParentProfile availability calendar instead)
 
-export default function SettingsModal({ onClose, onLogout, profileData, setProfileData, onSave }: {
+export default function SettingsModal({ onClose, onLogout, profileData, setProfileData, onSave, onShowHistory }: {
     onClose: () => void,
     onLogout: () => void,
     profileData: UserProfileData,
     setProfileData: (data: UserProfileData) => void,
-    onSave: (data: UserProfileData) => void
+    onSave: (data: UserProfileData) => void,
+    onShowHistory: () => void
 }) {
     const router = useRouter();
     const [view, setView] = useState<'menu' | 'edit'>('menu');
@@ -287,6 +288,11 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
                     icon={CreditCard}
                     label="Top Up Credits"
                     onClick={() => router.push('/top-up')}
+                />
+                <SettingsMenuItem
+                    icon={FileText}
+                    label="Transaction History"
+                    onClick={onShowHistory}
                 />
                 <SettingsSectionTitle title="Help" />
                 <SettingsMenuItem icon={FileText} label="FAQ's" onClick={() => router.push('/faq')} />

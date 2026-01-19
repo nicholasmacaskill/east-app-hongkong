@@ -18,22 +18,25 @@ interface EmailParams {
 }
 
 export async function sendEmail({ to, subject, html }: EmailParams) {
+  // Check for API Key first
   if (!process.env.RESEND_API_KEY) {
-    console.warn('⚠️ RESEND_API_KEY is missing. Email not sent.');
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('⚠️ [MOCK] RESEND_API_KEY missing in Non-Production. Simulating success.');
+      return { id: 'mock-email-id' }; // Corrected typo: mock-emai-id -> mock-email-id
+    }
+    console.error('❌ RESEND_API_KEY is missing in PRODUCTION. Email failed.');
     return null;
   }
 
+  // If we have a key, proceed to send
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`📧 [DEV LOG] Sending Real Email to: ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`HTML Preview: ${html.substring(0, 100)}...`);
+  }
+
   try {
-    // ✅ FIX: Destructure data and error separately
-    // ✅ DEV DEBUG: Log email content if we are in development
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`📧 [DEV LOG] Sending Email to: ${to}`);
-      console.log(`Subject: ${subject}`);
-      console.log(`HTML Preview: ${html.substring(0, 100)}...`);
-    }
-
     const resend = new Resend(process.env.RESEND_API_KEY);
-
 
     const { data, error } = await resend.emails.send({
       from: 'EAST Training <onboarding@resend.dev>',
@@ -45,15 +48,22 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
     // ✅ FIX: Check for API-level errors (like invalid email, domain issues)
     if (error) {
       console.error('❌ Resend API Error:', error);
-      return null;
+
+      // FALLBACK: If API key is invalid in DEV, mock success
+      if (process.env.NODE_ENV !== 'production' && (error.statusCode === 401 || error.message?.includes('API key'))) {
+        console.warn('⚠️ [MOCK] Resend Key Invalid in Dev. Simulating success.');
+        return { success: true, data: { id: 'mock-fallback-id' } };
+      }
+
+      return { success: false, error: error };
     }
 
     console.log(`📧 Email sent to ${to}:`, data);
-    return data;
+    return { success: true, data };
 
-  } catch (error) {
+  } catch (error: any) {
     // This catches network errors or code crashes
     console.error('❌ Unexpected Error sending email:', error);
-    return null;
+    return { success: false, error: error.message };
   }
 }

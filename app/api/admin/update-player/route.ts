@@ -15,13 +15,16 @@ interface UpdateRequest {
     parentId?: string;
     mobile?: string;
     bio?: string;
+    membershipStart?: string;
+    membershipExpires?: string;
 }
 
 export async function POST(request: Request) {
     try {
         const {
             userId, firstName, lastName, email, password, credits,
-            team, position, role, parentId, mobile, bio
+            team, position, role, parentId, mobile, bio,
+            membershipStart, membershipExpires
         } = await request.json() as UpdateRequest;
 
         if (!userId) {
@@ -61,6 +64,8 @@ export async function POST(request: Request) {
         if (parentId !== undefined) profileUpdates.parent_id = parentId === '' ? null : parentId;
         if (mobile !== undefined) profileUpdates.mobile = mobile;
         if (bio !== undefined) profileUpdates.bio = bio;
+        if (membershipStart !== undefined) profileUpdates.membership_start = membershipStart;
+        if (membershipExpires !== undefined) profileUpdates.membership_expires = membershipExpires;
 
         if (Object.keys(profileUpdates).length > 0) {
             const { error: profileError } = await supabaseAdmin

@@ -71,7 +71,9 @@ export default defineConfig({
         'tests/coach-workflow.spec.ts',
         'tests/stripe-payments.spec.ts',
         'tests/membership-tiers.spec.ts',
-        'tests/admin-user-creation.spec.ts'
+        'tests/admin-user-creation.spec.ts',
+        'tests/transaction-history.spec.ts',
+        'tests/membership-lifecycle.spec.ts'
       ],
     },
 

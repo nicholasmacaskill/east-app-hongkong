@@ -117,22 +117,22 @@ export async function POST(request: Request) {
                 } else {
                     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
                     priceId = subscription.items.data[0].price.id;
-                }
 
-                const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
+                    const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
+                    console.log(`Processing Subscription: ${plan.tier.toUpperCase()} for User: ${userId}`);
 
-                console.log(`Processing Subscription: ${plan.tier.toUpperCase()} for User: ${userId}`);
-
-                if (userId) {
-                    await updateProfile(userId, plan.credits, plan.tier, customerId, subscriptionId);
-                    if (customerEmail) {
-                        try {
-                            await sendEmail({
-                                to: customerEmail,
-                                subject: `Welcome to EAST - ${plan.tier.toUpperCase()} Member`,
-                                html: `<h1>Membership Confirmed!</h1><p>Thank you for joining. Your account has been credited with <strong>${plan.credits} credits</strong>.</p>`
-                            });
-                        } catch (e) { console.error("Email failed, but DB updated."); }
+                    if (userId) {
+                        const expiresAt = new Date((subscription as any).current_period_end * 1000).toISOString();
+                        await updateProfile(userId, plan.credits, plan.tier, customerId, subscriptionId, expiresAt);
+                        if (customerEmail) {
+                            try {
+                                await sendEmail({
+                                    to: customerEmail,
+                                    subject: `Welcome to EAST - ${plan.tier.toUpperCase()} Member`,
+                                    html: `<h1>Membership Confirmed!</h1><p>Thank you for joining. Your account has been credited with <strong>${plan.credits} credits</strong>.</p>`
+                                });
+                            } catch (e) { console.error("Email failed, but DB updated."); }
+                        }
                     }
                 }
             }
@@ -190,7 +190,7 @@ export async function POST(request: Request) {
                     .single();
 
                 if (profile) {
-                    await addCreditsOnly(profile.id, plan.credits, 'membership', invoice.id, `Monthly renewal: ${plan.credits} credits`);
+                    await handleRenewal(profile.id, plan.credits, 'membership', invoice.id, `Monthly renewal: ${plan.credits} credits`, (subscription as any).current_period_end);
                 }
             }
         }
@@ -203,9 +203,15 @@ export async function POST(request: Request) {
             const customerId = subscription.customer as string;
 
             const supabaseAdmin = getSupabaseAdmin();
+
+            // We keep the expiry date as is (user access remains until end of period),
+            // but mark status as canceled so no new credits/charges occur.
             await supabaseAdmin
                 .from('profiles')
-                .update({ subscription_status: 'canceled' })
+                .update({
+                    subscription_status: 'canceled',
+                    // Optional: You could ensure expires matches subscription.current_period_end * 1000
+                })
                 .eq('stripe_customer_id', customerId);
         }
 
@@ -226,7 +232,7 @@ export async function POST(request: Request) {
 // Helper Functions
 // ====================================================
 
-async function updateProfile(userId: string, creditsToAdd: number, tier: string, customerId: string, subscriptionId: string) {
+async function updateProfile(userId: string, creditsToAdd: number, tier: string, customerId: string, subscriptionId: string, expiresAt: string) {
     // 1. Fetch current credits
     const supabaseAdmin = getSupabaseAdmin();
     const { data: profile } = await supabaseAdmin.from('profiles').select('credits').eq('id', userId).single();
@@ -241,7 +247,9 @@ async function updateProfile(userId: string, creditsToAdd: number, tier: string,
             subscription_status: 'active',
             tier: tier,
             stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId
+            stripe_subscription_id: subscriptionId,
+            membership_start: new Date().toISOString(), // Member since NOW
+            membership_expires: expiresAt
         }, { onConflict: 'id' });
 
     if (error) {
@@ -253,6 +261,44 @@ async function updateProfile(userId: string, creditsToAdd: number, tier: string,
 
     // 3. Log Transaction
     await logTransaction(userId, creditsToAdd, 'membership', subscriptionId, `Initial membership purchase: ${creditsToAdd} credits`);
+}
+
+// Handles Renewals
+async function handleRenewal(userId: string, creditsToAdd: number, type: 'topup' | 'membership', sessionId: string, description: string, newPeriodEnd: number) {
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // Check idempotency
+    const { data: existing } = await supabaseAdmin.from('transactions').select('id').eq('stripe_session_id', sessionId).single();
+    if (existing) return;
+
+    const { data: profile } = await supabaseAdmin.from('profiles').select('credits, membership_expires, membership_history, tier').eq('id', userId).single();
+    const currentCredits = profile?.credits || 0;
+    const oldHistory = Array.isArray(profile?.membership_history) ? profile.membership_history : [];
+
+    // Archive current period
+    const historyEntry = {
+        action: 'renewal',
+        date: new Date().toISOString(),
+        previous_expires: profile?.membership_expires,
+        tier: profile?.tier
+    };
+
+    const { error } = await supabaseAdmin
+        .from('profiles')
+        .update({
+            credits: currentCredits + creditsToAdd,
+            membership_expires: new Date(newPeriodEnd * 1000).toISOString(),
+            membership_history: [...oldHistory, historyEntry]
+        })
+        .eq('id', userId);
+
+    if (error) {
+        console.error("❌ DB Renewal Update Failed:", error);
+        throw error;
+    } else {
+        console.log(`✅ DB Success: Renewal processed. Added ${creditsToAdd} credits.`);
+        await logTransaction(userId, creditsToAdd, type, sessionId, description);
+    }
 }
 
 async function addCreditsOnly(userId: string, creditsToAdd: number, type: 'topup' | 'membership' | 'transfer' | 'booking' | 'refund' = 'topup', sessionId?: string, description?: string) {

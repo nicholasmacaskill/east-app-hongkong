@@ -21,35 +21,18 @@ import BottomNav from '@/app/components/BottomNav';
 import ClassModal from '@/app/components/modals/ClassModal';
 import SettingsModal from '@/app/components/modals/SettingsModal';
 import NewsArticleModal from '@/app/components/modals/NewsArticleModal';
+import TransactionHistoryModal from '@/app/components/modals/TransactionHistoryModal';
 
 // 25: deleted
-import type { UserRole, Tab } from './types';
+import type { UserRole, Tab, UserProfileData } from './types';
 import { Session } from './types/session';
 
 // 1. Updated Interface to include credits and role
-export interface UserProfileData {
-  name: string;
-  surname: string;
-  first_name: string;
-  last_name: string;
-  username: string;
-  bio: string;
-  email: string;
-  mobile: string;
-  avatar_url?: string;
-  credits: number;
-  gallery_images: string[];
-  schedule_photo_url?: string;
-  role?: UserRole;
-  intro_video_url?: string;
-  id?: string;
-  preferences?: any;
-  subscription_status?: string;
-}
+
 
 // 2. Updated Initial State
 const initialProfileData: UserProfileData = {
-  name: '', surname: '', first_name: '', last_name: '', username: '', bio: '', email: '', mobile: '', avatar_url: '', credits: 0, gallery_images: [], schedule_photo_url: '', intro_video_url: '', role: undefined, preferences: {}, subscription_status: 'inactive'
+  name: '', surname: '', first_name: '', last_name: '', username: '', bio: '', email: '', mobile: '', avatar_url: '', credits: 0, gallery_images: [], schedule_photo_url: '', intro_video_url: '', role: undefined, preferences: {}, subscription_status: 'inactive', membership_start: undefined, membership_expires: undefined, membership_history: []
 };
 
 function AppContent() {
@@ -64,6 +47,7 @@ function AppContent() {
   const [showClassModal, setShowClassModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showNewsModal, setShowNewsModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedSessions, setSelectedSessions] = useState<Session[]>([]);
   const [selectedServiceDescription, setSelectedServiceDescription] = useState<string | null>(null);
   const [selectedCoachName, setSelectedCoachName] = useState<string | null>(null);
@@ -126,7 +110,10 @@ function AppContent() {
               role: profileData.role as UserRole,
               id: profileData.id,
               preferences: profileData.preferences || {},
-              subscription_status: profileData.subscription_status
+              subscription_status: profileData.subscription_status,
+              membership_start: profileData.membership_start,
+              membership_expires: profileData.membership_expires,
+              membership_history: profileData.membership_history || []
             });
           } else {
             console.log("⚠️ No profile found. Attempting auto-repair...");
@@ -433,24 +420,26 @@ function AppContent() {
                       }
                     }}
                   />
-                  : <PlayerProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} onRefresh={() => setRefreshKey(k => k + 1)} />
+                  : <PlayerProfile
+                    onOpenSettings={() => setShowSettingsModal(true)}
+                    profileData={userProfile}
+                    onRefresh={() => setRefreshKey(k => k + 1)}
+                    onShowHistory={() => setShowHistoryModal(true)}
+                  />
             )
           )}
 
-
-
           {activeTab === 'schedule' && (
             <ScheduleScreen
-              currentUserId={currentUserId}
+              onPreviewClick={(s) => handleClassClick([s], s.description, 'facilities', s.instructor)}
               refreshKey={refreshKey}
-              availability={userProfile.preferences?.availability || []}
-              onPreviewClick={(s) => {
-                handleClassClick([s], s.description, 'facilities', null, null, s.id, (s as any).attendee?.id);
-              }}
+              currentUserId={currentUserId}
+              parentMode={userProfile.role === 'parent'}
+              myChildren={myChildren}
             />
           )}
 
-          {/* {activeTab === 'community' && <CommunityScreen key={refreshKey} currentUserId={currentUserId} />} */}
+          {/* ... existing screens ... */}
 
           {activeTab === 'qr' && <QRScreen credits={userProfile.credits || 0} currentUserId={currentUserId} subscriptionStatus={userProfile.subscription_status} />}
         </main>
@@ -488,8 +477,17 @@ function AppContent() {
             profileData={userProfile}
             setProfileData={setUserProfile}
             onSave={handleSaveProfile}
+            onShowHistory={() => {
+              setShowSettingsModal(false);
+              setShowHistoryModal(true);
+            }}
           />
         )}
+
+        {showHistoryModal && (
+          <TransactionHistoryModal onClose={() => setShowHistoryModal(false)} />
+        )}
+
 
         {showNewsModal && selectedNews && (
           <NewsArticleModal

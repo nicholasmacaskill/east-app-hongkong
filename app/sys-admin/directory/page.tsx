@@ -136,7 +136,10 @@ export default function DirectoryPage() {
             role: profile.role || 'player',
             parentId: profile.parent_id || '',
             mobile: profile.mobile || '',
-            bio: profile.bio || ''
+            bio: profile.bio || '',
+            membershipStart: profile.membership_start ? new Date(profile.membership_start).toISOString().split('T')[0] : '',
+            membershipExpires: profile.membership_expires ? new Date(profile.membership_expires).toISOString().split('T')[0] : '',
+            membershipHistory: profile.membership_history || []
         });
 
         if (profile.role === 'coach') {
@@ -223,7 +226,9 @@ export default function DirectoryPage() {
                     parentId: editingUser.parentId,
                     mobile: editingUser.mobile,
                     bio: editingUser.bio,
-                    password: editingUser.password
+                    password: editingUser.password,
+                    membershipStart: editingUser.membershipStart ? new Date(editingUser.membershipStart).toISOString() : null,
+                    membershipExpires: editingUser.membershipExpires ? new Date(editingUser.membershipExpires).toISOString() : null
                 })
             });
 
@@ -639,6 +644,100 @@ export default function DirectoryPage() {
                                             className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                             placeholder="Leave blank to keep current"
                                         />
+                                        <button
+                                            onClick={async (e) => {
+                                                e.preventDefault();
+                                                if (!confirm('Send password reset email to ' + editingUser.email + '?')) return;
+
+                                                try {
+                                                    const res = await fetch('/api/admin/send-reset-email', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ email: editingUser.email })
+                                                    });
+                                                    const data = await res.json();
+                                                    if (data.success) {
+                                                        alert('Reset email sent!');
+                                                    } else {
+                                                        alert('Error: ' + data.error);
+                                                    }
+                                                } catch (err: any) {
+                                                    alert('Error: ' + err.message);
+                                                }
+                                            }}
+                                            className="mt-2 w-full bg-blue-500/10 text-blue-400 py-2 rounded-lg text-[10px] font-black uppercase italic hover:bg-blue-500 hover:text-white transition-colors"
+                                        >
+                                            Send Password Reset Email
+                                        </button>
+                                    </div>
+
+                                    {/* Membership Section */}
+                                    <div className="border-t border-white/10 pt-4">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase mb-2 block flex items-center gap-1">
+                                            <Calendar size={12} /> Membership & Billing
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase">Member Since</label>
+                                                <input
+                                                    type="date"
+                                                    value={editingUser.membershipStart}
+                                                    onChange={e => setEditingUser({ ...editingUser, membershipStart: e.target.value })}
+                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase">Expires On</label>
+                                                <input
+                                                    type="date"
+                                                    value={editingUser.membershipExpires}
+                                                    onChange={e => setEditingUser({ ...editingUser, membershipExpires: e.target.value })}
+                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2 mt-2">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    const today = new Date();
+                                                    const nextYear = new Date(new Date().setFullYear(today.getFullYear() + 1));
+                                                    setEditingUser({
+                                                        ...editingUser,
+                                                        membershipStart: editingUser.membershipStart || new Date().toISOString().split('T')[0],
+                                                        membershipExpires: nextYear.toISOString().split('T')[0]
+                                                    });
+                                                }}
+                                                className="flex-1 text-[10px] bg-[#28D160]/10 text-[#28D160] px-2 py-2 rounded uppercase font-black italic hover:bg-[#28D160] hover:text-black transition-colors"
+                                            >
+                                                Reactivate (+1 Year)
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    const yesterday = new Date();
+                                                    yesterday.setDate(yesterday.getDate() - 1);
+                                                    setEditingUser({
+                                                        ...editingUser,
+                                                        membershipExpires: yesterday.toISOString().split('T')[0]
+                                                    });
+                                                }}
+                                                className="flex-1 text-[10px] bg-red-500/10 text-red-500 px-2 py-2 rounded uppercase font-black italic hover:bg-red-500 hover:text-white transition-colors"
+                                            >
+                                                Cancel Immediately
+                                            </button>
+                                        </div>
+                                        {/* History Viewer */}
+                                        {editingUser.membershipHistory && editingUser.membershipHistory.length > 0 && (
+                                            <div className="mt-2 bg-black/30 p-2 rounded-lg max-h-24 overflow-y-auto">
+                                                <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">History</p>
+                                                {editingUser.membershipHistory.map((h: any, i: number) => (
+                                                    <div key={i} className="text-[9px] text-gray-400 border-b border-white/5 py-1">
+                                                        <span className="text-white">{new Date(h.date).toLocaleDateString()}</span> - {h.action} ({h.tier})
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className={`grid ${editingUser.role === 'player' ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
