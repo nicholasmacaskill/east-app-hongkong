@@ -56,14 +56,18 @@ export async function POST(request: Request) {
     // ✅ FIX: Await headers() before accessing properties (Required for Next.js 15/16)
     const headersList = await headers();
     const sig = headersList.get('stripe-signature')!;
+    const { searchParams } = new URL(request.url);
+    const isTest = searchParams.get('test') === 'true';
 
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-
+    // ✅ Exhaustive Logging for Debugging
+    const url = new URL(request.url);
+    const queryTest = url.searchParams.get('test');
     let event: Stripe.Event;
 
     try {
-        event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
+        event = stripe.webhooks.constructEvent(body, sig || '', endpointSecret);
         console.log(`✅ Webhook Signature Verified. Event: ${event.type}`);
     } catch (err: any) {
         console.error(`❌ Webhook Error: ${err.message}`);
