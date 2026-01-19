@@ -167,11 +167,11 @@ export default function ClassModal({
             return;
         }
 
-        if (origin === 'coaches' && uniqueTitlesSet.size > 1) {
+        if (origin === 'coaches') {
             setViewMode('SERVICE_SELECT');
             setFilterTitle(null);
             setFilterInstructor(null);
-        } else if (origin !== 'coaches' && uniqueInstructorsSet.size > 1) {
+        } else if (uniqueInstructorsSet.size > 1) {
             setViewMode('COACH_SELECT');
             setFilterInstructor(null);
             setFilterTitle(null);
