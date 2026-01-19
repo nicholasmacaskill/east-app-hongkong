@@ -9,7 +9,7 @@ export default function TermsPage() {
             <div className="max-w-2xl mx-auto space-y-8">
                 {/* Header */}
                 <div className="flex items-center gap-4">
-                    <Link href="/profile" className="p-2 bg-[#1e1e1e] rounded-lg hover:bg-[#28D160] hover:text-black transition-colors">
+                    <Link href="/?tab=profile" className="p-2 bg-[#1e1e1e] rounded-lg hover:bg-[#28D160] hover:text-black transition-colors">
                         <ChevronLeft size={20} />
                     </Link>
                     <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white">Terms & Conditions</h1>
@@ -234,7 +234,7 @@ export default function TermsPage() {
                     </section>
 
                     <div className="pt-8 flex justify-center">
-                        <Link href="/profile" className="text-[#28D160] font-black italic uppercase text-xs hover:underline">
+                        <Link href="/?tab=profile" className="text-[#28D160] font-black italic uppercase text-xs hover:underline">
                             Back to Profile
                         </Link>
                     </div>
