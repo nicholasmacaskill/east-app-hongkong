@@ -82,6 +82,31 @@ npx tsx run_sql.ts
 
 ---
 
+## 🧪 Debugging & Automated Testing
+
+We use **Playwright** for End-to-End (E2E) testing to ensure stability across critical flows, including Payments and Admin actions.
+
+### Running Tests
+```bash
+# Run all tests (Headless)
+npx playwright test
+
+# Run specific payment tests (bypassing Stripe signature verification)
+npx playwright test tests/stripe-payments.spec.ts --project=no-auth
+
+# View visual report of last run
+npx playwright show-report
+```
+
+### 🆘 Admin Recovery
+If you lose access to the Admin portal or need to set up a fresh admin in production (since we removed the default `admin@east.com`):
+```bash
+node database/create_admin.cjs <your-email> <new-password>
+```
+
+---
+
+
 ## 🛠️ Tech Stack
 
 | Layer | Technology | Service/Library | Purpose |
@@ -263,7 +288,7 @@ Use this checklist to ensure a smooth transition from development to a live prod
 
 ### 🗄️ 4. Data & Logic
 - [ ] **Database Migrations**: Ran `npx tsx run_sql.ts` against the production DB to ensure all tables, triggers, and the `preferences` column are present.
-- [ ] **Admin Account**: Manually promoted the head coach/owner to `admin` in the production `profiles` table.
+- [ ] **Admin Account**: Run `node database/create_admin.cjs <email> <password>` to create/promote the main admin.
 - [ ] **CORS/CSP**: Enabled restricted CORS settings in Supabase and Next.js to only allow requests from the production domain.
 
 ### 🖼️ 5. Assets & UX
