@@ -1,32 +1,244 @@
 'use client';
 import React from 'react';
-import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { ChevronLeft } from 'lucide-react';
 
 export default function TermsPage() {
     return (
-        <div className="min-h-screen bg-black text-white font-montserrat p-6 pb-24 animate-fadeIn">
-            <div className="max-w-md mx-auto">
-                <div className="flex items-center gap-4 mb-10 pt-4">
-                    <Link href="/" className="text-gray-400 hover:text-white transition-colors">
-                        <ChevronLeft size={28} />
+        <div className="min-h-screen bg-black text-white p-6 pb-32">
+            <div className="max-w-2xl mx-auto space-y-8">
+                {/* Header */}
+                <div className="flex items-center gap-4">
+                    <Link href="/profile" className="p-2 bg-[#1e1e1e] rounded-lg hover:bg-[#28D160] hover:text-black transition-colors">
+                        <ChevronLeft size={20} />
                     </Link>
-                    <h1 className="text-2xl font-black italic uppercase tracking-tight">Terms & Conditions</h1>
+                    <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white">Terms & Conditions</h1>
                 </div>
 
-                <div className="space-y-8 text-gray-400 font-opensans text-sm leading-relaxed">
+                <div className="bg-[#1e1e1e] rounded-3xl p-6 border border-white/5 space-y-6 text-gray-300 text-sm leading-relaxed">
+
                     <section>
-                        <h2 className="text-white font-black italic text-lg mb-3 uppercase tracking-tighter">1. Acceptance of Terms</h2>
-                        <p>By accessing or using the EAST App, you agree to be bound by these Terms and Conditions and all applicable laws and regulations.</p>
+                        <h2 className="text-white font-bold uppercase mb-2">1. Agreement Overview</h2>
+                        <p>These Terms and Conditions ("Agreement") govern your membership ("Membership") at EAST High Performance Centre ("Gym") and use of the associated mobile application ("EAST App"). By signing up for a Membership, you agree to be bound by these Terms.</p>
                     </section>
+
                     <section>
-                        <h2 className="text-white font-black italic text-lg mb-3 uppercase tracking-tighter">2. User Accounts</h2>
-                        <p>You are responsible for maintaining the confidentiality of your account and password and for restricting access to your devices. You agree to accept responsibility for all activities that occur under your account.</p>
+                        <h2 className="text-white font-bold uppercase mb-2">2. Membership Eligibility</h2>
+                        <p>To be eligible for Membership, you must be at least 18 years old or have consent from a parent or guardian. By signing this Agreement, you confirm that you meet these criteria.</p>
                     </section>
+
                     <section>
-                        <h2 className="text-white font-black italic text-lg mb-3 uppercase tracking-tighter">3. Booking & Cancellations</h2>
-                        <p>Bookings are subject to availability. Cancellations must be made within the specified time frame to receive a credit refund. EAST Sports Group reserves the right to cancel or reschedule sessions at any time.</p>
+                        <h2 className="text-white font-bold uppercase mb-2">3. Membership Fees</h2>
+                        <ul className="list-none space-y-2">
+                            <li><strong>A. Payment Structure:</strong> Membership fees are payable monthly or annually as selected during the sign-up process.</li>
+                            <li><strong>B. Payment Method:</strong> All membership and top-up payments will be processed via credit card through the App. By providing your credit card information, you authorize us to charge the Membership fees to your card. Bookings are paid via credits, which are granted or purchased at a 1 Credit = 1 HKD rate.</li>
+                            <li><strong>C. Rates:</strong> As rates can change from time to time, the most updated rates can be found in the EAST App. Reach out to our staff if you have any issues or would like more information.</li>
+                        </ul>
                     </section>
+
+                    <section>
+                        <h2 className="text-white font-bold uppercase mb-2">4. Mobile App Usage</h2>
+                        <ul className="list-none space-y-2">
+                            <li><strong>A. App Features:</strong> The App allows you to:
+                                <ul className="list-disc pl-5 mt-1 space-y-1 text-gray-400">
+                                    <li>Book classes and facilities</li>
+                                    <li>View and pay for Membership status and top-up credits</li>
+                                    <li>Store personal statistics and other data</li>
+                                </ul>
+                            </li>
+                            <li><strong>B. User Responsibilities:</strong> You agree to use the App responsibly and to maintain the confidentiality of your login information. You are responsible for any activity under your account.</li>
+                            <li><strong>C. Data Collection:</strong> By using the App, you consent to the collection, storage, and use of your personal data as outlined in our Privacy Policy. This includes data related to your fitness activities and payment information. Credits can be used for facility bookings, locker rentals, classes, coach bookings, food, and merchandise.</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2 className="text-white font-bold uppercase mb-2">5. Membership Benefits</h2>
+                        <p>Membership provides access to various facilities and classes offered by the Gym. Specific benefits may vary based on the Membership tier selected.</p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-white font-bold uppercase mb-2">6. Cancellation and Refund Policy</h2>
+                        <ul className="list-none space-y-2">
+                            <li><strong>A. Cancellation:</strong> You may cancel your Membership at any time via the App or by contacting Gym support. A notice period of 30 days may apply.</li>
+                            <li><strong>B. Refunds:</strong> Membership fees are non-refundable.</li>
+                            <li><strong>C. Bookings:</strong> Cancellation fees will apply to Bookings. A 100% credits refund will apply to any cancellation up to 48 hours before. Within 24-48 hours, a 50% credits refund will apply. If a cancellation occurs within 24 hours prior to the session, including no shows, no refunds will be given.</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2 className="text-white font-bold uppercase mb-2">7. Liability Waiver</h2>
+                        <p>By agreeing to these Terms, you release the Gym from any liability for injuries or damages sustained while using the facilities or participating in any classes.</p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-white font-bold uppercase mb-2">8. Code of Conduct</h2>
+                        <p className="mb-4">In joining EAST High Performance Centre and the EAST App, you are expected to adhere to the following Code of Conduct. Failure to adhere to this Code of Conduct may result in disciplinary action, including but not limited to suspension or loss of privileges related to Gym facilities, activities, and events. No refunds will be issued in the event of such disciplinary action.</p>
+
+                        <div className="space-y-4 pl-4 border-l-2 border-white/10">
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">General Behaviour</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>Always clean up after yourself and return equipment (weights, mats, etc.) to their designated areas.</li>
+                                    <li>Keep the facility tidy; dispose of trash properly and respect communal spaces.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Respect for Others</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>Treat all members, staff, coaches and other athletes with respect and courtesy at all times.</li>
+                                    <li>Avoid disruptive behaviour, including excessive noise or distractions during classes.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Clean Up After Yourself</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>Wipe down equipment after use.</li>
+                                    <li>Return weights, mats, and other equipment to their designated places.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Respect Personal Space</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>Maintain a safe distance from others while exercising.</li>
+                                    <li>Avoid crowding around someone else’s workout area.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Refrain from Excessive Noise</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>Keep conversations to a reasonable volume.</li>
+                                    <li>Avoid loud grunting or shouting during workouts.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Limit Time on Equipment</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>Be mindful of peak hours and limit your time on machines if others are waiting.</li>
+                                    <li>Use the “5-minute rule” to let others know you’ll be done soon.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Use Headphones for Music</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>If listening to music, keep the volume at a level that doesn’t disturb others.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Follow Gym Guidelines</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>Adhere to any posted rules or guidelines regarding facility usage.</li>
+                                    <li>Respect any reservations or time constraints for classes or specific areas.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Ask Before Joining a Group</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>If a group is using equipment, ask politely before joining in or using shared resources.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Don’t Interrupt Others</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>Avoid interrupting someone’s workout for social conversations or asking to work in unless necessary.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Dress Appropriately</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>Wear appropriate workout attire and footwear.</li>
+                                    <li>Avoid clothing with offensive graphics or slogans.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Be Mindful of Personal Belongings</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>Keep your belongings in designated areas or lockers, not on the gym floor.</li>
+                                    <li>Do not leave personal items unattended.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Encourage Others</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>Be supportive of other members’ efforts and achievements.</li>
+                                    <li>Avoid negative or judgmental comments.</li>
+                                    <li>Be courteous to gym staff; listen to their instructions.</li>
+                                    <li>Treat all other members with respect and kindness.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Report Issues</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>Notify staff about broken or malfunctioning equipment.</li>
+                                    <li>Report unsafe behavior or conditions.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Safety and Compliance</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>Follow all posted guidelines and instructions from staff regarding safety and equipment usage. Adjust weight and settings to ensure safe usage. Use equipment for its intended purpose.</li>
+                                    <li>Report any unsafe conditions, injuries, or accidents immediately.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Surveillance Notice</h3>
+                                <p className="text-xs">Please be aware that CCTV cameras are in effect 24/7 for safety and security purposes. Any inappropriate behavior will be addressed accordingly, with disciplinary actions ranging from warnings to termination of Membership.</p>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Zero Tolerance Policies</h3>
+                                <ul className="list-disc pl-4 space-y-1 text-xs">
+                                    <li>There is zero tolerance for harassment, bullying, derogatory remarks, or any form of discrimination.</li>
+                                    <li>Underage drinking, tobacco, vaping, and gambling are strictly prohibited.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 className="text-east-light font-bold text-xs uppercase mb-1">Social Media and Public Behaviour</h3>
+                                <p className="text-xs">Maintain a positive representation of the Gym on social media platforms. Any negative or defamatory posts about the Gym or its members will be addressed appropriately.</p>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 p-4 bg-white/5 rounded-xl border border-white/10">
+                            <p className="text-xs italic text-gray-400">By signing this agreement, I grant unlimited permission to use, reproduce, sell, disseminate and distribute any and all photographs, images, videotapes, motion pictures, recordings, or any other depiction of any kind of participation in an Event or related activity for any legitimate purpose in perpetuity and I understand that Participant will not be entitled to any compensation in connection therewith. I further hereby irrevocably and absolutely grant permission to the Releasees to film, videotape and record the performance of the Participant in the Event and subsequently to telecast, sell, distribute and otherwise utilize the same in whatever manner Releasees shall deem appropriate. Such permission shall include granting the unlimited and irrevocable rights to Releasees, without compensation of any kind to Participant, to use, reproduce or broadcast, Participant’s name, nickname, image, likeness, voice, photograph, signature facsimile, and biographical information in connection with the Event. I acknowledge that Releasees shall have unlimited right throughout the world to copyright, use, reuse, publish, republish, broadcast and otherwise distribute depictions of or information about Participant and all or any portion of the Event in which Participant may appear on any and all radio, network, cable and local television programs and in any print materials and in any other format or media (including electronic media) now known or hereafter devised in perpetuity and without compensation to Participant.</p>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h2 className="text-white font-bold uppercase mb-2">9. Changes to Terms</h2>
+                        <p>The Gym reserves the right to modify these Terms at any time. Changes will be communicated via the App, and continued use of your Membership constitutes acceptance of the revised Terms.</p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-white font-bold uppercase mb-2">10. Governing Law</h2>
+                        <p>This Agreement shall be governed by the laws of Hong Kong SAR.</p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-white font-bold uppercase mb-2">11. Contact Information</h2>
+                        <p>For any questions regarding these Terms, please contact us at +852 9432 7841.</p>
+                    </section>
+
+                    <div className="pt-8 flex justify-center">
+                        <Link href="/profile" className="text-[#28D160] font-black italic uppercase text-xs hover:underline">
+                            Back to Profile
+                        </Link>
+                    </div>
+
                 </div>
             </div>
         </div>
