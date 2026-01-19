@@ -138,10 +138,10 @@ export async function POST(request: Request) {
                 }, { status: 400 });
             }
 
-            // ✅ CREDIT INJECTION (Metadata-Driven)
+            // ✅ CREDIT INJECTION (Metadata-Driven with Idempotency)
             console.log(`Identified Credit Purchase. Adding ${creditAmount} credits to user ${targetUserId}.`);
 
-            await addCreditsOnly(targetUserId, creditAmount);
+            await addCreditsOnly(targetUserId, creditAmount, 'topup', session.id, `Top-up purchase: ${creditAmount} credits`);
 
             // Send confirmation email
             if (customerEmail) {
@@ -189,7 +189,7 @@ export async function POST(request: Request) {
                 console.log(`Found User ID: ${profile.id}. Adding monthly ${plan.credits} credits...`);
 
                 // Add monthly credits based on the plan they are on
-                await addCreditsOnly(profile.id, plan.credits);
+                await addCreditsOnly(profile.id, plan.credits, 'membership', invoice.id, `Monthly renewal: ${plan.credits} credits`);
 
                 // Send Renewal Email
                 if (customerEmail) {
@@ -210,6 +210,25 @@ export async function POST(request: Request) {
         }
     }
 
+    // ====================================================
+    // 3. Handle Subscription Cancellations
+    // ====================================================
+    if (event.type === 'customer.subscription.deleted') {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+
+        console.log(`Processing Subscription Cancellation for Customer: ${customerId}`);
+
+        const supabaseAdmin = getSupabaseAdmin();
+        const { error } = await supabaseAdmin
+            .from('profiles')
+            .update({ subscription_status: 'canceled' })
+            .eq('stripe_customer_id', customerId);
+
+        if (error) console.error("❌ Failed to update subscription status on cancellation:", error);
+        else console.log(`✅ Subscription marked as canceled for customer ${customerId}`);
+    }
+
     return NextResponse.json({ received: true });
 }
 
@@ -219,32 +238,50 @@ export async function POST(request: Request) {
 
 async function updateProfile(userId: string, creditsToAdd: number, tier: string, customerId: string, subscriptionId: string) {
     // 1. Fetch current credits
-    // This is needed to get the existing credit count before adding new ones
     const supabaseAdmin = getSupabaseAdmin();
     const { data: profile } = await supabaseAdmin.from('profiles').select('credits').eq('id', userId).single();
     const currentCredits = profile?.credits || 0;
 
-    // 2. Use upsert instead of update.
-    // This fixes the issue where credits are not added if the profile row doesn't exist yet
-    // (e.g., due to a race condition on initial sign-up).
+    // 2. Upsert profile
     const { error } = await supabaseAdmin
         .from('profiles')
         .upsert({
-            id: userId, // ✅ Must include the primary key for upsert
+            id: userId,
             credits: currentCredits + creditsToAdd,
             subscription_status: 'active',
             tier: tier,
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId
-        }, { onConflict: 'id' }); // ✅ Conflict target is the primary key
+        }, { onConflict: 'id' });
 
-    // Update console logging to reflect the change
-    if (error) console.error("❌ DB Upsert Failed:", error);
-    else console.log(`✅ DB Success: Upserted profile. Added ${creditsToAdd} credits, set tier to ${tier}.`);
+    if (error) {
+        console.error("❌ DB Upsert Failed:", error);
+        return;
+    }
+
+    console.log(`✅ DB Success: Upserted profile. Added ${creditsToAdd} credits.`);
+
+    // 3. Log Transaction
+    await logTransaction(userId, creditsToAdd, 'membership', subscriptionId, `Initial membership purchase: ${creditsToAdd} credits`);
 }
 
-async function addCreditsOnly(userId: string, creditsToAdd: number) {
+async function addCreditsOnly(userId: string, creditsToAdd: number, type: 'topup' | 'membership' | 'transfer' | 'booking' | 'refund' = 'topup', sessionId?: string, description?: string) {
     const supabaseAdmin = getSupabaseAdmin();
+
+    // Check for idempotency if sessionId provided
+    if (sessionId) {
+        const { data: existing } = await supabaseAdmin
+            .from('transactions')
+            .select('id')
+            .eq('stripe_session_id', sessionId)
+            .single();
+
+        if (existing) {
+            console.log(`⚠️ Transaction ${sessionId} already processed. Skipping credit addition.`);
+            return;
+        }
+    }
+
     const { data: profile } = await supabaseAdmin.from('profiles').select('credits').eq('id', userId).single();
     const currentCredits = profile?.credits || 0;
 
@@ -255,6 +292,25 @@ async function addCreditsOnly(userId: string, creditsToAdd: number) {
         })
         .eq('id', userId);
 
-    if (error) console.error("❌ DB Renewal Update Failed:", error);
-    else console.log("✅ DB Renewal Success: Monthly credits added.");
+    if (error) {
+        console.error("❌ DB Renewal Update Failed:", error);
+    } else {
+        console.log(`✅ DB Success: Added ${creditsToAdd} credits.`);
+        await logTransaction(userId, creditsToAdd, type, sessionId, description);
+    }
+}
+
+async function logTransaction(userId: string, amount: number, type: string, sessionId?: string, description?: string) {
+    const supabaseAdmin = getSupabaseAdmin();
+    const { error } = await supabaseAdmin
+        .from('transactions')
+        .insert({
+            user_id: userId,
+            amount: amount,
+            type: type,
+            stripe_session_id: sessionId,
+            description: description
+        });
+
+    if (error) console.error("❌ Failed to log transaction:", error);
 }
