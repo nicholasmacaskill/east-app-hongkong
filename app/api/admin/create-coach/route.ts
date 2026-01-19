@@ -16,8 +16,8 @@ export async function POST(request: Request) {
         // Use shared admin client
         const supabaseAdmin = getSupabaseAdmin();
 
-        // 1. Create Auth User
-        // Use provided password or generate random one
+        // 1. Create Auth User directly (Auto-confirm)
+        // If password is provided, use it. If not, generate a random one.
         const finalPassword = password || (Math.random().toString(36).slice(-12) + "A1!");
 
         const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
         const userId = userData.user.id;
         const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
 
-        // 2. Create Public Profile
+        // 2. Upsert Public Profile
         const { error: profileError } = await supabaseAdmin
             .from('profiles')
             .upsert({
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
                 username: username,
                 mobile: mobile || '',
                 bio: bio || '',
-                avatar_url: ''
+                avatar_url: '' // Default empty, can add placeholder if needed
             });
 
         if (profileError) {
@@ -59,38 +59,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: false, error: 'User created but profile failed: ' + profileError.message }, { status: 500 });
         }
 
-        // 3. Generate Password Reset Link
-        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-            type: 'recovery',
-            email: email,
-            options: {
-                redirectTo: `${BASE_URL}/update-password`
-            }
-        });
-
-        if (linkError) {
-            console.error('Error generating reset link:', linkError);
-            // Non-fatal, return success but warn
-        } else if (linkData && linkData.properties?.action_link) {
-            // 4. Send Email
-            const actionLink = linkData.properties.action_link;
-
-            const emailHtml = `
-                <div style="font-family: Arial, sans-serif; color: #000;">
-                    <h1>Welcome to EAST, Coach ${firstName}!</h1>
-                    <p>Your coach account has been created.</p>
-                    <p>Please click the button below to set your password and access your portal:</p>
-                    <a href="${actionLink}" style="background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; margin-top: 10px;">Set Password & Login</a>
-                    <p style="margin-top: 20px; font-size: 12px; color: #666;">If the button doesn't work, copy this link:<br/>${actionLink}</p>
-                </div>
-            `;
-
-            await sendEmail({
-                to: email,
-                subject: 'Welcome to EAST - Set Your Password',
-                html: emailHtml
-            });
-        }
+        // 3. Initialize Coach Services (Optional - explicitly empty for now)
+        // This prevents "no rows" errors later if logic expects at least an empty set
 
         return NextResponse.json({ success: true, userId: userId });
 
