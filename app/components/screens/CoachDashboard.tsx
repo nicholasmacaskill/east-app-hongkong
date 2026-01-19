@@ -29,6 +29,7 @@ export default function CoachDashboard({ currentUserId, userName }: { currentUse
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [expandedDates, setExpandedDates] = useState<string[]>([]);
+    const [attendance, setAttendance] = useState<Record<string, boolean>>({});
 
     const toggleDate = (date: string) => {
         setExpandedDates(prev =>
@@ -247,12 +248,28 @@ export default function CoachDashboard({ currentUserId, userName }: { currentUse
                                                             <span className="text-[9px] font-bold uppercase tracking-widest">Attending ({session.attendees.length})</span>
                                                         </div>
                                                         <div className="flex flex-wrap gap-2">
-                                                            {session.attendees.map(a => (
-                                                                <div key={a.id} className="flex items-center gap-1.5 bg-white/10 px-2 py-1 rounded select-all hover:bg-white/20 transition-colors cursor-default">
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-east-light" />
-                                                                    <span className="text-[10px] font-bold uppercase">{a.name}</span>
-                                                                </div>
-                                                            ))}
+                                                            {session.attendees.map(a => {
+                                                                const key = `${session.id}-${a.id}`;
+                                                                const isPresent = attendance[key];
+
+                                                                const toggleAttendance = async (sessionId: any, attendeeId: string) => {
+                                                                    const k = `${sessionId}-${attendeeId}`;
+                                                                    const newState = !attendance[k];
+                                                                    setAttendance(prev => ({ ...prev, [k]: newState }));
+                                                                };
+
+                                                                return (
+                                                                    <div
+                                                                        key={a.id}
+                                                                        onClick={() => toggleAttendance(session.id, a.id)}
+                                                                        className={`flex items-center gap-1.5 px-2 py-1 rounded select-none transition-all cursor-pointer ${isPresent ? 'bg-east-light text-black border border-east-light shadow-[0_0_10px_rgba(40,209,96,0.3)]' : 'bg-white/10 text-white/50 border border-white/5 hover:bg-white/20'}`}
+                                                                    >
+                                                                        <div className={`w-1.5 h-1.5 rounded-full ${isPresent ? 'bg-black animate-pulse' : 'bg-gray-600'}`} />
+                                                                        <span className="text-[10px] font-black uppercase text-inherit">{a.name}</span>
+                                                                        {isPresent && <span className="text-[8px] font-black ml-1 uppercase opacity-70">Present</span>}
+                                                                    </div>
+                                                                );
+                                                            })}
                                                         </div>
                                                     </div>
                                                 ) : (

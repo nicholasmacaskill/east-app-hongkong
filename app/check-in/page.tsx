@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Footer from '../components/Footer';
 import type { IDetectedBarcode } from '@yudiel/react-qr-scanner';
@@ -27,6 +27,17 @@ export default function CheckIn() {
   const [processing, setProcessing] = useState(false);
   const [paymentRequest, setPaymentRequest] = useState<{ amount: number, reason: string, data: any } | null>(null);
   const [lastScanMessage, setLastScanMessage] = useState("");
+
+  // Expose for automated testing
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).simulateScan = (val: string) => handleScan([{
+        rawValue: val,
+        format: 'qr_code',
+        cornerPoints: [] as any
+      } as any]);
+    }
+  }, []);
 
   // Helper to get current User ID (mocked or from Supabase auth if we were inside a component that fetched it)
   // For client-side safety, we should ideally fetch the user here.

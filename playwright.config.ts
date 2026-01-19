@@ -58,6 +58,21 @@ export default defineConfig({
       testMatch: 'admin-*.spec.ts',
     },
 
+    {
+      name: 'no-auth',
+      use: {
+        ...devices['Desktop Chrome'],
+        // No storageState here, tests will handle their own auth
+      },
+      testMatch: [
+        'tests/check-in-qr.spec.ts',
+        'tests/golf-stats.spec.ts',
+        'tests/family-management.spec.ts',
+        'tests/coach-workflow.spec.ts',
+        'tests/stripe-payments.spec.ts'
+      ],
+    },
+
     // {
     //   name: 'firefox',
     //   use: { ...devices['Desktop Firefox'] },

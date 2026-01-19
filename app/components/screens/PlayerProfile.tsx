@@ -1,8 +1,8 @@
 // ... imports ...
 import React, { useState, useEffect } from 'react';
-import { Edit2, Trophy, Target, Shield, Users, Activity, Award, ChevronRight, Camera, Coins } from 'lucide-react';
+import { Edit2, Trophy, Target, Shield, Users, Activity, Award, ChevronRight, Camera, Coins, Settings } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
-// Removed: useGallery, Lightbox, ImageIcon
+import UploadGolfStatsModal from '../modals/UploadGolfStatsModal';
 
 // Simple Card Wrapper
 const Card = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
@@ -24,9 +24,10 @@ interface PlayerProfileProps {
   profileData: any;
   stats?: PlayerStats;
   isReadOnly?: boolean;
+  onRefresh?: () => void;
 }
 
-export default function PlayerProfile({ onOpenSettings, profileData, stats: initialStats, isReadOnly = false }: PlayerProfileProps) {
+export default function PlayerProfile({ onOpenSettings, profileData, stats: initialStats, isReadOnly = false, onRefresh }: PlayerProfileProps) {
   const [activeTab, setActiveTab] = useState<'streaks' | 'full_stats'>('streaks');
   const [stats, setStats] = useState<PlayerStats | null>(initialStats || null);
   // Removed gallery state and refs
@@ -37,16 +38,73 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
   // Safety Check
   if (!profileData) return <div className="min-h-screen bg-black flex items-center justify-center text-white font-montserrat font-bold animate-pulse uppercase tracking-widest">Loading Player Profile...</div>;
 
+  const [showStatsModal, setShowStatsModal] = useState(false);
+
+  // Determine sport from bio or props
+  const sport = profileData.bio?.toUpperCase().includes('GOLF') ? 'GOLF' :
+    profileData.bio?.toUpperCase().includes('HOCKEY') ? 'HOCKEY' :
+      profileData.bio?.toUpperCase().includes('HYROX') ? 'HYROX' : 'GENERAL';
+
   useEffect(() => {
-    // Only load default mock data if no stats were provided
-    if (!initialStats) {
-      setStats({
-        age: 31, season: 3, team: 'RHINOS',
-        games_played_season: 12, games_played_total: 45, games_missed_healthy: 0, games_missed_injured: 2,
-        goals_season: 5, goals_total: 22, assists_season: 8, assists_total: 30
-      });
-    }
-  }, [initialStats]);
+    const fetchStats = async () => {
+      if (!profileData.id) return;
+
+      try {
+        // Fetch from players_stats first (Modern flexible approach)
+        const { data: psData, error: psError } = await supabase
+          .from('players_stats')
+          .select('*')
+          .eq('player_id', profileData.id)
+          .eq('category', sport)
+          .single();
+
+        if (psData) {
+          // If using JSONB stats column
+          const finalStats = psData.stats || psData; // Support both flat and JSONB
+          setStats({
+            age: finalStats.age || 31,
+            season: finalStats.season || 3,
+            team: finalStats.team || (profileData.team || 'RHINOS'),
+            games_played_season: finalStats.games_played_season || 0,
+            games_played_total: finalStats.games_played_total || 0,
+            games_missed_healthy: finalStats.games_missed_healthy || 0,
+            games_missed_injured: finalStats.games_missed_injured || 0,
+            goals_season: finalStats.goals_season || 0,
+            goals_total: finalStats.goals_total || 0,
+            assists_season: finalStats.assists_season || 0,
+            assists_total: finalStats.assists_total || 0
+          });
+          return;
+        }
+
+        // Fallback for Golf if handled separately
+        if (sport === 'GOLF') {
+          const { data: gData } = await supabase
+            .from('golf_stats')
+            .select('*')
+            .eq('player_id', profileData.id)
+            .single();
+          if (gData) {
+            // Map golf stats to the generic display if applicable, or keep specialized
+            // For now, let's keep it generic to avoid breaking the UI
+          }
+        }
+
+        // Default mock if nothing found
+        if (!initialStats) {
+          setStats({
+            age: 31, season: 3, team: profileData.team || 'RHINOS',
+            games_played_season: 12, games_played_total: 45, games_missed_healthy: 0, games_missed_injured: 2,
+            goals_season: 5, goals_total: 22, assists_season: 8, assists_total: 30
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching player stats:', err);
+      }
+    };
+
+    fetchStats();
+  }, [profileData.id, sport, initialStats]);
 
   // Removed handleGalleryUpload
 
@@ -99,9 +157,18 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
           {/* 1. TOP VISUALS */}
           <div className="relative h-[250px] w-full shrink-0">
             {!isReadOnly && (
-              <button onClick={onOpenSettings} className="absolute top-4 right-6 z-30 text-gray-400 hover:text-white transition-colors">
-                <Edit2 size={24} />
-              </button>
+              <div className="absolute top-4 right-6 z-30 flex gap-2">
+                <button
+                  onClick={() => setShowStatsModal(true)}
+                  className="bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-colors border border-white/10"
+                  title="Update Stats"
+                >
+                  <Activity size={20} className="text-east-light" />
+                </button>
+                <button onClick={onOpenSettings} className="bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-colors border border-white/10">
+                  <Edit2 size={20} className="text-gray-400" />
+                </button>
+              </div>
             )}
 
             <div className="absolute right-8 top-20 z-0 opacity-20">
@@ -305,6 +372,15 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
           )}
         </div>
       </div>
+
+      {showStatsModal && (
+        <UploadGolfStatsModal
+          onClose={() => setShowStatsModal(false)}
+          currentUserId={profileData.id}
+          onSuccess={() => onRefresh ? onRefresh() : window.location.reload()}
+          existingStats={stats}
+        />
+      )}
     </div>
   )
 }

@@ -432,7 +432,7 @@ function AppContent() {
                       }
                     }}
                   />
-                  : <PlayerProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} />
+                  : <PlayerProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} onRefresh={() => setRefreshKey(k => k + 1)} />
             )
           )}
 

@@ -335,13 +335,14 @@ export default function ParentProfile({
                      <div className="space-y-6">
                         <div>
                            <label className="text-[10px] uppercase font-bold text-gray-500 mb-2 block text-center">Amount to Transfer</label>
-                           <div className="flex items-center justify-center gap-4">
-                              <button onClick={() => setTransferAmount(Math.max(1, transferAmount - 1))} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/20 text-white flex items-center justify-center font-black">-</button>
-                              <div className="w-24 text-center">
-                                 <span className="text-3xl font-black italic text-white">{transferAmount}</span>
-                              </div>
-                              <button onClick={() => setTransferAmount(transferAmount + 1)} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/20 text-white flex items-center justify-center font-black">+</button>
-                           </div>
+                           <input
+                              type="number"
+                              min="1"
+                              max={profileData.credits || 0}
+                              value={transferAmount}
+                              onChange={(e) => setTransferAmount(parseInt(e.target.value) || 0)}
+                              className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-center text-3xl font-black italic text-white outline-none focus:border-east-light"
+                           />
                         </div>
 
                         <div className="bg-black/40 p-4 rounded-xl border border-white/5 text-center">

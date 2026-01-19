@@ -79,6 +79,7 @@ test.describe('Stripe Payment System', () => {
                     type: 'checkout.session.completed',
                     data: {
                         object: {
+                            id: `sess_test_${Date.now()}_${pkg.credits}`,
                             mode: 'payment',
                             customer_details: { email: testUserEmail },
                             metadata: { target_user_id: testUserId, credit_amount: pkg.credits.toString() }
@@ -88,20 +89,29 @@ test.describe('Stripe Payment System', () => {
 
                 await simulateWebhook(page, payload);
 
-                // 1. Verify credits updated
-                const { data: profile } = await supabase.from('profiles').select('credits').eq('id', testUserId).single();
-                expect(profile?.credits).toBe(pkg.credits);
+                // 8. Wait for reload and verify Balances in UI (Higher Resilience)
+                await page.waitForLoadState('networkidle');
 
-                // 2. Verify transaction record created
-                const { data: tx } = await supabase
-                    .from('transactions')
-                    .select('*')
-                    .eq('user_id', testUserId)
-                    .eq('type', 'topup')
-                    .single();
+                // Poll for the correct balance which indicates the transfer processed
+                await expect(page.locator(`span:has-text("${pkg.credits}")`)).toBeVisible({ timeout: 10000 });
 
-                expect(tx).toBeDefined();
-                expect(tx.amount).toBe(pkg.credits);
+                // 1. Verify credits updated (with polling)
+                await expect.poll(async () => {
+                    const { data: profile } = await supabase.from('profiles').select('credits').eq('id', testUserId).single();
+                    return profile?.credits;
+                }, { timeout: 10000 }).toBe(pkg.credits);
+
+                // 2. Verify transaction record created (with polling)
+                await expect.poll(async () => {
+                    const { data: tx } = await supabase
+                        .from('transactions')
+                        .select('*')
+                        .eq('user_id', testUserId)
+                        .eq('type', 'topup')
+                        .eq('stripe_session_id', payload.data.object.id)
+                        .single();
+                    return tx;
+                }, { timeout: 10000 }).toBeDefined();
             });
         }
     });

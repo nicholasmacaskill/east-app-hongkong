@@ -98,7 +98,7 @@ export async function DELETE(request: Request) {
 
       // C. Execute Cancellation RPC
       const { data: result, error } = await supabaseAdmin.rpc('cancel_session_and_refund', {
-        p_user_id: userId,
+        p_attendee_id: userId, // Corrected from p_user_id
         p_session_id: targetSesId
       });
 

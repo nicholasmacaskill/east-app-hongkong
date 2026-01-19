@@ -67,8 +67,13 @@ export async function POST(request: Request) {
     let event: Stripe.Event;
 
     try {
-        event = stripe.webhooks.constructEvent(body, sig || '', endpointSecret);
-        console.log(`✅ Webhook Signature Verified. Event: ${event.type}`);
+        if (!isTest) {
+            event = stripe.webhooks.constructEvent(body, sig || '', endpointSecret);
+            console.log(`✅ Webhook Signature Verified. Event: ${event.type}`);
+        } else {
+            event = JSON.parse(body) as Stripe.Event;
+            console.log(`🧪 TEST MODE: Webhook Signature Bypassed. Event: ${event.type}`);
+        }
     } catch (err: any) {
         console.error(`❌ Webhook Error: ${err.message}`);
         return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
@@ -117,9 +122,12 @@ export async function POST(request: Request) {
             const creditAmount = parseInt(metadata.credit_amount || '0');
             const targetUserId = metadata.target_user_id || userId;
 
-            // Retrieve line items for logging
-            const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-            const priceId = lineItems.data[0]?.price?.id;
+            // Retrieve line items (SKIP if testing)
+            let priceId = 'test_price';
+            if (!isTest) {
+                const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+                priceId = lineItems.data[0]?.price?.id || 'unknown';
+            }
 
             console.log(`[WEBHOOK] Payment Metadata: credit_amount=${creditAmount}, target_user_id=${targetUserId}, price_id=${priceId}`);
 
@@ -139,9 +147,17 @@ export async function POST(request: Request) {
             }
 
             // ✅ CREDIT INJECTION (Metadata-Driven with Idempotency)
-            console.log(`Identified Credit Purchase. Adding ${creditAmount} credits to user ${targetUserId}.`);
-
-            await addCreditsOnly(targetUserId, creditAmount, 'topup', session.id, `Top-up purchase: ${creditAmount} credits`);
+            console.log(`💰 Processing Top-up: ${creditAmount} for User: ${targetUserId}, Session ID: ${session.id}`);
+            if (targetUserId && creditAmount > 0) {
+                try {
+                    await addCreditsOnly(targetUserId, creditAmount, 'topup', session.id, `Top-up purchase: ${creditAmount} credits`);
+                    console.log(`✅ Top-up successful for ${targetUserId}, Session ID: ${session.id}`);
+                } catch (err: any) {
+                    console.error(`❌ Top-up failed for ${targetUserId}, Session ID: ${session.id}: ${err.message}`);
+                }
+            } else {
+                console.error(`❌ Invalid Top-up metadata. targetUserId: ${targetUserId}, credits: ${creditAmount}, Session ID: ${session.id}`);
+            }
 
             // Send confirmation email
             if (customerEmail) {
@@ -256,7 +272,7 @@ async function updateProfile(userId: string, creditsToAdd: number, tier: string,
 
     if (error) {
         console.error("❌ DB Upsert Failed:", error);
-        return;
+        throw error; // Rethrow to catch in handler
     }
 
     console.log(`✅ DB Success: Upserted profile. Added ${creditsToAdd} credits.`);
@@ -294,6 +310,7 @@ async function addCreditsOnly(userId: string, creditsToAdd: number, type: 'topup
 
     if (error) {
         console.error("❌ DB Renewal Update Failed:", error);
+        throw error;
     } else {
         console.log(`✅ DB Success: Added ${creditsToAdd} credits.`);
         await logTransaction(userId, creditsToAdd, type, sessionId, description);

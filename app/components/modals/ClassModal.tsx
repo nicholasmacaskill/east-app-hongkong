@@ -331,14 +331,24 @@ export default function ClassModal({
             // Only cancel if booked
             if (getBookedStatus(attendeeId)) {
                 try {
-                    await fetch('/api/sessions/cancel', {
+                    console.log(`[CANCEL REQUEST] Sending DELETE for User ${attendeeId}, Session ${selectedSessionId}`);
+                    const res = await fetch('/api/sessions/cancel', {
                         method: 'DELETE',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId: attendeeId, sessionId: selectedSessionId }) // passing attendeeId as userId
+                        body: JSON.stringify({ userId: attendeeId, sessionId: selectedSessionId })
                     });
-                    successCount++;
+                    const data = await res.json();
+                    console.log(`[CANCEL RESPONSE] Status: ${res.status}, Success: ${data.success}, Error: ${data.error}`);
+
+                    if (res.ok && data.success) {
+                        successCount++;
+                    } else {
+                        console.error(`[CANCEL ERROR] User ${attendeeId}:`, data.error || data.message);
+                        alert(`Failed to cancel: ${data.error || data.message}`);
+                    }
                 } catch (e) {
                     console.error(e);
+                    alert(`Network error cancelling session.`);
                 }
             }
         }
