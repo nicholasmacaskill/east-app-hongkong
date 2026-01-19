@@ -109,9 +109,16 @@ export async function POST(request: Request) {
             if (session.mode === 'subscription') {
                 const subscriptionId = session.subscription as string;
                 const customerId = session.customer as string;
+                let priceId: string;
 
-                const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-                const priceId = subscription.items.data[0].price.id;
+                if (isTest && session.metadata?.test_price_id) {
+                    priceId = session.metadata.test_price_id;
+                    console.log(`🧪 TEST MODE: Using test_price_id: ${priceId}`);
+                } else {
+                    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                    priceId = subscription.items.data[0].price.id;
+                }
+
                 const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
 
                 console.log(`Processing Subscription: ${plan.tier.toUpperCase()} for User: ${userId}`);

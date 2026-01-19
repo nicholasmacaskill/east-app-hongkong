@@ -69,7 +69,8 @@ export default defineConfig({
         'tests/golf-stats.spec.ts',
         'tests/family-management.spec.ts',
         'tests/coach-workflow.spec.ts',
-        'tests/stripe-payments.spec.ts'
+        'tests/stripe-payments.spec.ts',
+        'tests/membership-tiers.spec.ts'
       ],
     },
 
