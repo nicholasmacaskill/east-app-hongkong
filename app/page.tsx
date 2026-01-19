@@ -324,6 +324,7 @@ function AppContent() {
       <CoachDashboard
         currentUserId={currentUserId}
         userName={userProfile.first_name || 'Coach'}
+        userLastName={userProfile.last_name || ''}
       />
     );
   }

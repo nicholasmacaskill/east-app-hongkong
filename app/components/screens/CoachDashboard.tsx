@@ -22,7 +22,7 @@ interface MasterSession {
     coach_id?: string; // For filtering availability
 }
 
-export default function CoachDashboard({ currentUserId, userName }: { currentUserId: string, userName: string }) {
+export default function CoachDashboard({ currentUserId, userName, userLastName }: { currentUserId: string, userName: string, userLastName?: string }) {
     const [allSessions, setAllSessions] = useState<MasterSession[]>([]);
     const [filteredSessions, setFilteredSessions] = useState<MasterSession[]>([]);
     const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view'>('master_view');
@@ -76,7 +76,7 @@ export default function CoachDashboard({ currentUserId, userName }: { currentUse
             setFilteredSessions(allSessions);
         } else {
             // My Schedule: 
-            // 1. Sessions where instructor name matches (loose check, or ideally ID but sessions table store instructor name text)
+            // 1. Sessions where instructor name matches (stricter check)
             // 2. Slots where coach_id matches currentUserId
             const myData = allSessions.filter(s => {
                 if (s.type === 'slot') {
@@ -84,13 +84,29 @@ export default function CoachDashboard({ currentUserId, userName }: { currentUse
                 } else {
                     // Session: check if instructor string contains name parts or exact match
                     const instructorName = s.instructor?.toLowerCase() || '';
-                    const coachName = userName?.toLowerCase() || '';
-                    return instructorName.includes(coachName) || instructorName === 'you';
+                    const coachFirst = userName?.toLowerCase() || '';
+                    const coachLast = userLastName?.toLowerCase() || '';
+
+                    // Match Logic
+                    // 1. If last name exists, require match of First+Last OR First & Last parts
+                    if (coachLast) {
+                        if (instructorName.includes(`${coachFirst} ${coachLast}`)) return true;
+                        if (instructorName.includes(coachFirst) && instructorName.includes(coachLast)) return true;
+                    }
+                    // 2. If no last name, match first name (weak match, but best we can do)
+                    else {
+                        if (instructorName.includes(coachFirst)) return true;
+                    }
+
+                    // 3. Keep "You" logic for legacy or direct assignment if API changes
+                    if (instructorName === 'you') return true;
+
+                    return false;
                 }
             });
             setFilteredSessions(myData);
         }
-    }, [viewMode, allSessions, currentUserId, userName]);
+    }, [viewMode, allSessions, currentUserId, userName, userLastName]);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();

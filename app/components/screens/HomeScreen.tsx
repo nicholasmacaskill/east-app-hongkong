@@ -293,9 +293,23 @@ export default function HomeScreen({
               {coaches.map((coach) => (
                 <div key={coach.id} onClick={() => {
                   // Unified Flow: Click coach directly -> View ALL their private slots
+                  const scoreMatch = (instructor: string, first: string, last: string) => {
+                    const i = instructor.toLowerCase();
+                    const f = first.toLowerCase();
+                    const l = last.toLowerCase();
+                    // Strong match: instructor contains "First Last"
+                    if (l && i.includes(`${f} ${l}`)) return true;
+                    // Standard match: instructor contains "First" AND "Last" (if last exists)
+                    if (l && i.includes(f) && i.includes(l)) return true;
+                    // Weak match: instructor contains First (only if no Last name)
+                    if (!l && i.includes(f)) return true;
+                    return false;
+                  };
+
                   const coachSessions = sessions.filter(s =>
                     s.category === 'PRIVATE' &&
-                    s.instructor?.toLowerCase().includes(coach.first_name.toLowerCase())
+                    s.instructor &&
+                    scoreMatch(s.instructor, coach.first_name, coach.last_name || '')
                   );
                   if (coachSessions.length > 0) {
                     onClassClick(
