@@ -51,201 +51,168 @@ if (process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY) {
 }
 
 export async function POST(request: Request) {
-    const body = await request.text();
-
-    // ✅ FIX: Await headers() before accessing properties (Required for Next.js 15/16)
-    const headersList = await headers();
-    const sig = headersList.get('stripe-signature')!;
-    const { searchParams } = new URL(request.url);
-    const isTest = searchParams.get('test') === 'true';
-
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-    // ✅ Exhaustive Logging for Debugging
-    const url = new URL(request.url);
-    const queryTest = url.searchParams.get('test');
-    let event: Stripe.Event;
-
     try {
-        if (!isTest) {
-            event = stripe.webhooks.constructEvent(body, sig || '', endpointSecret);
-            console.log(`✅ Webhook Signature Verified. Event: ${event.type}`);
-        } else {
-            event = JSON.parse(body) as Stripe.Event;
-            console.log(`🧪 TEST MODE: Webhook Signature Bypassed. Event: ${event.type}`);
-        }
-    } catch (err: any) {
-        console.error(`❌ Webhook Error: ${err.message}`);
-        return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
-    }
+        const body = await request.text();
 
-    // ====================================================
-    // 1. Handle Initial Subscription Purchase (Checkout)
-    // ====================================================
-    if (event.type === 'checkout.session.completed') {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.userId;
-        const customerEmail = session.customer_details?.email;
+        // 1. Diagnostics & Runtime Check
+        console.log(`[STRIPE WEBHOOK] Inbound Request. Method: ${request.method}, URL: ${request.url}`);
 
-        // --- A. SUBSCRIPTION PURCHASE ---
-        if (session.mode === 'subscription') {
-            const subscriptionId = session.subscription as string;
-            const customerId = session.customer as string;
-
-            // Fetch plan details
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            const priceId = subscription.items.data[0].price.id;
-            const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
-
-            console.log(`Processing Subscription: ${plan.tier.toUpperCase()} for User: ${userId}`);
-
-            if (userId) {
-                await updateProfile(userId, plan.credits, plan.tier, customerId, subscriptionId);
-                if (customerEmail) {
-                    try {
-                        await sendEmail({
-                            to: customerEmail,
-                            subject: `Welcome to EAST - ${plan.tier.toUpperCase()} Member`,
-                            html: `<h1>Membership Confirmed!</h1><p>Thank you for joining. Your account has been credited with <strong>${plan.credits} credits</strong>.</p>`
-                        });
-                    } catch (e) { console.error("Email failed, but DB updated."); }
-                }
-            }
+        // Check for required environment variables
+        const requiredEnv = [
+            'STRIPE_SECRET_KEY',
+            'STRIPE_WEBHOOK_SECRET',
+            'NEXT_PUBLIC_SUPABASE_URL',
+            'SUPABASE_SERVICE_ROLE_KEY'
+        ];
+        const missing = requiredEnv.filter(k => !process.env[k]);
+        if (missing.length > 0) {
+            console.error(`❌ CRITICAL ERROR: Missing environment variables: ${missing.join(', ')}`);
+            return NextResponse.json({
+                error: 'Configuration Error',
+                missing_vars: missing
+            }, { status: 500 });
         }
 
-        // --- B. ONE-TIME TOP UP (Metadata-Driven) ---
-        else if (session.mode === 'payment') {
-            console.log(`Processing One-time Payment for Session: ${session.id}`);
+        // 2. Setup Headers & Signature
+        const headersList = await headers();
+        const sig = headersList.get('stripe-signature')!;
+        const { searchParams } = new URL(request.url);
+        const isTest = searchParams.get('test') === 'true';
 
-            // Extract metadata
-            const metadata = session.metadata || {};
-            const creditAmount = parseInt(metadata.credit_amount || '0');
-            const targetUserId = metadata.target_user_id || userId;
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+        let event: Stripe.Event;
 
-            // Retrieve line items (SKIP if testing)
-            let priceId = 'test_price';
+        // 3. Signature Verification
+        try {
             if (!isTest) {
-                const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-                priceId = lineItems.data[0]?.price?.id || 'unknown';
-            }
-
-            console.log(`[WEBHOOK] Payment Metadata: credit_amount=${creditAmount}, target_user_id=${targetUserId}, price_id=${priceId}`);
-
-            // ✅ VALIDATION: Ensure metadata is present and valid
-            if (!creditAmount || creditAmount <= 0) {
-                console.error(`❌ CRITICAL: Missing or invalid credit_amount in session ${session.id}. Metadata:`, metadata);
-                return NextResponse.json({
-                    error: 'Invalid or missing credit_amount metadata'
-                }, { status: 400 });
-            }
-
-            if (!targetUserId) {
-                console.error(`❌ CRITICAL: Missing target_user_id in session ${session.id}. Metadata:`, metadata);
-                return NextResponse.json({
-                    error: 'Missing target_user_id'
-                }, { status: 400 });
-            }
-
-            // ✅ CREDIT INJECTION (Metadata-Driven with Idempotency)
-            console.log(`💰 Processing Top-up: ${creditAmount} for User: ${targetUserId}, Session ID: ${session.id}`);
-            if (targetUserId && creditAmount > 0) {
-                try {
-                    await addCreditsOnly(targetUserId, creditAmount, 'topup', session.id, `Top-up purchase: ${creditAmount} credits`);
-                    console.log(`✅ Top-up successful for ${targetUserId}, Session ID: ${session.id}`);
-                } catch (err: any) {
-                    console.error(`❌ Top-up failed for ${targetUserId}, Session ID: ${session.id}: ${err.message}`);
-                }
+                event = stripe.webhooks.constructEvent(body, sig || '', endpointSecret);
+                console.log(`✅ Webhook Signature Verified. Event: ${event.type}`);
             } else {
-                console.error(`❌ Invalid Top-up metadata. targetUserId: ${targetUserId}, credits: ${creditAmount}, Session ID: ${session.id}`);
+                event = JSON.parse(body) as Stripe.Event;
+                console.log(`🧪 TEST MODE: Webhook Signature Bypassed. Event: ${event.type}`);
             }
+        } catch (err: any) {
+            console.error(`❌ Webhook Signature Error: ${err.message}`);
+            return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+        }
 
-            // Send confirmation email
-            if (customerEmail) {
-                try {
-                    await sendEmail({
-                        to: customerEmail,
-                        subject: 'Credits Top Up Confirmed',
-                        html: `<h1>Top Up Successful!</h1><p>You have successfully purchased <strong>${creditAmount} credits</strong>.</p><p>These have been added to your balance.</p>`
-                    });
-                } catch (e) {
-                    console.error("Email failed, but DB updated.");
+        // 4. Processing Handlers
+        // ====================================================
+        // A. Handle Initial Subscription Purchase (Checkout)
+        // ====================================================
+        if (event.type === 'checkout.session.completed') {
+            const session = event.data.object as Stripe.Checkout.Session;
+            const userId = session.metadata?.userId;
+            const customerEmail = session.customer_details?.email;
+
+            // --- A1. SUBSCRIPTION PURCHASE ---
+            if (session.mode === 'subscription') {
+                const subscriptionId = session.subscription as string;
+                const customerId = session.customer as string;
+
+                const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                const priceId = subscription.items.data[0].price.id;
+                const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
+
+                console.log(`Processing Subscription: ${plan.tier.toUpperCase()} for User: ${userId}`);
+
+                if (userId) {
+                    await updateProfile(userId, plan.credits, plan.tier, customerId, subscriptionId);
+                    if (customerEmail) {
+                        try {
+                            await sendEmail({
+                                to: customerEmail,
+                                subject: `Welcome to EAST - ${plan.tier.toUpperCase()} Member`,
+                                html: `<h1>Membership Confirmed!</h1><p>Thank you for joining. Your account has been credited with <strong>${plan.credits} credits</strong>.</p>`
+                            });
+                        } catch (e) { console.error("Email failed, but DB updated."); }
+                    }
                 }
             }
-        }
-    }
 
-    // ====================================================
-    // 2. Handle Monthly Recurring Payments (Renewals)
-    // ====================================================
-    if (event.type === 'invoice.payment_succeeded') {
-        const invoice = event.data.object as Stripe.Invoice;
+            // --- A2. ONE-TIME TOP UP ---
+            else if (session.mode === 'payment') {
+                console.log(`Processing One-time Payment for Session: ${session.id}`);
+                const metadata = session.metadata || {};
+                const creditAmount = parseInt(metadata.credit_amount || '0');
+                const targetUserId = metadata.target_user_id || userId;
 
-        // Check if this is a subscription renewal
-        if (invoice.billing_reason === 'subscription_cycle') {
-            const customerId = invoice.customer as string;
-            const customerEmail = invoice.customer_email;
-            const subscriptionId = (invoice as any).subscription as string;
+                let priceId = 'test_price';
+                if (!isTest) {
+                    const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+                    priceId = lineItems.data[0]?.price?.id || 'unknown';
+                }
 
-            console.log(`Processing Monthly Renewal for Stripe Customer: ${customerId}`);
+                if (!creditAmount || creditAmount <= 0 || !targetUserId) {
+                    console.error(`❌ CRITICAL: Invalid metadata for session ${session.id}`);
+                    return NextResponse.json({ error: 'Invalid metadata' }, { status: 400 });
+                }
 
-            // ✅ FETCH PLAN DETAILS AGAIN (So renewals also get the right amount)
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            const priceId = subscription.items.data[0].price.id;
-            const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
+                await addCreditsOnly(targetUserId, creditAmount, 'topup', session.id, `Top-up purchase: ${creditAmount} credits`);
 
-            // Find user by Stripe Customer ID
-            const supabaseAdmin = getSupabaseAdmin();
-            const { data: profile } = await supabaseAdmin
-                .from('profiles')
-                .select('id')
-                .eq('stripe_customer_id', customerId)
-                .single();
-
-            if (profile) {
-                console.log(`Found User ID: ${profile.id}. Adding monthly ${plan.credits} credits...`);
-
-                // Add monthly credits based on the plan they are on
-                await addCreditsOnly(profile.id, plan.credits, 'membership', invoice.id, `Monthly renewal: ${plan.credits} credits`);
-
-                // Send Renewal Email
                 if (customerEmail) {
                     try {
                         await sendEmail({
                             to: customerEmail,
-                            subject: 'Monthly Credits Added',
-                            html: `
-                        <p>Your monthly membership payment was successful.</p>
-                        <p><strong>${plan.credits} credits</strong> have been added to your account.</p>
-                        `
+                            subject: 'Credits Top Up Confirmed',
+                            html: `<h1>Top Up Successful!</h1><p>You have purchased <strong>${creditAmount} credits</strong>.</p>`
                         });
                     } catch (e) { console.error("Email failed, but DB updated."); }
                 }
-            } else {
-                console.error(`❌ Could not find user associated with Stripe Customer: ${customerId}`);
             }
         }
+
+        // ====================================================
+        // B. Handle Monthly Recurring Payments (Renewals)
+        // ====================================================
+        if (event.type === 'invoice.payment_succeeded') {
+            const invoice = event.data.object as Stripe.Invoice;
+            if (invoice.billing_reason === 'subscription_cycle') {
+                const customerId = invoice.customer as string;
+                const subscriptionId = (invoice as any).subscription as string;
+
+                const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                const priceId = subscription.items.data[0].price.id;
+                const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
+
+                const supabaseAdmin = getSupabaseAdmin();
+                const { data: profile } = await supabaseAdmin
+                    .from('profiles')
+                    .select('id')
+                    .eq('stripe_customer_id', customerId)
+                    .single();
+
+                if (profile) {
+                    await addCreditsOnly(profile.id, plan.credits, 'membership', invoice.id, `Monthly renewal: ${plan.credits} credits`);
+                }
+            }
+        }
+
+        // ====================================================
+        // C. Handle Subscription Cancellations
+        // ====================================================
+        if (event.type === 'customer.subscription.deleted') {
+            const subscription = event.data.object as Stripe.Subscription;
+            const customerId = subscription.customer as string;
+
+            const supabaseAdmin = getSupabaseAdmin();
+            await supabaseAdmin
+                .from('profiles')
+                .update({ subscription_status: 'canceled' })
+                .eq('stripe_customer_id', customerId);
+        }
+
+        return NextResponse.json({ received: true });
+
+    } catch (err: any) {
+        console.error(`🔥 UNHANDLED ERROR IN WEBHOOK: ${err.message}`);
+        console.error(err.stack);
+        return NextResponse.json({
+            error: 'Internal Server Error',
+            message: err.message,
+            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        }, { status: 500 });
     }
-
-    // ====================================================
-    // 3. Handle Subscription Cancellations
-    // ====================================================
-    if (event.type === 'customer.subscription.deleted') {
-        const subscription = event.data.object as Stripe.Subscription;
-        const customerId = subscription.customer as string;
-
-        console.log(`Processing Subscription Cancellation for Customer: ${customerId}`);
-
-        const supabaseAdmin = getSupabaseAdmin();
-        const { error } = await supabaseAdmin
-            .from('profiles')
-            .update({ subscription_status: 'canceled' })
-            .eq('stripe_customer_id', customerId);
-
-        if (error) console.error("❌ Failed to update subscription status on cancellation:", error);
-        else console.log(`✅ Subscription marked as canceled for customer ${customerId}`);
-    }
-
-    return NextResponse.json({ received: true });
 }
 
 // ====================================================
