@@ -83,9 +83,9 @@ export default function CoachDashboard({ currentUserId, userName }: { currentUse
                     return s.coach_id === currentUserId;
                 } else {
                     // Session: check if instructor string contains name parts or exact match
-                    // This is imperfect if names are non-unique, but fits current schema
-                    return s.instructor.toLowerCase().includes(userName.toLowerCase()) ||
-                        s.instructor.toLowerCase() === 'you';
+                    const instructorName = s.instructor?.toLowerCase() || '';
+                    const coachName = userName?.toLowerCase() || '';
+                    return instructorName.includes(coachName) || instructorName === 'you';
                 }
             });
             setFilteredSessions(myData);
@@ -235,7 +235,7 @@ export default function CoachDashboard({ currentUserId, userName }: { currentUse
                                                 </div>
 
                                                 <div className="flex items-center gap-2 mb-3">
-                                                    <span className={`text-[10px] font-bold uppercase ${session.instructor.toLowerCase().includes(userName.toLowerCase()) ? 'text-east-light' : 'text-gray-500'}`}>
+                                                    <span className={`text-[10px] font-bold uppercase ${(session.instructor?.toLowerCase() || '').includes(userName?.toLowerCase() || '') ? 'text-east-light' : 'text-gray-500'}`}>
                                                         {session.instructor}
                                                     </span>
                                                 </div>
