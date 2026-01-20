@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { rateLimit, getRateLimitIdentifier } from '@/app/lib/rateLimit';
+import { checkRateLimit, paymentRateLimit, getClientIdentifier } from '@/app/lib/rateLimit';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 
-
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
     // 1. Rate limiting
-    const identifier = getRateLimitIdentifier(request);
-    if (!rateLimit(identifier, { windowMs: 60000, maxRequests: 5 })) {
-        return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
+    const identifier = getClientIdentifier(request);
+    const { success, response } = await checkRateLimit(identifier, paymentRateLimit);
+
+    if (!success && response) {
+        return response;
     }
 
     try {

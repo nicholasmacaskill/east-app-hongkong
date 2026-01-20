@@ -10,7 +10,7 @@ export const announcementSchema = z.object({
     content: z.string().min(1, "Content is required").max(5000, "Content is too long"),
     type: z.enum(['news', 'event']),
     published: z.boolean(),
-    event_date: z.string().datetime().optional().nullable(),
+    event_date: z.string().optional().nullable(),
     image_url: z.string().url("Invalid image URL").optional().nullable().or(z.literal('')),
 });
 

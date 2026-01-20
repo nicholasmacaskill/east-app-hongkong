@@ -67,9 +67,11 @@ test.describe('Membership Lifecycle Management', () => {
         await expect(page.locator(`text=${uniqueName}`)).toBeVisible();
 
         // 4. OPEN EDIT MODAL
-        const userCard = page.locator(`div.rounded-2xl:has-text("${uniqueName}")`).first();
+        const userCard = page.locator('div.group').filter({ hasText: uniqueName }).first();
         // Click the edit button within that card.
-        await userCard.locator('button').first().click({ force: true });
+        // Click the edit button within that card.
+        // Click the edit button within that card.
+        await userCard.locator('button').nth(1).click({ force: true });
 
         // 5. UPDATE MEMBERSHIP DATES
         await expect(page.locator('h2:has-text("Edit Profile")')).toBeVisible();
@@ -90,10 +92,12 @@ test.describe('Membership Lifecycle Management', () => {
 
         // 7. VERIFY CHANGES
         // Re-open the modal to check if values persisted
-        await userCard.locator('button').first().click({ force: true });
+        await userCard.locator('button').nth(1).click({ force: true });
         await expect(page.locator('h2:has-text("Edit Profile")')).toBeVisible();
 
+        await expect(page.locator('div:has(> label:has-text("Member Since")) >> input')).toBeVisible();
         await expect(page.locator('div:has(> label:has-text("Member Since")) >> input')).toHaveValue(startDate);
+        await expect(page.locator('div:has(> label:has-text("Expires On")) >> input')).toBeVisible();
         await expect(page.locator('div:has(> label:has-text("Expires On")) >> input')).toHaveValue(expiryDate);
     });
 
@@ -113,8 +117,8 @@ test.describe('Membership Lifecycle Management', () => {
         await expect(page.locator(`text=${uniqueName}`)).toBeVisible();
 
         // 3. OPEN EDIT MODAL
-        const userCard = page.locator(`div.rounded-2xl:has-text("${uniqueName}")`).first();
-        await userCard.locator('button').first().click({ force: true });
+        const userCard = page.locator('div.group').filter({ hasText: uniqueName }).first();
+        await userCard.locator('button').nth(1).click({ force: true });
         await expect(page.locator('h2:has-text("Edit Profile")')).toBeVisible();
 
         // 4. TEST REACTIVATE
@@ -137,8 +141,9 @@ test.describe('Membership Lifecycle Management', () => {
         await page.click('button:has-text("Save Changes")');
         await expect(page.locator('h2:has-text("Edit Profile")')).not.toBeVisible();
 
-        await userCard.locator('button').first().click({ force: true });
+        await userCard.locator('button').nth(1).click({ force: true });
         await expect(page.locator('h2:has-text("Edit Profile")')).toBeVisible();
+        await expect(page.locator('div:has(> label:has-text("Expires On")) >> input')).toBeVisible();
         await expect(page.locator('div:has(> label:has-text("Expires On")) >> input')).toHaveValue(yesterdayStr);
     });
 
@@ -158,8 +163,8 @@ test.describe('Membership Lifecycle Management', () => {
         await expect(page.locator(`text=${uniqueName}`)).toBeVisible();
 
         // 3. OPEN EDIT MODAL
-        const userCard = page.locator(`div.rounded-2xl:has-text("${uniqueName}")`).first();
-        await userCard.locator('button').first().click({ force: true });
+        const userCard = page.locator('div.group').filter({ hasText: uniqueName }).first();
+        await userCard.locator('button').nth(1).click({ force: true });
         await expect(page.locator('h2:has-text("Edit Profile")')).toBeVisible();
 
         // 4. CLICK RESET PASSWORD BUTTON & HANDLE ALERTS

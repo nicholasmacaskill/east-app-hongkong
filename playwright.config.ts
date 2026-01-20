@@ -79,7 +79,8 @@ export default defineConfig({
         'tests/coach-extended.spec.ts',
         'tests/admin-system.spec.ts',
         'tests/edge-cases.spec.ts',
-        'tests/reminders.spec.ts'
+        'tests/reminders.spec.ts',
+        'tests/admin-events.spec.ts'
       ],
     },
 

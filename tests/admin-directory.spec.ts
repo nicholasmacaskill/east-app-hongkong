@@ -23,16 +23,17 @@ test.describe('Admin Directory Management', () => {
         // Use sibling selector (+) to avoid matching parent divs
         await page.locator('label:has-text("First Name") + input').fill('TestCoach');
         await page.locator('label:has-text("Last Name") + input').fill(`Auto-${timestamp}`);
-        await page.locator('label:has-text("Email (Invite Link)") + input').fill(`coach-${timestamp}@test.com`);
+        await page.locator('label:has-text("Email (Login ID)") + input').fill(`coach-${timestamp}@test.com`);
         await page.locator('label:has-text("Mobile") + input').fill('98765432');
         await page.locator('label:has-text("Bio") + textarea').fill('Automated Test Bio');
 
         // 5. Submit
-        await page.click('button:has-text("Send Invite")');
+        await page.click('button:has-text("Create User")');
 
         // 6. Verify Success Modal "Invite Sent!"
-        await expect(page.locator('text=Invite Sent!')).toBeVisible();
-        await page.click('button:has-text("Confirm")');
+        // 6. Verify Success Modal "User Created!"
+        await expect(page.locator('h2:has-text("User Created!")')).toBeVisible();
+        await page.click('button:has-text("Done")');
 
         // 7. Verify new coach appears in list (Coach Tab)
         await page.click('button:has-text("Coaches")');
