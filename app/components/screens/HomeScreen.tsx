@@ -142,6 +142,38 @@ export default function HomeScreen({
       return new Date(b.start_time).getTime() - new Date(a.start_time).getTime();
     });
 
+  // --- News and Events Normalization ---
+
+  // Combine news sessions with news announcements
+  const combinedNews = [
+    ...newsRaw,
+    ...announcements
+      .filter(a => a.type === 'news')
+      .map(a => ({
+        id: a.id,
+        title: a.title,
+        description: a.content,
+        image_url: a.image_url || 'https://images.unsplash.com/photo-1504462385-748101e7cabb?w=800', // Default news image
+        category: 'NEWS',
+        start_time: a.created_at
+      }))
+  ].sort((a, b) => new Date(b.start_time || 0).getTime() - new Date(a.start_time || 0).getTime());
+
+  // Combine event sessions with event announcements
+  const combinedEvents = [
+    ...eventsUnique,
+    ...announcements
+      .filter(a => a.type === 'event')
+      .map(a => ({
+        id: a.id,
+        title: a.title,
+        description: a.content,
+        image_url: a.image_url || 'https://images.unsplash.com/photo-1540317580384-e5d43616b9aa?w=800', // Default event image
+        category: 'EVENT',
+        start_time: a.event_date || a.created_at
+      }))
+  ].sort((a, b) => new Date(a.start_time || 0).getTime() - new Date(b.start_time || 0).getTime());
+
   const handleServiceClick = async (service: ServiceType) => {
     if (service.category === 'CLASS') {
       // Show upcoming sessions for this class type
@@ -177,7 +209,14 @@ export default function HomeScreen({
 
   // handleCoachSelect is no longer needed
 
-  const handleItemClick = (item: Session, groupByKey: 'title' | 'instructor') => {
+  const handleItemClick = (item: any, groupByKey: 'title' | 'instructor') => {
+    // If it's an announcement-based item (UUID string vs specific session ID)
+    // we just open the detail modal directly for that item.
+    if (typeof item.id === 'string' || item.category === 'NEWS') {
+      onClassClick([item as Session], item.description);
+      return;
+    }
+
     const allSlots = sessions.filter(s => s[groupByKey] === item[groupByKey] && s.category === item.category);
     allSlots.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
@@ -191,8 +230,6 @@ export default function HomeScreen({
 
   return (
     <div className="min-h-screen bg-black pb-24 animate-fadeIn relative">
-      {/* Header */}
-
       <AppHeader
         credits={credits}
         onOpenSettings={onOpenSettings}
@@ -211,8 +248,8 @@ export default function HomeScreen({
             </div>
           ) : (
             <div className="flex overflow-x-auto no-scrollbar gap-4 snap-x pb-4">
-              {newsRaw.map((item) => (
-                <div key={item.id} onClick={() => onClassClick([item])} className="snap-center min-w-[85%] relative rounded-2xl overflow-hidden aspect-[16/9] border border-white/10 cursor-pointer group shadow-2xl active:scale-95 transition-transform duration-200">
+              {combinedNews.map((item) => (
+                <div key={item.id} onClick={() => onClassClick([item as Session])} className="snap-center min-w-[85%] relative rounded-2xl overflow-hidden aspect-[16/9] border border-white/10 cursor-pointer group shadow-2xl active:scale-95 transition-transform duration-200">
                   <img src={item.image_url} alt={item.title} className="w-full h-full object-cover opacity-80 transition-all duration-700 group-hover:scale-105 group-hover:opacity-60" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 p-5 w-full">
@@ -225,36 +262,6 @@ export default function HomeScreen({
             </div>
           )}
         </div>
-
-        {/* Announcements & Events */}
-        {announcements.length > 0 && (
-          <div>
-            <SectionHeader title="Latest Updates" />
-            <div className="grid grid-cols-1 gap-3">
-              {announcements.slice(0, 3).map((announcement) => (
-                <div key={announcement.id} className="bg-[#1e1e1e] rounded-xl border border-white/5 p-4 flex gap-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${announcement.type === 'news'
-                          ? 'bg-[#28D160]/20 text-[#28D160]'
-                          : 'bg-blue-500/20 text-blue-400'
-                        }`}>
-                        {announcement.type}
-                      </span>
-                      {announcement.type === 'event' && announcement.event_date && (
-                        <span className="text-[9px] text-gray-500">
-                          📅 {new Date(announcement.event_date).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="font-montserrat font-bold text-sm text-white mb-1">{announcement.title}</h3>
-                    <p className="text-xs text-gray-400 line-clamp-2">{announcement.content}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Facility Booking */}
         <div>
@@ -384,13 +391,13 @@ export default function HomeScreen({
               <div className="space-y-4">
                 {[1, 2].map(i => <Skeleton key={i} className="w-full h-28 rounded-xl" />)}
               </div>
-            ) : eventsUnique.map((event) => (
+            ) : combinedEvents.map((event: any) => (
               <div key={event.id} className="cursor-pointer group relative rounded-xl overflow-hidden border border-gray-800 active:scale-95 transition-transform duration-200" onClick={() => handleItemClick(event, 'title')}>
                 <div className="h-28 relative">
                   <img src={event.image_url || ''} className="w-full h-full object-cover opacity-80 group-hover:opacity-60 transition-all duration-500" alt={event.title} />
                   <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-center items-start">
-                    <span className="text-[8px] font-bold text-east-light uppercase tracking-widest mb-1 border border-east-light px-2 py-0.5 rounded-full bg-black">Coming Soon</span>
+                    <span className="text-[8px] font-bold text-east-light uppercase tracking-widest mb-1 border border-EAST-LIGHT px-2 py-0.5 rounded-full bg-black">coming soon</span>
                     <h4 className="font-montserrat font-black italic text-lg text-white uppercase tracking-tight max-w-[80%]">{event.title}</h4>
                   </div>
                 </div>
