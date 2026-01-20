@@ -75,17 +75,20 @@ export async function POST(request: Request) {
 
         // 2. Setup Headers & Signature
         const headersList = await headers();
-        const sig = headersList.get('stripe-signature')!;
-        const { searchParams } = new URL(request.url);
-        const isTest = searchParams.get('test') === 'true';
+        const url = new URL(request.url, 'http://localhost');
+        const isTest = url.searchParams.get('test') === 'true';
 
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
         let event: Stripe.Event;
 
         // 3. Signature Verification
         try {
+            console.log(`[STRIPE WEBHOOK] isTest: ${isTest}, body length: ${body.length}, URL: ${request.url}`);
             if (!isTest) {
-                event = stripe.webhooks.constructEvent(body, sig || '', endpointSecret);
+                const sig = headersList.get('stripe-signature');
+                if (!sig) throw new Error('No stripe-signature header found');
+
+                event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
                 console.log(`✅ Webhook Signature Verified. Event: ${event.type}`);
             } else {
                 event = JSON.parse(body) as Stripe.Event;
@@ -93,7 +96,12 @@ export async function POST(request: Request) {
             }
         } catch (err: any) {
             console.error(`❌ Webhook Signature Error: ${err.message}`);
-            return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+            return NextResponse.json({
+                error: `Webhook Error: ${err.message}`,
+                isTest,
+                receivedUrl: request.url,
+                bodyLength: body.length
+            }, { status: 400 });
         }
 
         // 4. Processing Handlers
@@ -109,30 +117,33 @@ export async function POST(request: Request) {
             if (session.mode === 'subscription') {
                 const subscriptionId = session.subscription as string;
                 const customerId = session.customer as string;
-                let priceId: string;
+                let plan: { credits: number; tier: string };
+                let expiresAt: string;
 
                 if (isTest && session.metadata?.test_price_id) {
-                    priceId = session.metadata.test_price_id;
-                    console.log(`🧪 TEST MODE: Using test_price_id: ${priceId}`);
+                    const testPriceId = session.metadata.test_price_id;
+                    plan = PLAN_DETAILS[testPriceId] || { credits: 1000, tier: 'individual' };
+                    expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // +30 days
+                    console.log(`🧪 TEST MODE: Using test_price_id: ${testPriceId}`);
                 } else {
                     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-                    priceId = subscription.items.data[0].price.id;
+                    const priceId = subscription.items.data[0].price.id;
+                    plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
+                    expiresAt = new Date((subscription as any).current_period_end * 1000).toISOString();
+                }
 
-                    const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
-                    console.log(`Processing Subscription: ${plan.tier.toUpperCase()} for User: ${userId}`);
+                console.log(`Processing Subscription: ${plan.tier.toUpperCase()} for User: ${userId}`);
 
-                    if (userId) {
-                        const expiresAt = new Date((subscription as any).current_period_end * 1000).toISOString();
-                        await updateProfile(userId, plan.credits, plan.tier, customerId, subscriptionId, expiresAt);
-                        if (customerEmail) {
-                            try {
-                                await sendEmail({
-                                    to: customerEmail,
-                                    subject: `Welcome to EAST - ${plan.tier.toUpperCase()} Member`,
-                                    html: `<h1>Membership Confirmed!</h1><p>Thank you for joining. Your account has been credited with <strong>${plan.credits} credits</strong>.</p>`
-                                });
-                            } catch (e) { console.error("Email failed, but DB updated."); }
-                        }
+                if (userId) {
+                    await updateProfile(userId, plan.credits, plan.tier, customerId, subscriptionId, expiresAt);
+                    if (customerEmail) {
+                        try {
+                            await sendEmail({
+                                to: customerEmail,
+                                subject: `Welcome to EAST - ${plan.tier.toUpperCase()} Member`,
+                                html: `<h1>Membership Confirmed!</h1><p>Thank you for joining. Your account has been credited with <strong>${plan.credits} credits</strong>.</p>`
+                            });
+                        } catch (e) { console.error("Email failed, but DB updated."); }
                     }
                 }
             }
@@ -178,9 +189,20 @@ export async function POST(request: Request) {
                 const customerId = invoice.customer as string;
                 const subscriptionId = (invoice as any).subscription as string;
 
-                const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-                const priceId = subscription.items.data[0].price.id;
-                const plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
+                let plan: { credits: number; tier: string };
+                let currentPeriodEnd: number;
+
+                if (isTest && invoice.metadata?.test_price_id) {
+                    const testPriceId = invoice.metadata.test_price_id;
+                    plan = PLAN_DETAILS[testPriceId] || { credits: 1000, tier: 'individual' };
+                    currentPeriodEnd = Math.floor((Date.now() + 30 * 24 * 60 * 60 * 1000) / 1000);
+                    console.log(`🧪 TEST MODE: Processing renewal for test_price_id: ${testPriceId}`);
+                } else {
+                    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                    const priceId = subscription.items.data[0].price.id;
+                    plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
+                    currentPeriodEnd = (subscription as any).current_period_end;
+                }
 
                 const supabaseAdmin = getSupabaseAdmin();
                 const { data: profile } = await supabaseAdmin
@@ -190,7 +212,7 @@ export async function POST(request: Request) {
                     .single();
 
                 if (profile) {
-                    await handleRenewal(profile.id, plan.credits, 'membership', invoice.id, `Monthly renewal: ${plan.credits} credits`, (subscription as any).current_period_end);
+                    await handleRenewal(profile.id, plan.credits, 'membership', invoice.id, `Monthly renewal: ${plan.credits} credits`, currentPeriodEnd);
                 }
             }
         }

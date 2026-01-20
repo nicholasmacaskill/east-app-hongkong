@@ -18,3 +18,12 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Build artifacts
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+debug_*.png
+
+# Test artifacts
+test-results/
+playwright-report/
