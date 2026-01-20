@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { createClient } from '@supabase/supabase-js';
+import { announcementSchema, validateInput } from '@/app/lib/validation';
+import { sanitize } from '@/app/lib/sanitize';
 
 export async function GET(request: Request) {
     try {
@@ -52,7 +54,17 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { title, content, type, published, event_date, image_url } = body;
+
+        // 1. Validate Input
+        const validation = validateInput(announcementSchema, body);
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error }, { status: 400 });
+        }
+
+        // 2. Sanitize Input
+        const { title, content, type, published, event_date, image_url } = validation.data;
+        const safeTitle = sanitize(title);
+        const safeContent = sanitize(content, false); // Allow basic HTML (rich text) if intended, or true for strict
 
         // Authentication check
         const authHeader = request.headers.get('Authorization');
@@ -85,8 +97,8 @@ export async function POST(request: Request) {
         const { data: announcement, error } = await supabaseAdmin
             .from('announcements')
             .insert({
-                title,
-                content,
+                title: safeTitle,
+                content: safeContent,
                 type,
                 published: published || false,
                 event_date: event_date || null,
@@ -111,11 +123,22 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
     try {
         const body = await request.json();
-        const { id, title, content, type, published, event_date, image_url } = body;
+        const { id } = body;
 
         if (!id) {
             return NextResponse.json({ error: 'ID required' }, { status: 400 });
         }
+
+        // 1. Validate Input
+        const validation = validateInput(announcementSchema, body);
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error }, { status: 400 });
+        }
+
+        // 2. Sanitize Input
+        const { title, content, type, published, event_date, image_url } = validation.data;
+        const safeTitle = sanitize(title);
+        const safeContent = sanitize(content, false);
 
         // Authentication check
         const authHeader = request.headers.get('Authorization');
@@ -148,8 +171,8 @@ export async function PUT(request: Request) {
         const { data: announcement, error } = await supabaseAdmin
             .from('announcements')
             .update({
-                title,
-                content,
+                title: safeTitle,
+                content: safeContent,
                 type,
                 published,
                 event_date: event_date || null,
