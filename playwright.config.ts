@@ -77,7 +77,9 @@ export default defineConfig({
         'tests/public-flows.spec.ts',
         'tests/membership-webhooks.spec.ts',
         'tests/coach-extended.spec.ts',
-        'tests/admin-system.spec.ts'
+        'tests/admin-system.spec.ts',
+        'tests/edge-cases.spec.ts',
+        'tests/reminders.spec.ts'
       ],
     },
 
