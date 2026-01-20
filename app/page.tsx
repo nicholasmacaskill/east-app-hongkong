@@ -374,15 +374,6 @@ function AppContent() {
                 setTab={setActiveTab}
               />
 
-              {/* Fail-safe Admin Link */}
-              {((userProfile.role as string) === 'admin' || (userProfile.role as string) === 'sys-admin') && (
-                <div className="bg-red-900/50 border border-red-500 p-4 m-4 rounded text-center">
-                  <p className="text-white font-bold mb-2">Admin Access Detected</p>
-                  <a href="/sys-admin" className="inline-block bg-red-600 text-white px-6 py-2 rounded font-black uppercase tracking-widest hover:bg-red-500 transition-colors">
-                    FORCE ENTER ADMIN PANEL
-                  </a>
-                </div>
-              )}
             </>
           )}
 

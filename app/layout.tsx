@@ -10,8 +10,8 @@ const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat
 const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-opensans" });
 
 export const metadata: Metadata = {
-  title: "EAST Training App",
-  description: "Sports training application",
+  title: "EAST Sports Group",
+  description: "Official application for EAST Sports Group",
 };
 
 export default function RootLayout({
