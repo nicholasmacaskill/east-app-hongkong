@@ -304,17 +304,9 @@ function AppContent() {
   };
 
   // ----------------------------------------------------
-  // COACH VIEW (Redirect to Master Dashboard)
+  // COACH VIEW (Rendered in home tab below)
   // ----------------------------------------------------
-  if (userProfile.role === 'coach') {
-    return (
-      <CoachDashboard
-        currentUserId={currentUserId}
-        userName={userProfile.first_name || 'Coach'}
-        userLastName={userProfile.last_name || ''}
-      />
-    );
-  }
+  // Removed early return to allow BottomNav and Profile access
 
   // AUTO-REDIRECT ADMINS TO PORTAL (UI ONLY) - DISABLED, RESTORE MANUAL ENTRY
   if (userProfile.role === 'admin') {
@@ -361,14 +353,22 @@ function AppContent() {
 
           {activeTab === 'home' && (
             <>
-              <HomeScreen
-                onClassClick={handleClassClick}
-                onOpenSettings={() => setShowSettingsModal(true)}
-                bookedSessions={bookedSessions}
-                credits={userProfile.credits || 0}
-                subscriptionStatus={userProfile.subscription_status}
-                setTab={setActiveTab}
-              />
+              {userProfile.role === 'coach' ? (
+                <CoachDashboard
+                  currentUserId={currentUserId}
+                  userName={userProfile.first_name || 'Coach'}
+                  userLastName={userProfile.last_name || ''}
+                />
+              ) : (
+                <HomeScreen
+                  onClassClick={handleClassClick}
+                  onOpenSettings={() => setShowSettingsModal(true)}
+                  bookedSessions={bookedSessions}
+                  credits={userProfile.credits || 0}
+                  subscriptionStatus={userProfile.subscription_status}
+                  setTab={setActiveTab}
+                />
+              )}
 
               {/* Fail-safe Admin Link */}
               {((userProfile.role as string) === 'admin' || (userProfile.role as string) === 'sys-admin') && (

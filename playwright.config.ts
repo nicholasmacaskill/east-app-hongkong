@@ -73,7 +73,11 @@ export default defineConfig({
         'tests/membership-tiers.spec.ts',
         'tests/admin-user-creation.spec.ts',
         'tests/transaction-history.spec.ts',
-        'tests/membership-lifecycle.spec.ts'
+        'tests/membership-lifecycle.spec.ts',
+        'tests/public-flows.spec.ts',
+        'tests/membership-webhooks.spec.ts',
+        'tests/coach-extended.spec.ts',
+        'tests/admin-system.spec.ts'
       ],
     },
 

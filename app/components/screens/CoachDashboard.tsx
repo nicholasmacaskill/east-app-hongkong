@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers } from 'lucide-react';
+import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send } from 'lucide-react';
 
 interface Attendee {
     id: string;
@@ -30,6 +30,10 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
     const [refreshing, setRefreshing] = useState(false);
     const [expandedDates, setExpandedDates] = useState<string[]>([]);
     const [attendance, setAttendance] = useState<Record<string, boolean>>({});
+    const [selectedAttendeeForNote, setSelectedAttendeeForNote] = useState<Attendee | null>(null);
+    const [noteContent, setNoteContent] = useState('');
+    const [savingNote, setSavingNote] = useState(false);
+    const [existingNotes, setExistingNotes] = useState<any[]>([]);
 
     const toggleDate = (date: string) => {
         setExpandedDates(prev =>
@@ -107,6 +111,42 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
             setFilteredSessions(myData);
         }
     }, [viewMode, allSessions, currentUserId, userName, userLastName]);
+
+    const openNoteModal = async (attendee: Attendee) => {
+        setSelectedAttendeeForNote(attendee);
+        setNoteContent('');
+        setExistingNotes([]);
+        // Fetch notes
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const res = await fetch(`/api/coach/notes?playerId=${attendee.id}`, {
+            headers: { 'Authorization': `Bearer ${session.access_token}` }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            setExistingNotes(data);
+        }
+    };
+
+    const handleSaveNote = async () => {
+        if (!selectedAttendeeForNote || !noteContent.trim()) return;
+        setSavingNote(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const res = await fetch('/api/coach/notes', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ playerId: selectedAttendeeForNote.id, content: noteContent })
+        });
+        if (res.ok) {
+            setNoteContent('');
+            openNoteModal(selectedAttendeeForNote); // Refresh list
+        }
+        setSavingNote(false);
+    };
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -277,12 +317,23 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                                                 return (
                                                                     <div
                                                                         key={a.id}
-                                                                        onClick={() => toggleAttendance(session.id, a.id)}
-                                                                        className={`flex items-center gap-1.5 px-2 py-1 rounded select-none transition-all cursor-pointer ${isPresent ? 'bg-east-light text-black border border-east-light shadow-[0_0_10px_rgba(40,209,96,0.3)]' : 'bg-white/10 text-white/50 border border-white/5 hover:bg-white/20'}`}
+                                                                        className="flex items-center gap-2"
                                                                     >
-                                                                        <div className={`w-1.5 h-1.5 rounded-full ${isPresent ? 'bg-black animate-pulse' : 'bg-gray-600'}`} />
-                                                                        <span className="text-[10px] font-black uppercase text-inherit">{a.name}</span>
-                                                                        {isPresent && <span className="text-[8px] font-black ml-1 uppercase opacity-70">Present</span>}
+                                                                        <div
+                                                                            onClick={() => toggleAttendance(session.id, a.id)}
+                                                                            className={`flex items-center gap-1.5 px-2 py-1 rounded select-none transition-all cursor-pointer ${isPresent ? 'bg-east-light text-black border border-east-light shadow-[0_0_10px_rgba(40,209,96,0.3)]' : 'bg-white/10 text-white/50 border border-white/5 hover:bg-white/20'}`}
+                                                                        >
+                                                                            <div className={`w-1.5 h-1.5 rounded-full ${isPresent ? 'bg-black animate-pulse' : 'bg-gray-600'}`} />
+                                                                            <span className="text-[10px] font-black uppercase text-inherit">{a.name}</span>
+                                                                            {isPresent && <span className="text-[8px] font-black ml-1 uppercase opacity-70">Present</span>}
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); openNoteModal(a); }}
+                                                                            className="p-1.5 rounded bg-white/5 hover:bg-east-light hover:text-black text-gray-400 transition-all border border-white/5"
+                                                                            title="Private Note"
+                                                                        >
+                                                                            <FileText size={12} />
+                                                                        </button>
                                                                     </div>
                                                                 );
                                                             })}
@@ -306,6 +357,69 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                 })}
 
             </div>
+
+            {/* PRIVATE NOTE MODAL */}
+            {selectedAttendeeForNote && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fadeIn">
+                    <div className="w-full max-w-md bg-[#121212] rounded-3xl overflow-hidden border border-white/10 shadow-2xl flex flex-col max-h-[80vh]">
+                        {/* Modal Header */}
+                        <div className="bg-gradient-to-r from-east-light to-east-dark p-4 flex justify-between items-center">
+                            <div>
+                                <h2 className="font-black italic text-lg text-black uppercase leading-none">PLAYER NOTES</h2>
+                                <p className="text-[10px] font-bold text-black/60 uppercase tracking-widest mt-1">PRIVATE • {selectedAttendeeForNote.name}</p>
+                            </div>
+                            <button onClick={() => setSelectedAttendeeForNote(null)} className="p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors">
+                                <X size={20} className="text-black" />
+                            </button>
+                        </div>
+
+                        {/* Note Input */}
+                        <div className="p-6 border-b border-white/5 bg-black/40">
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 block">New Performance Note</label>
+                            <div className="relative">
+                                <textarea
+                                    value={noteContent}
+                                    onChange={(e) => setNoteContent(e.target.value)}
+                                    placeholder="Add private feedback, strengths, or areas for improvement..."
+                                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl p-4 text-sm text-white focus:border-east-light outline-none min-h-[100px] font-medium placeholder:text-gray-700 transition-all"
+                                />
+                                <button
+                                    onClick={handleSaveNote}
+                                    disabled={savingNote || !noteContent.trim()}
+                                    className="absolute bottom-3 right-3 p-2 bg-east-light text-black rounded-lg hover:bg-white transition-all disabled:opacity-30 disabled:hover:bg-east-light"
+                                >
+                                    {savingNote ? <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <Send size={16} />}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Existing Notes List */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-4 hide-scrollbar">
+                            <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Note History</h3>
+                            {existingNotes.length === 0 ? (
+                                <div className="text-center py-10 opacity-30">
+                                    <FileText size={32} className="mx-auto mb-2" />
+                                    <p className="text-[10px] font-bold uppercase">No private notes yet</p>
+                                </div>
+                            ) : (
+                                existingNotes.map((note) => (
+                                    <div key={note.id} className="bg-white/5 rounded-2xl p-4 border border-white/5 animate-slideDown">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-[8px] font-black text-east-light uppercase tracking-tighter">
+                                                {new Date(note.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                                            </span>
+                                            <span className="text-[8px] font-bold text-gray-600 uppercase">
+                                                {new Date(note.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-white/90 leading-relaxed font-medium">{note.content}</p>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

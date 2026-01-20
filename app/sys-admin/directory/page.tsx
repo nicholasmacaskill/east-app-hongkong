@@ -192,14 +192,26 @@ export default function DirectoryPage() {
     };
 
     const handleQuickCreditUpdate = async (userId: string, currentCredits: number, delta: number) => {
-        const newCredits = Math.max(0, currentCredits + delta);
         try {
-            const { error } = await supabase
-                .from('profiles')
-                .update({ credits: newCredits })
-                .eq('id', userId);
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('Not authenticated');
 
-            if (error) throw error;
+            const response = await fetch('/api/admin/adjust-credits', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify({
+                    userId,
+                    amount: delta,
+                    description: `Quick manual adjustment (${delta > 0 ? '+' : ''}${delta})`
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Failed to update credits');
+
             fetchProfiles(); // Refresh
         } catch (error: any) {
             alert('Failed to update credits: ' + error.message);
@@ -941,15 +953,25 @@ export default function DirectoryPage() {
                                             <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 ml-2">Unassigned Athletes ({unassignedPlayers.length})</h2>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 {unassignedPlayers.map(player => (
-                                                    <div key={player.id} className="bg-[#1e1e1e] rounded-2xl p-4 border border-amber-500/20 flex items-center justify-between group/row">
+                                                    <div key={player.id} className="bg-[#1e1e1e] rounded-2xl p-4 border border-amber-500/20 flex items-center justify-between group">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-10 h-10 rounded-xl bg-white p-1">
                                                                 <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : ''}/profile/${player.id}`} size={32} />
                                                             </div>
                                                             <div>
                                                                 <p className="font-bold text-white text-sm">{player.first_name} {player.last_name}</p>
-                                                                <div className="flex gap-2">
+                                                                <div className="flex gap-2 items-center">
                                                                     <span className="text-[8px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded uppercase font-black italic">UNASSIGNED</span>
+                                                                    <div className="flex items-center gap-1 group">
+                                                                        <Coins size={10} className="text-amber-500" />
+                                                                        <span className="text-[8px] text-gray-500 uppercase font-black italic">{player.credits}</span>
+                                                                        <button
+                                                                            onClick={() => handleQuickCreditUpdate(player.id, player.credits, 10)}
+                                                                            className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-[8px] font-bold hover:bg-amber-500 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                        >
+                                                                            +
+                                                                        </button>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>

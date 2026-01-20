@@ -28,9 +28,21 @@ export default function AdminLayout({
         const checkAuth = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
-                router.replace('/');
+                // Wait a tiny bit and try one more time as session might be restoring
+                await new Promise(r => setTimeout(r, 500));
+                const { data: { user: retryUser } } = await supabase.auth.getUser();
+                if (!retryUser) {
+                    router.replace('/');
+                    return;
+                }
+                // If found on retry, continue with that user
+                processUser(retryUser);
                 return;
             }
+            processUser(user);
+        };
+
+        const processUser = async (user: any) => {
 
             const metaRole = user.user_metadata?.role;
             if (metaRole === 'admin' || metaRole === 'sys-admin') {
