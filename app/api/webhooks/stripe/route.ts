@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from '@/app/lib/email';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { checkRateLimit, paymentRateLimit, getClientIdentifier } from '@/app/lib/rateLimit';
 
 // 1. Setup Stripe
 // 1. Setup Stripe
@@ -52,6 +53,13 @@ if (process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY) {
 
 export async function POST(request: Request) {
     try {
+        // 0. Check Rate Limit
+        const identifier = getClientIdentifier(request);
+        const rateLimitResult = await checkRateLimit(identifier, paymentRateLimit);
+        if (!rateLimitResult.success) {
+            return rateLimitResult.response;
+        }
+
         const body = await request.text();
 
         // 1. Diagnostics & Runtime Check
