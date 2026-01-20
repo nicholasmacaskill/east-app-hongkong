@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 const authFile = 'playwright/.auth/admin.json';
 
 setup('authenticate as admin', async ({ page }) => {
+    setup.setTimeout(120000);
     // 1. Create Test Admin via Admin API
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

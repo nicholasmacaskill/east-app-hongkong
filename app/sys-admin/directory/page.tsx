@@ -708,6 +708,32 @@ export default function DirectoryPage() {
                                                 />
                                             </div>
                                         </div>
+
+                                        {/* Membership Status Badge */}
+                                        <div className="mt-4 p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between">
+                                            <div>
+                                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Account Status</p>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    {editingUser.membershipExpires && new Date(editingUser.membershipExpires) > new Date() ? (
+                                                        <>
+                                                            <div className="w-2 h-2 rounded-full bg-[#28D160] shadow-[0_0_8px_rgba(40,209,96,0.5)]"></div>
+                                                            <span className="text-xs font-black italic uppercase text-[#28D160]">Active Member</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                                                            <span className="text-xs font-black italic uppercase text-red-500">Expired / Inactive</span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Renews / Ends</p>
+                                                <p className="text-xs font-mono font-bold text-white mt-0.5">
+                                                    {editingUser.membershipExpires ? new Date(editingUser.membershipExpires).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                                                </p>
+                                            </div>
+                                        </div>
                                         <div className="flex gap-2 mt-2">
                                             <button
                                                 onClick={(e) => {
@@ -863,7 +889,10 @@ export default function DirectoryPage() {
                                         return (
                                             <div key={parent.id} className="bg-[#1e1e1e] rounded-3xl border border-white/5 overflow-hidden">
                                                 {/* Parent Row */}
-                                                <div className="p-5 flex items-center justify-between border-b border-white/5 bg-gradient-to-r from-purple-900/10 to-transparent group/row">
+                                                <div
+                                                    onClick={() => handleEditClick(parent)}
+                                                    className="p-5 flex items-center justify-between border-b border-white/5 bg-gradient-to-r from-purple-900/10 to-transparent group/row cursor-pointer hover:bg-purple-900/20 transition-colors"
+                                                >
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-12 h-12 rounded-full bg-purple-600/20 border border-purple-600/30 flex items-center justify-center">
                                                             <User className="text-purple-400" size={24} />
@@ -900,7 +929,11 @@ export default function DirectoryPage() {
                                                     ) : (
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                                                             {children.map(child => (
-                                                                <div key={child.id} className="bg-[#252525]/50 rounded-2xl p-4 border border-white/5 flex items-center justify-between group">
+                                                                <div
+                                                                    key={child.id}
+                                                                    onClick={() => handleEditClick(child)}
+                                                                    className="bg-[#252525]/50 rounded-2xl p-4 border border-white/5 flex items-center justify-between group cursor-pointer hover:border-[#28D160]/30 hover:bg-[#252525] transition-all"
+                                                                >
                                                                     <div className="flex items-center gap-3">
                                                                         <div className="w-10 h-10 rounded-xl bg-white p-1">
                                                                             <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : ''}/profile/${child.id}`} size={32} />
@@ -953,7 +986,11 @@ export default function DirectoryPage() {
                                             <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 ml-2">Unassigned Athletes ({unassignedPlayers.length})</h2>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 {unassignedPlayers.map(player => (
-                                                    <div key={player.id} className="bg-[#1e1e1e] rounded-2xl p-4 border border-amber-500/20 flex items-center justify-between group">
+                                                    <div
+                                                        key={player.id}
+                                                        onClick={() => handleEditClick(player)}
+                                                        className="bg-[#1e1e1e] rounded-2xl p-4 border border-amber-500/20 flex items-center justify-between group cursor-pointer hover:border-amber-500/50 hover:bg-[#252525] transition-all"
+                                                    >
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-10 h-10 rounded-xl bg-white p-1">
                                                                 <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : ''}/profile/${player.id}`} size={32} />
