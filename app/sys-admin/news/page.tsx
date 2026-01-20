@@ -2,362 +2,366 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
-import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Edit2, Upload, X, Save, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, Calendar, Newspaper, Eye, EyeOff } from 'lucide-react';
+import Link from 'next/link';
 
-interface NewsItem {
-    id: number;
+type Announcement = {
+    id: string;
     title: string;
-    description: string;
-    image_url: string;
-    start_time: string;
-    priority?: number;
-}
+    content: string;
+    type: 'news' | 'event';
+    published: boolean;
+    event_date?: string;
+    image_url?: string;
+    created_at: string;
+    updated_at: string;
+};
 
-export default function AdminNewsPage() {
-    const router = useRouter();
-    const [news, setNews] = useState<NewsItem[]>([]);
+export default function NewsManagementPage() {
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isEditing, setIsEditing] = useState(false);
-    const [currentItem, setCurrentItem] = useState<Partial<NewsItem>>({});
-    const [uploading, setUploading] = useState(false);
+    const [filter, setFilter] = useState<'all' | 'news' | 'event'>('all');
+    const [showModal, setShowModal] = useState(false);
+    const [editingItem, setEditingItem] = useState<Announcement | null>(null);
+    const [formData, setFormData] = useState({
+        title: '',
+        content: '',
+        type: 'news' as 'news' | 'event',
+        published: false,
+        event_date: '',
+        image_url: ''
+    });
 
     useEffect(() => {
-        fetchNews();
+        fetchAnnouncements();
     }, []);
 
-    const fetchNews = async () => {
+    const fetchAnnouncements = async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('sessions')
-            .select('*')
-            .eq('category', 'NEWS')
-            // Order by priority first (NULLS LAST), then newest date
-            .order('priority', { ascending: false, nullsFirst: false })
-            .order('start_time', { ascending: false });
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
 
-        if (error) console.error('Error fetching news:', error);
-        else setNews(data || []);
+            const response = await fetch('/api/admin/announcements', {
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`
+                }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setAnnouncements(data);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
         setLoading(false);
     };
 
-    const handleMove = async (index: number, direction: -1 | 1) => {
-        const newIndex = index + direction;
-        if (newIndex < 0 || newIndex >= news.length) return;
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
 
-        const itemA = news[index];
-        const itemB = news[newIndex];
+            const method = editingItem ? 'PUT' : 'POST';
+            const body = editingItem
+                ? { ...formData, id: editingItem.id }
+                : formData;
 
-        // Ensure both have valid priorities
-        const priorityA = (itemA.priority || 0);
-        const priorityB = (itemB.priority || 0);
+            const response = await fetch('/api/admin/announcements', {
+                method,
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
 
-        // If priorities are equal, create a gap
-        // Or simpler: Just swap their distinct priority values.
-        // But simply swapping might not work if priorities are identical (default 0).
-        // Strategy: Assign explicit priorities based on current order. 
-        // We want the item moving UP (-1 index) to have a HIGHER priority value.
-
-        // Let's re-normalize the priority of the entire list to be safe, 
-        // assigning decreasing values from top to bottom.
-        // E.g. Top item = N, Bottom = 1.
-
-        const newNews = [...news];
-        // Swap items in local array
-        [newNews[index], newNews[newIndex]] = [newNews[newIndex], newNews[index]];
-        setNews(newNews); // Optimistic update
-
-        // Update DB
-        // Assign priority = length - index (so index 0 has highest priority)
-        const updates = newNews.map((item, i) => ({
-            id: item.id,
-            unweighted_priority: newNews.length - i
-        }));
-
-        // We can't do a bulk update easily in one query without a custom function or loop.
-        // Loop is fine for small lists like News.
-        for (const update of updates) {
-            await supabase.from('sessions').update({ priority: update.unweighted_priority }).eq('id', update.id);
+            if (response.ok) {
+                setShowModal(false);
+                setEditingItem(null);
+                setFormData({
+                    title: '',
+                    content: '',
+                    type: 'news',
+                    published: false,
+                    event_date: '',
+                    image_url: ''
+                });
+                fetchAnnouncements();
+            }
+        } catch (error) {
+            console.error('Error:', error);
         }
     };
 
-    const handleEdit = (item: NewsItem) => {
-        setCurrentItem(item);
-        setIsEditing(true);
+    const handleDelete = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this announcement?')) return;
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+
+            const response = await fetch(`/api/admin/announcements?id=${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`
+                }
+            });
+
+            if (response.ok) {
+                fetchAnnouncements();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
     };
 
-    const handleCreate = () => {
-        setCurrentItem({
-            title: '',
-            description: '',
-            image_url: '',
-            start_time: new Date().toISOString().slice(0, 16) // Default to now
+    const togglePublished = async (item: Announcement) => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+
+            const response = await fetch('/api/admin/announcements', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${session.access_token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ...item,
+                    published: !item.published
+                })
+            });
+
+            if (response.ok) {
+                fetchAnnouncements();
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    };
+
+    const openEditModal = (item: Announcement) => {
+        setEditingItem(item);
+        setFormData({
+            title: item.title,
+            content: item.content,
+            type: item.type,
+            published: item.published,
+            event_date: item.event_date ? new Date(item.event_date).toISOString().split('T')[0] : '',
+            image_url: item.image_url || ''
         });
-        setIsEditing(true);
+        setShowModal(true);
     };
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('Are you sure you want to delete this story?')) return;
-
-        const { error } = await supabase
-            .from('sessions')
-            .delete()
-            .eq('id', id);
-
-        if (error) alert('Error deleting news: ' + error.message);
-        else {
-            fetchNews();
-        }
-    };
-
-    const handleSave = async () => {
-        if (!currentItem.title || !currentItem.description) {
-            alert('Title and Description are required.');
-            return;
-        }
-
-        const payload = {
-            title: currentItem.title,
-            description: currentItem.description,
-            image_url: currentItem.image_url,
-            start_time: new Date(currentItem.start_time || Date.now()).toISOString(),
-            // Fixed fields for News items
-            category: 'NEWS',
-            instructor: 'Admin', // Default author
-            end_time: new Date(Date.now() + 86400000).toISOString(), // Dummy end time (24h later)
-            credit_cost: 0,
-            priority: (currentItem as any).priority || 0
-        };
-
-        let error;
-        if (currentItem.id) {
-            // Update
-            const res = await supabase
-                .from('sessions')
-                .update(payload)
-                .eq('id', currentItem.id);
-            error = res.error;
-        } else {
-            // Create - Put at TOP by finding max priority + 1?
-            // For now, let's insert with high priority so it appears first potentially,
-            // OR fetch current max.
-            // Simplified: Insert with a high number OR just 0 and let user reorder.
-            // Let's use a reasonable default. Since we re-normalize to N...1, 
-            // inserting with N+1 is best. But we don't have N here easily. 
-            // We'll insert with 0 (bottom) or let DB handle default.
-
-            // Actually, if we want it at the top, we can use a huge number, 
-            // but then re-normalizing becomes weird.
-            // Let's just insert.
-
-            // To support "Add to Top", we'd need to shift everyone else down or use float priorities.
-            // Given the reorder function re-writes ALL IDs, 
-            // let's just insert as 0. The user can move it up.
-            const res = await supabase
-                .from('sessions')
-                .insert(payload);
-            error = res.error;
-        }
-
-        if (error) {
-            alert('Error saving news: ' + error.message);
-        } else {
-            setIsEditing(false);
-            fetchNews();
-        }
-    };
-
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0) return;
-
-        setUploading(true);
-        const file = e.target.files[0];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `news/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-            .from('uploads')
-            .upload(filePath, file);
-
-        if (uploadError) {
-            alert('Error uploading image: ' + uploadError.message);
-            setUploading(false);
-            return;
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-            .from('uploads')
-            .getPublicUrl(filePath);
-
-        setCurrentItem({ ...currentItem, image_url: publicUrl });
-        setUploading(false);
-    };
+    const filtered = announcements.filter(a => filter === 'all' || a.type === filter);
 
     return (
-        <div className="p-8 text-black bg-white min-h-screen">
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-black italic uppercase tracking-tighter">News Management</h1>
-                <button
-                    onClick={handleCreate}
-                    className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-full font-bold uppercase tracking-widest hover:bg-gray-800 transition-all"
-                >
-                    <Plus size={18} />
-                    Add Story
-                </button>
+        <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-2">
+                <Link href="/sys-admin" className="self-start text-[10px] text-gray-500 font-bold uppercase tracking-widest hover:text-white mb-4 block transition-colors">← Back to Dashboard</Link>
+                <div className="flex justify-between items-end">
+                    <div>
+                        <h1 className="text-3xl font-black italic uppercase tracking-tighter">News Management</h1>
+                        <p className="text-gray-400 max-w-2xl">
+                            Create and manage news announcements and events for the public landing page.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => {
+                            setEditingItem(null);
+                            setFormData({
+                                title: '',
+                                content: '',
+                                type: 'news',
+                                published: false,
+                                event_date: '',
+                                image_url: ''
+                            });
+                            setShowModal(true);
+                        }}
+                        className="flex items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg"
+                    >
+                        <Plus size={14} /> Add Announcement
+                    </button>
+                </div>
             </div>
 
-            {loading ? (
-                <div>Loading news...</div>
-            ) : (
-                <div className="grid gap-4">
-                    {news.map((item, index) => (
-                        <div key={item.id} className="border border-gray-200 p-4 rounded-xl flex items-center gap-6 shadow-sm hover:shadow-md transition-all">
+            {/* Filter Tabs */}
+            <div className="flex gap-2">
+                {(['all', 'news', 'event'] as const).map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setFilter(tab)}
+                        className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${filter === tab
+                                ? 'bg-[#28D160] text-black'
+                                : 'bg-[#1e1e1e] text-gray-400 hover:text-white'
+                            }`}
+                    >
+                        {tab}
+                    </button>
+                ))}
+            </div>
 
-                            {/* REORDER CONTROLS */}
-                            <div className="flex flex-col gap-1 pr-2 border-r border-gray-100">
+            {/* Announcements Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {loading ? (
+                    <div className="col-span-full text-center py-12 text-gray-500">Loading...</div>
+                ) : filtered.length === 0 ? (
+                    <div className="col-span-full text-center py-12 text-gray-500">No announcements found</div>
+                ) : (
+                    filtered.map(item => (
+                        <div key={item.id} className="bg-[#1e1e1e] rounded-2xl border border-white/5 p-6 flex flex-col gap-4">
+                            <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-2">
+                                    {item.type === 'news' ? (
+                                        <Newspaper size={16} className="text-[#28D160]" />
+                                    ) : (
+                                        <Calendar size={16} className="text-blue-400" />
+                                    )}
+                                    <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${item.type === 'news'
+                                            ? 'bg-[#28D160]/20 text-[#28D160]'
+                                            : 'bg-blue-500/20 text-blue-400'
+                                        }`}>
+                                        {item.type}
+                                    </span>
+                                </div>
                                 <button
-                                    onClick={() => handleMove(index, -1)}
-                                    className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-black disabled:opacity-30 transition-colors"
-                                    disabled={index === 0}
-                                    title="Move Up"
+                                    onClick={() => togglePublished(item)}
+                                    className={`p-1 rounded ${item.published ? 'text-[#28D160]' : 'text-gray-500'}`}
+                                    title={item.published ? 'Published' : 'Draft'}
                                 >
-                                    <ChevronUp size={20} />
-                                </button>
-                                <button
-                                    onClick={() => handleMove(index, 1)}
-                                    className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-black disabled:opacity-30 transition-colors"
-                                    disabled={index === news.length - 1}
-                                    title="Move Down"
-                                >
-                                    <ChevronDown size={20} />
+                                    {item.published ? <Eye size={16} /> : <EyeOff size={16} />}
                                 </button>
                             </div>
 
-                            <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                                {item.image_url ? (
-                                    <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-300">No Img</div>
-                                )}
+                            <div>
+                                <h3 className="font-bold text-white mb-2">{item.title}</h3>
+                                <p className="text-sm text-gray-400 line-clamp-3">{item.content}</p>
                             </div>
-                            <div className="flex-1">
-                                <h3 className="font-bold text-lg uppercase tracking-tight">{item.title}</h3>
-                                <p className="text-gray-500 text-sm line-clamp-2">{item.description}</p>
-                                <span className="text-xs text-gray-400 mt-2 block">
-                                    {new Date(item.start_time).toLocaleDateString()} • Priority: {(item as any).priority || 0}
-                                </span>
-                            </div>
-                            <div className="flex gap-2">
+
+                            {item.type === 'event' && item.event_date && (
+                                <div className="text-xs text-gray-500">
+                                    📅 {new Date(item.event_date).toLocaleDateString()}
+                                </div>
+                            )}
+
+                            <div className="flex gap-2 mt-auto pt-4 border-t border-white/5">
                                 <button
-                                    onClick={() => handleEdit(item)}
-                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                    onClick={() => openEditModal(item)}
+                                    className="flex-1 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white px-3 py-2 rounded-lg text-xs font-bold transition-all"
                                 >
-                                    <Edit2 size={20} />
+                                    <Edit2 size={12} /> Edit
                                 </button>
                                 <button
                                     onClick={() => handleDelete(item.id)}
-                                    className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                    className="flex-1 flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-2 rounded-lg text-xs font-bold transition-all"
                                 >
-                                    <Trash2 size={20} />
+                                    <Trash2 size={12} /> Delete
                                 </button>
                             </div>
                         </div>
-                    ))}
-                    {news.length === 0 && <p className="text-gray-500 italic">No news stories found.</p>}
-                </div>
-            )}
+                    ))
+                )}
+            </div>
 
-            {/* EDITOR MODAL */}
-            {isEditing && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                            <h2 className="text-xl font-black italic uppercase tracking-tighter">
-                                {currentItem.id ? 'Edit Story' : 'New Story'}
-                            </h2>
-                            <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-black">
-                                <X size={24} />
-                            </button>
-                        </div>
+            {/* Modal */}
+            {showModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                    <div className="bg-[#1e1e1e] rounded-2xl border border-white/10 p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        <h2 className="text-2xl font-black italic uppercase tracking-tighter mb-6">
+                            {editingItem ? 'Edit Announcement' : 'New Announcement'}
+                        </h2>
 
-                        <div className="p-6 overflow-y-auto space-y-6">
-                            {/* Image Section */}
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Cover Image</label>
-                                <div className="flex items-center gap-4">
-                                    <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 relative group">
-                                        {currentItem.image_url ? (
-                                            <img src={currentItem.image_url} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                                <Upload size={24} />
-                                            </div>
-                                        )}
-                                        {uploading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs font-bold">Uploading...</div>}
-                                    </div>
-                                    <div className="flex-1">
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleImageUpload}
-                                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
-                                        />
-                                        <p className="text-xs text-gray-400 mt-2">Recommended: 1200x800px or similar landscape.</p>
-                                    </div>
-                                </div>
+                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Type</label>
+                                <select
+                                    value={formData.type}
+                                    onChange={(e) => setFormData({ ...formData, type: e.target.value as 'news' | 'event' })}
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                                    required
+                                >
+                                    <option value="news">News</option>
+                                    <option value="event">Event</option>
+                                </select>
                             </div>
 
-                            {/* Details */}
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Headline</label>
-                                    <input
-                                        type="text"
-                                        value={currentItem.title || ''}
-                                        onChange={e => setCurrentItem({ ...currentItem, title: e.target.value })}
-                                        className="w-full p-3 border border-gray-200 rounded-lg font-bold focus:outline-none focus:ring-2 focus:ring-black"
-                                        placeholder="Enter headline..."
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Story Text</label>
-                                    <textarea
-                                        value={currentItem.description || ''}
-                                        onChange={e => setCurrentItem({ ...currentItem, description: e.target.value })}
-                                        className="w-full p-3 border border-gray-200 rounded-lg h-40 focus:outline-none focus:ring-2 focus:ring-black"
-                                        placeholder="Write your story here..."
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Publish Date</label>
-                                    <input
-                                        type="datetime-local"
-                                        value={currentItem.start_time ? new Date(currentItem.start_time).toISOString().slice(0, 16) : ''}
-                                        onChange={e => setCurrentItem({ ...currentItem, start_time: new Date(e.target.value).toISOString() })}
-                                        className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                                    />
-                                </div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Title</label>
+                                <input
+                                    type="text"
+                                    value={formData.title}
+                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                    placeholder="Enter headline..."
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                                    required
+                                />
                             </div>
-                        </div>
 
-                        <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
-                            <button
-                                onClick={() => setIsEditing(false)}
-                                className="px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black hover:bg-gray-200 transition-all"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                className="px-8 py-3 rounded-full bg-black text-white text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg flex items-center gap-2"
-                            >
-                                <Save size={16} />
-                                Save Story
-                            </button>
-                        </div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Content</label>
+                                <textarea
+                                    value={formData.content}
+                                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                                    placeholder="Write your story..."
+                                    rows={6}
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all resize-none"
+                                    required
+                                />
+                            </div>
+
+                            {formData.type === 'event' && (
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Event Date</label>
+                                    <input
+                                        type="date"
+                                        value={formData.event_date}
+                                        onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
+                                        className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                                    />
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Image URL (Optional)</label>
+                                <input
+                                    type="url"
+                                    value={formData.image_url}
+                                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                                    placeholder="https://..."
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <input
+                                    type="checkbox"
+                                    id="published"
+                                    checked={formData.published}
+                                    onChange={(e) => setFormData({ ...formData, published: e.target.checked })}
+                                    className="w-4 h-4"
+                                />
+                                <label htmlFor="published" className="text-sm text-gray-300">Publish immediately</label>
+                            </div>
+
+                            <div className="flex gap-3 mt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowModal(false)}
+                                    className="flex-1 bg-white/5 hover:bg-white/10 text-white px-4 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex-1 bg-[#28D160] hover:bg-white text-black px-4 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all"
+                                >
+                                    {editingItem ? 'Update' : 'Save Story'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

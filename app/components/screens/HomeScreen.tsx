@@ -47,6 +47,7 @@ export default function HomeScreen({
   const [sessions, setSessions] = useState<Session[]>([]);
   const [allServices, setAllServices] = useState<ServiceType[]>([]);
   const [coaches, setCoaches] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal State
@@ -81,13 +82,25 @@ export default function HomeScreen({
         if (coachesData) setCoaches(coachesData);
 
       } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setLoading(false);
+        console.error('Error fetching data:', error);
+      }
+      setLoading(false);
+    };
+
+    const fetchAnnouncements = async () => {
+      try {
+        const response = await fetch('/api/announcements');
+        if (response.ok) {
+          const data = await response.json();
+          setAnnouncements(data);
+        }
+      } catch (error) {
+        console.error('Error fetching announcements:', error);
       }
     };
 
     loadData();
+    fetchAnnouncements();
   }, []);
 
   const isGroupBooked = (title: string, category: string) => {
@@ -212,6 +225,36 @@ export default function HomeScreen({
             </div>
           )}
         </div>
+
+        {/* Announcements & Events */}
+        {announcements.length > 0 && (
+          <div>
+            <SectionHeader title="Latest Updates" />
+            <div className="grid grid-cols-1 gap-3">
+              {announcements.slice(0, 3).map((announcement) => (
+                <div key={announcement.id} className="bg-[#1e1e1e] rounded-xl border border-white/5 p-4 flex gap-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${announcement.type === 'news'
+                          ? 'bg-[#28D160]/20 text-[#28D160]'
+                          : 'bg-blue-500/20 text-blue-400'
+                        }`}>
+                        {announcement.type}
+                      </span>
+                      {announcement.type === 'event' && announcement.event_date && (
+                        <span className="text-[9px] text-gray-500">
+                          📅 {new Date(announcement.event_date).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-montserrat font-bold text-sm text-white mb-1">{announcement.title}</h3>
+                    <p className="text-xs text-gray-400 line-clamp-2">{announcement.content}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Facility Booking */}
         <div>
