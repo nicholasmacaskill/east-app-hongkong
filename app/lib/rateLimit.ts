@@ -1,47 +1,113 @@
-// Simple in-memory rate limiter for API routes
-// For production, consider Redis-based solution
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
 
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+// Create Redis client
+// Note: You'll need to add UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to your environment variables
+const redis = process.env.UPSTASH_REDIS_REST_URL
+    ? new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    })
+    : null;
 
-interface RateLimitConfig {
-    windowMs: number;  // Time window in milliseconds
-    maxRequests: number;  // Max requests per window
+// Create rate limiters with different limits for different endpoints
+export const authRateLimit = redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(5, '15 m'), // 5 requests per 15 minutes
+        analytics: true,
+        prefix: 'ratelimit:auth',
+    })
+    : null;
+
+export const paymentRateLimit = redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(10, '1 h'), // 10 requests per hour
+        analytics: true,
+        prefix: 'ratelimit:payment',
+    })
+    : null;
+
+export const apiRateLimit = redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(100, '1 m'), // 100 requests per minute
+        analytics: true,
+        prefix: 'ratelimit:api',
+    })
+    : null;
+
+export const strictRateLimit = redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(3, '1 m'), // 3 requests per minute (for sensitive operations)
+        analytics: true,
+        prefix: 'ratelimit:strict',
+    })
+    : null;
+
+/**
+ * Helper function to check rate limit and return appropriate response
+ * @param identifier - Unique identifier (IP address, user ID, etc.)
+ * @param rateLimit - The rate limiter to use
+ * @returns { success: boolean, response?: Response }
+ */
+export async function checkRateLimit(
+    identifier: string,
+    rateLimit: Ratelimit | null
+): Promise<{ success: boolean; response?: Response }> {
+    if (!rateLimit) {
+        // If Redis is not configured, allow the request (development mode)
+        return { success: true };
+    }
+
+    const { success, limit, reset, remaining } = await rateLimit.limit(identifier);
+
+    if (!success) {
+        return {
+            success: false,
+            response: new Response(
+                JSON.stringify({
+                    error: 'Too many requests',
+                    message: 'Please try again later',
+                    retryAfter: Math.floor((reset - Date.now()) / 1000),
+                }),
+                {
+                    status: 429,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-RateLimit-Limit': limit.toString(),
+                        'X-RateLimit-Remaining': remaining.toString(),
+                        'X-RateLimit-Reset': new Date(reset).toISOString(),
+                        'Retry-After': Math.floor((reset - Date.now()) / 1000).toString(),
+                    },
+                }
+            ),
+        };
+    }
+
+    return { success: true };
 }
 
-export function rateLimit(identifier: string, config: RateLimitConfig): boolean {
-    const now = Date.now();
-    const record = rateLimitMap.get(identifier);
+/**
+ * Get client identifier from request (IP address or user ID)
+ */
+export function getClientIdentifier(request: Request, userId?: string): string {
+    if (userId) return userId;
 
-    // Clean up expired entries periodically
-    if (rateLimitMap.size > 10000) {
-        for (const [key, value] of rateLimitMap.entries()) {
-            if (value.resetTime < now) {
-                rateLimitMap.delete(key);
-            }
-        }
+    // Try to get IP from various headers
+    const forwarded = request.headers.get('x-forwarded-for');
+    const realIp = request.headers.get('x-real-ip');
+
+    if (forwarded) {
+        return forwarded.split(',')[0].trim();
     }
 
-    if (!record || record.resetTime < now) {
-        // New window
-        rateLimitMap.set(identifier, {
-            count: 1,
-            resetTime: now + config.windowMs
-        });
-        return true;
+    if (realIp) {
+        return realIp;
     }
 
-    if (record.count >= config.maxRequests) {
-        return false;  // Rate limit exceeded
-    }
-
-    record.count++;
-    return true;
-}
-
-// Helper to get identifier from request (IP + user ID if available)
-export function getRateLimitIdentifier(request: Request, userId?: string): string {
-    const ip = request.headers.get('x-forwarded-for') ||
-        request.headers.get('x-real-ip') ||
-        'unknown';
-    return userId ? `${ip}:${userId}` : ip;
+    // Fallback to a generic identifier
+    return 'anonymous';
 }
