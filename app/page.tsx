@@ -304,11 +304,23 @@ function AppContent() {
   };
 
   // ----------------------------------------------------
-  // COACH VIEW (Rendered in home tab below)
+  // COACH VIEW (Dedicated, Full-Screen, Responsive)
   // ----------------------------------------------------
-  // Removed early return to allow BottomNav and Profile access
+  if (userProfile.role === 'coach') {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a]">
+        <CoachDashboard
+          currentUserId={currentUserId}
+          userName={userProfile.first_name || 'Coach'}
+          userLastName={userProfile.last_name || ''}
+        />
+      </div>
+    );
+  }
 
-  // AUTO-REDIRECT ADMINS TO PORTAL (UI ONLY) - DISABLED, RESTORE MANUAL ENTRY
+  // ----------------------------------------------------
+  // ADMIN VIEW (Portal Redirect)
+  // ----------------------------------------------------
   if (userProfile.role === 'admin') {
     return (
       <div className="bg-black min-h-screen text-white flex flex-col justify-center items-center font-montserrat p-6 select-none cursor-default">
@@ -353,22 +365,14 @@ function AppContent() {
 
           {activeTab === 'home' && (
             <>
-              {userProfile.role === 'coach' ? (
-                <CoachDashboard
-                  currentUserId={currentUserId}
-                  userName={userProfile.first_name || 'Coach'}
-                  userLastName={userProfile.last_name || ''}
-                />
-              ) : (
-                <HomeScreen
-                  onClassClick={handleClassClick}
-                  onOpenSettings={() => setShowSettingsModal(true)}
-                  bookedSessions={bookedSessions}
-                  credits={userProfile.credits || 0}
-                  subscriptionStatus={userProfile.subscription_status}
-                  setTab={setActiveTab}
-                />
-              )}
+              <HomeScreen
+                onClassClick={handleClassClick}
+                onOpenSettings={() => setShowSettingsModal(true)}
+                bookedSessions={bookedSessions}
+                credits={userProfile.credits || 0}
+                subscriptionStatus={userProfile.subscription_status}
+                setTab={setActiveTab}
+              />
 
               {/* Fail-safe Admin Link */}
               {((userProfile.role as string) === 'admin' || (userProfile.role as string) === 'sys-admin') && (
@@ -388,7 +392,7 @@ function AppContent() {
                 <p className="text-white">Redirecting to Admin Panel...</p>
               </div>
             ) : (
-              (userProfile.role as string) === 'coach' || (userProfile.role as string) === 'admin'
+              (userProfile.role as string) === 'admin'
                 ? <CoachProfile onOpenSettings={() => setShowSettingsModal(true)} profileData={userProfile} currentUserId={currentUserId} />
                 : userProfile.role === 'parent'
                   ? <ParentProfile
