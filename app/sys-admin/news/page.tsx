@@ -34,18 +34,28 @@ export default function NewsManagementPage() {
 
     useEffect(() => {
         fetchAnnouncements();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session) fetchAnnouncements(session);
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
-    const fetchAnnouncements = async () => {
+    const fetchAnnouncements = async (passedSession?: any) => {
         setLoading(true);
         try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
+            const session = passedSession || (await supabase.auth.getSession()).data.session;
+            if (!session) {
+                setLoading(false);
+                return;
+            }
 
             const response = await fetch('/api/admin/announcements', {
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`
-                }
+                },
+                cache: 'no-store'
             });
             const data = await response.json();
             if (response.ok) {
@@ -195,8 +205,8 @@ export default function NewsManagementPage() {
                         key={tab}
                         onClick={() => setFilter(tab)}
                         className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${filter === tab
-                                ? 'bg-[#28D160] text-black'
-                                : 'bg-[#1e1e1e] text-gray-400 hover:text-white'
+                            ? 'bg-[#28D160] text-black'
+                            : 'bg-[#1e1e1e] text-gray-400 hover:text-white'
                             }`}
                     >
                         {tab}
@@ -221,8 +231,8 @@ export default function NewsManagementPage() {
                                         <Calendar size={16} className="text-blue-400" />
                                     )}
                                     <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${item.type === 'news'
-                                            ? 'bg-[#28D160]/20 text-[#28D160]'
-                                            : 'bg-blue-500/20 text-blue-400'
+                                        ? 'bg-[#28D160]/20 text-[#28D160]'
+                                        : 'bg-blue-500/20 text-blue-400'
                                         }`}>
                                         {item.type}
                                     </span>

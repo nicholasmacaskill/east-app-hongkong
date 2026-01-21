@@ -4,6 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import { announcementSchema, validateInput } from '@/app/lib/validation';
 import { sanitize } from '@/app/lib/sanitize';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
     try {
         // Authentication check

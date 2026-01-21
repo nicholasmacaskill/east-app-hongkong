@@ -64,6 +64,7 @@ export default function MasterSchedule() {
     const [recurring, setRecurring] = useState(false);
     const [repeatDays, setRepeatDays] = useState<number[]>([]); // 0-6 (Sun-Sat)
     const [repeatWeeks, setRepeatWeeks] = useState(4);
+    const [registrations, setRegistrations] = useState<any[]>([]); // Registered users
 
     useEffect(() => {
         if (autoInstructor && !hasAutoOpened.current) {
@@ -142,6 +143,15 @@ export default function MasterSchedule() {
         setCoachServices(data || []);
     };
 
+    const fetchRegistrations = async (sessionId: number) => {
+        const { data } = await supabase
+            .from('bookings')
+            .select('*, profiles(first_name, last_name, email)')
+            .eq('session_id', sessionId)
+            .neq('status', 'cancelled');
+        setRegistrations(data || []);
+    };
+
     const handleCellClick = (timeSlot: string) => {
         const start = `${selectedDate}T${timeSlot}:00`;
         const nextHour = (parseInt(timeSlot) + 1).toString().padStart(2, '0');
@@ -162,12 +172,15 @@ export default function MasterSchedule() {
             image_url: ''
         });
         setShowModal(true);
+        setRegistrations([]);
     };
 
     const handleSessionClick = (session: Session) => {
         setModalAction('EDIT');
         setEditingSession({ ...session, lockInstructor: !!session.instructor });
         setShowModal(true);
+        if (session.id) fetchRegistrations(session.id);
+        else setRegistrations([]);
     };
 
     const handleSaveSession = async () => {
@@ -517,6 +530,33 @@ export default function MasterSchedule() {
                                             <div className="flex items-center justify-center gap-4">
                                                 {[1, 2, 4, 8, 12].map(w => <button key={w} onClick={() => setRepeatWeeks(w)} className={`text-[10px] font-black px-3 py-1 rounded-full transition-all ${repeatWeeks === w ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}>{w}W</button>)}
                                             </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {modalAction === 'EDIT' && (
+                                <div className="space-y-4 bg-black/20 p-4 rounded-2xl border border-white/5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                        <User size={12} /> Registered Athletes ({registrations.length})
+                                    </label>
+                                    {registrations.length === 0 ? (
+                                        <p className="text-xs text-gray-500 italic ml-6">No active registrations.</p>
+                                    ) : (
+                                        <div className="space-y-2 ml-1 max-h-[150px] overflow-y-auto pr-2 custom-scrollbar">
+                                            {registrations.map(reg => (
+                                                <div key={reg.id} className="flex justify-between items-center bg-black/40 p-2 rounded-lg border border-white/5">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-[10px] font-black text-white border border-white/10">
+                                                            {reg.profiles?.first_name?.[0]}{reg.profiles?.last_name?.[0]}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs font-bold text-white">{reg.profiles?.first_name} {reg.profiles?.last_name}</p>
+                                                            <p className="text-[9px] text-gray-500 uppercase tracking-wider">{reg.status}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     )}
                                 </div>

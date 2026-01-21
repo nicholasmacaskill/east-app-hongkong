@@ -4,7 +4,7 @@ import { Trophy, Flame, Star, Shield, Users, ChevronLeft, Flag, Target, PlusCirc
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
 import { MOCK_PLAYERS, MOCK_TEAMS, MOCK_GOALIES, MOCK_HYROX } from './mockData';
-import UploadGolfStatsModal from '@/app/components/modals/UploadGolfStatsModal';
+// UploadGolfStatsModal removed
 
 export default function LeaderboardPage() {
     const [sport, setSport] = useState<'hockey' | 'golf' | 'hyrox'>('hockey');
@@ -21,7 +21,7 @@ export default function LeaderboardPage() {
     // Golf State
     const [golfLeaders, setGolfLeaders] = useState<any[]>([]);
     const [loadingGolf, setLoadingGolf] = useState(false);
-    const [showUploadModal, setShowUploadModal] = useState(false);
+    // Upload modal state removed
     const [currentUserStats, setCurrentUserStats] = useState<any>(null);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -396,12 +396,7 @@ export default function LeaderboardPage() {
                 )}
             </div>
 
-            {showUploadModal && <UploadGolfStatsModal
-                currentUserId={currentUserId}
-                onClose={() => setShowUploadModal(false)}
-                onSuccess={() => { fetchGolfStats(); }}
-                existingStats={currentUserStats}
-            />}
+
         </div>
     );
 }

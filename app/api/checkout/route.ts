@@ -29,8 +29,9 @@ export async function POST(request: Request) {
     const TOPUP_RATES: Record<string, number> = {
       // 500 Credits ($500)
       'price_1SkINl12ap1SCxTolaVPqdzA': 500,
-      // 1000 Credits ($1000)
+      // 1000 Credits ($1000) / Standard Top-up
       'price_1SkINl12ap1SCxToIyvikBgt': 1000,
+      'price_1SkINl12ap1SCxToSkb1jrWV': 1200, // Current NEXT_PUBLIC_STRIPE_PRICE_TOPUP
       // 2500 Credits ($2500)
       'price_1SkINl12ap1SCxTodZWHrIQm': 2500,
       // 5000 Credits ($5000)
@@ -54,7 +55,8 @@ export async function POST(request: Request) {
     console.log("Session Mode:", mode, "Credit Amount:", topUpAmount);
 
     // Default URLs if not provided
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    const origin = request.headers.get('origin');
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || origin || 'http://localhost:3000';
 
     let defaultSuccessPath = '/?success=true';
     if (mode === 'subscription') {

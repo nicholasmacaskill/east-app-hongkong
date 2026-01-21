@@ -301,6 +301,7 @@ async function updateProfile(userId: string, creditsToAdd: number, tier: string,
             id: userId,
             credits: currentCredits + creditsToAdd,
             subscription_status: 'active',
+            account_status: 'active', // Explicitly unlock on purchase
             tier: tier,
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
@@ -381,6 +382,7 @@ async function addCreditsOnly(userId: string, creditsToAdd: number, type: 'topup
         .from('profiles')
         .update({
             credits: currentCredits + creditsToAdd,
+            account_status: 'active', // Unlock on top-up too
         })
         .eq('id', userId);
 
