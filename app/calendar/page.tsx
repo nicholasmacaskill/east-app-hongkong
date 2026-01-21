@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { addMonths, startOfMonth, format } from 'date-fns';
 import Calendar from '../components/Calendar/index';
+import LockedOverlay from '../components/ui/LockedOverlay';
 import { CalendarEvent } from '../types/calendar';
 import { Session } from '../types/session'; // Import Session type
 import { useRouter } from 'next/navigation';
@@ -15,11 +16,30 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('calendar');
   const router = useRouter();
+  const [isLocked, setIsLocked] = useState(false);
 
   // Fetch real registrations from the API
   const fetchMySchedule = useCallback(async () => {
     try {
       setLoading(true);
+
+      // Check for user and lock status
+      const { supabase } = await import('@/app/lib/supabase');
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('account_status, subscription_status')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          const locked = (!profile.subscription_status || (profile.subscription_status !== 'active' && profile.subscription_status !== 'trialing')) && profile.account_status !== 'active';
+          setIsLocked(locked);
+        }
+      }
+
       // We use the same API endpoint you used for the ScheduleScreen
       const res = await fetch('/api/my-schedule?userId=12');
       const data: Session[] = await res.json();
@@ -66,7 +86,8 @@ export default function CalendarPage() {
     <div className="app min-h-screen bg-black text-white flex flex-col">
       <div className="east-logo text-4xl md:text-6xl text-center py-6 w-full font-montserrat font-black italic">EAST</div>
 
-      <main className="flex-grow w-full max-w-7xl mx-auto px-4 py-8">
+      <main className="flex-grow w-full max-w-7xl mx-auto px-4 py-8 relative">
+        {isLocked && <LockedOverlay />}
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-east-light"></div>

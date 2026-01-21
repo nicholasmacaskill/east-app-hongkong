@@ -245,6 +245,32 @@ export async function POST(request: Request) {
                 .eq('stripe_customer_id', customerId);
         }
 
+        // ====================================================
+        // D. Handle Subscription Updates (Status Changes)
+        // ====================================================
+        if (event.type === 'customer.subscription.updated') {
+            const subscription = event.data.object as Stripe.Subscription;
+            const customerId = subscription.customer as string;
+            const status = subscription.status; // active, past_due, unpaid, canceled
+
+            console.log(`[STRIPE WEBHOOK] Subscription Update: Customer ${customerId} status -> ${status}`);
+
+            const supabaseAdmin = getSupabaseAdmin();
+
+            // Sync status. 'past_due'/'unpaid' will trigger Locked UI.
+            // 'active' will Unlock UI.
+            const { error } = await supabaseAdmin
+                .from('profiles')
+                .update({ subscription_status: status })
+                .eq('stripe_customer_id', customerId);
+
+            if (error) {
+                console.error(`❌ DB Error updating subscription status: ${error.message}`);
+                return NextResponse.json({ error: error.message }, { status: 500 });
+            }
+            console.log(`✅ DB Success: Updated subscription_status to '${status}'`);
+        }
+
         return NextResponse.json({ received: true });
 
     } catch (err: any) {

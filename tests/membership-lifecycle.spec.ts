@@ -126,7 +126,10 @@ test.describe('Membership Lifecycle Management', () => {
         const nextYear = new Date(new Date().setFullYear(today.getFullYear() + 1));
         const nextYearStr = nextYear.toISOString().split('T')[0];
 
-        await page.click('button:has-text("Reactivate (+1 Year)")');
+        const reactivateBtn = page.locator('button:has-text("+1 Year")');
+        await reactivateBtn.waitFor();
+        await reactivateBtn.click();
+
         await expect(page.locator('div:has(> label:has-text("Expires On")) >> input')).toHaveValue(nextYearStr);
 
         // 5. TEST CANCEL
@@ -198,5 +201,49 @@ test.describe('Membership Lifecycle Management', () => {
             success: true,
             message: 'Password reset email sent via Resend'
         });
+    });
+
+    test('Locked account UX verification', async ({ page }) => {
+        // 1. MANUALLY SET STATUS TO LOCKED VIA DB
+        const { error } = await supabase
+            .from('profiles')
+            .update({ account_status: 'locked' })
+            .eq('contact_email', testUserEmail);
+        expect(error).toBeNull();
+
+        // 2. LOGIN AS TEST USER
+        await page.goto('/login');
+        await page.fill('input[name="email"]', testUserEmail);
+        await page.fill('input[name="password"]', testPassword);
+        await page.click('button[type="submit"]');
+        await page.waitForURL('/');
+
+        // 3. VERIFY LOCKED BADGE IN HEADER
+        await expect(page.locator('button:has-text("LOCKED")')).toBeVisible();
+
+        // 4. VERIFY CALENDAR OVERLAY
+        await page.goto('/calendar');
+        const lockedOverlay = page.locator('[data-testid="locked-overlay"]');
+        await expect(lockedOverlay).toBeVisible();
+        await expect(lockedOverlay).toContainText('Account Locked');
+
+        // 5. VERIFY TOP-UP WARNING (Optional: depending on requirements, usually we want them to Top Up)
+        await page.goto('/top-up');
+        // We ensure we CAN see top up options
+        await expect(page.locator('h1:has-text("Top Up Credits")')).toBeVisible();
+
+        // 6. VERIFY HOME BOOKING DISABLED
+        await page.goto('/');
+        // Check a class card
+        const classCard = page.locator('text=Classes').first().locator('..').locator('div.cursor-pointer').first();
+        if (await classCard.isVisible()) {
+            await classCard.click();
+            // Expect either no modal, or a toast warning, or redirect
+            // Check for toast
+            const toast = page.locator('div[role="status"]');
+            // Wait for toast or check if navigation happened
+            // For now, let's assume we want a Toast warning saying "Account Locked"
+            await expect(page.getByText(/Account Locked|Subscription required/i)).toBeVisible();
+        }
     });
 });

@@ -87,24 +87,25 @@ test('Test 3', async ({ page }) => { /* ... */ });
 
 ---
 
-### Phase 4: Validation in Headed Mode
+### Phase 4: Validation in Headless Mode
 
-**Rule:** Every new test MUST pass in headed mode before proceeding.
+**Rule:** Every new test MUST pass in headless mode (default) before proceeding.
 
 ```bash
-# Run in headed mode with debug
-npx playwright test --grep "Test name" --headed --debug
+# Run test in headless mode (default - no visible browser)
+npx playwright test --grep "Test name"
 
-# Watch the browser execute
-# Verify each action completes
+# Tests run in background, no browser window appears
+# Check terminal output for pass/fail status
 # If it fails, FIX IT before writing more tests
 ```
 
 **Validation Checklist:**
-- [ ] Test runs without errors in headed mode
+- [ ] Test runs without errors in headless mode
 - [ ] All selectors find their elements
 - [ ] Assertions pass with correct expected values
 - [ ] No timeouts or race conditions
+- [ ] Review HTML report if needed: `npx playwright show-report`
 
 ---
 

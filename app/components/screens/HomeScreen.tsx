@@ -203,6 +203,14 @@ export default function HomeScreen({
   }
 
   const handleServiceClick = async (service: ServiceType) => {
+    // Check for locked status
+    const isLocked = (!subscriptionStatus || (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing')) && accountStatus !== 'active';
+
+    if (isLocked) {
+      addToast('Account Locked: Active subscription or top-up required to book classes.', 'error');
+      return;
+    }
+
     if (service.category === 'CLASS') {
       // Show upcoming sessions for this class type
       // We filter the already fetched 'sessions' by title matching the service title
