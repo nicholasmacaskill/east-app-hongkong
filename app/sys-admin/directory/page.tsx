@@ -6,12 +6,14 @@ import { supabase } from '@/app/lib/supabase';
 import { QRCodeSVG } from 'qrcode.react';
 import { UserRole } from '@/app/types';
 import AvailabilityModal from '../coaches/AvailabilityModal';
+import { useToast } from '@/app/components/ui/Toast';
 
 export default function DirectoryPage() {
     const [profiles, setProfiles] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState<'households' | 'coaches' | 'admins'>('households');
+    const [activeTab, setActiveTab] = useState<'households' | 'coaches' | 'admins' | 'unassigned'>('households');
+    const { addToast } = useToast();
 
     // Add User Form State
     const [showAddForm, setShowAddForm] = useState(false);
@@ -65,7 +67,7 @@ export default function DirectoryPage() {
 
         if (error) {
             console.error('Error fetching profiles:', error);
-            alert('Failed to load data: ' + error.message);
+            addToast('Failed to load data: ' + error.message, 'error');
         } else if (data) {
             setProfiles(data);
         }
@@ -74,7 +76,7 @@ export default function DirectoryPage() {
 
     const handleAddUser = async () => {
         if (!newUser.email || !newUser.first_name || !newUser.last_name) {
-            alert('Please fill in all required fields');
+            addToast('Please fill in all required fields', 'warning');
             return;
         }
 
@@ -119,7 +121,7 @@ export default function DirectoryPage() {
             fetchProfiles();
 
         } catch (error: any) {
-            alert('Error creating user: ' + error.message);
+            addToast('Error creating user: ' + error.message, 'error');
         }
     };
 
@@ -183,11 +185,11 @@ export default function DirectoryPage() {
                 throw new Error(data.error);
             }
 
-            alert(`${profileName} deleted successfully.`);
+            addToast(`${profileName} deleted successfully.`, 'success');
             fetchProfiles();
 
         } catch (error: any) {
-            alert('Error deleting: ' + error.message);
+            addToast('Error deleting: ' + error.message, 'error');
         }
     };
 
@@ -214,7 +216,7 @@ export default function DirectoryPage() {
 
             fetchProfiles(); // Refresh
         } catch (error: any) {
-            alert('Failed to update credits: ' + error.message);
+            addToast('Failed to update credits: ' + error.message, 'error');
         }
     };
 
@@ -262,13 +264,13 @@ export default function DirectoryPage() {
                 }
             }
 
-            alert('Profile updated successfully');
+            addToast('Profile updated successfully', 'success');
             setShowEditForm(false);
             setEditingUser(null);
             fetchProfiles();
 
         } catch (error: any) {
-            alert('Error updating profile: ' + error.message);
+            addToast('Error updating profile: ' + error.message, 'error');
         }
     };
 
@@ -381,8 +383,8 @@ export default function DirectoryPage() {
                     </div>
 
                     <div
-                        onClick={() => setActiveTab('households')}
-                        className={`bg-[#1e1e1e] border p-4 rounded-2xl cursor-pointer transition-all group ${unassignedPlayers.length > 0 ? 'border-amber-500/50 bg-amber-500/5' : 'border-white/5'}`}
+                        onClick={() => setActiveTab('unassigned')}
+                        className={`bg-[#1e1e1e] border p-4 rounded-2xl cursor-pointer transition-all group ${activeTab === 'unassigned' ? 'border-amber-500 ring-1 ring-amber-500/20' : (unassignedPlayers.length > 0 ? 'border-amber-500/30' : 'border-white/5')}`}
                     >
                         <div className="flex items-center justify-between mb-2">
                             <AlertCircle className={unassignedPlayers.length > 0 ? 'text-amber-500' : 'text-gray-600'} size={20} />
@@ -412,18 +414,17 @@ export default function DirectoryPage() {
                 </div>
 
                 {/* Tab Switcher */}
-                <div className="flex gap-2 p-1 bg-black/40 rounded-xl self-start">
-                    {(['households', 'coaches', 'admins'] as const).map(tab => (
+                <div className="flex gap-2 p-1 bg-black/40 rounded-xl self-start overflow-x-auto max-w-full">
+                    {(['households', 'coaches', 'admins', 'unassigned'] as const).map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`px-6 py-2 rounded-lg text-xs font-black uppercase italic transition-all ${activeTab === tab ? 'bg-white/10 text-[#28D160] shadow-sm' : 'text-gray-500 hover:text-white'}`}
+                            className={`px-6 py-2 rounded-lg text-xs font-black uppercase italic transition-all whitespace-nowrap ${activeTab === tab ? 'bg-white/10 text-[#28D160] shadow-sm' : 'text-gray-500 hover:text-white'}`}
                         >
                             {tab}
                         </button>
                     ))}
                 </div>
-
 
                 {/* Success / Invite Modal */}
                 {
@@ -669,12 +670,12 @@ export default function DirectoryPage() {
                                                     });
                                                     const data = await res.json();
                                                     if (data.success) {
-                                                        alert('Reset email sent!');
+                                                        addToast('Reset email sent!', 'success');
                                                     } else {
-                                                        alert('Error: ' + data.error);
+                                                        addToast('Error: ' + data.error, 'error');
                                                     }
                                                 } catch (err: any) {
-                                                    alert('Error: ' + err.message);
+                                                    addToast('Error: ' + err.message, 'error');
                                                 }
                                             }}
                                             className="mt-2 w-full bg-blue-500/10 text-blue-400 py-2 rounded-lg text-[10px] font-black uppercase italic hover:bg-blue-500 hover:text-white transition-colors"
@@ -748,7 +749,28 @@ export default function DirectoryPage() {
                                                 }}
                                                 className="flex-1 text-[10px] bg-[#28D160]/10 text-[#28D160] px-2 py-2 rounded uppercase font-black italic hover:bg-[#28D160] hover:text-black transition-colors"
                                             >
-                                                Reactivate (+1 Year)
+                                                +1 Year
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    const currentExpiry = editingUser.membershipExpires ? new Date(editingUser.membershipExpires) : new Date();
+                                                    // Ensure we start from at least "today" if expired
+                                                    const baseDate = currentExpiry > new Date() ? currentExpiry : new Date();
+
+                                                    // Add 1 Month safely
+                                                    const nextMonth = new Date(baseDate);
+                                                    nextMonth.setMonth(baseDate.getMonth() + 1);
+
+                                                    setEditingUser({
+                                                        ...editingUser,
+                                                        membershipStart: editingUser.membershipStart || new Date().toISOString().split('T')[0],
+                                                        membershipExpires: nextMonth.toISOString().split('T')[0]
+                                                    });
+                                                }}
+                                                className="flex-1 text-[10px] bg-blue-500/10 text-blue-500 px-2 py-2 rounded uppercase font-black italic hover:bg-blue-500 hover:text-white transition-colors"
+                                            >
+                                                +1 Month
                                             </button>
                                             <button
                                                 onClick={(e) => {
@@ -1035,8 +1057,8 @@ export default function DirectoryPage() {
                                         {coaches.map(coach => (
                                             <div key={coach.id} className="bg-[#1e1e1e] rounded-2xl p-4 border border-white/5 flex items-center justify-between group">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-12 h-12 rounded-full bg-[#28D160]/10 border border-[#28D160]/20 flex items-center justify-center">
-                                                        <Star className="text-[#28D160]" size={20} />
+                                                    <div className="w-12 h-12 rounded-full bg-blue-600/10 border border-blue-600/20 flex items-center justify-center">
+                                                        <Star className="text-blue-400" size={20} />
                                                     </div>
                                                     <div>
                                                         <p className="font-bold text-white text-sm">{coach.first_name} {coach.last_name}</p>
@@ -1068,14 +1090,14 @@ export default function DirectoryPage() {
                                     <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-2">Administrative Staff ({admins.length})</h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         {admins.map(admin => (
-                                            <div key={admin.id} className="bg-[#1e1e1e] rounded-2xl p-4 border border-white/5 flex items-center justify-between group/row">
+                                            <div key={admin.id} className="bg-[#1e1e1e] rounded-2xl p-4 border border-white/5 flex items-center justify-between group/row hover:border-rose-500/50 transition-all">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-12 h-12 rounded-full bg-blue-600/10 border border-blue-600/20 flex items-center justify-center">
-                                                        <Shield className="text-blue-400" size={20} />
+                                                    <div className="w-12 h-12 rounded-full bg-rose-600/10 border border-rose-600/20 flex items-center justify-center">
+                                                        <Shield className="text-rose-400" size={20} />
                                                     </div>
                                                     <div>
                                                         <p className="font-bold text-white text-sm">{admin.first_name} {admin.last_name}</p>
-                                                        <p className="text-[10px] text-gray-500 uppercase font-black italic text-blue-400">{admin.role}</p>
+                                                        <p className="text-[10px] text-gray-500 uppercase font-black italic text-rose-400">{admin.role}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-1 transition-opacity">
@@ -1089,6 +1111,57 @@ export default function DirectoryPage() {
                                             </div>
                                         ))}
                                     </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'unassigned' && (
+                                <div className="flex flex-col gap-4">
+                                    <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 ml-2">Unassigned Athletes ({unassignedPlayers.length})</h2>
+                                    {unassignedPlayers.length === 0 ? (
+                                        <div className="p-12 text-center border border-dashed border-gray-800 rounded-3xl">
+                                            <p className="text-gray-500 text-sm font-bold">All athletes are assigned to households.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {unassignedPlayers.map(player => (
+                                                <div
+                                                    key={player.id}
+                                                    onClick={() => handleEditClick(player)}
+                                                    className="bg-[#1e1e1e] rounded-2xl p-4 border border-amber-500/20 flex items-center justify-between group cursor-pointer hover:border-amber-500/50 hover:bg-[#252525] transition-all"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-10 h-10 rounded-xl bg-white p-1">
+                                                            <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : ''}/profile/${player.id}`} size={32} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold text-white text-sm">{player.first_name} {player.last_name}</p>
+                                                            <div className="flex gap-2 items-center">
+                                                                <span className="text-[8px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded uppercase font-black italic">UNASSIGNED</span>
+                                                                <div className="flex items-center gap-1 group">
+                                                                    <Coins size={10} className="text-amber-500" />
+                                                                    <span className="text-[8px] text-gray-500 uppercase font-black italic">{player.credits}</span>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleQuickCreditUpdate(player.id, player.credits, 10); }}
+                                                                        className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-[8px] font-bold hover:bg-amber-500 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                    >
+                                                                        +
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-1 transition-opacity">
+                                                        <button onClick={(e) => { e.stopPropagation(); handleEditClick(player); }} className="p-1.5 text-gray-400 hover:text-[#28D160]">
+                                                            <Edit2 size={14} />
+                                                        </button>
+                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteProfile(player.id, `${player.first_name} ${player.last_name}`); }} className="p-1.5 text-gray-400 hover:text-red-500">
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </>

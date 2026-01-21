@@ -3,6 +3,7 @@ import React, { useState, useCallback } from 'react';
 import { User, Mail, Lock, Phone, LogIn, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
+import { useToast } from '@/app/components/ui/Toast';
 import type { UserRole } from '../types';
 
 type AuthStep = 'login' | 'register' | 'success';
@@ -48,6 +49,7 @@ const InputField: React.FC<{ label: string; name: keyof FormData; type: string; 
 );
 
 export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenProps) {
+    const { addToast } = useToast();
     const [step, setStep] = useState<AuthStep>('login');
     const [formData, setFormData] = useState<FormData>({
         ...initialFormData,
@@ -69,7 +71,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
         });
 
         if (error) {
-            alert(error.message);
+            addToast(error.message, 'error');
             setLoading(false);
         } else if (data.user) {
             // Fetch role from profile
@@ -100,7 +102,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
         });
 
         if (error) {
-            alert(error.message);
+            addToast(error.message, 'error');
             setLoading(false);
         } else {
             // Send welcome email

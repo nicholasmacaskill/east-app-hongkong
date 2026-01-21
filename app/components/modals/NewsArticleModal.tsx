@@ -1,6 +1,7 @@
 'use client';
 import React from 'react';
 import { X, Share2, Calendar, Clock, Bookmark } from 'lucide-react';
+import { useToast } from '../ui/Toast';
 
 interface NewsArticleModalProps {
     item: {
@@ -13,6 +14,7 @@ interface NewsArticleModalProps {
 }
 
 export default function NewsArticleModal({ item, onClose }: NewsArticleModalProps) {
+    const { addToast } = useToast();
     const handleShare = async () => {
         if (navigator.share) {
             try {
@@ -27,7 +29,7 @@ export default function NewsArticleModal({ item, onClose }: NewsArticleModalProp
         } else {
             // Fallback: Copy to clipboard
             navigator.clipboard.writeText(`${item.title}\n\n${item.description}\n\nRead more on EAST App.`);
-            alert('Link copied to clipboard!');
+            addToast('Link copied to clipboard!', 'success');
         }
     };
 

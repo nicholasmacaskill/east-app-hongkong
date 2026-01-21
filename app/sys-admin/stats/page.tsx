@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { Search, Save, CheckCircle } from 'lucide-react';
+import { useToast } from '@/app/components/ui/Toast';
 
 export default function ManualStatsPage() {
     const [players, setPlayers] = useState<any[]>([]);
@@ -15,6 +16,7 @@ export default function ManualStatsPage() {
     });
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState<string | null>(null);
+    const { addToast } = useToast();
 
     // Fetch Players
     useEffect(() => {
@@ -76,7 +78,7 @@ export default function ManualStatsPage() {
 
         setIsSaving(false);
         if (error) {
-            alert('Error saving stats: ' + error.message);
+            addToast('Error saving stats: ' + error.message, 'error');
         } else {
             setLastSaved(new Date().toLocaleTimeString());
         }
@@ -104,12 +106,17 @@ export default function ManualStatsPage() {
                                 key={p.id}
                                 onClick={() => setSelectedPlayer(p)}
                                 className={`w-full text-left p-4 rounded-xl border transition-all ${selectedPlayer?.id === p.id
-                                        ? 'bg-east-light text-black border-east-light font-black'
-                                        : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                    ? 'bg-east-light text-black border-east-light font-black'
+                                    : 'bg-white/5 border-white/10 hover:bg-white/10'
                                     }`}
                             >
                                 <div className="uppercase">{p.first_name} {p.last_name}</div>
-                                <div className="text-[10px] opacity-70 uppercase tracking-widest">{p.team || 'NO TEAM'}</div>
+                                <div className={`text-[8px] px-2 py-0.5 rounded-full inline-block border mt-1 font-black uppercase tracking-widest ${p.team === 'EAST HK' ? 'bg-east-light/10 text-east-light border-east-light/20' :
+                                        p.team === 'NORTH HK' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                            'bg-white/5 text-gray-500 border-white/5'
+                                    }`}>
+                                    {p.team || 'NO TEAM'}
+                                </div>
                             </button>
                         ))}
                     </div>

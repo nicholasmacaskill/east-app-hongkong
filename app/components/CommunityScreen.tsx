@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { ChevronDown, ChevronLeft, Trash2, Camera, Image as ImageIcon, Paperclip, Heart, Share2, X, Send, Trophy } from 'lucide-react';
+import { useToast } from './ui/Toast';
 import Link from 'next/link';
 import { Post, Message, Profile } from '@/app/types/community';
 
@@ -92,6 +93,7 @@ const SharedPostCard = ({ post }: { post: Post }) => {
 
 // ✅ UPDATED: Component now accepts currentUserId prop
 export default function CommunityScreen({ currentUserId }: { currentUserId: string }) {
+    const { addToast } = useToast();
     const [viewMode, setViewMode] = useState<'feed' | 'messenger-list' | 'chat-detail'>('feed');
 
     const [posts, setPosts] = useState<Post[]>([]);
@@ -256,9 +258,9 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
     };
 
     const deletePost = async (postId: number) => {
-        if (!confirm("Are you sure you want to delete this post?")) return;
         setPosts(prev => prev.filter(p => p.id !== postId));
         await supabase.from('posts').delete().eq('id', postId);
+        addToast('Post deleted', 'success');
     };
 
     const deleteMessage = async (messageId: number) => {
@@ -288,7 +290,7 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
             }
         } else {
             navigator.clipboard.writeText(`${title}\n${text}\n${url}`);
-            alert('Link copied to clipboard!');
+            addToast('Link copied to clipboard!', 'success');
         }
     };
 
@@ -311,7 +313,7 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
             user_id: currentUserId, caption, image_url: url, shared_post_id: sharedId
         }).select().single();
 
-        if (error) alert("Could not post: " + error.message);
+        if (error) addToast("Could not post: " + error.message, 'error');
         else if (data) {
             const newPost = await fetchSinglePostRobust(data.id);
             if (newPost) setPosts(prev => [newPost as Post, ...prev]);
@@ -352,7 +354,7 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
 
         if (error) {
             setMessages(prev => prev.filter(m => m.id !== tempId));
-            alert("Failed to send message");
+            addToast("Failed to send message", 'error');
         } else {
             setMessages(prev => prev.map(m => m.id === tempId ? {
                 ...m, id: data.id, content: data.content, image_url: data.image_url, is_me: true

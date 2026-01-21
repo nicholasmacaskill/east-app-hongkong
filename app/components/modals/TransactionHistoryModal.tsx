@@ -59,9 +59,9 @@ export default function TransactionHistoryModal({ onClose }: TransactionHistoryM
             <div className="bg-[#1e1e1e] p-6 rounded-[2rem] w-full max-w-md border border-white/10 relative shadow-2xl flex flex-col max-h-[80vh]">
                 <button
                     onClick={onClose}
-                    className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors"
+                    className="absolute top-6 right-6 bg-white/10 text-white p-2 rounded-full hover:bg-white/20 transition-all shadow-lg active:scale-95 z-50"
                 >
-                    <X size={24} />
+                    <X size={20} />
                 </button>
 
                 <div className="flex items-center gap-3 mb-6 px-2">

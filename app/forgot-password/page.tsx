@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Mail, Lock, ChevronLeft, CheckCircle, Smartphone, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase'; // ✅ IMPORT SUPABASE
+import { useToast } from '@/app/components/ui/Toast';
 
 // --- Types ---
 type ResetStep = 'request' | 'otp' | 'new_password' | 'success';
@@ -53,6 +54,7 @@ export default function ForgotPasswordPage() {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const { addToast } = useToast();
 
     // --- Step 1: Request Reset ---
     const handleRequestSubmit = async (e: React.FormEvent) => {
@@ -70,7 +72,7 @@ export default function ForgotPasswordPage() {
 
         setLoading(false);
         if (!res.ok) {
-            alert(data.error || 'Failed to send code');
+            addToast(data.error || 'Failed to send code', 'error');
         } else {
             setStep('otp');
         }
@@ -101,7 +103,7 @@ export default function ForgotPasswordPage() {
 
         setLoading(false);
         if (error) {
-            alert('Invalid Code: ' + error.message);
+            addToast('Invalid Code: ' + error.message, 'error');
         } else {
             // Success! The user is now "Logged In" securely.
             setStep('new_password');
@@ -123,7 +125,7 @@ export default function ForgotPasswordPage() {
 
         setLoading(false);
         if (error) {
-            alert('Error updating password: ' + error.message);
+            addToast('Error updating password: ' + error.message, 'error');
         } else {
             setStep('success');
         }

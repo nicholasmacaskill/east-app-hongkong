@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { Tab } from '../types';
 import { supabase } from '@/app/lib/supabase';
+import { useToast } from '@/app/components/ui/Toast';
 
 // --- PRICE IDS ---
 // Individual (Pro)
@@ -96,6 +97,7 @@ const BENEFITS = [
 function MembershipContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { addToast } = useToast();
 
     // Selection States
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -133,7 +135,7 @@ function MembershipContent() {
 
     const handlePurchase = async () => {
         if (!currentUserId) {
-            alert("Please log in to purchase.");
+            addToast("Please log in to purchase.", "info");
             return;
         }
 
@@ -159,11 +161,11 @@ function MembershipContent() {
             if (data.url) {
                 window.location.href = data.url;
             } else {
-                alert(`Checkout Failed: ${data.error || 'Unknown error'}`);
+                addToast(`Checkout Failed: ${data.error || 'Unknown error'}`, "error");
             }
         } catch (e: any) {
             console.error(e);
-            alert(`Purchase Failed: ${e.message || 'Network error'}`);
+            addToast(`Purchase Failed: ${e.message || 'Network error'}`, "error");
         } finally {
             setIsLoading(false);
         }

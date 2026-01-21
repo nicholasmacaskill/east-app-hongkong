@@ -215,8 +215,8 @@ export default function ManageServicesPage() {
                             <div className="flex-1">
                                 <h3 className="font-bold text-lg">{service.title}</h3>
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded text-black uppercase ${service.category === 'CLASS' ? 'bg-blue-400' :
-                                        service.category === 'PRIVATE' ? 'bg-purple-400' :
-                                            'bg-[#28D160]'
+                                    service.category === 'PRIVATE' ? 'bg-purple-400' :
+                                        'bg-[#28D160]'
                                     }`}>
                                     {service.category}
                                 </span>
@@ -237,7 +237,7 @@ export default function ManageServicesPage() {
             {/* Modal */}
             {isEditing && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl w-full max-w-md p-6 relative">
+                    <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto">
                         <button
                             onClick={() => setIsEditing(false)}
                             className="absolute top-4 right-4 text-gray-400 hover:text-white"

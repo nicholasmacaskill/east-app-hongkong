@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Calendar, User, LayoutGrid, RefreshCw, Plus,
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { format, addDays, subDays, startOfWeek, isSameDay } from 'date-fns';
+import { useToast } from '@/app/components/ui/Toast';
 
 // Types
 interface Session {
@@ -39,6 +40,7 @@ export default function MasterSchedule() {
     const searchParams = useSearchParams();
     const autoInstructor = searchParams?.get('instructor');
     const hasAutoOpened = React.useRef(false);
+    const { addToast } = useToast();
 
     const [sessions, setSessions] = useState<Session[]>([]);
     const [availability, setAvailability] = useState<any[]>([]);
@@ -170,7 +172,7 @@ export default function MasterSchedule() {
 
     const handleSaveSession = async () => {
         if (!editingSession.title || !editingSession.start_time || !editingSession.end_time) {
-            alert("Title and times are required.");
+            addToast("Title and times are required.", "warning");
             return;
         }
 
@@ -213,7 +215,7 @@ export default function MasterSchedule() {
                 setRepeatDays([]);
                 fetchSchedule();
             } else {
-                alert(data.error);
+                addToast(data.error, "error");
             }
         } catch (e) {
             console.error(e);
@@ -479,11 +481,23 @@ export default function MasterSchedule() {
                             <div className="grid grid-cols-2 gap-4 bg-black/20 p-4 rounded-2xl border border-white/5">
                                 <div>
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block flex items-center gap-1"><Clock size={10} /> Start Time</label>
-                                    <input type="datetime-local" value={editingSession.start_time.slice(0, 16)} onChange={e => setEditingSession({ ...editingSession, start_time: e.target.value })} className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-[11px] text-white outline-none" />
+                                    <input
+                                        type="datetime-local"
+                                        value={editingSession.start_time.slice(0, 16)}
+                                        onChange={e => setEditingSession({ ...editingSession, start_time: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-[11px] text-white outline-none dark-calendar-picker"
+                                        style={{ colorScheme: 'dark' }}
+                                    />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block flex items-center gap-1"><Clock size={10} /> End Time</label>
-                                    <input type="datetime-local" value={editingSession.end_time.slice(0, 16)} onChange={e => setEditingSession({ ...editingSession, end_time: e.target.value })} className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-[11px] text-white outline-none" />
+                                    <input
+                                        type="datetime-local"
+                                        value={editingSession.end_time.slice(0, 16)}
+                                        onChange={e => setEditingSession({ ...editingSession, end_time: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-[11px] text-white outline-none dark-calendar-picker"
+                                        style={{ colorScheme: 'dark' }}
+                                    />
                                 </div>
                             </div>
 

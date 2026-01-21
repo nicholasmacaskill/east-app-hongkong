@@ -12,6 +12,7 @@ interface AppHeaderProps {
     className?: string;
     showLogo?: boolean;
     subscriptionStatus?: string;
+    accountStatus?: string;
 }
 
 export default function AppHeader({
@@ -22,11 +23,25 @@ export default function AppHeader({
     title,
     className = "",
     showLogo = true,
-    subscriptionStatus
+    subscriptionStatus,
+    accountStatus
 }: AppHeaderProps) {
 
     // Check locked status
-    const isLocked = subscriptionStatus && subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing';
+    // Unlocked if: (Subscription Active OR Trialing) OR (Account Manually Active)
+    const isLocked = (!subscriptionStatus || (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing')) && accountStatus !== 'active';
+
+    // WAIT: The issue description says "Users remain LOCKED even after Admin manually activates".
+    // This implies `subscriptionStatus` passed here is NOT 'active' even after admin change.
+    // OR the logic `subscriptionStatus && ...` fails if it's null?
+
+    // Let's refine the logic to be safer:
+    // Locked if: status exists AND is NOT active/trialing.
+    // If status is Missing/Null, is it locked? Yes, usually.
+
+    // Correct Logic: 
+    // Unlocked = active OR trialing.
+    // Locked = NOT (active OR trialing).
 
     return (
         <div className={`sticky top-0 z-50 px-6 py-4 border-b border-white/5 flex justify-between items-center backdrop-blur-xl bg-black/50 transition-all duration-300 ${className}`}>

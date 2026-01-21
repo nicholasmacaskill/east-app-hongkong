@@ -7,8 +7,10 @@ import { CalendarEvent } from '../types/calendar';
 import { Session } from '../types/session'; // Import Session type
 import { useRouter } from 'next/navigation';
 import Footer from '../components/Footer';
+import { useToast } from '../components/ui/Toast';
 
 export default function CalendarPage() {
+  const { addToast } = useToast();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('calendar');
@@ -57,7 +59,7 @@ export default function CalendarPage() {
   };
 
   const handleEventClick = (event: CalendarEvent) => {
-    alert(`${event.title}\n${event.startTime.toLocaleString()}`);
+    addToast(`${event.title}\n${event.startTime.toLocaleString()}`, 'info');
   };
 
   return (

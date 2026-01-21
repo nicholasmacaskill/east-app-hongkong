@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { fetchSessions } from '@/app/services/dataFetcher';
 import { Session } from '@/app/types/session';
 import { Plus } from 'lucide-react';
+import { useToast } from '../ui/Toast';
 import Link from 'next/link';
 import AppHeader from '../AppHeader';
 import Skeleton from '../ui/Skeleton';
@@ -27,12 +28,16 @@ interface HomeScreenProps {
     description?: string | null,
     origin?: 'facilities' | 'coaches',
     coachName?: string | null,
-    coachBio?: string | null
+    coachBio?: string | null,
+    initialSessionId?: number | null,
+    attendeeId?: string | null,
+    serviceId?: string | null // NEW
   ) => void;
   onOpenSettings: () => void;
   bookedSessions: Session[];
   credits: number;
   subscriptionStatus?: string;
+  accountStatus?: string;
   setTab: (tab: any) => void;
 }
 
@@ -42,8 +47,10 @@ export default function HomeScreen({
   bookedSessions,
   credits,
   subscriptionStatus, // NEW
+  accountStatus,
   setTab
 }: HomeScreenProps) {
+  const { addToast } = useToast();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [allServices, setAllServices] = useState<ServiceType[]>([]);
   const [coaches, setCoaches] = useState<any[]>([]);
@@ -109,10 +116,6 @@ export default function HomeScreen({
     return bookedSessions.some(b => b.title === title);
   };
 
-  // --- Filter Lists ---
-  // We now use allServices for Classes and Private Lessons
-  const serviceClasses = allServices.filter(s => s.category === 'CLASS');
-  const servicePrivate = allServices.filter(s => s.category === 'PRIVATE');
 
   // Facilities, Events, News still use session data for now (unless we migrate them too)
   const facilitiesRaw = sessions.filter(s => s.category === 'FACILITY');
@@ -174,6 +177,31 @@ export default function HomeScreen({
       }))
   ].sort((a, b) => new Date(a.start_time || 0).getTime() - new Date(b.start_time || 0).getTime());
 
+  // Derive Service Lists
+  const serviceClasses = allServices.filter(s => s.category === 'CLASS');
+  let servicePrivate = allServices.filter(s => s.category === 'PRIVATE');
+
+  // Check for "Orphan" Admin Sessions (Private sessions with no matching Service ID)
+  // These are often manually created via Admin Panel with title but no Service Type.
+  const orphanSessions = sessions.filter(s =>
+    s.category === 'PRIVATE' &&
+    !s.session_type_id
+  );
+
+  if (orphanSessions.length > 0) {
+    // Check if we already have a generic "Private Coaching" tile
+    const hasGeneric = servicePrivate.some(s => s.title === 'Private Coaching');
+    if (!hasGeneric) {
+      servicePrivate.push({
+        id: 'orphan_private_generic',
+        title: 'Private Coaching',
+        category: 'PRIVATE',
+        image_url: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400',
+        description: 'One-on-one sessions with our expert coaches.'
+      });
+    }
+  }
+
   const handleServiceClick = async (service: ServiceType) => {
     if (service.category === 'CLASS') {
       // Show upcoming sessions for this class type
@@ -186,7 +214,7 @@ export default function HomeScreen({
       );
 
       if (matching.length === 0) {
-        alert(`No upcoming sessions scheduled for ${service.title} yet.`);
+        addToast(`No upcoming sessions scheduled for ${service.title} yet.`, 'info');
       } else {
         matching.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
         onClassClick(matching, service.description);
@@ -195,11 +223,18 @@ export default function HomeScreen({
     } else if (service.category === 'PRIVATE') {
       const matching = sessions.filter(s =>
         s.category === 'PRIVATE' &&
-        (s.session_type_id === service.id || s.title.toLowerCase().trim() === service.title.toLowerCase().trim())
+        (
+          // 1. Direct ID match
+          s.session_type_id === service.id ||
+          // 2. Title Match
+          s.title.toLowerCase().trim() === service.title.toLowerCase().trim() ||
+          // 3. Fallback: If this is the "Generic" tile (id='orphan_private_generic'), catch ALL orphans
+          (service.id === 'orphan_private_generic' && !s.session_type_id)
+        )
       );
 
       if (matching.length === 0) {
-        alert(`No upcoming private slots for ${service.title} yet.`);
+        addToast(`No upcoming private slots for ${service.title} yet.`, 'info');
       } else {
         matching.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
         onClassClick(matching, service.description);
@@ -213,7 +248,7 @@ export default function HomeScreen({
     // If it's an announcement-based item (UUID string vs specific session ID)
     // we just open the detail modal directly for that item.
     if (typeof item.id === 'string' || item.category === 'NEWS') {
-      onClassClick([item as Session], item.description);
+      onClassClick([item as Session], item.description, 'facilities', null, null, null, null, item.session_type_id);
       return;
     }
 
@@ -225,7 +260,7 @@ export default function HomeScreen({
       (item.session_type_id && svc.id === item.session_type_id) ||
       svc.title.toLowerCase().trim() === item.title.toLowerCase().trim()
     );
-    onClassClick(allSlots, service?.description);
+    onClassClick(allSlots, service?.description, 'facilities', null, null, null, null, service?.id || item.session_type_id);
   };
 
   return (
@@ -235,6 +270,7 @@ export default function HomeScreen({
         onOpenSettings={onOpenSettings}
         setTab={setTab}
         subscriptionStatus={subscriptionStatus}
+        accountStatus={accountStatus}
       />
 
       <div className="relative z-10 px-5 space-y-10 pt-6">
@@ -249,7 +285,7 @@ export default function HomeScreen({
           ) : (
             <div className="flex overflow-x-auto no-scrollbar gap-4 snap-x pb-4">
               {combinedNews.map((item) => (
-                <div key={item.id} onClick={() => onClassClick([item as Session])} className="snap-center min-w-[85%] relative rounded-2xl overflow-hidden aspect-[16/9] border border-white/10 cursor-pointer group shadow-2xl active:scale-95 transition-transform duration-200">
+                <div key={item.id} onClick={() => onClassClick([item as Session], item.description, 'facilities', null, null, null, null, (item as any).session_type_id)} className="snap-center min-w-[85%] relative rounded-2xl overflow-hidden aspect-[16/9] border border-white/10 cursor-pointer group shadow-2xl active:scale-95 transition-transform duration-200">
                   <img src={item.image_url} alt={item.title} className="w-full h-full object-cover opacity-80 transition-all duration-700 group-hover:scale-105 group-hover:opacity-60" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 p-5 w-full">
@@ -367,10 +403,13 @@ export default function HomeScreen({
                       null,
                       'coaches',
                       `${coach.first_name} ${coach.last_name}`,
-                      coach.bio
+                      coach.bio,
+                      null,
+                      null,
+                      null // serviceId? Maybe fetch if we can match relevant PRIVATE service, but simpler to rely on filtering
                     );
                   } else {
-                    alert(`${coach.first_name} ${coach.last_name} has no available sessions at the moment.`);
+                    addToast(`${coach.first_name} ${coach.last_name} has no available sessions at the moment.`, 'info');
                   }
                 }} className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer group w-20 active:scale-95 transition-transform duration-200">
                   <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-800 relative shadow-xl group-hover:border-east-light transition-colors">

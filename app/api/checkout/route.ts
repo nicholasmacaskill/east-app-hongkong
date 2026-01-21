@@ -55,7 +55,13 @@ export async function POST(request: Request) {
 
     // Default URLs if not provided
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const finalSuccessUrl = successUrl || `${baseUrl}/?success=true`;
+
+    let defaultSuccessPath = '/?success=true';
+    if (mode === 'subscription') {
+      defaultSuccessPath = '/membership/success';
+    }
+
+    const finalSuccessUrl = successUrl || `${baseUrl}${defaultSuccessPath}`;
     const finalCancelUrl = cancelUrl || `${baseUrl}/?canceled=true`;
 
     // Create a Stripe Checkout Session

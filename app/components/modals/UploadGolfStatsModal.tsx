@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { X, Save, Activity } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
+import { useToast } from '../ui/Toast';
 
 interface UploadGolfStatsModalProps {
     onClose: () => void;
@@ -11,6 +12,7 @@ interface UploadGolfStatsModalProps {
 }
 
 export default function UploadGolfStatsModal({ onClose, currentUserId, onSuccess, existingStats }: UploadGolfStatsModalProps) {
+    const { addToast } = useToast();
     const [loading, setLoading] = useState(false);
     const [stats, setStats] = useState({
         handicap: existingStats?.handicap || '',
@@ -50,7 +52,7 @@ export default function UploadGolfStatsModal({ onClose, currentUserId, onSuccess
             onSuccess();
             onClose();
         } catch (error: any) {
-            alert('Error updating stats: ' + error.message);
+            addToast('Error updating stats: ' + error.message, 'error');
         } finally {
             setLoading(false);
         }

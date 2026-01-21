@@ -27,6 +27,7 @@ export interface UserProfileData {
     id?: string;
     preferences?: any;
     subscription_status?: string;
+    account_status?: string;
     membership_start?: string;
     membership_expires?: string;
     membership_history?: any[];

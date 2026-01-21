@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Edit2, Plus, Trash2, Camera, Calendar, Clock, Image as ImageIcon, Mic } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
+import { useToast } from '@/app/components/ui/Toast';
 
 const SettingsContainer = ({ children }: { children: React.ReactNode }) => {
     React.useEffect(() => {
@@ -44,6 +45,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
     const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
     const [loading, setLoading] = useState(false);
     const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+    const { addToast } = useToast();
 
     // Form State
     const [date, setDate] = useState('');
@@ -90,8 +92,14 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
     }
 
     const handleAddSlot = async () => {
-        if (!date || !startTime || !endTime) return alert("Please fill all fields");
-        if (isRepeating && (!repeatUntil || selectedDays.length === 0)) return alert("Please select repeat days and end date");
+        if (!date || !startTime || !endTime) {
+            addToast("Please fill all fields", "warning");
+            return;
+        }
+        if (isRepeating && (!repeatUntil || selectedDays.length === 0)) {
+            addToast("Please select repeat days and end date", "warning");
+            return;
+        }
 
         setLoading(true);
         const slotsToInsert = [];
@@ -106,7 +114,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
             const end = new Date(repeatUntil);
 
             if (end < start) {
-                alert("End date must be after start date");
+                addToast("End date must be after start date", "error");
                 setLoading(false);
                 return;
             }
@@ -115,7 +123,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
             const diffTime = Math.abs(end.getTime() - start.getTime());
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             if (diffDays > 180) {
-                alert("For performance, please schedule max 6 months at a time.");
+                addToast("For performance, please schedule max 6 months at a time.", "warning");
                 setLoading(false);
                 return;
             }
@@ -133,9 +141,10 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
 
         const { error } = await supabase.from('availability').insert(slotsToInsert);
 
-        if (error) alert(error.message);
-        else {
-            alert("Schedule Updated Successfully!");
+        if (error) {
+            addToast(error.message, "error");
+        } else {
+            addToast("Schedule Updated Successfully!", "success");
             if (onScheduleUpdate) onScheduleUpdate();
             else {
                 // If no parent update provided, just fetch locally (fallback)
@@ -165,7 +174,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
         const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
 
         if (uploadError) {
-            alert('Upload failed');
+            addToast('Upload failed', "error");
             setLoading(false);
             return;
         }

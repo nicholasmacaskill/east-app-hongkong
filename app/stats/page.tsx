@@ -292,14 +292,8 @@ export default function LeaderboardPage() {
                 {/* GOLF VIEW */}
                 {sport === 'golf' && (
                     <div className="animate-fadeIn">
-                        <div className="flex justify-between items-center max-w-md mx-auto mb-8 px-2">
+                        <div className="flex justify-center items-center max-w-md mx-auto mb-8 px-2">
                             <h2 className="text-2xl font-black italic uppercase text-white tracking-tight">Leaderboard</h2>
-                            <button
-                                onClick={() => setShowUploadModal(true)}
-                                className="bg-east-light text-black px-5 py-2.5 rounded-xl text-[10px] font-black italic uppercase tracking-[0.1em] flex items-center gap-2 hover:bg-white transition-all shadow-lg hover:scale-105 active:scale-95"
-                            >
-                                <PlusCircle size={14} /> Upload Stats
-                            </button>
                         </div>
 
                         <div className="flex justify-center gap-3 mb-10 overflow-x-auto no-scrollbar pb-2 px-2">

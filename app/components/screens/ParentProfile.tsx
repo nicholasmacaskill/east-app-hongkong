@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Edit2, CheckCircle2, ChevronRight, Users, Calendar, Heart, Award, Lock, Plus, X, Coins } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
+import { useToast } from '../ui/Toast';
 
 interface ParentProfileProps {
    onOpenSettings: () => void;
@@ -22,6 +23,7 @@ export default function ParentProfile({
    setActiveChildId,
    onAddChild
 }: ParentProfileProps) {
+   const { addToast } = useToast();
 
    const [activeTab, setActiveTab] = useState('athletes');
    const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
@@ -69,14 +71,14 @@ export default function ParentProfile({
             throw new Error(data.error || 'Transfer failed');
          }
 
-         alert('Credits transferred successfully!');
+         addToast('Credits transferred successfully!', 'success');
          setShowTransferModal(false);
          // Ideally triggers a refresh of the parent data, but for now we reload or rely on state update if parent fetches again?
          // Since app/page.tsx handles the state, a reload is safest to update both balances
          window.location.reload();
 
       } catch (error: any) {
-         alert(error.message);
+         addToast(error.message, 'error');
       } finally {
          setIsTransferring(false);
       }
@@ -172,7 +174,7 @@ export default function ParentProfile({
                ].map((stat, i) => (
                   <div
                      key={i}
-                     onClick={() => stat.isLocked && alert("Current credits are unusable until a new subscription is purchased.")}
+                     onClick={() => stat.isLocked && addToast("Current credits are unusable until a new subscription is purchased.", "warning")}
                      title={stat.isLocked ? "Current credits are unusable until a new subscription is purchased." : ""}
                      className={`flex flex-col items-center p-3 bg-white/5 rounded-xl border group hover:border-east-light/50 transition-colors ${stat.isLocked ? 'border-red-900/50 bg-red-900/10 cursor-not-allowed' : 'border-white/10'}`}
                   >

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Share2, Send, CreditCard, AlertCircle, Check, ChevronLeft } from 'lucide-react';
 import { Session } from '@/app/types/session';
 import { supabase } from '@/app/lib/supabase';
+import { useToast } from '@/app/components/ui/Toast';
 
 interface ClassModalProps {
     sessions: Session[];
@@ -18,6 +19,7 @@ interface ClassModalProps {
     coachName?: string;
     initialSessionId?: number;
     serviceDescription?: string | null;
+    serviceId?: string | null; // NEW
 }
 
 export default function ClassModal({
@@ -32,7 +34,8 @@ export default function ClassModal({
     coachBio,
     coachName,
     initialSessionId,
-    serviceDescription
+    serviceDescription,
+    serviceId
 }: ClassModalProps) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
@@ -46,6 +49,7 @@ export default function ClassModal({
     const [selectedCoachId, setSelectedCoachId] = useState<string | null>(null);
     const [isLoadingCoaches, setIsLoadingCoaches] = useState(false);
     const [currentRegistrations, setCurrentRegistrations] = useState<number>(0);
+    const { addToast } = useToast();
     const [isLoadingCapacity, setIsLoadingCapacity] = useState(false);
 
     // NEW: Manual Coach Hierarchy Flow
@@ -93,16 +97,65 @@ export default function ClassModal({
     const isNews = displaySession.category === 'NEWS';
     const isPrivate = displaySession.category === 'PRIVATE';
 
-    // Normalize Instructor Names: collapse whitespace and trim
-    const normalize = (name: string) => name?.replace(/\s+/g, ' ').trim() || '';
+    // Normalize Instructor Names: collapse whitespace, trim, lowercase
+    const normalize = (name: string) => name?.replace(/\s+/g, ' ').trim().toLowerCase() || '';
 
     // Helpers
     const selectedSession = sessions.find(s => s.id === selectedSessionId);
     const creditCostPerPerson = selectedSession ? selectedSession.credit_cost || 10 : 10;
     const COACH_ADDON_COST = 750; // Constant for now
 
-    const uniqueTitles = new Set(sessions.map(s => s.title));
-    const uniqueInstructors = new Set(sessions.map(s => normalize(s.instructor)));
+    const [allowedCoaches, setAllowedCoaches] = useState<string[] | null>(null);
+
+    // Fetch allowed coaches for strict filtering
+    useEffect(() => {
+        async function fetchAllowedCoaches() {
+            if (!serviceId) {
+                setAllowedCoaches(null);
+                return;
+            }
+
+            // 1. Get coach IDs assigned to this service
+            const { data: assignments } = await supabase
+                .from('coach_services')
+                .select('coach_id')
+                .eq('session_type_id', serviceId);
+
+            if (!assignments || assignments.length === 0) {
+                // If defined service but no coaches, assume strict 0.
+                setAllowedCoaches([]);
+                return;
+            }
+
+            const coachIds = assignments.map(a => a.coach_id);
+
+            // 2. Get coach NAMES from profiles
+            const { data: profiles } = await supabase
+                .from('profiles')
+                .select('first_name, last_name')
+                .in('id', coachIds);
+
+            if (profiles) {
+                const names = profiles.map(p => {
+                    const full = `${p.first_name || ''} ${p.last_name || ''}`;
+                    return normalize(full);
+                });
+                setAllowedCoaches(names);
+            }
+        }
+
+        fetchAllowedCoaches();
+    }, [serviceId]);
+
+    // Filter sessions by allowed coaches first
+    const visibleSessions = sessions.filter(s => {
+        if (!allowedCoaches) return true; // No strict filter active
+        if (!s.instructor) return false;
+        return allowedCoaches.includes(normalize(s.instructor));
+    });
+
+    const uniqueTitles = new Set(visibleSessions.map(s => s.title));
+    const uniqueInstructors = new Set(visibleSessions.map(s => normalize(s.instructor)));
     const isCoachView = uniqueInstructors.size === 1 && uniqueTitles.size > 1;
 
     // Dynamic Header Logic (Gradient Bar)
@@ -119,10 +172,10 @@ export default function ClassModal({
     useEffect(() => {
         if (initialSessionId) {
             setSelectedSessionId(initialSessionId);
-        } else if (sessions.length === 1) {
-            setSelectedSessionId(sessions[0].id);
+        } else if (visibleSessions.length === 1) {
+            setSelectedSessionId(visibleSessions[0].id);
         }
-    }, [sessions, initialSessionId]);
+    }, [visibleSessions, initialSessionId]);
 
     // Check who is ALREADY booked for the SELECTED session
     // bookedSessions contains objects with session details AND attendee details (from my-schedule API)
@@ -143,8 +196,8 @@ export default function ClassModal({
     // If ALL selected are booked, show CANCEL button.
     const allSelectedAreBooked = selectedAttendeeIds.length > 0 && selectedAttendeeIds.every(id => getBookedStatus(id));
 
-    const filteredSessions = sessions.filter(s =>
-        (!filterInstructor || s.instructor === filterInstructor) &&
+    const filteredSessions = visibleSessions.filter(s =>
+        (!filterInstructor || normalize(s.instructor) === normalize(filterInstructor)) &&
         (!filterTitle || s.title === filterTitle)
     );
 
@@ -209,7 +262,7 @@ export default function ClassModal({
         const attendeesToBook = selectedAttendeeIds.filter(id => !getBookedStatus(id));
 
         if (attendeesToBook.length === 0) {
-            alert("All selected attendees are already booked.");
+            addToast("All selected attendees are already booked.", "warning");
             return;
         }
 
@@ -244,24 +297,22 @@ export default function ClassModal({
 
                 // NEW: Handle Locked/Inactive Subscription
                 if (data.code === 'SUBSCRIPTION_LOCKED' || (data.error && data.error.includes('Account Locked'))) {
-                    if (window.confirm("Account Locked: active subscription required. Would you like to reactivate now?")) {
-                        window.location.href = '/membership';
-                    }
+                    addToast("Account Locked: active subscription required.", "error");
                     return;
                 }
 
-                alert(data.error || 'A critical error occurred.');
+                addToast(data.error || 'A critical error occurred.', 'error');
                 return;
             }
 
             // Success
             // data.message might say "Booked 2 session(s)"
-            alert(data.message || `Success! Session booked.`);
+            addToast(data.message || `Success! Session booked.`, 'success');
             if (onScheduleChange) onScheduleChange();
             onClose();
         } catch (error: any) {
             console.error(error);
-            alert(`Booking Request Failed: ${error.message || 'Network error'}`);
+            addToast(`Booking Request Failed: ${error.message || 'Network error'}`, 'error');
             setIsProcessing(false);
         }
     };
@@ -273,13 +324,16 @@ export default function ClassModal({
             const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP;
             console.log("DEBUG: Env Var Value:", priceId);
             if (!priceId) {
-                alert("CRITICAL ERROR: Limit Reached. (Missing TopUp Price ID)");
+                addToast("CRITICAL ERROR: Limit Reached. (Missing TopUp Price ID)", "error");
                 setIsProcessing(false);
                 return;
             }
             console.log("DEBUG: Using Price ID:", priceId);
-            alert(`DEBUG: Price ID is ${priceId}`); // Temporary debug
-            if (!priceId) { alert('Top Up not configured'); setIsProcessing(false); return; }
+            if (!priceId) {
+                addToast('Top Up not configured', 'error');
+                setIsProcessing(false);
+                return;
+            }
 
             const { data: profile } = await supabase.from('profiles').select('contact_email').eq('id', currentUserId).single();
             const { data: { user } } = await supabase.auth.getUser();
@@ -295,12 +349,12 @@ export default function ClassModal({
             if (data.url) {
                 window.location.href = data.url;
             } else {
-                alert(`Checkout Failed: ${data.error || 'Unknown error'}`);
+                addToast(`Checkout Failed: ${data.error || 'Unknown error'}`, 'error');
                 setIsProcessing(false);
             }
         } catch (e) {
             console.error(e);
-            alert("Error initiating Top Up.");
+            addToast("Error initiating Top Up.", 'error');
             setIsProcessing(false);
         }
     };
@@ -344,17 +398,17 @@ export default function ClassModal({
                         successCount++;
                     } else {
                         console.error(`[CANCEL ERROR] User ${attendeeId}:`, data.error || data.message);
-                        alert(`Failed to cancel: ${data.error || data.message}`);
+                        addToast(`Failed to cancel: ${data.error || data.message}`, "error");
                     }
                 } catch (e) {
                     console.error(e);
-                    alert(`Network error cancelling session.`);
+                    addToast(`Network error cancelling session.`, "error");
                 }
             }
         }
 
         setIsProcessing(false);
-        alert(`Cancelled ${successCount} booking(s).`);
+        addToast(`Cancelled ${successCount} booking(s).`, "success");
         if (onScheduleChange) onScheduleChange();
         onClose();
     };
@@ -367,7 +421,7 @@ export default function ClassModal({
             try { await navigator.share({ title, text, url }); } catch (err) { console.log(err); }
         } else {
             navigator.clipboard.writeText(`${title}\n${text}\n${url}`);
-            alert('Link copied to clipboard!');
+            addToast('Link copied to clipboard!', "success");
         }
     };
 

@@ -3,7 +3,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { QrCode, User as UserIcon } from 'lucide-react';
 
-export default function QRScreen({ credits, currentUserId, subscriptionStatus }: { credits: number, currentUserId: string | null, subscriptionStatus?: string }) {
+export default function QRScreen({ credits, currentUserId, subscriptionStatus, accountStatus }: { credits: number, currentUserId: string | null, subscriptionStatus?: string, accountStatus?: string }) {
   const router = useRouter();
   // handleTopUp logic replaced by direct router.push('/top-up')
 
@@ -43,7 +43,7 @@ export default function QRScreen({ credits, currentUserId, subscriptionStatus }:
             </div>
 
             {/* Locked Credits Warning */}
-            {subscriptionStatus && subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && (
+            {((!subscriptionStatus || (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing')) && accountStatus !== 'active') && (
               <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 mb-4">
                 <p className="text-[10px] font-bold text-red-400 text-center uppercase tracking-wide">
                   ⚠️ Credits locked until subscription is purchased or reactivated

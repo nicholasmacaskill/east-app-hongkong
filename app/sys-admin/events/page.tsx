@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Plus, Trash2, Edit2, Upload, X, Save, Calendar, Clock, DollarSign } from 'lucide-react';
+import { useToast } from '@/app/components/ui/Toast';
 
 interface EventItem {
     id: number;
@@ -22,6 +23,7 @@ export default function AdminEventsPage() {
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [currentItem, setCurrentItem] = useState<Partial<EventItem>>({});
+    const { addToast } = useToast();
     const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
@@ -75,15 +77,16 @@ export default function AdminEventsPage() {
             .delete()
             .eq('id', id);
 
-        if (error) alert('Error deleting event: ' + error.message);
+        if (error) addToast('Error deleting event: ' + error.message, 'error');
         else {
+            addToast('Event deleted', 'success');
             fetchEvents();
         }
     };
 
     const handleSave = async () => {
         if (!currentItem.title || !currentItem.description || !currentItem.start_time || !currentItem.end_time) {
-            alert('Title, Description, and Dates are required.');
+            addToast('Title, Description, and Dates are required.', 'warning');
             return;
         }
 
@@ -115,8 +118,9 @@ export default function AdminEventsPage() {
         }
 
         if (error) {
-            alert('Error saving event: ' + error.message);
+            addToast('Error saving event: ' + error.message, 'error');
         } else {
+            addToast('Event saved successfully', 'success');
             setIsEditing(false);
             fetchEvents();
         }
@@ -136,7 +140,7 @@ export default function AdminEventsPage() {
             .upload(filePath, file);
 
         if (uploadError) {
-            alert('Error uploading image: ' + uploadError.message);
+            addToast('Error uploading image: ' + uploadError.message, 'error');
             setUploading(false);
             return;
         }
@@ -158,12 +162,15 @@ export default function AdminEventsPage() {
     };
 
     return (
-        <div className="p-8 text-black bg-white min-h-screen">
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-black italic uppercase tracking-tighter">Event Management</h1>
+        <div className="p-8 text-white bg-black min-h-screen font-montserrat pb-24">
+            <div className="flex justify-between items-center mb-10">
+                <div>
+                    <h1 className="text-3xl font-black italic uppercase tracking-tighter text-east-light">Event Management</h1>
+                    <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">Special events and workshops</p>
+                </div>
                 <button
                     onClick={handleCreate}
-                    className="flex items-center gap-2 bg-black text-white px-6 py-3 rounded-full font-bold uppercase tracking-widest hover:bg-gray-800 transition-all"
+                    className="flex items-center gap-2 bg-east-light text-black px-6 py-3 rounded-full font-black italic uppercase tracking-wider hover:bg-white transition-all shadow-lg active:scale-95"
                 >
                     <Plus size={18} />
                     Create Event
@@ -171,179 +178,203 @@ export default function AdminEventsPage() {
             </div>
 
             {loading ? (
-                <div>Loading events...</div>
+                <div className="flex flex-col items-center py-20 gap-3">
+                    <div className="w-6 h-6 border-2 border-east-light border-t-transparent rounded-full animate-spin" />
+                    <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">Fetching Events</p>
+                </div>
             ) : (
-                <div className="grid gap-4">
+                <div className="grid gap-6">
                     {events.map(item => (
-                        <div key={item.id} className="border border-gray-200 p-4 rounded-xl flex items-center gap-6 shadow-sm hover:shadow-md transition-all">
-                            <div className="w-24 h-24 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                        <div key={item.id} className="bg-[#111111] border border-white/5 p-5 rounded-2xl flex items-center gap-6 shadow-xl hover:border-white/10 transition-all group">
+                            <div className="w-28 h-28 bg-black rounded-xl overflow-hidden shrink-0 border border-white/5 relative">
                                 {item.image_url ? (
-                                    <img src={item.image_url} alt={item.title} className="w-full h-full object-cover" />
+                                    <img src={item.image_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                 ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                        <Calendar size={24} />
+                                    <div className="w-full h-full flex items-center justify-center text-gray-800">
+                                        <Calendar size={32} />
                                     </div>
                                 )}
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-bold text-lg uppercase tracking-tight">{item.title}</h3>
-                                <p className="text-gray-500 text-sm line-clamp-2">{item.description}</p>
-                                <div className="flex items-center gap-4 mt-2 text-xs text-gray-400 font-bold uppercase tracking-wider">
-                                    <span className="flex items-center gap-1">
-                                        <Calendar size={12} />
+                                <h3 className="font-black italic text-xl uppercase tracking-tight text-white mb-2">{item.title}</h3>
+                                <p className="text-gray-400 text-sm line-clamp-2 mb-4 font-medium leading-relaxed">{item.description}</p>
+                                <div className="flex items-center gap-5 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                    <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full">
+                                        <Calendar size={12} className="text-east-light" />
                                         {new Date(item.start_time).toLocaleDateString()}
                                     </span>
-                                    <span className="flex items-center gap-1">
-                                        <Clock size={12} />
+                                    <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full">
+                                        <Clock size={12} className="text-east-light" />
                                         {new Date(item.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
-                                    <span className="flex items-center gap-1 text-black">
+                                    <span className="flex items-center gap-1.5 bg-east-light/10 text-east-light px-2.5 py-1 rounded-full border border-east-light/20">
                                         <DollarSign size={12} />
                                         {item.credit_cost > 0 ? `${item.credit_cost} Credits` : 'FREE'}
                                     </span>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex flex-col gap-2">
                                 <button
                                     onClick={() => handleEdit(item)}
-                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                    className="p-3 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
                                 >
                                     <Edit2 size={20} />
                                 </button>
                                 <button
                                     onClick={() => handleDelete(item.id)}
-                                    className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                    className="p-3 bg-red-500/10 text-red-400 hover:text-white hover:bg-red-500 rounded-xl transition-all"
                                 >
                                     <Trash2 size={20} />
                                 </button>
                             </div>
                         </div>
                     ))}
-                    {events.length === 0 && <p className="text-gray-500 italic">No upcoming events found.</p>}
+                    {events.length === 0 && (
+                        <div className="text-center py-20 border border-dashed border-white/5 rounded-3xl">
+                            <p className="text-gray-500 italic uppercase font-black tracking-widest text-xs">No upcoming events found.</p>
+                        </div>
+                    )}
                 </div>
             )}
 
             {/* EDITOR MODAL */}
             {isEditing && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                            <h2 className="text-xl font-black italic uppercase tracking-tighter">
-                                {currentItem.id ? 'Edit Event' : 'New Event'}
-                            </h2>
-                            <button onClick={() => setIsEditing(false)} className="text-gray-400 hover:text-black">
-                                <X size={24} />
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                    <div className="bg-[#111111] w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-white/10">
+                        <div className="p-8 border-b border-white/5 flex justify-between items-center bg-black/20">
+                            <div>
+                                <h2 className="text-2xl font-black italic uppercase tracking-tighter text-white">
+                                    {currentItem.id ? 'Edit Event' : 'New Event'}
+                                </h2>
+                                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">Event Configuration</p>
+                            </div>
+                            <button onClick={() => setIsEditing(false)} className="text-gray-500 hover:text-white transition-colors">
+                                <X size={28} />
                             </button>
                         </div>
 
-                        <div className="p-6 overflow-y-auto space-y-6">
+                        <div className="p-8 overflow-y-auto space-y-8 no-scrollbar">
                             {/* Image Section */}
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Event Image</label>
-                                <div className="flex items-center gap-4">
-                                    <div className="w-32 h-32 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 relative group">
+                                <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-3">Cover Image</label>
+                                <div className="flex items-center gap-6">
+                                    <div className="w-40 h-40 bg-black rounded-2xl overflow-hidden border border-white/10 relative group">
                                         {currentItem.image_url ? (
                                             <img src={currentItem.image_url} className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                                <Upload size={24} />
+                                            <div className="w-full h-full flex items-center justify-center text-gray-800">
+                                                <Upload size={32} />
                                             </div>
                                         )}
-                                        {uploading && <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs font-bold">Uploading...</div>}
+                                        {uploading && (
+                                            <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center text-east-light text-[10px] font-black uppercase tracking-widest">
+                                                <div className="w-4 h-4 border-2 border-east-light border-t-transparent rounded-full animate-spin mb-2" />
+                                                Uploading...
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="flex-1">
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleImageUpload}
-                                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
-                                        />
-                                        <p className="text-xs text-gray-400 mt-2">Recommended: 1200x800px or similar landscape.</p>
+                                        <div className="relative">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleImageUpload}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            />
+                                            <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center hover:bg-white/10 transition-all cursor-pointer">
+                                                <span className="text-xs font-bold uppercase tracking-widest text-white">Select New Image</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-gray-500 mt-3 font-medium">JPG, PNG or WebP. recommended: 1200x800px.</p>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Details */}
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 <div>
-                                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Event Name</label>
+                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2 font-montserrat">Event Title</label>
                                     <input
                                         type="text"
                                         value={currentItem.title || ''}
                                         onChange={e => setCurrentItem({ ...currentItem, title: e.target.value })}
-                                        className="w-full p-3 border border-gray-200 rounded-lg font-bold focus:outline-none focus:ring-2 focus:ring-black"
-                                        placeholder="E.g. Summer Camp Kickoff"
+                                        className="w-full bg-black border border-white/10 rounded-xl p-4 text-white font-black italic uppercase placeholder:text-gray-700 focus:outline-none focus:border-east-light transition-all"
+                                        placeholder="E.G. SUMMER CAMP CHAMPIONSHIP"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Description</label>
+                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Description</label>
                                     <textarea
                                         value={currentItem.description || ''}
                                         onChange={e => setCurrentItem({ ...currentItem, description: e.target.value })}
-                                        className="w-full p-3 border border-gray-200 rounded-lg h-32 focus:outline-none focus:ring-2 focus:ring-black"
-                                        placeholder="Event details, location, etc."
+                                        className="w-full bg-black border border-white/10 rounded-xl p-4 text-white text-sm h-32 focus:outline-none focus:border-east-light transition-all placeholder:text-gray-700"
+                                        placeholder="PROVIDE DETAILED EVENT INFORMATION..."
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Start Time</label>
+                                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Starts At</label>
                                         <input
                                             type="datetime-local"
                                             value={toLocalISO(currentItem.start_time)}
                                             onChange={e => setCurrentItem({ ...currentItem, start_time: new Date(e.target.value).toISOString() })}
-                                            className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                                            className="w-full bg-black border border-white/10 rounded-xl p-4 text-white text-xs uppercase focus:outline-none focus:border-east-light transition-all"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">End Time</label>
+                                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Ends At</label>
                                         <input
                                             type="datetime-local"
                                             value={toLocalISO(currentItem.end_time)}
                                             onChange={e => setCurrentItem({ ...currentItem, end_time: new Date(e.target.value).toISOString() })}
-                                            className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                                            className="w-full bg-black border border-white/10 rounded-xl p-4 text-white text-xs uppercase focus:outline-none focus:border-east-light transition-all"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Credit Cost</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            value={currentItem.credit_cost || 0}
-                                            onChange={e => setCurrentItem({ ...currentItem, credit_cost: parseInt(e.target.value) })}
-                                            className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
-                                        />
+                                        <label className="block text-[10px] font-bold uppercase tracking-widest text-east-light mb-2 italic">Credit Cost</label>
+                                        <div className="relative">
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                value={currentItem.credit_cost || 0}
+                                                onChange={e => setCurrentItem({ ...currentItem, credit_cost: parseInt(e.target.value) })}
+                                                className="w-full bg-black border border-east-light/20 rounded-xl p-4 text-east-light font-black italic text-xl focus:outline-none focus:border-east-light transition-all"
+                                            />
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-east-light/50 uppercase italic">CREDITS</span>
+                                        </div>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Instructor / Host</label>
+                                        <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Special Instructor</label>
                                         <input
                                             type="text"
                                             value={currentItem.instructor || ''}
                                             onChange={e => setCurrentItem({ ...currentItem, instructor: e.target.value })}
-                                            className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+                                            className="w-full bg-black border border-white/10 rounded-xl p-4 text-white text-xs uppercase focus:outline-none focus:border-east-light transition-all"
+                                            placeholder="E.G. COACH NICK"
                                         />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
+                        <div className="p-8 border-t border-white/5 flex gap-4 bg-black/20">
                             <button
                                 onClick={() => setIsEditing(false)}
-                                className="px-6 py-3 rounded-full text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-black hover:bg-gray-200 transition-all"
+                                className="flex-1 px-6 py-4 rounded-xl text-xs font-black uppercase tracking-widest text-gray-500 hover:text-white hover:bg-white/5 transition-all outline-none"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSave}
-                                className="px-8 py-3 rounded-full bg-black text-white text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg flex items-center gap-2"
+                                className="flex-[2] bg-east-light text-black font-black italic uppercase text-lg py-4 rounded-xl hover:bg-white transition-all shadow-lg shadow-east-light/10 flex items-center justify-center gap-3 active:scale-[0.98]"
                             >
-                                <Save size={16} />
-                                Save Event
+                                <Save size={20} />
+                                Save & Publish
                             </button>
                         </div>
                     </div>

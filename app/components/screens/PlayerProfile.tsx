@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Edit2, Activity, Award, Camera, Coins } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
+import { useToast } from '../ui/Toast';
 import UploadGolfStatsModal from '../modals/UploadGolfStatsModal';
 
 // Simple Card Wrapper
@@ -28,6 +29,7 @@ export interface PlayerProfileProps {
 }
 
 export default function PlayerProfile({ onOpenSettings, profileData, stats: initialStats, isReadOnly = false, onRefresh, onShowHistory }: PlayerProfileProps) {
+  const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<'streaks' | 'full_stats'>('streaks');
   const [stats, setStats] = useState<PlayerStats | null>(initialStats || null);
 
@@ -114,7 +116,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
     const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
 
     if (uploadError) {
-      alert('Avatar upload failed');
+      addToast('Avatar upload failed', 'error');
       return;
     }
 
@@ -125,7 +127,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
       .eq('id', profileData.id);
 
     if (!dbError) {
-      alert('Avatar updated!');
+      addToast('Avatar updated!', 'success');
       window.location.reload();
     }
   };

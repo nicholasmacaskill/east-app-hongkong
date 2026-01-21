@@ -123,7 +123,7 @@ export async function POST(request: Request) {
     // ==========================
     const { data: userProfile, error: profileErr } = await supabaseAdmin
       .from('profiles')
-      .select('subscription_status, parent_id')
+      .select('subscription_status, account_status, parent_id')
       .eq('id', userId)
       .single();
 
@@ -137,21 +137,23 @@ export async function POST(request: Request) {
     }
 
     let subscriptionStatus = userProfile.subscription_status;
+    let accountStatus = userProfile.account_status;
 
     // Handle Child Accounts: If this user has a parent, check parent's subscription
     if (userProfile.parent_id) {
       const { data: parentProfile } = await supabaseAdmin
         .from('profiles')
-        .select('subscription_status')
+        .select('subscription_status, account_status')
         .eq('id', userProfile.parent_id)
         .single();
 
       if (parentProfile) {
         subscriptionStatus = parentProfile.subscription_status;
+        accountStatus = parentProfile.account_status;
       }
     }
 
-    if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing') {
+    if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && accountStatus !== 'active') {
       return NextResponse.json({ error: 'Account Locked: Active subscription required.', code: 'SUBSCRIPTION_LOCKED' }, { status: 403 });
     }
 

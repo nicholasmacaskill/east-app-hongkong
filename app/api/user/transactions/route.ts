@@ -1,30 +1,32 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/app/lib/supabase';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 
 export async function GET(request: Request) {
     try {
-        // 1. Authenticate check (standard for user routes)
-        // We use the client-side token passed in headers usually, but here we can just verify headers
-        // actually easier to use standard supabase server client pattern if available, 
-        // but for now let's rely on the client passing the token or session validation.
-
-        // Simpler approach compatible with other routes in this project:
-        // Extract auth token from header
+        // 1. Get user session from cookie
         const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
-            return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+        let user;
+
+        if (authHeader) {
+            const token = authHeader.replace('Bearer ', '');
+            const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+            if (authError || !authUser) {
+                return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+            }
+            user = authUser;
+        } else {
+            // Fallback for non-bearer auth if needed
+            const { data: { user: sessionUser }, error: sessionError } = await supabase.auth.getUser();
+            if (sessionError || !sessionUser) {
+                return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+            }
+            user = sessionUser;
         }
 
-        const token = authHeader.replace('Bearer ', '');
-        const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-        if (authError || !user) {
-            return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
-        }
-
-        // 2. Fetch Transactions
-        const { data: transactions, error: dbError } = await supabase
+        // 2. Fetch Transactions using ADMIN client to guarantee visibility
+        const supabaseAdmin = getSupabaseAdmin();
+        const { data: transactions, error: dbError } = await supabaseAdmin
             .from('transactions')
             .select('*')
             .eq('user_id', user.id)
@@ -38,6 +40,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ success: true, transactions });
 
     } catch (error: any) {
+        console.error("Critical error in transactions API:", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }

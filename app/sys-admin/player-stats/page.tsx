@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Upload, Save, Camera, Edit2, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
+import { useToast } from '@/app/components/ui/Toast';
 
 interface PlayerStats {
     age?: number | null;
@@ -35,6 +36,7 @@ export default function PlayerStatsAdmin() {
     const [ocrProcessing, setOcrProcessing] = useState(false);
     const [uploadedImage, setUploadedImage] = useState<string | null>(null);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+    const { addToast } = useToast();
 
     useEffect(() => {
         fetchPlayers();
@@ -94,10 +96,10 @@ export default function PlayerStatsAdmin() {
                 if (data.success) {
                     setStats(data.stats);
                 } else {
-                    alert('OCR failed: ' + data.error);
+                    addToast('OCR failed: ' + data.error, 'error');
                 }
             } catch (err: any) {
-                alert('OCR error: ' + err.message);
+                addToast('OCR error: ' + err.message, 'error');
             }
             setOcrProcessing(false);
         };
@@ -106,7 +108,7 @@ export default function PlayerStatsAdmin() {
 
     const handleSaveStats = async () => {
         if (!selectedPlayerId) {
-            alert('Please select a player');
+            addToast('Please select a player', 'warning');
             return;
         }
 

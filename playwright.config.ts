@@ -26,7 +26,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3033',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -80,7 +80,8 @@ export default defineConfig({
         'tests/admin-system.spec.ts',
         'tests/edge-cases.spec.ts',
         'tests/reminders.spec.ts',
-        'tests/admin-events.spec.ts'
+        'tests/admin-events.spec.ts',
+        'tests/qa-verification.spec.ts'
       ],
     },
 
@@ -97,8 +98,8 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    command: 'npm run dev -- -p 3033',
+    url: 'http://localhost:3033',
     reuseExistingServer: true,
   },
 });

@@ -3,6 +3,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
 import { Home, User, QrCode, Activity, MessageSquare, Plus } from 'lucide-react';
+import { ToastProvider, useToast } from '@/app/components/ui/Toast';
 
 // Screens
 import HomeScreen from '@/app/components/screens/HomeScreen';
@@ -32,12 +33,13 @@ import { Session } from './types/session';
 
 // 2. Updated Initial State
 const initialProfileData: UserProfileData = {
-  name: '', surname: '', first_name: '', last_name: '', username: '', bio: '', email: '', mobile: '', avatar_url: '', credits: 0, gallery_images: [], schedule_photo_url: '', intro_video_url: '', role: undefined, preferences: {}, subscription_status: 'inactive', membership_start: undefined, membership_expires: undefined, membership_history: []
+  name: '', surname: '', first_name: '', last_name: '', username: '', bio: '', email: '', mobile: '', avatar_url: '', credits: 0, gallery_images: [], schedule_photo_url: '', intro_video_url: '', role: undefined, preferences: {}, subscription_status: 'inactive', account_status: 'active', membership_start: undefined, membership_expires: undefined, membership_history: []
 };
 
 function AppContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +61,7 @@ function AppContent() {
   const [myChildren, setMyChildren] = useState<any[]>([]);
   const [selectedInitialSessionId, setSelectedInitialSessionId] = useState<number | null>(null);
   const [selectedAttendeeId, setSelectedAttendeeId] = useState<string | null>(null);
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null); // NEW
 
   const [userProfile, setUserProfile] = useState<UserProfileData>(initialProfileData);
 
@@ -111,6 +114,7 @@ function AppContent() {
               id: profileData.id,
               preferences: profileData.preferences || {},
               subscription_status: profileData.subscription_status,
+              account_status: profileData.account_status,
               membership_start: profileData.membership_start,
               membership_expires: profileData.membership_expires,
               membership_history: profileData.membership_history || []
@@ -205,9 +209,9 @@ function AppContent() {
     if (searchParams.get('success') === 'true') {
       setRefreshKey(prev => prev + 1);
       router.replace('/');
-      alert("Purchase Successful! Credits added.");
+      addToast("Top-up Successful! Credits Added.", "success");
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, addToast]);
 
   // Auto-redirect admin/sys-admin
   useEffect(() => {
@@ -237,11 +241,11 @@ function AppContent() {
       .eq('id', currentUserId);
 
     if (error) {
-      alert('Failed to save profile. ' + error.message);
+      addToast('Failed to save profile: ' + error.message, 'error');
     } else {
       setUserProfile(updatedData);
       setRefreshKey(prev => prev + 1);
-      alert('Profile updated successfully');
+      addToast('Profile updated successfully', 'success');
       setShowSettingsModal(false);
     }
   };
@@ -253,7 +257,8 @@ function AppContent() {
     coachName?: string | null,
     coachBio?: string | null,
     initialSessionId?: number | null,
-    attendeeId?: string | null
+    attendeeId?: string | null,
+    serviceId?: string | null // NEW
   ) => {
     if (s.length === 1 && s[0].category === 'NEWS') {
       setSelectedNews(s[0]);
@@ -267,6 +272,7 @@ function AppContent() {
     setSelectedCoachBio(coachBio || null);
     setSelectedInitialSessionId(initialSessionId || null);
     setSelectedAttendeeId(attendeeId || null);
+    setSelectedServiceId(serviceId || null); // NEW STATE
     setShowClassModal(true);
   };
 
@@ -371,6 +377,7 @@ function AppContent() {
                 bookedSessions={bookedSessions}
                 credits={userProfile.credits || 0}
                 subscriptionStatus={userProfile.subscription_status}
+                accountStatus={userProfile.account_status}
                 setTab={setActiveTab}
               />
 
@@ -405,13 +412,13 @@ function AppContent() {
                         });
                         const data = await res.json();
                         if (!res.ok) {
-                          alert(`Error: ${data.error}`);
+                          addToast(`Error: ${data.error}`, 'error');
                         } else {
-                          alert('Child added successfully!');
+                          addToast('Child added successfully!', 'success');
                           setRefreshKey(prev => prev + 1);
                         }
                       } catch (e: any) {
-                        alert(`Failed to add child: ${e.message}`);
+                        addToast(`Failed to add child: ${e.message}`, 'error');
                       }
                     }}
                   />
@@ -436,7 +443,7 @@ function AppContent() {
 
           {/* ... existing screens ... */}
 
-          {activeTab === 'qr' && <QRScreen credits={userProfile.credits || 0} currentUserId={currentUserId} subscriptionStatus={userProfile.subscription_status} />}
+          {activeTab === 'qr' && <QRScreen credits={userProfile.credits || 0} currentUserId={currentUserId} subscriptionStatus={userProfile.subscription_status} accountStatus={userProfile.account_status} />}
         </main>
 
         <BottomNav activeTab={activeTab} setTab={setActiveTab} />
@@ -498,7 +505,9 @@ function AppContent() {
 export default function App() {
   return (
     <Suspense fallback={<div className="bg-black h-screen text-white flex justify-center items-center font-montserrat font-black italic uppercase tracking-widest animate-pulse">Loading...</div>}>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </Suspense>
   );
 }

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Save, Clock, Trash2, Plus, Info } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
+import { useToast } from '@/app/components/ui/Toast';
 
 interface AvailabilityModalProps {
     coach: any;
@@ -30,6 +31,7 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
     const [slots, setSlots] = useState<TimeSlot[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const { addToast } = useToast();
     const [serviceTypes, setServiceTypes] = useState<any[]>([]);
 
     // Tracking changes
@@ -68,7 +70,7 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
             if (data.success) {
                 setSlots(data.data);
             } else {
-                alert('Failed to load availability: ' + data.error);
+                addToast('Failed to load availability: ' + data.error, 'error');
             }
         } catch (e) {
             console.error(e);
@@ -186,7 +188,7 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
         setAddedSlots([...addedSlots, ...newBulkSlots]);
         setShowBulkTool(false);
         const typeLabel = bulkConfig.selectedServiceId ? 'SESSIONS' : 'Availability Slots';
-        alert(`Generated ${newBulkSlots.length} ${typeLabel}. Click Save to confirm.`);
+        addToast(`Generated ${newBulkSlots.length} ${typeLabel}. Click Save to confirm.`, 'success');
     };
 
     const handleSave = async () => {
@@ -204,14 +206,14 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
 
             const data = await res.json();
             if (data.success) {
-                alert('Availability/Sessions saved successfully!');
+                addToast('Availability/Sessions saved successfully!', 'success');
                 onClose();
             } else {
-                alert('Error saving: ' + data.error);
+                addToast('Error saving: ' + data.error, 'error');
             }
         } catch (e) {
             console.error(e);
-            alert('Error saving availability.');
+            addToast('Error saving availability.', 'error');
         }
         setSaving(false);
     };
