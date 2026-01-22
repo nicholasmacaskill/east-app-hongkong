@@ -75,15 +75,26 @@ function AppContent() {
   useEffect(() => {
     const init = async () => {
       try {
+        console.log('[INIT] Starting initialization...');
         const { data: { user } } = await supabase.auth.getUser();
+        console.log('[INIT] Got user:', user?.id);
 
         if (user) {
+          // IMMEDIATE ADMIN REDIRECT - Check metadata first
+          const metadataRole = user.user_metadata?.role;
+          if (metadataRole === 'admin' || metadataRole === 'sys-admin') {
+            console.log('[INIT] Admin detected in metadata, redirecting immediately...');
+            window.location.href = '/sys-admin';
+            return; // Stop further execution
+          }
+
           setCurrentUserId(user.id);
 
           // A. INITIAL SETUP (If user is new)
           const emailName = user.email?.split('@')[0] || 'Member';
 
           // B. ENSURE PROFILE EXISTS (DOUBTFUL UPSERT - PREFER SELECT THEN INSERT)
+          console.log('[INIT] Checking existing profile...');
           const { data: existingProfile } = await supabase
             .from('profiles')
             .select('role')
@@ -92,11 +103,20 @@ function AppContent() {
 
           if (!existingProfile) {
             // Wait / Retry logic handled by UI loading state or subsequent fetch
+            console.log('[INIT] No existing profile found');
           }
 
           // C. FETCH REAL PROFILE DATA (Resiliently)
           console.log(`[INIT] Fetching resilient profile for ${user.id}...`);
           const profileData = await fetchProfileResilient(user.id);
+          console.log('[INIT] Profile data received:', profileData?.role);
+
+          // Check if admin from profile data
+          if (profileData && (profileData.role === 'admin' || profileData.role === 'sys-admin')) {
+            console.log('[INIT] Admin detected in profile, redirecting...');
+            window.location.href = '/sys-admin';
+            return; // Stop further execution
+          }
 
           if (profileData) {
             setUserProfile({
@@ -126,7 +146,6 @@ function AppContent() {
             console.log("⚠️ No profile found. Attempting auto-repair...");
 
             // 1. Set temporary UI state from metadata
-            const metadataRole = user.user_metadata?.role as UserRole;
             if (metadataRole) {
               setUserProfile(prev => ({
                 ...prev,
@@ -154,6 +173,7 @@ function AppContent() {
           }
 
           // D. FETCH BOOKINGS (SAFER VERSION)
+          console.log('[INIT] Fetching bookings...');
           try {
             const res = await fetch(`/api/my-schedule?userId=${user.id}`);
 
@@ -174,6 +194,7 @@ function AppContent() {
 
           // E. FETCH CHILDREN (IF PARENT)
           if (profileData && profileData.role === 'parent') {
+            console.log('[INIT] Fetching children...');
             const { data: childrenData } = await supabase
               .from('profiles')
               .select('*')
@@ -190,9 +211,11 @@ function AppContent() {
           }
 
         }
+        console.log('[INIT] Initialization complete');
       } catch (error) {
         console.error("Initialization error:", error);
       } finally {
+        console.log('[INIT] Setting loading to false');
         setLoading(false);
       }
     };
@@ -308,14 +331,6 @@ function AppContent() {
     }
   }, [searchParams, router, addToast]);
 
-  // Auto-redirect admin/sys-admin
-  useEffect(() => {
-    if (userProfile.role === 'admin' || userProfile.role === 'sys-admin') {
-      console.log("Admin detected. Force redirecting...");
-      // Use hard redirect to clear state/cache
-      window.location.href = '/sys-admin';
-    }
-  }, [userProfile.role]);
 
   const handleSaveProfile = async (updatedData: UserProfileData) => {
     if (!currentUserId) return;
