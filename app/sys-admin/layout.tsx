@@ -4,6 +4,7 @@ import { Shield, Newspaper, QrCode, Calendar, Home } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
+import { fetchProfileResilient } from '@/app/lib/authProfile'; // Added resilient fetch
 import AdminLogoutButton from '../components/AdminLogoutButton';
 
 // Helper Component for Sidebar Links
@@ -31,14 +32,12 @@ export default function AdminLayout({
             try {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) {
-                    // Wait a tiny bit and try one more time as session might be restoring
                     await new Promise(r => setTimeout(r, 500));
                     const { data: { user: retryUser } } = await supabase.auth.getUser();
                     if (!retryUser) {
                         router.replace('/');
                         return;
                     }
-                    // If found on retry, continue with that user
                     await processUser(retryUser);
                     return;
                 }
@@ -56,11 +55,8 @@ export default function AdminLayout({
                 return;
             }
 
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .single();
+            // Use the resilient fetch instead of the single direct query
+            const profile = await fetchProfileResilient(user.id);
 
             if (!profile || (profile.role !== 'admin' && profile.role !== 'sys-admin')) {
                 router.replace('/');
@@ -69,11 +65,10 @@ export default function AdminLayout({
             }
         };
 
-        // Failsafe: Redirect if check takes too long (5s)
         timeoutId = setTimeout(() => {
             console.error("Admin auth timeout - redirecting");
             router.replace('/');
-        }, 5000);
+        }, 8000); // Increased timeout to give resilient fetch more time
 
         checkAuth().finally(() => {
             clearTimeout(timeoutId);
@@ -105,17 +100,17 @@ export default function AdminLayout({
                     </div>
 
                     <div className="flex items-center gap-6">
-                        <div className="hidden sm:flex items-center gap-8 mr-4 border-r border-white/10 pr-8">
-                            <AdminNavLink href="/sys-admin" icon={Home} label="Admin Home" />
-                            <AdminNavLink href="/sys-admin/qr" icon={QrCode} label="QR Codes" />
+                        <div className="hidden sm:flex items-center gap-6 mr-6 border-r border-white/10 pr-6">
+                            <AdminNavLink href="/sys-admin" icon={Home} label="Dashboard" />
+                            <AdminNavLink href="/sys-admin/schedule" icon={Calendar} label="Schedule" />
+                            <AdminNavLink href="/sys-admin/qr" icon={QrCode} label="Check-In" />
                             <AdminNavLink href="/sys-admin/news" icon={Newspaper} label="News" />
-                            <AdminNavLink href="/sys-admin/schedule?category=EVENT" icon={Calendar} label="Events" />
                         </div>
                         <AdminLogoutButton />
                     </div>
                 </div>
             </header>
-            <main className="max-w-7xl mx-auto p-4 md:p-8">
+            <main>
                 {children}
             </main>
         </div>

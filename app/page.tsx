@@ -70,6 +70,7 @@ function AppContent() {
   const isWaitingForCreditsRef = React.useRef(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const processingToastIdRef = React.useRef<string | null>(null);
+  const hasAttemptedRepair = React.useRef(false);
 
   // 1. Auth & Data Fetch
   useEffect(() => {
@@ -129,8 +130,9 @@ function AppContent() {
               membership_expires: profileData.membership_expires,
               membership_history: profileData.membership_history || []
             });
-          } else {
-            console.log("⚠️ No profile found. Attempting auto-repair...");
+          } else if (!hasAttemptedRepair.current) {
+            console.log("⚠️ No profile found. Attempting auto-repair once...");
+            hasAttemptedRepair.current = true; // Block future attempts this session
 
             // 1. Set temporary UI state from metadata
             if (metadataRole) {
