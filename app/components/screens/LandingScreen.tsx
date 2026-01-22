@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { UserRole } from '@/app/types';
 
 interface LandingScreenProps {
@@ -26,7 +27,14 @@ export default function LandingScreen({ onSelectRole }: LandingScreenProps) {
                 <div className={`transition-all duration-[3000ms] ease-out-expo ${isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
                     {/* Logo */}
                     <div className="mb-2">
-                        <img src="/east-logo-transparent.png" className="w-64 h-auto object-contain mx-auto" alt="EAST Logo" />
+                        <Image
+                            src="/east-logo-transparent.png"
+                            width={256}
+                            height={128}
+                            className="w-64 h-auto object-contain mx-auto"
+                            alt="EAST Logo"
+                            priority
+                        />
                     </div>
                 </div>
 

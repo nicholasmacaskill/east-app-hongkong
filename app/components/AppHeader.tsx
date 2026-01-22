@@ -2,6 +2,7 @@
 import React from 'react';
 import { Plus, Trophy, Settings, ChevronLeft, Lock } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface AppHeaderProps {
     credits?: number;
@@ -53,7 +54,13 @@ export default function AppHeader({
                 ) : (
                     showLogo && (
                         <div className="relative w-40 h-16">
-                            <img src="/east-logo-transparent.png" alt="EAST" className="w-full h-full object-contain object-left opacity-100" />
+                            <Image
+                                src="/east-logo-transparent.png"
+                                alt="EAST"
+                                fill
+                                className="object-contain object-left opacity-100"
+                                priority
+                            />
                         </div>
                     )
                 )}
