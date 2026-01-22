@@ -20,6 +20,9 @@ interface ClassModalProps {
     initialSessionId?: number;
     serviceDescription?: string | null;
     serviceId?: string | null; // NEW
+    subscriptionStatus?: string;
+    accountStatus?: string;
+    role?: string;
 }
 
 export default function ClassModal({
@@ -35,7 +38,10 @@ export default function ClassModal({
     coachName,
     initialSessionId,
     serviceDescription,
-    serviceId
+    serviceId,
+    subscriptionStatus,
+    accountStatus,
+    role
 }: ClassModalProps) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
@@ -257,6 +263,18 @@ export default function ClassModal({
     // --- BOOKING LOGIC ---
     const handleBookSession = async () => {
         if (!selectedSessionId || isNews || !currentUserId || selectedAttendeeIds.length === 0) return;
+
+        // CHECK LOCKED STATUS
+        const isSubscriber = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
+        const isManuallyActive = accountStatus === 'active';
+        const isUnlocked = isSubscriber || isManuallyActive;
+        const needsLockCheck = role === 'player' || role === 'parent' || !role;
+        const isLocked = needsLockCheck && !isUnlocked;
+
+        if (isLocked) {
+            addToast("Account Locked: active subscription required to book.", "error");
+            return;
+        }
 
         // Filter out those who are already booked to avoid double booking error noise
         const attendeesToBook = selectedAttendeeIds.filter(id => !getBookedStatus(id));

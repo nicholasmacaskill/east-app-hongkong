@@ -206,20 +206,6 @@ export default function HomeScreen({
   }
 
   const handleServiceClick = async (service: ServiceType) => {
-    // Check for locked status
-    const isSubscriber = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
-    const isManuallyActive = accountStatus === 'active';
-    const isUnlocked = isSubscriber || isManuallyActive;
-
-    // Only apply locking to player/parent roles. Admins/Coaches bypass this.
-    const needsLockCheck = role === 'player' || role === 'parent' || !role;
-    const isLocked = needsLockCheck && !isUnlocked;
-
-    if (isLocked) {
-      addToast('Account Locked: Active subscription or top-up required to book classes.', 'error');
-      return;
-    }
-
     if (service.category === 'FACILITY') {
       const matching = sessions.filter(s =>
         s.category === 'FACILITY' &&

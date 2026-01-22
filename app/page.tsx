@@ -582,6 +582,9 @@ function AppContent() {
             coachBio={selectedCoachBio || undefined}
             initialSessionId={selectedInitialSessionId || undefined}
             initialAttendeeId={selectedAttendeeId || undefined}
+            subscriptionStatus={userProfile.subscription_status}
+            accountStatus={userProfile.account_status}
+            role={userProfile.role}
           />
         )}
 
