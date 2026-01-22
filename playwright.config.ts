@@ -87,7 +87,8 @@ export default defineConfig({
         'tests/admin-events.spec.ts',
         'tests/qa-verification.spec.ts',
         'tests/family-schedule-sync.spec.ts',
-        'tests/stripe-edge-cases.spec.ts'
+        'tests/stripe-edge-cases.spec.ts',
+        'tests/home-screen-integrity.spec.ts'
       ],
     },
 
