@@ -102,214 +102,44 @@ export async function POST(request: Request) {
 
   console.log(`[BOOKING] Origin: ${origin}, User: ${userId}, Session: ${sessionId}, Targets:`, targets, `Coach: ${coachId}, Tier: ${coachTier}`);
 
-  const results = [];
-  let successCount = 0;
-
   try {
-    // 1. Fetch Session Info (for time and type)
+    // 1. Call the Atomic Master Booking RPC
     const supabaseAdmin = getSupabaseAdmin();
-    const { data: mainSession, error: fetchErr } = await supabaseAdmin
-      .from('sessions')
-      .select('*')
-      .eq('id', sessionId)
-      .single();
+    const { data: result, error: rpcError } = await supabaseAdmin.rpc('master_book_atomic', {
+      p_user_id: userId,
+      p_session_id: sessionId,
+      p_attendee_ids: targets,
+      p_coach_id: coachId,
+      p_coach_tier: coachTier,
+      p_origin: origin
+    });
 
-    if (fetchErr || !mainSession) {
-      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    if (rpcError) {
+      console.error(`[BOOKING] RPC Error:`, rpcError);
+      return NextResponse.json({ error: rpcError.message }, { status: 500 });
     }
 
-    // ==========================
-    // SECURITY: Check Subscription
-    // ==========================
-    const { data: userProfile, error: profileErr } = await supabaseAdmin
-      .from('profiles')
-      .select('subscription_status, account_status, parent_id')
-      .eq('id', userId)
-      .single();
-
-    if (profileErr || !userProfile) {
-      // It might be a child profile in the 'players' table or just missing?
-      // Let's check if it's a child by looking up 'profiles' (maybe they are a profile with parent_id)
-      // If not found in profiles, we can't check subscription easily.
-      // BUT, let's assume if not found, we return 404. 
-      // However, if found, we check parent_id.
-      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
+    if (!result.success) {
+      console.error(`[BOOKING] Failed: ${result.message}`);
+      return NextResponse.json({
+        error: result.message,
+        code: result.code
+      }, { status: result.code === 'INSUFFICIENT_CREDITS' || result.code === 'CAPACITY_MET' ? 400 : 403 });
     }
 
-    let subscriptionStatus = userProfile.subscription_status;
-    let accountStatus = userProfile.account_status;
-
-    // Handle Child Accounts: If this user has a parent, check parent's subscription
-    if (userProfile.parent_id) {
-      const { data: parentProfile } = await supabaseAdmin
-        .from('profiles')
-        .select('subscription_status, account_status')
-        .eq('id', userProfile.parent_id)
-        .single();
-
-      if (parentProfile) {
-        subscriptionStatus = parentProfile.subscription_status;
-        accountStatus = parentProfile.account_status;
-      }
-    }
-
-    if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && accountStatus !== 'active') {
-      return NextResponse.json({ error: 'Account Locked: Active subscription required.', code: 'SUBSCRIPTION_LOCKED' }, { status: 403 });
-    }
-
-
-
-    // ==========================
-    // VALIDATION: Capacity & Availability
-    // ==========================
-
-    // 1. Check General Capacity (Registrations vs Max Capacity)
-    const { count: currentBookings } = await supabaseAdmin
-      .from('registrations')
-      .select('*', { count: 'exact', head: true })
-      .eq('session_id', sessionId);
-
-    const maxUsers = mainSession.max_capacity || 999;
-
-    if (currentBookings !== null && currentBookings >= maxUsers) {
-      return NextResponse.json({ error: 'Capacity Met', code: 'CAPACITY_MET' }, { status: 400 });
-    }
-
-    if (origin === 'facilities') {
-      // If coach attached, verify coach availability
-      if (coachId) {
-        const { data: coachAvailability, error: availErr } = await supabaseAdmin
-          .from('availability')
-          .select('*')
-          .eq('coach_id', coachId)
-          .lte('start_time', mainSession.start_time)
-          .gte('end_time', mainSession.end_time);
-
-        if (availErr || !coachAvailability || coachAvailability.length === 0) {
-          return NextResponse.json({ error: 'Coach not available' }, { status: 400 });
-        }
-      }
-
-    } else if (origin === 'coaches' && coachId) {
-      // "Our Coaches": Validate Coach Only.
-      const { data: coachAvailability, error: availErr } = await supabaseAdmin
-        .from('availability')
-        .select('*')
-        .eq('coach_id', coachId)
-        .lte('start_time', mainSession.start_time)
-        .gte('end_time', mainSession.end_time);
-
-      if (availErr || !coachAvailability || coachAvailability.length === 0) {
-        return NextResponse.json({ error: 'Coach not available at this time' }, { status: 400 });
-      }
-    }
-
-    // 2. Handle Coach Booking (if selected)
-    let coachSessionId: number | null = null;
-    if (coachId) {
-      const { data: coachProfile } = await supabaseAdmin
-        .from('profiles')
-        .select('*')
-        .eq('id', coachId)
-        .single();
-
-      if (coachProfile) {
-        // Create a temporary PRIVATE session for this coach
-        // ideally in a real system we might not create a session row every time, 
-        // but this allows us to track it in registrations linking to a session_id
-        const { data: newSess, error: createSessErr } = await supabaseAdmin
-          .from('sessions')
-          .insert({
-            title: `Private with ${coachProfile.first_name}`,
-            category: 'PRIVATE',
-            instructor: `${coachProfile.first_name} ${coachProfile.last_name || ''}`.trim(),
-            start_time: mainSession.start_time,
-            end_time: mainSession.end_time,
-            image_url: mainSession.image_url,
-            coach_image_url: coachProfile.avatar_url,
-            description: `Private coaching during ${mainSession.title}`,
-            credit_cost: getCoachCost(coachTier, origin) // Dynamic pricing
-          })
-          .select()
-          .single();
-
-        if (!createSessErr && newSess) {
-          coachSessionId = newSess.id;
-        } else {
-          console.error("Failed to create coach session:", createSessErr);
-        }
-      }
-    }
-
-    // 3. Iterate and book each target
-    for (const targetId of targets) {
-
-      let facilitySuccess = true;
-
-      // A. BOOK FACILITY SESSION (Only if origin === 'facilities')
-      if (origin === 'facilities') {
-        console.log(`[BOOKING] Calling book_session_with_credits for User ${userId}, Session ${sessionId}, Attendee ${targetId}`);
-        const { data: result, error: rpcError } = await supabaseAdmin.rpc('book_session_with_credits', {
-          p_user_id: userId,
-          p_session_id: sessionId,
-          p_attendee_id: targetId
-        });
-
-        console.log(`[BOOKING] RPC Result:`, result);
-        if (rpcError) console.error(`[BOOKING] RPC Error:`, rpcError);
-
-        if (rpcError || !result.success) {
-          console.error(`[BOOKING] Failed: ${rpcError?.message || result?.message}`);
-          results.push({ attendeeId: targetId, type: 'facility', success: false, error: rpcError?.message || result?.message });
-          facilitySuccess = false;
-        } else {
-          console.log(`[BOOKING] Success confirmed.`);
-          // ✅ No manual patch needed - RPC now stores credits_paid automatically
-          results.push({ attendeeId: targetId, type: 'facility', success: true, message: result.message });
-        }
-      } else {
-        // Coach Only flow - assume "facility" part is passed/skipped
-        facilitySuccess = true;
-      }
-
-      if (facilitySuccess) {
-        if (origin === 'facilities' && !coachId) {
-          successCount++; // Facility only booking confirmed
-        }
-
-        // B. BOOK COACH SESSION (If coach selected)
-        if (coachSessionId && coachId) {
-          const coachFee = getCoachCost(coachTier, origin);
-
-          const bookingOrigin = origin;
-
-          const { data: coachResult, error: coachRpcError } = await supabaseAdmin.rpc('book_coach_atomic', {
-            p_user_id: userId,
-            p_session_id: coachSessionId,
-            p_coach_id: coachId,
-            p_attendee_id: targetId,
-            p_credit_cost: coachFee,
-            p_origin: bookingOrigin
-          });
-
-          if (coachRpcError) {
-            results.push({ attendeeId: targetId, type: 'coach', success: false, error: coachRpcError.message });
-          } else if (!coachResult.success) {
-            results.push({ attendeeId: targetId, type: 'coach', success: false, error: coachResult.message });
-          } else {
-            results.push({ attendeeId: targetId, type: 'coach', success: true, message: 'Coach confirmed!' });
-            successCount++;
-          }
-        }
-      }
-    }
+    console.log(`[BOOKING] Success: ${result.message}`);
+    const results = result.results;
+    const successCount = targets.length;
 
     // Attempt to send email summary (optional, best effort)
     try {
       if (successCount > 0) {
+        // Fetch session info for email
+        const { data: mainSession } = await supabaseAdmin.from('sessions').select('*').eq('id', sessionId).single();
         // Find email of user
         const { data: userProfile } = await supabaseAdmin.from('profiles').select('contact_email').eq('id', userId).single();
-        if (userProfile?.contact_email) {
+
+        if (userProfile?.contact_email && mainSession) {
           await sendEmail({
             to: userProfile.contact_email,
             subject: 'Booking Confirmation - EAST',

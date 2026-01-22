@@ -1,7 +1,7 @@
-// app/api/cron/reminders/route.ts (OPTIMIZED)
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { sendEmail } from '@/app/lib/email';
+import { formatHK } from '@/app/lib/dateUtils';
 
 // This route checks for sessions starting in ~1 hour and emails attendees
 export async function GET() {
@@ -52,7 +52,7 @@ export async function GET() {
         html: `
           <p>Hi ${userProfile.first_name || 'Member'},</p>
           <p>Get ready! <strong>${session.title}</strong> is starting soon.</p>
-          <p>Time: ${new Date(session.start_time).toLocaleTimeString()}</p>
+          <p>Time: ${formatHK(session.start_time)}</p>
           <p>See you there!</p>
         `
       });

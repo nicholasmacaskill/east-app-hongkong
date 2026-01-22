@@ -4,6 +4,9 @@ import { createClient } from '@supabase/supabase-js';
 const authFile = 'playwright/.auth/admin.json';
 
 setup('authenticate as admin', async ({ page }) => {
+    page.on('console', msg => console.log('BROWSER:', msg.text()));
+    page.on('pageerror', err => console.log('BROWSER ERROR:', err.message));
+
     setup.setTimeout(120000);
     // 1. Create Test Admin via Admin API
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

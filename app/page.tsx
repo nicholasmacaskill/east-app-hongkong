@@ -29,6 +29,7 @@ import ProcessingOverlay from '@/app/components/ui/ProcessingOverlay';
 // 25: deleted
 import type { UserRole, Tab, UserProfileData } from './types';
 import { Session } from './types/session';
+import { fetchProfileResilient } from '@/app/lib/authProfile';
 
 // 1. Updated Interface to include credits and role
 
@@ -93,12 +94,9 @@ function AppContent() {
             // Wait / Retry logic handled by UI loading state or subsequent fetch
           }
 
-          // C. FETCH REAL PROFILE DATA
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
+          // C. FETCH REAL PROFILE DATA (Resiliently)
+          console.log(`[INIT] Fetching resilient profile for ${user.id}...`);
+          const profileData = await fetchProfileResilient(user.id);
 
           if (profileData) {
             setUserProfile({

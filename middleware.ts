@@ -73,13 +73,26 @@ export async function middleware(request: NextRequest) {
                 }
             );
 
-            const { data: profile } = await serviceRoleSupabase
-                .from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .single();
+            // DEFENSIVE: Retry profile fetch to handle race conditions for new users
+            let profile = null;
+            let role = null;
 
-            const role = profile?.role;
+            for (let i = 0; i < 3; i++) {
+                const { data } = await serviceRoleSupabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+
+                if (data?.role) {
+                    profile = data;
+                    role = data.role;
+                    break;
+                }
+
+                // Wait 150ms before retry
+                if (i < 2) await new Promise(resolve => setTimeout(resolve, 150));
+            }
 
             // Admin only
             if (request.nextUrl.pathname.startsWith('/sys-admin') || request.nextUrl.pathname.startsWith('/api/admin')) {

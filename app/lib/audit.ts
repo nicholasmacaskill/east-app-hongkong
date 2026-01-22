@@ -20,12 +20,14 @@ export interface AuditLogEntry {
     userAgent?: string;
 }
 
+import { formatAuditHK } from '@/app/lib/dateUtils';
+
 /**
  * Logs a critical system action for audit purposes.
  * Currently logs to console/Sentry, but designed to write to an audit_logs table.
  */
 export async function logAudit(entry: AuditLogEntry) {
-    const timestamp = new Date().toISOString();
+    const timestamp = formatAuditHK(new Date());
 
     // 1. Structural Logging (picked up by Sentry/Datadog/Vercel)
     console.log(JSON.stringify({

@@ -4,6 +4,7 @@ import { User, Mail, Lock, Phone, LogIn, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
+import { fetchProfileResilient } from '@/app/lib/authProfile';
 import type { UserRole } from '../types';
 
 type AuthStep = 'login' | 'register' | 'success';
@@ -74,14 +75,9 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
             addToast(error.message, 'error');
             setLoading(false);
         } else if (data.user) {
-            // Fetch role from profile
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', data.user.id)
-                .single();
-
-            onAuthSuccess((profile?.role as UserRole) || 'player');
+            // Fetch role from profile (Resiliently)
+            const profile = await fetchProfileResilient(data.user.id);
+            onAuthSuccess(profile?.role || 'player');
         }
     };
 
@@ -121,6 +117,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
 
             // Check for immediate session
             if (data.session) {
+                await fetchProfileResilient(data.user!.id);
                 onAuthSuccess(formData.role);
             } else {
                 // Try immediate login
@@ -130,6 +127,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
                 });
 
                 if (loginData?.session) {
+                    await fetchProfileResilient(loginData.user!.id);
                     onAuthSuccess(formData.role);
                 } else {
                     setStep('success');

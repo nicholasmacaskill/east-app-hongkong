@@ -26,6 +26,7 @@
     "@upstash/redis": "^1.36.1",
     "@yudiel/react-qr-scanner": "^2.5.0",
     "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "dotenv": "^17.2.3",
     "inngest": "^3.48.1",
     "jsonwebtoken": "^9.0.3",
