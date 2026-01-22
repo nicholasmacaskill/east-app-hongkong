@@ -82,22 +82,22 @@ async function runMigration() {
         console.log('5. Inserting core services...');
         const services = [
             {
-                title: 'Trackman Range',
-                category: 'CLASS',
-                description: 'Group practice session using Trackman technology.',
-                image_url: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=800'
+                title: 'Facility',
+                category: 'FACILITY',
+                description: 'Access our high-performance facility and equipment.',
+                image_url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800'
             },
             {
-                title: 'Private Coaching',
+                title: 'Class',
+                category: 'CLASS',
+                description: 'Group training sessions led by expert instructors.',
+                image_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800'
+            },
+            {
+                title: 'Private Session',
                 category: 'PRIVATE',
-                description: '1-on-1 personalized instruction.',
+                description: '1-on-1 personalized coaching and instruction.',
                 image_url: 'https://images.unsplash.com/photo-1544367563-12123d832e30?w=800'
-            },
-            {
-                title: 'Junior Academy',
-                category: 'CLASS',
-                description: 'Youth development program.',
-                image_url: 'https://images.unsplash.com/photo-1628155930542-3c7a64e2c833?w=800'
             }
         ];
 
