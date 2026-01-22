@@ -36,10 +36,10 @@ export default function AdminLayout({
                     return;
                 }
                 // If found on retry, continue with that user
-                processUser(retryUser);
+                await processUser(retryUser);
                 return;
             }
-            processUser(user);
+            await processUser(user);
         };
 
         const processUser = async (user: any) => {
