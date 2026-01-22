@@ -107,6 +107,11 @@ function AppContent() {
 
 
           if (profileData) {
+            // FIX: Ensure admins/coaches land on the correct dashboard
+            if (profileData.role === 'admin' || profileData.role === 'coach' || profileData.role === 'sys-admin') {
+              setSelectedRole(profileData.role as UserRole);
+            }
+
             setUserProfile({
               name: profileData.first_name || '',
               surname: profileData.last_name || '',
@@ -393,7 +398,7 @@ function AppContent() {
             if (role === 'admin' || role === 'sys-admin') {
               window.location.href = '/sys-admin';
             } else {
-              window.location.reload();
+              setRefreshKey(prev => prev + 1);
             }
           }}
         />

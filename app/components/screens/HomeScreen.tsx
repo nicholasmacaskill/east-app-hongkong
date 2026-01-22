@@ -64,10 +64,15 @@ export default function HomeScreen({
     const loadData = async () => {
       try {
         // Fetch sessions (for booking availability)
-        const sessionsData = await fetchSessions();
-        if (Array.isArray(sessionsData)) {
-          const filtered = sessionsData.filter(s => s.instructor !== 'Coach User');
-          setSessions(filtered);
+        try {
+          const sessionsData = await fetchSessions();
+          if (Array.isArray(sessionsData)) {
+            const filtered = sessionsData.filter(s => s.instructor !== 'Coach User');
+            setSessions(filtered);
+          }
+        } catch (sessionErr) {
+          console.error('Failed to fetch sessions, continuing with local data:', sessionErr);
+          // sessions state remains empty array, UI will show empty/skeleton as appropriate
         }
 
         const { supabase } = await import('@/app/lib/supabase');
