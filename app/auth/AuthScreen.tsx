@@ -75,8 +75,15 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
             addToast(error.message, 'error');
             setLoading(false);
         } else if (data.user) {
+            // Mirroring Admin Layout Logic: Check metadata first for immediate access
+            const metaRole = data.user.user_metadata?.role;
+            if (metaRole === 'admin' || metaRole === 'sys-admin') {
+                onAuthSuccess(metaRole);
+                return;
+            }
+
             // Fetch role from profile (Resiliently)
-            const profile = await fetchProfileResilient(data.user.id);
+            const profile = await fetchProfileResilient(data.user.id, { select: 'role' });
             onAuthSuccess(profile?.role || 'player');
         }
     };
@@ -117,7 +124,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
 
             // Check for immediate session
             if (data.session) {
-                await fetchProfileResilient(data.user!.id);
+                await fetchProfileResilient(data.user!.id, { select: 'role' });
                 onAuthSuccess(formData.role);
             } else {
                 // Try immediate login
@@ -127,7 +134,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
                 });
 
                 if (loginData?.session) {
-                    await fetchProfileResilient(loginData.user!.id);
+                    await fetchProfileResilient(loginData.user!.id, { select: 'role' });
                     onAuthSuccess(formData.role);
                 } else {
                     setStep('success');
