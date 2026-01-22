@@ -56,7 +56,7 @@ export default function AdminLayout({
             }
 
             // Use the resilient fetch instead of the single direct query
-            const profile = await fetchProfileResilient(user.id);
+            const profile = await fetchProfileResilient(user.id, { select: 'role' });
 
             if (!profile || (profile.role !== 'admin' && profile.role !== 'sys-admin')) {
                 router.replace('/');

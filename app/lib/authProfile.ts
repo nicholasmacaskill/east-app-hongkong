@@ -7,16 +7,16 @@ import type { UserRole } from '../types';
  */
 export async function fetchProfileResilient(
     userId: string,
-    maxRetries: number = 3,
-    delayMs: number = 300
+    options: { maxRetries?: number; delayMs?: number; select?: string } = {}
 ): Promise<any | null> {
+    const { maxRetries = 3, delayMs = 300, select = '*' } = options;
     let lastError = null;
 
     for (let i = 0; i < maxRetries; i++) {
         try {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('*')
+                .select(select)
                 .eq('id', userId)
                 .single();
 
