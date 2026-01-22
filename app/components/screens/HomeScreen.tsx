@@ -17,7 +17,7 @@ const SectionHeader = ({ title, className = "" }: { title: string, className?: s
 interface ServiceType {
   id: string;
   title: string;
-  category: 'CLASS' | 'PRIVATE';
+  category: 'CLASS' | 'PRIVATE' | 'FACILITY';
   image_url: string | null;
   description: string | null;
 }
@@ -64,15 +64,10 @@ export default function HomeScreen({
     const loadData = async () => {
       try {
         // Fetch sessions (for booking availability)
-        try {
-          const sessionsData = await fetchSessions();
-          if (Array.isArray(sessionsData)) {
-            const filtered = sessionsData.filter(s => s.instructor !== 'Coach User');
-            setSessions(filtered);
-          }
-        } catch (sessionErr) {
-          console.error('Failed to fetch sessions, continuing with local data:', sessionErr);
-          // sessions state remains empty array, UI will show empty/skeleton as appropriate
+        const sessionsData = await fetchSessions();
+        if (Array.isArray(sessionsData)) {
+          const filtered = sessionsData.filter(s => s.instructor !== 'Coach User');
+          setSessions(filtered);
         }
 
         const { supabase } = await import('@/app/lib/supabase');
@@ -184,7 +179,8 @@ export default function HomeScreen({
 
   // Derive Service Lists
   const serviceClasses = allServices.filter(s => s.category === 'CLASS');
-  let servicePrivate = allServices.filter(s => s.category === 'PRIVATE');
+  const servicePrivate = allServices.filter(s => s.category === 'PRIVATE');
+  const serviceFacilities = allServices.filter(s => s.category === 'FACILITY');
 
   // Check for "Orphan" Admin Sessions (Private sessions with no matching Service ID)
   // These are often manually created via Admin Panel with title but no Service Type.
@@ -216,7 +212,20 @@ export default function HomeScreen({
       return;
     }
 
-    if (service.category === 'CLASS') {
+    if (service.category === 'FACILITY') {
+      const matching = sessions.filter(s =>
+        s.category === 'FACILITY' &&
+        (s.session_type_id === service.id || s.title.toLowerCase().trim() === service.title.toLowerCase().trim())
+      );
+
+      if (matching.length === 0) {
+        addToast(`No upcoming slots for ${service.title} yet.`, 'info');
+      } else {
+        matching.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+        onClassClick(matching, service.description);
+      }
+
+    } else if (service.category === 'CLASS') {
       // Show upcoming sessions for this class type
       // We filter the already fetched 'sessions' by title matching the service title
       // NOTE: Ideally we should match by ID, but legacy sessions table doesn't have session_type_id yet.
@@ -321,10 +330,10 @@ export default function HomeScreen({
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-3">
-              {facilitiesUnique.map((fac) => (
-                <div key={fac.id} onClick={() => handleItemClick(fac, 'title')} className="flex flex-col gap-2 cursor-pointer group active:scale-95 transition-transform duration-200">
+              {serviceFacilities.map((fac) => (
+                <div key={fac.id} onClick={() => handleServiceClick(fac)} className="flex flex-col gap-2 cursor-pointer group active:scale-95 transition-transform duration-200">
                   <div className="aspect-square rounded-2xl overflow-hidden border border-gray-800 bg-[#0a0a0a] relative shadow-lg group-hover:border-east-light transition-colors">
-                    <img src={fac.image_url} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" alt={fac.title} />
+                    <img src={fac.image_url || 'https://images.unsplash.com/photo-1541744158664-972170366318?w=400'} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" alt={fac.title} />
                   </div>
                   <span className="font-montserrat font-bold italic text-[9px] uppercase text-center text-gray-400 group-hover:text-white transition-colors">{fac.title}</span>
                 </div>
