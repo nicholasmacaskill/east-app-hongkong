@@ -25,45 +25,96 @@ export default function AdminLayout({
     const [authorized, setAuthorized] = useState(false);
 
     useEffect(() => {
+        let timeoutId: NodeJS.Timeout;
+
         const checkAuth = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                // Wait a tiny bit and try one more time as session might be restoring
-                await new Promise(r => setTimeout(r, 500));
-                const { data: { user: retryUser } } = await supabase.auth.getUser();
-                if (!retryUser) {
+            try {
+                console.log('[Admin Layout] Starting auth check...');
+
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+                if (userError) {
+                    console.error('[Admin Layout] Error fetching user:', userError);
                     router.replace('/');
                     return;
                 }
-                // If found on retry, continue with that user
-                processUser(retryUser);
-                return;
+
+                if (!user) {
+                    console.log('[Admin Layout] No user found, retrying...');
+                    // Wait a tiny bit and try one more time as session might be restoring
+                    await new Promise(r => setTimeout(r, 500));
+                    const { data: { user: retryUser }, error: retryError } = await supabase.auth.getUser();
+
+                    if (retryError || !retryUser) {
+                        console.error('[Admin Layout] Retry failed, redirecting to home');
+                        router.replace('/');
+                        return;
+                    }
+                    // If found on retry, continue with that user
+                    await processUser(retryUser);
+                    return;
+                }
+                await processUser(user);
+            } catch (error) {
+                console.error('[Admin Layout] Unexpected error during auth check:', error);
+                router.replace('/');
             }
-            processUser(user);
         };
 
         const processUser = async (user: any) => {
+            try {
+                console.log('[Admin Layout] Processing user:', user.id);
 
-            const metaRole = user.user_metadata?.role;
-            if (metaRole === 'admin' || metaRole === 'sys-admin') {
-                setAuthorized(true);
-                return;
-            }
+                const metaRole = user.user_metadata?.role;
+                console.log('[Admin Layout] User metadata role:', metaRole);
 
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .single();
+                if (metaRole === 'admin' || metaRole === 'sys-admin') {
+                    console.log('[Admin Layout] ✅ Authorized via metadata');
+                    setAuthorized(true);
+                    return;
+                }
 
-            if (!profile || (profile.role !== 'admin' && profile.role !== 'sys-admin')) {
+                console.log('[Admin Layout] Checking profile table...');
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profileError) {
+                    console.error('[Admin Layout] Profile fetch error:', profileError);
+                    router.replace('/');
+                    return;
+                }
+
+                console.log('[Admin Layout] Profile role:', profile?.role);
+
+                if (!profile || (profile.role !== 'admin' && profile.role !== 'sys-admin')) {
+                    console.warn('[Admin Layout] ❌ Unauthorized - redirecting');
+                    router.replace('/');
+                } else {
+                    console.log('[Admin Layout] ✅ Authorized via profile');
+                    setAuthorized(true);
+                }
+            } catch (error) {
+                console.error('[Admin Layout] Error processing user:', error);
                 router.replace('/');
-            } else {
-                setAuthorized(true);
             }
         };
 
-        checkAuth();
+        // Set a timeout fallback - if auth check takes more than 5 seconds, redirect
+        timeoutId = setTimeout(() => {
+            console.error('[Admin Layout] ⏱️ Auth check timeout - redirecting to home');
+            router.replace('/');
+        }, 5000);
+
+        checkAuth().finally(() => {
+            clearTimeout(timeoutId);
+        });
+
+        return () => {
+            clearTimeout(timeoutId);
+        };
     }, [router]);
 
     if (!authorized) {
