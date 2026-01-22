@@ -159,15 +159,16 @@ export default function MasterSchedule() {
 
         setModalAction('CREATE');
         setEditingSession({
-            title: '',
-            category: 'FACILITY',
-            instructor: '',
+            title: autoInstructor ? `${autoInstructor} - Session` : '',
+            category: autoInstructor ? 'PRIVATE' : 'FACILITY',
+            instructor: autoInstructor || '',
             start_time: start,
             end_time: end,
             total_facility_bays: 0,
-            max_capacity: 4,
+            max_capacity: autoInstructor ? 1 : 4,
             credit_cost: 100,
             session_type_id: null,
+            lockInstructor: !!autoInstructor,
             description: '',
             image_url: ''
         });

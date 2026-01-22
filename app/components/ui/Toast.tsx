@@ -3,16 +3,17 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { X, Check, Info, AlertTriangle } from 'lucide-react';
 
-type ToastType = 'success' | 'error' | 'info' | 'warning';
+type ToastType = 'success' | 'error' | 'info' | 'warning' | 'loading';
 
 interface Toast {
     id: string;
     message: string;
     type: ToastType;
+    duration?: number;
 }
 
 interface ToastContextType {
-    addToast: (message: string, type?: ToastType) => void;
+    addToast: (message: string, type?: ToastType, duration?: number) => string;
     removeToast: (id: string) => void;
 }
 
@@ -21,9 +22,10 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export function ToastProvider({ children }: { children: React.ReactNode }) {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
-    const addToast = useCallback((message: string, type: ToastType = 'success') => {
+    const addToast = useCallback((message: string, type: ToastType = 'success', duration: number = 4000) => {
         const id = Math.random().toString(36).substring(2, 9);
-        setToasts((prev) => [...prev, { id, message, type }]);
+        setToasts((prev) => [...prev, { id, message, type, duration }]);
+        return id;
     }, []);
 
     const removeToast = useCallback((id: string) => {
@@ -44,17 +46,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string) => void }) {
     useEffect(() => {
+        if (toast.duration === 0) return;
         const timer = setTimeout(() => {
             onDismiss(toast.id);
-        }, 4000);
+        }, toast.duration || 4000);
         return () => clearTimeout(timer);
-    }, [toast.id, onDismiss]);
+    }, [toast.id, toast.duration, onDismiss]);
 
     const bgColors = {
         success: 'bg-east-light text-black',
         error: 'bg-red-600 text-white',
         info: 'bg-blue-600 text-white',
         warning: 'bg-yellow-500 text-black',
+        loading: 'bg-east-light text-black',
     };
 
     const Icons = {
@@ -62,6 +66,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
         error: AlertTriangle,
         info: Info,
         warning: AlertTriangle,
+        loading: () => <div className="animate-spin rounded-full h-4 w-4 border-2 border-black border-t-transparent" />,
     };
 
     const Icon = Icons[toast.type];

@@ -79,6 +79,15 @@ export async function POST(request: Request) {
       // Pre-fill user email to simplify checkout
       customer_email: userEmail,
 
+      // For subscriptions, ensure metadata is passed to the subscription object
+      ...(mode === 'subscription' && {
+        subscription_data: {
+          metadata: {
+            userId: userId,
+          }
+        }
+      }),
+
       // Metadata allows us to match the payment to the user in the Webhook
       // ✅ UPDATED: Dynamic credit_amount from map
       metadata: {

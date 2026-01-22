@@ -94,9 +94,10 @@ test.describe('Role-Based Permissions & Access Control', () => {
     test('Player role: Cannot see "Add Child" button or attendee selection', async ({ page }) => {
         // Login as player
         await page.goto('/login');
-        await page.fill('input[placeholder="Email Address"]', playerEmail);
-        await page.fill('input[placeholder="Password"]', playerPassword);
+        await page.fill('input[placeholder="Enter your email"]', playerEmail);
+        await page.fill('input[placeholder="Enter your password"]', playerPassword);
         await page.click('button:has-text("Login")');
+        await page.waitForTimeout(500); // Allow for redirection logic
 
         await isHydrated(page);
         await page.waitForURL('/');
@@ -129,9 +130,10 @@ test.describe('Role-Based Permissions & Access Control', () => {
     test('Parent role: Can see "Households" section and toggle between attendees', async ({ page }) => {
         // Login as parent
         await page.goto('/login');
-        await page.fill('input[placeholder="Email Address"]', parentEmail);
-        await page.fill('input[placeholder="Password"]', parentPassword);
+        await page.fill('input[placeholder="Enter your email"]', parentEmail);
+        await page.fill('input[placeholder="Enter your password"]', parentPassword);
         await page.click('button:has-text("Login")');
+        await page.waitForTimeout(500); // Allow for redirection logic
 
         await isHydrated(page);
         await page.waitForURL('/');
@@ -182,9 +184,10 @@ test.describe('Role-Based Permissions & Access Control', () => {
 
         // Login as locked player
         await page.goto('/login');
-        await page.fill('input[placeholder="Email Address"]', playerEmail);
-        await page.fill('input[placeholder="Password"]', playerPassword);
+        await page.fill('input[placeholder="Enter your email"]', playerEmail);
+        await page.fill('input[placeholder="Enter your password"]', playerPassword);
         await page.click('button:has-text("Login")');
+        await page.waitForTimeout(500); // Allow for redirection logic
 
         await isHydrated(page);
 
@@ -216,9 +219,10 @@ test.describe('Role-Based Permissions & Access Control', () => {
 
         // Login as locked parent
         await page.goto('/login');
-        await page.fill('input[placeholder="Email Address"]', parentEmail);
-        await page.fill('input[placeholder="Password"]', parentPassword);
+        await page.fill('input[placeholder="Enter your email"]', parentEmail);
+        await page.fill('input[placeholder="Enter your password"]', parentPassword);
         await page.click('button:has-text("Login")');
+        await page.waitForTimeout(500); // Allow for redirection logic
 
         await isHydrated(page);
 
@@ -248,9 +252,10 @@ test.describe('Role-Based Permissions & Access Control', () => {
     test('Player cannot access parent-only features', async ({ page }) => {
         // Login as player
         await page.goto('/login');
-        await page.fill('input[placeholder="Email Address"]', playerEmail);
-        await page.fill('input[placeholder="Password"]', playerPassword);
+        await page.fill('input[placeholder="Enter your email"]', playerEmail);
+        await page.fill('input[placeholder="Enter your password"]', playerPassword);
         await page.click('button:has-text("Login")');
+        await page.waitForTimeout(500); // Allow for redirection logic
 
         await isHydrated(page);
 
@@ -270,9 +275,10 @@ test.describe('Role-Based Permissions & Access Control', () => {
     test('Parent can transfer credits between family members', async ({ page }) => {
         // Login as parent
         await page.goto('/login');
-        await page.fill('input[placeholder="Email Address"]', parentEmail);
-        await page.fill('input[placeholder="Password"]', parentPassword);
+        await page.fill('input[placeholder="Enter your email"]', parentEmail);
+        await page.fill('input[placeholder="Enter your password"]', parentPassword);
         await page.click('button:has-text("Login")');
+        await page.waitForTimeout(500); // Allow for redirection logic
 
         await isHydrated(page);
 

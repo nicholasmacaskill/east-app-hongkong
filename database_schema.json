@@ -1,0 +1,1412 @@
+{
+  "availability": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "coach_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "start_time",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "end_time",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "is_recurring",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "false"
+      },
+      {
+        "column_name": "status",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": "'available'::text"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "timezone('utc'::text, now())"
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "availability_coach_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "coach_id",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "availability_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "availability",
+        "foreign_column_name": "id",
+        "check_clause": null
+      }
+    ]
+  },
+  "likes": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "bigint",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "post_id",
+        "data_type": "bigint",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "likes_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "likes",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "likes_post_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "post_id",
+        "foreign_table_name": "posts",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "likes_user_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "user_id",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "likes_user_id_post_id_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "user_id",
+        "foreign_table_name": "likes",
+        "foreign_column_name": "post_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "likes_user_id_post_id_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "user_id",
+        "foreign_table_name": "likes",
+        "foreign_column_name": "user_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "likes_user_id_post_id_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "post_id",
+        "foreign_table_name": "likes",
+        "foreign_column_name": "post_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "likes_user_id_post_id_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "post_id",
+        "foreign_table_name": "likes",
+        "foreign_column_name": "user_id",
+        "check_clause": null
+      }
+    ]
+  },
+  "messages": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "bigint",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "sender_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "receiver_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "content",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "image_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "timezone('utc'::text, now())"
+      },
+      {
+        "column_name": "shared_event_id",
+        "data_type": "bigint",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "messages_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "messages",
+        "foreign_column_name": "id",
+        "check_clause": null
+      }
+    ]
+  },
+  "posts": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "bigint",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "image_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "caption",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "timezone('utc'::text, now())"
+      },
+      {
+        "column_name": "shared_post_id",
+        "data_type": "bigint",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "posts_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "posts",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "posts_shared_post_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "shared_post_id",
+        "foreign_table_name": "posts",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "posts_user_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "user_id",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      }
+    ]
+  },
+  "players_stats": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "bigint",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "player_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "age",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "season",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "team",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "games_played_season",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "games_played_total",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "games_missed_healthy",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "games_missed_injured",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "goals_season",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "goals_total",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "assists_season",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "assists_total",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "gp",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "points",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "gwg",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "ppg",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "shg",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "pim",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "top_scorer_team",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "top_scorer_league",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "least_pim_team",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "most_shots_team",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "is_verified",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "false"
+      },
+      {
+        "column_name": "verified_by",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "verified_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES",
+        "column_default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "players_stats_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "players_stats",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "players_stats_player_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "player_id",
+        "foreign_table_name": null,
+        "foreign_column_name": null,
+        "check_clause": null
+      },
+      {
+        "constraint_name": "players_stats_verified_by_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "verified_by",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      }
+    ]
+  },
+  "sessions": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "bigint",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "title",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "category",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "instructor",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "start_time",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "end_time",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "image_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "coach_image_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "description",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "credit_cost",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "10"
+      },
+      {
+        "column_name": "max_capacity",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "10"
+      },
+      {
+        "column_name": "priority",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "0"
+      },
+      {
+        "column_name": "total_facility_bays",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "0"
+      },
+      {
+        "column_name": "session_type_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "capacity",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "1"
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "sessions_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "sessions",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "sessions_session_type_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "session_type_id",
+        "foreign_table_name": "session_types",
+        "foreign_column_name": "id",
+        "check_clause": null
+      }
+    ]
+  },
+  "voice_commands": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "coach_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "command_text",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "processed_json",
+        "data_type": "jsonb",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "timezone('utc'::text, now())"
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "voice_commands_coach_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "coach_id",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "voice_commands_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "voice_commands",
+        "foreign_column_name": "id",
+        "check_clause": null
+      }
+    ]
+  },
+  "player_relationships": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "parent_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "child_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "relationship_type",
+        "data_type": "character varying",
+        "is_nullable": "YES",
+        "column_default": "'parent_child'::character varying"
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES",
+        "column_default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "player_relationships_parent_id_child_id_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "parent_id",
+        "foreign_table_name": "player_relationships",
+        "foreign_column_name": "child_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "player_relationships_parent_id_child_id_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "parent_id",
+        "foreign_table_name": "player_relationships",
+        "foreign_column_name": "parent_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "player_relationships_parent_id_child_id_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "child_id",
+        "foreign_table_name": "player_relationships",
+        "foreign_column_name": "child_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "player_relationships_parent_id_child_id_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "child_id",
+        "foreign_table_name": "player_relationships",
+        "foreign_column_name": "parent_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "player_relationships_parent_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "parent_id",
+        "foreign_table_name": null,
+        "foreign_column_name": null,
+        "check_clause": null
+      },
+      {
+        "constraint_name": "player_relationships_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "player_relationships",
+        "foreign_column_name": "id",
+        "check_clause": null
+      }
+    ]
+  },
+  "profiles": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "username",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "first_name",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "last_name",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "mobile",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "contact_email",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "avatar_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "bio",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "tier",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": "'free'::text"
+      },
+      {
+        "column_name": "stripe_customer_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "stripe_subscription_id",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "subscription_status",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": "'inactive'::text"
+      },
+      {
+        "column_name": "credits",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "100"
+      },
+      {
+        "column_name": "gallery_images",
+        "data_type": "ARRAY",
+        "is_nullable": "YES",
+        "column_default": "'{}'::text[]"
+      },
+      {
+        "column_name": "schedule_photo_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "role",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": "'player'::text"
+      },
+      {
+        "column_name": "parent_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "intro_video_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "preferences",
+        "data_type": "jsonb",
+        "is_nullable": "YES",
+        "column_default": "'{}'::jsonb"
+      },
+      {
+        "column_name": "team",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "position",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "timezone('utc'::text, now())"
+      },
+      {
+        "column_name": "is_managed",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "false"
+      },
+      {
+        "column_name": "membership_tier",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": "'individual'::text"
+      },
+      {
+        "column_name": "membership_start",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "membership_expires",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "membership_history",
+        "data_type": "jsonb",
+        "is_nullable": "YES",
+        "column_default": "'[]'::jsonb"
+      },
+      {
+        "column_name": "account_status",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": "'locked'::text"
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "profiles_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "id",
+        "foreign_table_name": null,
+        "foreign_column_name": null,
+        "check_clause": null
+      },
+      {
+        "constraint_name": "profiles_parent_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "parent_id",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "profiles_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      }
+    ]
+  },
+  "golf_stats": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "player_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "handicap",
+        "data_type": "numeric",
+        "is_nullable": "YES",
+        "column_default": "0"
+      },
+      {
+        "column_name": "average_score",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "0"
+      },
+      {
+        "column_name": "rounds_played",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "0"
+      },
+      {
+        "column_name": "best_score",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "0"
+      },
+      {
+        "column_name": "driver_distance",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "0"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "golf_stats_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "golf_stats",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "golf_stats_player_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "player_id",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "golf_stats_player_id_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "player_id",
+        "foreign_table_name": "golf_stats",
+        "foreign_column_name": "player_id",
+        "check_clause": null
+      }
+    ]
+  },
+  "registrations": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "bigint",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "session_id",
+        "data_type": "bigint",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "registered_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "timezone('utc'::text, now())"
+      },
+      {
+        "column_name": "payer_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "credits_paid",
+        "data_type": "integer",
+        "is_nullable": "YES",
+        "column_default": "0"
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "registrations_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "registrations",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "registrations_session_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "session_id",
+        "foreign_table_name": "sessions",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "registrations_user_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "user_id",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "registrations_user_id_session_id_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "user_id",
+        "foreign_table_name": "registrations",
+        "foreign_column_name": "session_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "registrations_user_id_session_id_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "user_id",
+        "foreign_table_name": "registrations",
+        "foreign_column_name": "user_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "registrations_user_id_session_id_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "session_id",
+        "foreign_table_name": "registrations",
+        "foreign_column_name": "session_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "registrations_user_id_session_id_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "session_id",
+        "foreign_table_name": "registrations",
+        "foreign_column_name": "user_id",
+        "check_clause": null
+      }
+    ]
+  },
+  "session_types": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "title",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "category",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "image_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "timezone('utc'::text, now())"
+      },
+      {
+        "column_name": "description",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "session_types_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "session_types",
+        "foreign_column_name": "id",
+        "check_clause": null
+      }
+    ]
+  },
+  "coach_services": {
+    "columns": [
+      {
+        "column_name": "coach_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "session_type_id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": null
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "coach_services_coach_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "coach_id",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "coach_services_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "coach_id",
+        "foreign_table_name": "coach_services",
+        "foreign_column_name": "coach_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "coach_services_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "coach_id",
+        "foreign_table_name": "coach_services",
+        "foreign_column_name": "session_type_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "coach_services_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "session_type_id",
+        "foreign_table_name": "coach_services",
+        "foreign_column_name": "coach_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "coach_services_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "session_type_id",
+        "foreign_table_name": "coach_services",
+        "foreign_column_name": "session_type_id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "coach_services_session_type_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "session_type_id",
+        "foreign_table_name": "session_types",
+        "foreign_column_name": "id",
+        "check_clause": null
+      }
+    ]
+  },
+  "transactions": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "uuid_generate_v4()"
+      },
+      {
+        "column_name": "user_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "amount",
+        "data_type": "integer",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "type",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "description",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "idempotency_key",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "transactions_idempotency_key_key",
+        "constraint_type": "UNIQUE",
+        "column_name": "idempotency_key",
+        "foreign_table_name": "transactions",
+        "foreign_column_name": "idempotency_key",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "transactions_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "transactions",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "transactions_user_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "user_id",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      }
+    ]
+  },
+  "coach_notes": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "coach_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "player_id",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "content",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "NO",
+        "column_default": "timezone('utc'::text, now())"
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "coach_notes_coach_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "coach_id",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "coach_notes_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "coach_notes",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "coach_notes_player_id_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "player_id",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      }
+    ]
+  },
+  "announcements": {
+    "columns": [
+      {
+        "column_name": "id",
+        "data_type": "uuid",
+        "is_nullable": "NO",
+        "column_default": "gen_random_uuid()"
+      },
+      {
+        "column_name": "title",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "content",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "type",
+        "data_type": "text",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "column_name": "published",
+        "data_type": "boolean",
+        "is_nullable": "YES",
+        "column_default": "false"
+      },
+      {
+        "column_name": "event_date",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "image_url",
+        "data_type": "text",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_by",
+        "data_type": "uuid",
+        "is_nullable": "YES",
+        "column_default": null
+      },
+      {
+        "column_name": "created_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      },
+      {
+        "column_name": "updated_at",
+        "data_type": "timestamp with time zone",
+        "is_nullable": "YES",
+        "column_default": "now()"
+      }
+    ],
+    "constraints": [
+      {
+        "constraint_name": "announcements_created_by_fkey",
+        "constraint_type": "FOREIGN KEY",
+        "column_name": "created_by",
+        "foreign_table_name": "profiles",
+        "foreign_column_name": "id",
+        "check_clause": null
+      },
+      {
+        "constraint_name": "announcements_pkey",
+        "constraint_type": "PRIMARY KEY",
+        "column_name": "id",
+        "foreign_table_name": "announcements",
+        "foreign_column_name": "id",
+        "check_clause": null
+      }
+    ]
+  }
+}

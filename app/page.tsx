@@ -23,6 +23,8 @@ import ClassModal from '@/app/components/modals/ClassModal';
 import SettingsModal from '@/app/components/modals/SettingsModal';
 import NewsArticleModal from '@/app/components/modals/NewsArticleModal';
 import TransactionHistoryModal from '@/app/components/modals/TransactionHistoryModal';
+import LockedOverlay from '@/app/components/ui/LockedOverlay';
+import ProcessingOverlay from '@/app/components/ui/ProcessingOverlay';
 
 // 25: deleted
 import type { UserRole, Tab, UserProfileData } from './types';
@@ -39,7 +41,7 @@ const initialProfileData: UserProfileData = {
 function AppContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { addToast } = useToast();
+  const { addToast, removeToast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,6 +66,9 @@ function AppContent() {
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null); // NEW
 
   const [userProfile, setUserProfile] = useState<UserProfileData>(initialProfileData);
+  const isWaitingForCreditsRef = React.useRef(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const processingToastIdRef = React.useRef<string | null>(null);
 
   // 1. Auth & Data Fetch
   useEffect(() => {
@@ -197,6 +202,84 @@ function AppContent() {
     init();
   }, [refreshKey]);
 
+  // 2. Real-time Profile Listener
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    console.log("🚀 Initializing real-time profile listener for:", currentUserId);
+
+    const channel = supabase
+      .channel(`profile-updates-${currentUserId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${currentUserId}`
+        },
+        (payload) => {
+          console.log('🔄 Profile update detected:', payload.new);
+          const newData = payload.new;
+
+          // Debug hook for Playwright
+          if (typeof window !== 'undefined') {
+            (window as any).lastProfileUpdate = newData;
+          }
+
+          if (isWaitingForCreditsRef.current) {
+            console.log("💰 Webhook pulse detected while waiting for credits.");
+            setUserProfile(prev => {
+              // If credits increased, we're done waiting
+              if (newData.credits > prev.credits) {
+                console.log("✅ Credits confirmed! Clearing wait state.");
+                isWaitingForCreditsRef.current = false;
+                setIsProcessingPayment(false);
+                if (processingToastIdRef.current) {
+                  removeToast(processingToastIdRef.current);
+                  processingToastIdRef.current = null;
+                }
+                addToast("Credits Authenticated! You're ready to book.", "success");
+              }
+              return {
+                ...prev,
+                credits: newData.credits ?? prev.credits,
+                subscription_status: newData.subscription_status ?? prev.subscription_status,
+                account_status: newData.account_status ?? prev.account_status,
+                membership_expires: newData.membership_expires ?? prev.membership_expires,
+                role: newData.role ?? prev.role,
+                first_name: newData.first_name ?? prev.first_name,
+                last_name: newData.last_name ?? prev.last_name,
+                name: newData.first_name ?? prev.name,
+                surname: newData.last_name ?? prev.surname,
+              };
+            });
+          } else {
+            setUserProfile(prev => ({
+              ...prev,
+              credits: newData.credits ?? prev.credits,
+              subscription_status: newData.subscription_status ?? prev.subscription_status,
+              account_status: newData.account_status ?? prev.account_status,
+              membership_expires: newData.membership_expires ?? prev.membership_expires,
+              role: newData.role ?? prev.role,
+              first_name: newData.first_name ?? prev.first_name,
+              last_name: newData.last_name ?? prev.last_name,
+              name: newData.first_name ?? prev.name,
+              surname: newData.last_name ?? prev.surname,
+            }));
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log(`📡 Real-time channel status for ${currentUserId}:`, status);
+      });
+
+    return () => {
+      console.log("🔌 Cleaning up profile listener");
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId]);
+
   useEffect(() => {
     const targetTab = searchParams.get('tab');
     const isTab = (t: string): t is Tab => {
@@ -207,9 +290,23 @@ function AppContent() {
     }
 
     if (searchParams.get('success') === 'true') {
-      setRefreshKey(prev => prev + 1);
+      isWaitingForCreditsRef.current = true;
       router.replace('/');
-      addToast("Top-up Successful! Credits Added.", "success");
+      const tid = addToast("Payment Received. Finalizing credits...", "loading", 0);
+      processingToastIdRef.current = tid;
+
+      // Safety timeout - if no webhook in 30s, refresh manually
+      setTimeout(() => {
+        if (isWaitingForCreditsRef.current) {
+          isWaitingForCreditsRef.current = false;
+          if (processingToastIdRef.current) {
+            removeToast(processingToastIdRef.current);
+            processingToastIdRef.current = null;
+          }
+          setRefreshKey(prev => prev + 1);
+          addToast("Credit sync taking longer than usual. Refreshing...", "info");
+        }
+      }, 30000);
     }
   }, [searchParams, router, addToast]);
 
@@ -362,9 +459,22 @@ function AppContent() {
 
 
 
+  // ----------------------------------------------------
+  // LOCKING LOGIC (Bug #6 Fix)
+  // ----------------------------------------------------
+  const isSubscriber = userProfile.subscription_status === 'active' || userProfile.subscription_status === 'trialing';
+  const isManuallyActive = userProfile.account_status === 'active';
+  const isUnlocked = isSubscriber || isManuallyActive;
+
+  // Only apply locking to player/parent roles. Admins/Coaches bypass this.
+  const needsLockCheck = userProfile.role === 'player' || userProfile.role === 'parent';
+  const showLockedOverlay = needsLockCheck && !isUnlocked;
+
   return (
     <div className="min-h-screen bg-black text-white font-opensans select-none">
       <div className="max-w-md mx-auto bg-black min-h-screen relative border-x border-gray-900 shadow-2xl">
+        {showLockedOverlay && <LockedOverlay />}
+        <ProcessingOverlay isOpen={isProcessingPayment} />
         <main>
 
 

@@ -47,37 +47,54 @@ export async function middleware(request: NextRequest) {
             data: { user },
         } = await supabase.auth.getUser();
 
-        // 1. PROTECT ADMIN ROUTES & APIs
-        if (request.nextUrl.pathname.startsWith('/sys-admin') || request.nextUrl.pathname.startsWith('/api/admin')) {
-            if (!user) {
-                console.log("Middleware: No user found for /sys-admin request");
-                return NextResponse.redirect(new URL('/', request.url));
+        // 1. GLOBAL PROTECTION (Unauthenticated)
+        const isApiRequest = request.nextUrl.pathname.startsWith('/api/');
+        const isAuthPage = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/forgot-password');
+        const isPublicPage = request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/public') || isAuthPage;
+
+        if (!user && !isPublicPage) {
+            if (isApiRequest) {
+                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
             }
+            return NextResponse.redirect(new URL('/login', request.url));
+        }
 
-            console.log("Middleware: Checking admin role for user", user?.id);
-
-            // BYPASS RLS: Use Service Role Key to check admin status securely
+        // 2. ROLE-BASED PROTECTION
+        if (user) {
+            // BYPASS RLS: Use Service Role Key to check role securely
             const serviceRoleSupabase = createServerClient(
                 supabaseUrl,
                 process.env.SUPABASE_SERVICE_ROLE_KEY!,
                 {
                     cookies: {
                         getAll() { return request.cookies.getAll() },
-                        setAll() { } // No setting cookies with service role client
+                        setAll() { }
                     }
                 }
             );
 
-            // Check for "admin" role
             const { data: profile } = await serviceRoleSupabase
                 .from('profiles')
                 .select('role')
-                .eq('id', user?.id)
+                .eq('id', user.id)
                 .single();
 
-            if (!profile || (profile.role !== 'admin' && profile.role !== 'sys-admin')) {
-                console.log("Middleware: Access denied. Role is", profile?.role);
-                return NextResponse.redirect(new URL('/', request.url));
+            const role = profile?.role;
+
+            // Admin only
+            if (request.nextUrl.pathname.startsWith('/sys-admin') || request.nextUrl.pathname.startsWith('/api/admin')) {
+                if (role !== 'admin' && role !== 'sys-admin') {
+                    if (isApiRequest) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+                    return NextResponse.redirect(new URL('/', request.url));
+                }
+            }
+
+            // Coach only
+            if (request.nextUrl.pathname.startsWith('/coach') || request.nextUrl.pathname.startsWith('/api/coach')) {
+                if (role !== 'admin' && role !== 'sys-admin' && role !== 'coach') {
+                    if (isApiRequest) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+                    return NextResponse.redirect(new URL('/', request.url));
+                }
             }
         }
 

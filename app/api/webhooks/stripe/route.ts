@@ -127,20 +127,24 @@ export async function POST(request: Request) {
                 const customerId = session.customer as string;
                 let plan: { credits: number; tier: string };
                 let expiresAt: string;
+                let priceId: string;
 
                 if (isTest && session.metadata?.test_price_id) {
-                    const testPriceId = session.metadata.test_price_id;
-                    plan = PLAN_DETAILS[testPriceId] || { credits: 1000, tier: 'individual' };
+                    priceId = session.metadata.test_price_id;
+                    plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
                     expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // +30 days
-                    console.log(`🧪 TEST MODE: Using test_price_id: ${testPriceId}`);
+                    console.log(`🧪 TEST MODE: Using test_price_id: ${priceId}`);
                 } else {
                     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-                    const priceId = subscription.items.data[0].price.id;
+                    priceId = subscription.items.data[0].price.id;
                     plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
                     expiresAt = new Date((subscription as any).current_period_end * 1000).toISOString();
                 }
 
-                console.log(`Processing Subscription: ${plan.tier.toUpperCase()} for User: ${userId}`);
+                if (!plan.tier || plan.tier === 'individual' && !PLAN_DETAILS[priceId]) {
+                    console.warn(`[STRIPE WEBHOOK] ⚠️ UNKNOWN PRICE ID: ${priceId}. Defaulting to Individual plan.`);
+                }
+                console.log(`Processing Subscription: ${plan.tier.toUpperCase()} for User: ${userId} (Price ID: ${priceId})`);
 
                 if (userId) {
                     await updateProfile(userId, plan.credits, plan.tier, customerId, subscriptionId, expiresAt);
@@ -295,6 +299,7 @@ async function updateProfile(userId: string, creditsToAdd: number, tier: string,
     const currentCredits = profile?.credits || 0;
 
     // 2. Upsert profile
+    console.log(`[STRIPE WEBHOOK] Updating profile for ${userId}. Credits: ${currentCredits} -> ${currentCredits + creditsToAdd}, Status: active`);
     const { error } = await supabaseAdmin
         .from('profiles')
         .upsert({
@@ -378,6 +383,7 @@ async function addCreditsOnly(userId: string, creditsToAdd: number, type: 'topup
     const { data: profile } = await supabaseAdmin.from('profiles').select('credits').eq('id', userId).single();
     const currentCredits = profile?.credits || 0;
 
+    console.log(`[STRIPE WEBHOOK] Adding ${creditsToAdd} credits to ${userId}. Current: ${currentCredits}`);
     const { error } = await supabaseAdmin
         .from('profiles')
         .update({
@@ -385,6 +391,12 @@ async function addCreditsOnly(userId: string, creditsToAdd: number, type: 'topup
             account_status: 'active', // Unlock on top-up too
         })
         .eq('id', userId);
+
+    if (error) {
+        console.error(`[STRIPE WEBHOOK] DB Update Failed for ${userId}:`, error);
+        throw error;
+    }
+    console.log(`✅ [STRIPE WEBHOOK] Credits added and account unlocked for ${userId}`);
 
     if (error) {
         console.error("❌ DB Renewal Update Failed:", error);

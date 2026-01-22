@@ -242,7 +242,8 @@ export default function DirectoryPage() {
                     bio: editingUser.bio,
                     password: editingUser.password,
                     membershipStart: editingUser.membershipStart ? new Date(editingUser.membershipStart).toISOString() : null,
-                    membershipExpires: editingUser.membershipExpires ? new Date(editingUser.membershipExpires).toISOString() : null
+                    membershipExpires: editingUser.membershipExpires ? new Date(editingUser.membershipExpires).toISOString() : null,
+                    accountStatus: (editingUser.membershipExpires && new Date(editingUser.membershipExpires) > new Date()) ? 'active' : undefined
                 })
             });
 
