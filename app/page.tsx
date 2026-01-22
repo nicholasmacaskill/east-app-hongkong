@@ -82,14 +82,11 @@ function AppContent() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
 
+        // Define metadataRole early for use in fallback logic
+        const metadataRole = user?.user_metadata?.role;
+
         if (user) {
-          // IMMEDIATE ADMIN REDIRECT - Check metadata first
-          const metadataRole = user.user_metadata?.role;
-          if (metadataRole === 'admin' || metadataRole === 'sys-admin') {
-            setLoading(false);
-            window.location.href = '/sys-admin';
-            return; // Stop further execution
-          }
+
 
           setCurrentUserId(user.id);
 
@@ -106,12 +103,7 @@ function AppContent() {
           // C. FETCH REAL PROFILE DATA (Resiliently)
           const profileData = await fetchProfileResilient(user.id);
 
-          // Check if admin from profile data
-          if (profileData && (profileData.role === 'admin' || profileData.role === 'sys-admin')) {
-            setLoading(false);
-            window.location.href = '/sys-admin';
-            return; // Stop further execution
-          }
+
 
           if (profileData) {
             setUserProfile({
