@@ -84,6 +84,7 @@ function AppContent() {
           const metadataRole = user.user_metadata?.role;
           if (metadataRole === 'admin' || metadataRole === 'sys-admin') {
             console.log('[INIT] Admin detected in metadata, redirecting immediately...');
+            setLoading(false);
             window.location.href = '/sys-admin';
             return; // Stop further execution
           }
@@ -114,6 +115,7 @@ function AppContent() {
           // Check if admin from profile data
           if (profileData && (profileData.role === 'admin' || profileData.role === 'sys-admin')) {
             console.log('[INIT] Admin detected in profile, redirecting...');
+            setLoading(false);
             window.location.href = '/sys-admin';
             return; // Stop further execution
           }
