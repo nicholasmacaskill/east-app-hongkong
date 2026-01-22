@@ -467,18 +467,15 @@ function AppContent() {
   // ----------------------------------------------------
   // LOCKING LOGIC (Bug #6 Fix)
   // ----------------------------------------------------
+  // Note: Global overlay removed to allow browsing. 
+  // Locking is now handled per-action (e.g., in HomeScreen booking).
   const isSubscriber = userProfile.subscription_status === 'active' || userProfile.subscription_status === 'trialing';
   const isManuallyActive = userProfile.account_status === 'active';
   const isUnlocked = isSubscriber || isManuallyActive;
 
-  // Only apply locking to player/parent roles. Admins/Coaches bypass this.
-  const needsLockCheck = userProfile.role === 'player' || userProfile.role === 'parent';
-  const showLockedOverlay = needsLockCheck && !isUnlocked;
-
   return (
     <div className="min-h-screen bg-black text-white font-opensans select-none">
       <div className="max-w-md mx-auto bg-black min-h-screen relative border-x border-gray-900 shadow-2xl">
-        {showLockedOverlay && <LockedOverlay />}
         <ProcessingOverlay isOpen={isProcessingPayment} />
         <main>
 
@@ -493,6 +490,7 @@ function AppContent() {
                 credits={userProfile.credits || 0}
                 subscriptionStatus={userProfile.subscription_status}
                 accountStatus={userProfile.account_status}
+                role={userProfile.role}
                 setTab={setActiveTab}
               />
 
@@ -558,7 +556,7 @@ function AppContent() {
 
           {/* ... existing screens ... */}
 
-          {activeTab === 'qr' && <QRScreen credits={userProfile.credits || 0} currentUserId={currentUserId} subscriptionStatus={userProfile.subscription_status} accountStatus={userProfile.account_status} />}
+          {activeTab === 'qr' && <QRScreen credits={userProfile.credits || 0} currentUserId={currentUserId} subscriptionStatus={userProfile.subscription_status} accountStatus={userProfile.account_status} role={userProfile.role} />}
         </main>
 
         <BottomNav activeTab={activeTab} setTab={setActiveTab} />

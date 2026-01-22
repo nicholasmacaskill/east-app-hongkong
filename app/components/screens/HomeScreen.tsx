@@ -38,6 +38,7 @@ interface HomeScreenProps {
   credits: number;
   subscriptionStatus?: string;
   accountStatus?: string;
+  role?: string; // NEW
   setTab: (tab: any) => void;
 }
 
@@ -48,6 +49,7 @@ export default function HomeScreen({
   credits,
   subscriptionStatus, // NEW
   accountStatus,
+  role,
   setTab
 }: HomeScreenProps) {
   const { addToast } = useToast();
@@ -205,7 +207,13 @@ export default function HomeScreen({
 
   const handleServiceClick = async (service: ServiceType) => {
     // Check for locked status
-    const isLocked = (!subscriptionStatus || (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing')) && accountStatus !== 'active';
+    const isSubscriber = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
+    const isManuallyActive = accountStatus === 'active';
+    const isUnlocked = isSubscriber || isManuallyActive;
+
+    // Only apply locking to player/parent roles. Admins/Coaches bypass this.
+    const needsLockCheck = role === 'player' || role === 'parent' || !role;
+    const isLocked = needsLockCheck && !isUnlocked;
 
     if (isLocked) {
       addToast('Account Locked: Active subscription or top-up required to book classes.', 'error');
@@ -293,6 +301,7 @@ export default function HomeScreen({
         setTab={setTab}
         subscriptionStatus={subscriptionStatus}
         accountStatus={accountStatus}
+        role={role}
       />
 
       <div className="relative z-10 px-5 space-y-10 pt-6">

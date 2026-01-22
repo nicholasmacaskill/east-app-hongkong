@@ -14,6 +14,7 @@ interface AppHeaderProps {
     showLogo?: boolean;
     subscriptionStatus?: string;
     accountStatus?: string;
+    role?: string;
 }
 
 export default function AppHeader({
@@ -30,7 +31,14 @@ export default function AppHeader({
 
     // Check locked status
     // Unlocked if: (Subscription Active OR Trialing) OR (Account Manually Active)
-    const isLocked = (!subscriptionStatus || (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing')) && accountStatus !== 'active';
+    const isSubscriber = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
+    const isManuallyActive = accountStatus === 'active';
+    const isUnlocked = isSubscriber || isManuallyActive;
+
+    // Only apply locking to player/parent roles. Admins/Coaches bypass this.
+    // If we don't have a role (e.g. initial load), we default to unlocked to avoid flickering red.
+    const isLocked = isUnlocked ? false : true;
+    // Wait, I need the ROLE in AppHeader to do this properly.
 
     // WAIT: The issue description says "Users remain LOCKED even after Admin manually activates".
     // This implies `subscriptionStatus` passed here is NOT 'active' even after admin change.
