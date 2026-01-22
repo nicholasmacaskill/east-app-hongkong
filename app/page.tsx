@@ -429,7 +429,7 @@ function AppContent() {
   // ----------------------------------------------------
   // ADMIN VIEW (Portal Redirect)
   // ----------------------------------------------------
-  if (userProfile.role === 'admin') {
+  if (userProfile.role === 'admin' || userProfile.role === 'sys-admin') {
     return (
       <div className="bg-black min-h-screen text-white flex flex-col justify-center items-center font-montserrat p-6 select-none cursor-default">
         {/* Animated Background Gradient */}
@@ -500,7 +500,7 @@ function AppContent() {
           )}
 
           {activeTab === 'profile' && (
-            userProfile.role === 'sys-admin' ? (
+            (userProfile.role as string) === 'sys-admin' ? (
               <div className="flex h-screen items-center justify-center">
                 <p className="text-white">Redirecting to Admin Panel...</p>
               </div>
