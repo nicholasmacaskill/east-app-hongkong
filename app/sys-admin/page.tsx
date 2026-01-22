@@ -7,7 +7,7 @@ import { Users, Calendar, ArrowRight, QrCode, LayoutGrid, Coins } from 'lucide-r
 export default function AdminDashboard() {
     const router = useRouter();
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-8 pb-20">
             <div className="flex flex-col gap-2">
                 <Link href="/" className="self-start text-[10px] text-gray-500 font-bold uppercase tracking-widest hover:text-white mb-4 block transition-colors">← Back to App</Link>
                 <h1 className="text-3xl font-black italic uppercase tracking-tighter">Dashboard</h1>

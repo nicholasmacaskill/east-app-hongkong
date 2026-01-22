@@ -168,7 +168,7 @@ export default function NewsManagementPage() {
     const filtered = announcements.filter(a => filter === 'all' || a.type === filter);
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-8 pb-20">
             <div className="flex flex-col gap-2">
                 <Link href="/sys-admin" className="self-start text-[10px] text-gray-500 font-bold uppercase tracking-widest hover:text-white mb-4 block transition-colors">← Back to Dashboard</Link>
                 <div className="flex justify-between items-end">

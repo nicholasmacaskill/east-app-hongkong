@@ -170,9 +170,9 @@ export default function ManageServicesPage() {
     };
 
     return (
-        <div className="min-h-screen bg-black text-white p-4 md:p-8 pb-32">
+        <div className="pb-32">
             {/* Header */}
-            <div className="max-w-4xl mx-auto mb-8 flex items-center justify-between">
+            <div className="mb-8 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Link href="/sys-admin" className="p-2 bg-gray-900 rounded-full hover:bg-gray-800 transition-colors">
                         <ArrowLeft size={20} className="text-gray-400" />
@@ -191,7 +191,7 @@ export default function ManageServicesPage() {
             </div>
 
             {/* List */}
-            <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {loading ? (
                     <div className="col-span-full flex justify-center py-12">
                         <Loader2 className="animate-spin text-gray-500" />
