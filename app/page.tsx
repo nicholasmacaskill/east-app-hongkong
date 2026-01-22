@@ -444,7 +444,7 @@ function AppContent() {
           </p>
 
           <button
-            onClick={() => router.push('/sys-admin')}
+            onClick={() => window.location.href = '/sys-admin'}
             className="group relative bg-[#28D160] text-black font-black italic text-xl px-12 py-5 rounded-2xl uppercase tracking-widest hover:bg-white transition-all shadow-[0_0_30px_rgba(40,209,96,0.3)] hover:shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:-translate-y-1 active:translate-y-0.5 active:scale-95 duration-300"
           >
             Enter Portal
