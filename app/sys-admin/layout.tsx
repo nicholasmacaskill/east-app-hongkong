@@ -25,25 +25,31 @@ export default function AdminLayout({
     const [authorized, setAuthorized] = useState(false);
 
     useEffect(() => {
+        let timeoutId: NodeJS.Timeout;
+
         const checkAuth = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                // Wait a tiny bit and try one more time as session might be restoring
-                await new Promise(r => setTimeout(r, 500));
-                const { data: { user: retryUser } } = await supabase.auth.getUser();
-                if (!retryUser) {
-                    router.replace('/');
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    // Wait a tiny bit and try one more time as session might be restoring
+                    await new Promise(r => setTimeout(r, 500));
+                    const { data: { user: retryUser } } = await supabase.auth.getUser();
+                    if (!retryUser) {
+                        router.replace('/');
+                        return;
+                    }
+                    // If found on retry, continue with that user
+                    await processUser(retryUser);
                     return;
                 }
-                // If found on retry, continue with that user
-                await processUser(retryUser);
-                return;
+                await processUser(user);
+            } catch (error) {
+                console.error("Auth check failed:", error);
+                router.replace('/');
             }
-            await processUser(user);
         };
 
         const processUser = async (user: any) => {
-
             const metaRole = user.user_metadata?.role;
             if (metaRole === 'admin' || metaRole === 'sys-admin') {
                 setAuthorized(true);
@@ -63,7 +69,17 @@ export default function AdminLayout({
             }
         };
 
-        checkAuth();
+        // Failsafe: Redirect if check takes too long (5s)
+        timeoutId = setTimeout(() => {
+            console.error("Admin auth timeout - redirecting");
+            router.replace('/');
+        }, 5000);
+
+        checkAuth().finally(() => {
+            clearTimeout(timeoutId);
+        });
+
+        return () => clearTimeout(timeoutId);
     }, [router]);
 
     if (!authorized) {
