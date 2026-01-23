@@ -684,8 +684,8 @@ export default function DirectoryPage() {
                                 </div>
 
 
-                                {/* Membership Section - Hidden for Admins */}
-                                {editingUser.role !== 'admin' && editingUser.role !== 'sys-admin' && (
+                                {/* Membership Section - Hidden for Admins and Coaches */}
+                                {editingUser.role !== 'admin' && editingUser.role !== 'sys-admin' && editingUser.role !== 'coach' && (
                                     <div className="border-t border-white/10 pt-4">
                                         <label className="text-[10px] font-bold text-gray-500 uppercase mb-2 block flex items-center gap-1">
                                             <Calendar size={12} /> Membership & Billing
