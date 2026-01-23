@@ -387,7 +387,7 @@ export default function DirectoryPage() {
                 >
                     <div className="flex items-center justify-between mb-2">
                         <AlertCircle className={unassignedPlayers.length > 0 ? 'text-amber-500' : 'text-gray-600'} size={20} />
-                        <span className="text-[10px] font-black text-gray-600 uppercase text-right">Unassigned<br />Athletes</span>
+                        <span className="text-[10px] font-black text-gray-600 uppercase text-right">Solo<br />Athletes</span>
                     </div>
                     <p className={`text-2xl font-black ${unassignedPlayers.length > 0 ? 'text-amber-500' : 'text-white'}`}>{unassignedPlayers.length}</p>
                 </div>
@@ -822,7 +822,7 @@ export default function DirectoryPage() {
                                                 onChange={e => setEditingUser({ ...editingUser, parentId: e.target.value })}
                                                 className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                             >
-                                                <option value="">No Parent (Unassigned)</option>
+                                                <option value="">No Parent (Solo Athlete)</option>
                                                 {profiles.filter(p => p.role === 'parent' || p.role === 'admin' || p.role === 'sys-admin').map(p => (
                                                     <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
                                                 ))}
@@ -1001,10 +1001,10 @@ export default function DirectoryPage() {
                                     );
                                 })}
 
-                                {/* Unassigned Section inside Household Tab if active */}
+                                {/* Solo Athletes Section inside Household Tab if active */}
                                 {unassignedPlayers.length > 0 && (
                                     <div className="mt-8 flex flex-col gap-4">
-                                        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 ml-2">Unassigned Athletes ({unassignedPlayers.length})</h2>
+                                        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 ml-2">Solo Athletes ({unassignedPlayers.length})</h2>
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                             {unassignedPlayers.map(player => (
                                                 <div
@@ -1115,7 +1115,7 @@ export default function DirectoryPage() {
 
                         {activeTab === 'unassigned' && (
                             <div className="flex flex-col gap-4">
-                                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 ml-2">Unassigned Athletes ({unassignedPlayers.length})</h2>
+                                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 ml-2">Solo Athletes ({unassignedPlayers.length})</h2>
                                 {unassignedPlayers.length === 0 ? (
                                     <div className="p-12 text-center border border-dashed border-gray-800 rounded-3xl">
                                         <p className="text-gray-500 text-sm font-bold">All athletes are assigned to households.</p>
