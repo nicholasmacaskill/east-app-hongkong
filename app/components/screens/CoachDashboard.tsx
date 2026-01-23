@@ -181,16 +181,22 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
         <div className="min-h-screen bg-[#0a0a0a] text-white font-montserrat selection:bg-east-light selection:text-black">
             {/* TOP BAR */}
             <div className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/10 px-6 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-                <div>
-                    <h1 className="text-xl font-black italic uppercase tracking-tighter text-white">EAST <span className="text-east-light">COACH</span></h1>
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Dashboard • {userName}</p>
+                <div className="flex justify-between items-center w-full md:w-auto">
+                    <div>
+                        <h1 className="text-xl font-black italic uppercase tracking-tighter text-white">EAST <span className="text-east-light">COACH</span></h1>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Dashboard • {userName}</p>
+                    </div>
+                    {/* Mobile Only Logout - accessible without menu */}
+                    <button onClick={handleLogout} className="md:hidden p-2 rounded-full hover:bg-red-500/20 text-gray-400 hover:text-red-500 transition-colors">
+                        <LogOut size={18} />
+                    </button>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    {/* Availability Metric */}
-                    <div className="hidden md:flex flex-col items-end mr-4">
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto">
+                    {/* Availability Metric - Always Visible Now */}
+                    <div className="flex flex-row justify-between w-full md:w-auto md:flex-col md:items-end mr-4 bg-[#121212] md:bg-transparent p-3 md:p-0 rounded-lg md:rounded-none border border-white/5 md:border-none">
                         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Available Hours</span>
-                        <span className="text-xl font-black italic text-[#28D160]">
+                        <span className="text-xl font-black italic text-[#28D160] leading-none">
                             {allSessions
                                 .filter(s => s.type === 'slot' && s.coach_id === currentUserId)
                                 .reduce((acc, curr) => acc + (new Date(curr.end_time).getTime() - new Date(curr.start_time).getTime()) / (1000 * 60 * 60), 0)
@@ -198,30 +204,34 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                         </span>
                     </div>
 
-                    {/* View Toggles */}
-                    <div className="bg-[#1e1e1e] p-1 rounded-lg flex border border-white/10">
-                        <button
-                            onClick={() => setViewMode('master_view')}
-                            className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${viewMode === 'master_view' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            Master View
-                        </button>
-                        <button
-                            onClick={() => setViewMode('my_schedule')}
-                            className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${viewMode === 'my_schedule' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
-                        >
-                            My Schedule
-                        </button>
+                    <div className="flex items-center justify-between w-full md:w-auto gap-4">
+                        {/* View Toggles */}
+                        <div className="bg-[#1e1e1e] p-1 rounded-lg flex border border-white/10 flex-1 md:flex-none justify-center">
+                            <button
+                                onClick={() => setViewMode('master_view')}
+                                className={`flex-1 md:flex-none px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${viewMode === 'master_view' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                Master View
+                            </button>
+                            <button
+                                onClick={() => setViewMode('my_schedule')}
+                                className={`flex-1 md:flex-none px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${viewMode === 'my_schedule' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                My Schedule
+                            </button>
+                        </div>
+
+                        <div className="hidden md:block h-6 w-px bg-white/10" />
+
+                        <div className="flex items-center gap-2">
+                            <button onClick={fetchSchedule} className={`p-2 rounded-full hover:bg-white/10 transition-all ${refreshing ? 'animate-spin' : ''}`}>
+                                <RefreshCw size={18} className="text-white" />
+                            </button>
+                            <button onClick={handleLogout} className="hidden md:block p-2 rounded-full hover:bg-red-500/20 hover:text-red-500 transition-colors">
+                                <LogOut size={18} />
+                            </button>
+                        </div>
                     </div>
-
-                    <div className="h-6 w-px bg-white/10" />
-
-                    <button onClick={fetchSchedule} className={`p-2 rounded-full hover:bg-white/10 transition-all ${refreshing ? 'animate-spin' : ''}`}>
-                        <RefreshCw size={18} className="text-white" />
-                    </button>
-                    <button onClick={handleLogout} className="p-2 rounded-full hover:bg-red-500/20 hover:text-red-500 transition-colors">
-                        <LogOut size={18} />
-                    </button>
                 </div>
             </div>
 

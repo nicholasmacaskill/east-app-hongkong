@@ -88,7 +88,8 @@ export default defineConfig({
         'tests/qa-verification.spec.ts',
         'tests/family-schedule-sync.spec.ts',
         'tests/stripe-edge-cases.spec.ts',
-        'tests/home-screen-integrity.spec.ts'
+        'tests/home-screen-integrity.spec.ts',
+        'tests/mobile-layout-audit.spec.ts'
       ],
     },
 

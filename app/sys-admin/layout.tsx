@@ -90,7 +90,7 @@ export default function AdminLayout({
 
     return (
         <div className="min-h-screen bg-black text-white font-montserrat">
-            <header className="bg-[#1e1e1e] border-b border-white/10 p-4 sticky top-0 z-50">
+            <header className="bg-[#1e1e1e] border-b border-white/10 py-5 px-6 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <span className="font-black italic text-2xl tracking-tighter text-white">EAST</span>
@@ -100,12 +100,42 @@ export default function AdminLayout({
                     </div>
 
                     <div className="flex items-center gap-6">
-                        <div className="hidden sm:flex items-center gap-6 mr-6 border-r border-white/10 pr-6">
+                        {/* Desktop Nav */}
+                        <div className="hidden md:flex items-center gap-6 mr-6 border-r border-white/10 pr-6">
                             <AdminNavLink href="/sys-admin" icon={Home} label="Dashboard" />
                             <AdminNavLink href="/sys-admin/schedule" icon={Calendar} label="Schedule" />
                             <AdminNavLink href="/sys-admin/qr" icon={QrCode} label="Check-In" />
                             <AdminNavLink href="/sys-admin/news" icon={Newspaper} label="News" />
                         </div>
+
+                        {/* Mobile Menu Toggle */}
+                        <div className="md:hidden relative group" tabIndex={0}>
+                            <button className="p-2 -mr-2 text-white/70 hover:text-white">
+                                <div className="space-y-1.5">
+                                    <div className="w-5 h-0.5 bg-current"></div>
+                                    <div className="w-5 h-0.5 bg-current"></div>
+                                    <div className="w-5 h-0.5 bg-current"></div>
+                                </div>
+                            </button>
+
+                            <div className="absolute right-0 top-full mt-4 w-64 bg-[#1e1e1e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden hidden group-focus-within:block animate-fadeIn">
+                                <div className="flex flex-col py-3 gap-1">
+                                    <Link href="/sys-admin" className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors">
+                                        <Home size={16} /> Dashboard
+                                    </Link>
+                                    <Link href="/sys-admin/schedule" className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors">
+                                        <Calendar size={16} /> Schedule
+                                    </Link>
+                                    <Link href="/sys-admin/qr" className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors">
+                                        <QrCode size={16} /> Check-In
+                                    </Link>
+                                    <Link href="/sys-admin/news" className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors">
+                                        <Newspaper size={16} /> News
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+
                         <AdminLogoutButton />
                     </div>
                 </div>

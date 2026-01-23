@@ -313,10 +313,10 @@ export default function DirectoryPage() {
     // For now let's just use placeholder logic or skip if too complex.
 
     return (
-        <div className="space-y-8 relative pb-32">
+        <div className="space-y-10 relative pb-32 pt-4">
             {/* Header Area */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4 w-full md:w-auto">
                     <Link href="/sys-admin" className="p-2 bg-[#1e1e1e] rounded-lg hover:bg-[#28D160] hover:text-black transition-colors">
                         <ChevronLeft size={20} />
                     </Link>
@@ -325,7 +325,7 @@ export default function DirectoryPage() {
                         <p className="text-gray-400 text-xs">Manage households, coaches, and staff</p>
                     </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
                     <button
                         onClick={() => {
                             setNewUser({ ...newUser, role: 'parent' });
@@ -480,7 +480,7 @@ export default function DirectoryPage() {
                                 {newUser.role === 'coach' ? 'Add New Coach' : newUser.role === 'parent' ? 'Add New Household' : 'Add New Athlete'}
                             </h2>
                             <div className="flex flex-col gap-4">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-500 uppercase">First Name</label>
                                         <input
@@ -546,7 +546,7 @@ export default function DirectoryPage() {
 
                                 {newUser.role === 'player' && (
                                     <>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="text-[10px] font-bold text-gray-500 uppercase">Team</label>
                                                 <input
@@ -599,7 +599,7 @@ export default function DirectoryPage() {
                         <div className="bg-[#1e1e1e] p-6 rounded-2xl w-full max-w-md border border-white/10 max-h-[90vh] overflow-y-auto">
                             <h2 className="font-black italic text-xl uppercase mb-4 text-[#28D160]">Edit Profile</h2>
                             <div className="flex flex-col gap-4">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-500 uppercase">First Name</label>
                                         <input
@@ -618,7 +618,7 @@ export default function DirectoryPage() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-500 uppercase">Credits</label>
                                         <input
@@ -690,7 +690,7 @@ export default function DirectoryPage() {
                                         <label className="text-[10px] font-bold text-gray-500 uppercase mb-2 block flex items-center gap-1">
                                             <Calendar size={12} /> Membership & Billing
                                         </label>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="text-[10px] font-bold text-gray-500 uppercase">Member Since</label>
                                                 <input
@@ -736,7 +736,7 @@ export default function DirectoryPage() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex gap-2 mt-2">
+                                        <div className="flex flex-col md:flex-row gap-2 mt-2">
                                             <button
                                                 onClick={(e) => {
                                                     e.preventDefault();
