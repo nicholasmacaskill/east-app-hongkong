@@ -683,121 +683,124 @@ export default function DirectoryPage() {
                                     </button>
                                 </div>
 
-                                {/* Membership Section */}
-                                <div className="border-t border-white/10 pt-4">
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase mb-2 block flex items-center gap-1">
-                                        <Calendar size={12} /> Membership & Billing
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase">Member Since</label>
-                                            <input
-                                                type="date"
-                                                value={editingUser.membershipStart}
-                                                onChange={e => setEditingUser({ ...editingUser, membershipStart: e.target.value })}
-                                                className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase">Expires On</label>
-                                            <input
-                                                type="date"
-                                                value={editingUser.membershipExpires}
-                                                onChange={e => setEditingUser({ ...editingUser, membershipExpires: e.target.value })}
-                                                className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
-                                            />
-                                        </div>
-                                    </div>
 
-                                    {/* Membership Status Badge */}
-                                    <div className="mt-4 p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between">
-                                        <div>
-                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Account Status</p>
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                                {editingUser.membershipExpires && new Date(editingUser.membershipExpires) > new Date() ? (
-                                                    <>
-                                                        <div className="w-2 h-2 rounded-full bg-[#28D160] shadow-[0_0_8px_rgba(40,209,96,0.5)]"></div>
-                                                        <span className="text-xs font-black italic uppercase text-[#28D160]">Active Member</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
-                                                        <span className="text-xs font-black italic uppercase text-red-500">Expired / Inactive</span>
-                                                    </>
-                                                )}
+                                {/* Membership Section - Hidden for Admins */}
+                                {editingUser.role !== 'admin' && editingUser.role !== 'sys-admin' && (
+                                    <div className="border-t border-white/10 pt-4">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase mb-2 block flex items-center gap-1">
+                                            <Calendar size={12} /> Membership & Billing
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase">Member Since</label>
+                                                <input
+                                                    type="date"
+                                                    value={editingUser.membershipStart}
+                                                    onChange={e => setEditingUser({ ...editingUser, membershipStart: e.target.value })}
+                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase">Expires On</label>
+                                                <input
+                                                    type="date"
+                                                    value={editingUser.membershipExpires}
+                                                    onChange={e => setEditingUser({ ...editingUser, membershipExpires: e.target.value })}
+                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                />
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Renews / Ends</p>
-                                            <p className="text-xs font-mono font-bold text-white mt-0.5">
-                                                {editingUser.membershipExpires ? new Date(editingUser.membershipExpires).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2 mt-2">
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                const today = new Date();
-                                                const nextYear = new Date(new Date().setFullYear(today.getFullYear() + 1));
-                                                setEditingUser({
-                                                    ...editingUser,
-                                                    membershipStart: editingUser.membershipStart || new Date().toISOString().split('T')[0],
-                                                    membershipExpires: nextYear.toISOString().split('T')[0]
-                                                });
-                                            }}
-                                            className="flex-1 text-[10px] bg-[#28D160]/10 text-[#28D160] px-2 py-2 rounded uppercase font-black italic hover:bg-[#28D160] hover:text-black transition-colors"
-                                        >
-                                            +1 Year
-                                        </button>
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                const currentExpiry = editingUser.membershipExpires ? new Date(editingUser.membershipExpires) : new Date();
-                                                // Ensure we start from at least "today" if expired
-                                                const baseDate = currentExpiry > new Date() ? currentExpiry : new Date();
 
-                                                // Add 1 Month safely
-                                                const nextMonth = new Date(baseDate);
-                                                nextMonth.setMonth(baseDate.getMonth() + 1);
-
-                                                setEditingUser({
-                                                    ...editingUser,
-                                                    membershipStart: editingUser.membershipStart || new Date().toISOString().split('T')[0],
-                                                    membershipExpires: nextMonth.toISOString().split('T')[0]
-                                                });
-                                            }}
-                                            className="flex-1 text-[10px] bg-blue-500/10 text-blue-500 px-2 py-2 rounded uppercase font-black italic hover:bg-blue-500 hover:text-white transition-colors"
-                                        >
-                                            +1 Month
-                                        </button>
-                                        <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                const yesterday = new Date();
-                                                yesterday.setDate(yesterday.getDate() - 1);
-                                                setEditingUser({
-                                                    ...editingUser,
-                                                    membershipExpires: yesterday.toISOString().split('T')[0]
-                                                });
-                                            }}
-                                            className="flex-1 text-[10px] bg-red-500/10 text-red-500 px-2 py-2 rounded uppercase font-black italic hover:bg-red-500 hover:text-white transition-colors"
-                                        >
-                                            Cancel Immediately
-                                        </button>
-                                    </div>
-                                    {/* History Viewer */}
-                                    {editingUser.membershipHistory && editingUser.membershipHistory.length > 0 && (
-                                        <div className="mt-2 bg-black/30 p-2 rounded-lg max-h-24 overflow-y-auto">
-                                            <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">History</p>
-                                            {editingUser.membershipHistory.map((h: any, i: number) => (
-                                                <div key={i} className="text-[9px] text-gray-400 border-b border-white/5 py-1">
-                                                    <span className="text-white">{new Date(h.date).toLocaleDateString()}</span> - {h.action} ({h.tier})
+                                        {/* Membership Status Badge */}
+                                        <div className="mt-4 p-3 rounded-xl bg-black/40 border border-white/5 flex items-center justify-between">
+                                            <div>
+                                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Account Status</p>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    {editingUser.membershipExpires && new Date(editingUser.membershipExpires) > new Date() ? (
+                                                        <>
+                                                            <div className="w-2 h-2 rounded-full bg-[#28D160] shadow-[0_0_8px_rgba(40,209,96,0.5)]"></div>
+                                                            <span className="text-xs font-black italic uppercase text-[#28D160]">Active Member</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                                                            <span className="text-xs font-black italic uppercase text-red-500">Expired / Inactive</span>
+                                                        </>
+                                                    )}
                                                 </div>
-                                            ))}
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Renews / Ends</p>
+                                                <p className="text-xs font-mono font-bold text-white mt-0.5">
+                                                    {editingUser.membershipExpires ? new Date(editingUser.membershipExpires).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                                                </p>
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
+                                        <div className="flex gap-2 mt-2">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    const today = new Date();
+                                                    const nextYear = new Date(new Date().setFullYear(today.getFullYear() + 1));
+                                                    setEditingUser({
+                                                        ...editingUser,
+                                                        membershipStart: editingUser.membershipStart || new Date().toISOString().split('T')[0],
+                                                        membershipExpires: nextYear.toISOString().split('T')[0]
+                                                    });
+                                                }}
+                                                className="flex-1 text-[10px] bg-[#28D160]/10 text-[#28D160] px-2 py-2 rounded uppercase font-black italic hover:bg-[#28D160] hover:text-black transition-colors"
+                                            >
+                                                +1 Year
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    const currentExpiry = editingUser.membershipExpires ? new Date(editingUser.membershipExpires) : new Date();
+                                                    // Ensure we start from at least "today" if expired
+                                                    const baseDate = currentExpiry > new Date() ? currentExpiry : new Date();
+
+                                                    // Add 1 Month safely
+                                                    const nextMonth = new Date(baseDate);
+                                                    nextMonth.setMonth(baseDate.getMonth() + 1);
+
+                                                    setEditingUser({
+                                                        ...editingUser,
+                                                        membershipStart: editingUser.membershipStart || new Date().toISOString().split('T')[0],
+                                                        membershipExpires: nextMonth.toISOString().split('T')[0]
+                                                    });
+                                                }}
+                                                className="flex-1 text-[10px] bg-blue-500/10 text-blue-500 px-2 py-2 rounded uppercase font-black italic hover:bg-blue-500 hover:text-white transition-colors"
+                                            >
+                                                +1 Month
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    const yesterday = new Date();
+                                                    yesterday.setDate(yesterday.getDate() - 1);
+                                                    setEditingUser({
+                                                        ...editingUser,
+                                                        membershipExpires: yesterday.toISOString().split('T')[0]
+                                                    });
+                                                }}
+                                                className="flex-1 text-[10px] bg-red-500/10 text-red-500 px-2 py-2 rounded uppercase font-black italic hover:bg-red-500 hover:text-white transition-colors"
+                                            >
+                                                Cancel Immediately
+                                            </button>
+                                        </div>
+                                        {/* History Viewer */}
+                                        {editingUser.membershipHistory && editingUser.membershipHistory.length > 0 && (
+                                            <div className="mt-2 bg-black/30 p-2 rounded-lg max-h-24 overflow-y-auto">
+                                                <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">History</p>
+                                                {editingUser.membershipHistory.map((h: any, i: number) => (
+                                                    <div key={i} className="text-[9px] text-gray-400 border-b border-white/5 py-1">
+                                                        <span className="text-white">{new Date(h.date).toLocaleDateString()}</span> - {h.action} ({h.tier})
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div className={`grid ${editingUser.role === 'player' ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
                                     <div>
