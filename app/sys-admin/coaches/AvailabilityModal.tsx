@@ -225,10 +225,10 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
 
     return (
         <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-[#1e1e1e] w-full max-w-5xl rounded-3xl border border-white/10 shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="bg-[#1e1e1e] w-full max-w-5xl rounded-3xl border border-white/10 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
 
                 {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b border-white/10">
+                <div className="flex justify-between items-center p-6 border-b border-white/10 shrink-0">
                     <div>
                         <h2 className="text-2xl font-black italic uppercase tracking-tighter text-white">
                             Availability: <span className="text-[#28D160]">{coach.first_name} {coach.last_name}</span>
@@ -242,224 +242,227 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                     </div>
                 </div>
 
-                {/* Toolbar */}
-                <div className="flex items-center justify-between p-4 bg-[#151515] border-b border-white/5">
-                    <div className="flex items-center gap-4">
-                        <button onClick={handlePrevWeek} className="p-2 bg-[#1e1e1e] border border-white/5 rounded-lg hover:border-[#28D160] transition-colors">
-                            <ChevronLeft size={16} />
-                        </button>
-                        <span className="font-bold text-sm uppercase tracking-wider w-40 text-center">
-                            {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </span>
-                        <button onClick={handleNextWeek} className="p-2 bg-[#1e1e1e] border border-white/5 rounded-lg hover:border-[#28D160] transition-colors">
-                            <ChevronRight size={16} />
-                        </button>
-                    </div>
+                <div className="flex-1 overflow-y-auto">
+                    {/* Toolbar */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-[#151515] border-b border-white/5 gap-4 md:gap-0">
+                        <div className="flex items-center justify-center md:justify-start gap-4">
+                            <button onClick={handlePrevWeek} className="p-2 bg-[#1e1e1e] border border-white/5 rounded-lg hover:border-[#28D160] transition-colors">
+                                <ChevronLeft size={16} />
+                            </button>
+                            <span className="font-bold text-sm uppercase tracking-wider w-40 text-center">
+                                {weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </span>
+                            <button onClick={handleNextWeek} className="p-2 bg-[#1e1e1e] border border-white/5 rounded-lg hover:border-[#28D160] transition-colors">
+                                <ChevronRight size={16} />
+                            </button>
+                        </div>
 
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => setShowBulkTool(!showBulkTool)}
-                            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-colors ${showBulkTool ? 'bg-[#28D160] text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                        >
-                            <Plus size={14} /> Bulk Add
-                        </button>
-                        <div className="h-6 w-px bg-white/10" />
-                        <div className="flex gap-2">
-                            <div className="flex items-center gap-2 px-3 py-1 bg-[#28D160]/10 rounded border border-[#28D160]/20">
-                                <div className="w-3 h-3 bg-[#28D160] rounded-sm"></div>
-                                <span className="text-[10px] uppercase font-bold text-[#28D160]">Available</span>
+                        <div className="flex items-center justify-between md:justify-end gap-4">
+                            <button
+                                onClick={() => setShowBulkTool(!showBulkTool)}
+                                className={`px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-colors ${showBulkTool ? 'bg-[#28D160] text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                            >
+                                <Plus size={14} /> Bulk Add
+                            </button>
+                            <div className="h-6 w-px bg-white/10" />
+                            <div className="flex gap-2">
+                                <div className="flex items-center gap-2 px-3 py-1 bg-[#28D160]/10 rounded border border-[#28D160]/20">
+                                    <div className="w-3 h-3 bg-[#28D160] rounded-sm"></div>
+                                    <span className="text-[10px] uppercase font-bold text-[#28D160]">Available</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Bulk Tool Panel */}
-                {showBulkTool && (
-                    <div className="bg-[#1a1a1a] p-5 border-b border-white/10 animate-fadeIn">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-black italic text-[#28D160] uppercase text-sm">Bulk Availability Generator</h3>
-                        </div>
-
-                        {/* 1. Date, Time & Days */}
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
-                            <div className="md:col-span-4">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Date Range</label>
-                                <div className="flex gap-2 items-center">
-                                    <input
-                                        type="date"
-                                        value={bulkConfig.startDate}
-                                        onChange={e => setBulkConfig({ ...bulkConfig, startDate: e.target.value })}
-                                        className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] w-full"
-                                    />
-                                    <span className="text-gray-500">—</span>
-                                    <input
-                                        type="date"
-                                        value={bulkConfig.endDate}
-                                        onChange={e => setBulkConfig({ ...bulkConfig, endDate: e.target.value })}
-                                        className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] w-full"
-                                    />
-                                </div>
+                    {/* Bulk Tool Panel */}
+                    {showBulkTool && (
+                        <div className="bg-[#1a1a1a] p-5 border-b border-white/10 animate-fadeIn">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-black italic text-[#28D160] uppercase text-sm">Bulk Availability Generator</h3>
                             </div>
 
-                            <div className="md:col-span-3">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Hours (24h)</label>
-                                <div className="flex gap-2 items-center">
-                                    <input
-                                        type="number" min="0" max="23"
-                                        value={bulkConfig.startHour}
-                                        onChange={e => setBulkConfig({ ...bulkConfig, startHour: parseInt(e.target.value) })}
-                                        className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] w-full text-center"
-                                    />
-                                    <span className="text-gray-500 text-[10px] font-bold">TO</span>
-                                    <input
-                                        type="number" min="0" max="24"
-                                        value={bulkConfig.endHour}
-                                        onChange={e => setBulkConfig({ ...bulkConfig, endHour: parseInt(e.target.value) })}
-                                        className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] w-full text-center"
-                                    />
+                            {/* 1. Date, Time & Days */}
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-6">
+                                <div className="md:col-span-4">
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Date Range</label>
+                                    <div className="flex gap-2 items-center">
+                                        <input
+                                            type="date"
+                                            value={bulkConfig.startDate}
+                                            onChange={e => setBulkConfig({ ...bulkConfig, startDate: e.target.value })}
+                                            className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] w-full"
+                                        />
+                                        <span className="text-gray-500">—</span>
+                                        <input
+                                            type="date"
+                                            value={bulkConfig.endDate}
+                                            onChange={e => setBulkConfig({ ...bulkConfig, endDate: e.target.value })}
+                                            className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] w-full"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="md:col-span-5">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Days of Week</label>
-                                <div className="flex gap-1">
-                                    {DAYS.map((d, i) => (
-                                        <button
-                                            key={d}
-                                            onClick={() => {
-                                                const newDays = bulkConfig.selectedDays.includes(i)
-                                                    ? bulkConfig.selectedDays.filter(d => d !== i)
-                                                    : [...bulkConfig.selectedDays, i];
-                                                setBulkConfig({ ...bulkConfig, selectedDays: newDays });
-                                            }}
-                                            className={`
+                                <div className="md:col-span-3">
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Hours (24h)</label>
+                                    <div className="flex gap-2 items-center">
+                                        <input
+                                            type="number" min="0" max="23"
+                                            value={bulkConfig.startHour}
+                                            onChange={e => setBulkConfig({ ...bulkConfig, startHour: parseInt(e.target.value) })}
+                                            className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] w-full text-center"
+                                        />
+                                        <span className="text-gray-500 text-[10px] font-bold">TO</span>
+                                        <input
+                                            type="number" min="0" max="24"
+                                            value={bulkConfig.endHour}
+                                            onChange={e => setBulkConfig({ ...bulkConfig, endHour: parseInt(e.target.value) })}
+                                            className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] w-full text-center"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="md:col-span-5">
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Days of Week</label>
+                                    <div className="flex gap-1">
+                                        {DAYS.map((d, i) => (
+                                            <button
+                                                key={d}
+                                                onClick={() => {
+                                                    const newDays = bulkConfig.selectedDays.includes(i)
+                                                        ? bulkConfig.selectedDays.filter(d => d !== i)
+                                                        : [...bulkConfig.selectedDays, i];
+                                                    setBulkConfig({ ...bulkConfig, selectedDays: newDays });
+                                                }}
+                                                className={`
                                                 flex-1 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase transition-all
                                                 ${bulkConfig.selectedDays.includes(i) ? 'bg-[#28D160] text-black shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-black/40 text-gray-500 hover:bg-white/10 hover:text-white'}
                                             `}
-                                        >
-                                            {d.charAt(0)}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 2. Service Options */}
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end border-t border-white/5 pt-6">
-                            <div className="md:col-span-5">
-                                <div className="flex items-center gap-2 mb-1.5">
-                                    <label className="text-[10px] font-bold text-[#28D160] uppercase block">Service Type (Optional)</label>
-                                    <Info size={10} className="text-gray-500" />
-                                </div>
-                                <select
-                                    value={bulkConfig.selectedServiceId}
-                                    onChange={e => setBulkConfig({ ...bulkConfig, selectedServiceId: e.target.value })}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160]"
-                                >
-                                    <option value="">-- Generic Availability --</option>
-                                    {serviceTypes.map(st => (
-                                        <option key={st.id} value={st.id}>{st.title} ({st.category})</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="md:col-span-2">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Credit Cost</label>
-                                <input
-                                    type="number" min="0"
-                                    disabled={!bulkConfig.selectedServiceId}
-                                    value={bulkConfig.creditCost}
-                                    onChange={e => setBulkConfig({ ...bulkConfig, creditCost: parseInt(e.target.value) })}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] disabled:opacity-20"
-                                />
-                            </div>
-
-                            <div className="md:col-span-2">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Capacity</label>
-                                <input
-                                    type="number" min="1"
-                                    disabled={!bulkConfig.selectedServiceId}
-                                    value={bulkConfig.capacity}
-                                    onChange={e => setBulkConfig({ ...bulkConfig, capacity: parseInt(e.target.value) })}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] disabled:opacity-20"
-                                />
-                            </div>
-
-                            <div className="md:col-span-3">
-                                <button
-                                    onClick={generateBulkSlots}
-                                    className="w-full bg-[#28D160] text-black font-black uppercase text-xs py-2.5 rounded-xl hover:bg-white transition-all shadow-lg active:scale-95"
-                                >
-                                    Generate Slots
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Calendar Grid */}
-                <div className="flex-1 overflow-auto bg-[#1e1e1e] p-4">
-                    <div className="grid grid-cols-[60px_1fr] min-w-[800px]">
-                        {/* Time Column */}
-                        <div className="pt-10">
-                            {HOURS.map(hour => (
-                                <div key={hour} className="h-14 text-right pr-3 text-[10px] font-bold text-gray-500 -mt-2">
-                                    {hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Days Columns */}
-                        <div className="grid grid-cols-7 border-l border-white/5">
-                            {/* Header Row */}
-                            {weekDays.map(day => (
-                                <div key={day.toString()} className="text-center pb-2 border-b border-white/5">
-                                    <div className="text-[10px] text-gray-500 uppercase font-black">{DAYS[day.getDay()]}</div>
-                                    <div className={`text-sm font-bold ${day.toDateString() === new Date().toDateString() ? 'text-[#28D160]' : 'text-white'}`}>
-                                        {day.getDate()}
+                                            >
+                                                {d.charAt(0)}
+                                            </button>
+                                        ))}
                                     </div>
                                 </div>
-                            ))}
+                            </div>
 
-                            {/* Cells */}
-                            {HOURS.map(hour => (
-                                <React.Fragment key={hour}>
-                                    {weekDays.map(day => {
-                                        // Check availability
-                                        const slotStart = new Date(day);
-                                        slotStart.setHours(hour, 0, 0, 0);
+                            {/* 2. Service Options */}
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end border-t border-white/5 pt-6">
+                                <div className="md:col-span-5">
+                                    <div className="flex items-center gap-2 mb-1.5">
+                                        <label className="text-[10px] font-bold text-[#28D160] uppercase block">Service Type (Optional)</label>
+                                        <Info size={10} className="text-gray-500" />
+                                    </div>
+                                    <select
+                                        value={bulkConfig.selectedServiceId}
+                                        onChange={e => setBulkConfig({ ...bulkConfig, selectedServiceId: e.target.value })}
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160]"
+                                    >
+                                        <option value="">-- Generic Availability --</option>
+                                        {serviceTypes.map(st => (
+                                            <option key={st.id} value={st.id}>{st.title} ({st.category})</option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                                        const isAvailable = displaySlots.some(s => {
-                                            const sStart = safeDate(s.start_time);
-                                            // Simple hour check
-                                            return sStart && slotStart.getTime() === sStart.getTime();
-                                        });
+                                <div className="md:col-span-2">
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Credit Cost</label>
+                                    <input
+                                        type="number" min="0"
+                                        disabled={!bulkConfig.selectedServiceId}
+                                        value={bulkConfig.creditCost}
+                                        onChange={e => setBulkConfig({ ...bulkConfig, creditCost: parseInt(e.target.value) })}
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] disabled:opacity-20"
+                                    />
+                                </div>
 
-                                        return (
-                                            <div
-                                                key={`${day}-${hour}`}
-                                                onClick={() => handleSlotClick(day, hour)}
-                                                className={`
+                                <div className="md:col-span-2">
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Capacity</label>
+                                    <input
+                                        type="number" min="1"
+                                        disabled={!bulkConfig.selectedServiceId}
+                                        value={bulkConfig.capacity}
+                                        onChange={e => setBulkConfig({ ...bulkConfig, capacity: parseInt(e.target.value) })}
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160] disabled:opacity-20"
+                                    />
+                                </div>
+
+                                <div className="md:col-span-3">
+                                    <button
+                                        onClick={generateBulkSlots}
+                                        className="w-full bg-[#28D160] text-black font-black uppercase text-xs py-2.5 rounded-xl hover:bg-white transition-all shadow-lg active:scale-95"
+                                    >
+                                        Generate Slots
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Calendar Grid */}
+                    <div className="overflow-x-auto bg-[#1e1e1e] p-4">
+                        <div className="grid grid-cols-[60px_1fr] min-w-[800px]">
+                            {/* Time Column */}
+                            <div className="pt-10">
+                                {HOURS.map(hour => (
+                                    <div key={hour} className="h-14 text-right pr-3 text-[10px] font-bold text-gray-500 -mt-2">
+                                        {hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Days Columns */}
+                            <div className="grid grid-cols-7 border-l border-white/5">
+                                {/* Header Row */}
+                                {weekDays.map(day => (
+                                    <div key={day.toString()} className="text-center pb-2 border-b border-white/5">
+                                        <div className="text-[10px] text-gray-500 uppercase font-black">{DAYS[day.getDay()]}</div>
+                                        <div className={`text-sm font-bold ${day.toDateString() === new Date().toDateString() ? 'text-[#28D160]' : 'text-white'}`}>
+                                            {day.getDate()}
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* Cells */}
+                                {HOURS.map(hour => (
+                                    <React.Fragment key={hour}>
+                                        {weekDays.map(day => {
+                                            // Check availability
+                                            const slotStart = new Date(day);
+                                            slotStart.setHours(hour, 0, 0, 0);
+
+                                            const isAvailable = displaySlots.some(s => {
+                                                const sStart = safeDate(s.start_time);
+                                                // Simple hour check
+                                                return sStart && slotStart.getTime() === sStart.getTime();
+                                            });
+
+                                            return (
+                                                <div
+                                                    key={`${day}-${hour}`}
+                                                    onClick={() => handleSlotClick(day, hour)}
+                                                    className={`
                                                     h-14 border-b border-r border-white/5 cursor-pointer transition-all hover:bg-white/5
                                                     ${isAvailable ? 'bg-[#28D160]/20 border-[#28D160]/30 hover:bg-[#28D160]/30' : ''}
                                                 `}
-                                            >
-                                                {isAvailable && (
-                                                    <div className="w-full h-full flex items-center justify-center">
-                                                        <Clock size={12} className="text-[#28D160]" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                </React.Fragment>
-                            ))}
+                                                >
+                                                    {isAvailable && (
+                                                        <div className="w-full h-full flex items-center justify-center">
+                                                            <Clock size={12} className="text-[#28D160]" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </React.Fragment>
+                                ))}
+                            </div>
                         </div>
                     </div>
+
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-white/10 flex justify-end gap-3 bg-[#151515]">
+                <div className="p-4 border-t border-white/10 flex flex-col md:flex-row justify-end gap-3 bg-[#151515] shrink-0">
                     <button
                         onClick={onClose}
                         className="px-6 py-3 bg-white/5 text-white font-bold uppercase text-xs rounded-xl hover:bg-white/10 transition-colors"
