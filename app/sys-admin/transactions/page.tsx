@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { ArrowLeft, Search, Coins, Calendar, User, Download, FileText } from 'lucide-react';
 import Link from 'next/link';
+import { safetoLocaleDateString } from '@/app/lib/dateUtils';
 
 export default function AdminTransactionsPage() {
     const [transactions, setTransactions] = useState<any[]>([]);
@@ -45,10 +46,10 @@ export default function AdminTransactionsPage() {
     );
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-8 w-full overflow-x-hidden">
             <div className="flex flex-col gap-2">
                 <Link href="/sys-admin" className="self-start text-[10px] text-gray-500 font-bold uppercase tracking-widest hover:text-white mb-4 block transition-colors">← Back to Dashboard</Link>
-                <div className="flex justify-between items-end">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
                     <div>
                         <h1 className="text-3xl font-black italic uppercase tracking-tighter">Financial Oversight</h1>
                         <p className="text-gray-400 max-w-2xl">
@@ -105,7 +106,7 @@ export default function AdminTransactionsPage() {
                             ) : filtered.map((t) => (
                                 <tr key={t.id} className="hover:bg-white/5 transition-colors group">
                                     <td className="px-6 py-4 text-xs text-gray-400">
-                                        {new Date(t.created_at).toLocaleString()}
+                                        {safetoLocaleDateString(t.created_at, undefined, { dateStyle: 'short', timeStyle: 'short' })}
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col">
@@ -117,9 +118,9 @@ export default function AdminTransactionsPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${t.type === 'membership' ? 'bg-blue-500/20 text-blue-400' :
-                                                t.type === 'manual' ? 'bg-purple-500/20 text-purple-400' :
-                                                    t.type === 'refund' ? 'bg-red-500/20 text-red-400' :
-                                                        'bg-green-500/20 text-green-400'
+                                            t.type === 'manual' ? 'bg-purple-500/20 text-purple-400' :
+                                                t.type === 'refund' ? 'bg-red-500/20 text-red-400' :
+                                                    'bg-green-500/20 text-green-400'
                                             }`}>
                                             {t.type}
                                         </span>

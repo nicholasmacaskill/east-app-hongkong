@@ -7,6 +7,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { UserRole } from '@/app/types';
 import AvailabilityModal from '../coaches/AvailabilityModal';
 import { useToast } from '@/app/components/ui/Toast';
+import { safeDate, safeDateFiles, safetoLocaleDateString } from '@/app/lib/dateUtils';
 
 export default function DirectoryPage() {
     const [profiles, setProfiles] = useState<any[]>([]);
@@ -139,8 +140,8 @@ export default function DirectoryPage() {
             parentId: profile.parent_id || '',
             mobile: profile.mobile || '',
             bio: profile.bio || '',
-            membershipStart: profile.membership_start ? new Date(profile.membership_start).toISOString().split('T')[0] : '',
-            membershipExpires: profile.membership_expires ? new Date(profile.membership_expires).toISOString().split('T')[0] : '',
+            membershipStart: safeDateFiles(profile.membership_start),
+            membershipExpires: safeDateFiles(profile.membership_expires),
             membershipHistory: profile.membership_history || []
         });
 
@@ -241,9 +242,9 @@ export default function DirectoryPage() {
                     mobile: editingUser.mobile,
                     bio: editingUser.bio,
                     password: editingUser.password,
-                    membershipStart: editingUser.membershipStart ? new Date(editingUser.membershipStart).toISOString() : null,
-                    membershipExpires: editingUser.membershipExpires ? new Date(editingUser.membershipExpires).toISOString() : null,
-                    accountStatus: (editingUser.membershipExpires && new Date(editingUser.membershipExpires) > new Date()) ? 'active' : undefined
+                    membershipStart: safeDate(editingUser.membershipStart)?.toISOString() || null,
+                    membershipExpires: safeDate(editingUser.membershipExpires)?.toISOString() || null,
+                    accountStatus: (editingUser.membershipExpires && (safeDate(editingUser.membershipExpires)?.getTime() || 0) > Date.now()) ? 'active' : undefined
                 })
             });
 
@@ -313,7 +314,7 @@ export default function DirectoryPage() {
     // For now let's just use placeholder logic or skip if too complex.
 
     return (
-        <div className="space-y-10 relative pb-32 pt-4">
+        <div className="space-y-10 relative pb-32 pt-4 w-full overflow-x-hidden">
             {/* Header Area */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4 w-full md:w-auto">
@@ -372,58 +373,49 @@ export default function DirectoryPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div
                     onClick={() => setActiveTab('households')}
-                    className={`bg-[#1e1e1e] border p-4 rounded-2xl hover:border-purple-500/50 cursor-pointer transition-all group ${activeTab === 'households' ? 'border-purple-500/30 ring-1 ring-purple-500/20' : 'border-white/5'}`}
+                    className={`bg-[#1e1e1e] border p-4 rounded-2xl cursor-pointer transition-all group ${activeTab === 'households' ? 'border-purple-500 ring-1 ring-purple-500/20' : 'border-white/5 hover:border-purple-500/30'}`}
                 >
                     <div className="flex items-center justify-between mb-2">
-                        <Users className="text-purple-400 group-hover:scale-110 transition-transform" size={20} />
+                        <Users className={activeTab === 'households' ? 'text-purple-400' : 'text-gray-600 group-hover:text-purple-400'} size={20} />
                         <span className="text-[10px] font-black text-gray-600 uppercase">Households</span>
                     </div>
-                    <p className="text-2xl font-black text-white">{households.length}</p>
+                    <p className={`text-2xl font-black ${activeTab === 'households' ? 'text-white' : 'text-gray-400'}`}>{households.length}</p>
                 </div>
 
                 <div
                     onClick={() => setActiveTab('unassigned')}
-                    className={`bg-[#1e1e1e] border p-4 rounded-2xl cursor-pointer transition-all group ${activeTab === 'unassigned' ? 'border-amber-500 ring-1 ring-amber-500/20' : (unassignedPlayers.length > 0 ? 'border-amber-500/30' : 'border-white/5')}`}
+                    className={`bg-[#1e1e1e] border p-4 rounded-2xl cursor-pointer transition-all group ${activeTab === 'unassigned' ? 'border-amber-500 ring-1 ring-amber-500/20' : (unassignedPlayers.length > 0 ? 'border-amber-500/30 hover:border-amber-500/60' : 'border-white/5 hover:border-amber-500/30')}`}
                 >
                     <div className="flex items-center justify-between mb-2">
-                        <AlertCircle className={unassignedPlayers.length > 0 ? 'text-amber-500' : 'text-gray-600'} size={20} />
+                        <AlertCircle className={activeTab === 'unassigned' ? 'text-amber-500' : (unassignedPlayers.length > 0 ? 'text-amber-500/60' : 'text-gray-600 group-hover:text-amber-500')} size={20} />
                         <span className="text-[10px] font-black text-gray-600 uppercase text-right">Solo<br />Athletes</span>
                     </div>
-                    <p className={`text-2xl font-black ${unassignedPlayers.length > 0 ? 'text-amber-500' : 'text-white'}`}>{unassignedPlayers.length}</p>
+                    <p className={`text-2xl font-black ${activeTab === 'unassigned' ? 'text-amber-500' : 'text-white'}`}>{unassignedPlayers.length}</p>
                 </div>
 
                 <div
                     onClick={() => setActiveTab('coaches')}
-                    className={`bg-[#1e1e1e] border p-4 rounded-2xl hover:border-[#28D160]/50 cursor-pointer transition-all group ${activeTab === 'coaches' ? 'border-[#28D160]/30 ring-1 ring-purple-500/20' : 'border-white/5'}`}
+                    className={`bg-[#1e1e1e] border p-4 rounded-2xl cursor-pointer transition-all group ${activeTab === 'coaches' ? 'border-blue-500 ring-1 ring-blue-500/20' : 'border-white/5 hover:border-blue-500/30'}`}
                 >
                     <div className="flex items-center justify-between mb-2">
-                        <Star className="text-[#28D160] group-hover:scale-110 transition-transform" size={20} />
+                        <Star className={activeTab === 'coaches' ? 'text-blue-500' : 'text-gray-600 group-hover:text-blue-500'} size={20} />
                         <span className="text-[10px] font-black text-gray-600 uppercase">Coaches</span>
                     </div>
-                    <p className="text-2xl font-black text-white">{coaches.length}</p>
+                    <p className={`text-2xl font-black ${activeTab === 'coaches' ? 'text-white' : 'text-gray-400'}`}>{coaches.length}</p>
                 </div>
 
-                <div className="bg-[#1e1e1e] border border-white/5 p-4 rounded-2xl opacity-50">
+                <div
+                    onClick={() => setActiveTab('admins')}
+                    className={`bg-[#1e1e1e] border p-4 rounded-2xl cursor-pointer transition-all group ${activeTab === 'admins' ? 'border-rose-500 ring-1 ring-rose-500/20' : 'border-white/5 hover:border-rose-500/30'}`}
+                >
                     <div className="flex items-center justify-between mb-2">
-                        <Mail className="text-blue-400" size={20} />
-                        <span className="text-[10px] font-black text-gray-600 uppercase text-right">Pending<br />Invites</span>
+                        <Shield className={activeTab === 'admins' ? 'text-rose-500' : 'text-gray-600 group-hover:text-rose-500'} size={20} />
+                        <span className="text-[10px] font-black text-gray-600 uppercase text-right">Staff /<br />Admins</span>
                     </div>
-                    <p className="text-2xl font-black text-white">-</p>
+                    <p className={`text-2xl font-black ${activeTab === 'admins' ? 'text-white' : 'text-gray-400'}`}>{admins.length}</p>
                 </div>
             </div>
 
-            {/* Tab Switcher */}
-            <div className="flex gap-2 p-1 bg-black/40 rounded-xl self-start overflow-x-auto max-w-full">
-                {(['households', 'coaches', 'admins', 'unassigned'] as const).map(tab => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab)}
-                        className={`px-6 py-2 rounded-lg text-xs font-black uppercase italic transition-all whitespace-nowrap ${activeTab === tab ? 'bg-white/10 text-[#28D160] shadow-sm' : 'text-gray-500 hover:text-white'}`}
-                    >
-                        {tab}
-                    </button>
-                ))}
-            </div>
 
             {/* Success / Invite Modal */}
             {
@@ -716,7 +708,7 @@ export default function DirectoryPage() {
                                             <div>
                                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Account Status</p>
                                                 <div className="flex items-center gap-2 mt-0.5">
-                                                    {editingUser.membershipExpires && new Date(editingUser.membershipExpires) > new Date() ? (
+                                                    {editingUser.membershipExpires && (safeDate(editingUser.membershipExpires)?.getTime() || 0) > Date.now() ? (
                                                         <>
                                                             <div className="w-2 h-2 rounded-full bg-[#28D160] shadow-[0_0_8px_rgba(40,209,96,0.5)]"></div>
                                                             <span className="text-xs font-black italic uppercase text-[#28D160]">Active Member</span>
@@ -732,7 +724,7 @@ export default function DirectoryPage() {
                                             <div className="text-right">
                                                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Renews / Ends</p>
                                                 <p className="text-xs font-mono font-bold text-white mt-0.5">
-                                                    {editingUser.membershipExpires ? new Date(editingUser.membershipExpires).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                                                    {editingUser.membershipExpires ? safetoLocaleDateString(editingUser.membershipExpires, 'en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
                                                 </p>
                                             </div>
                                         </div>
@@ -755,9 +747,9 @@ export default function DirectoryPage() {
                                             <button
                                                 onClick={(e) => {
                                                     e.preventDefault();
-                                                    const currentExpiry = editingUser.membershipExpires ? new Date(editingUser.membershipExpires) : new Date();
+                                                    const currentExpiry = safeDate(editingUser.membershipExpires) || new Date();
                                                     // Ensure we start from at least "today" if expired
-                                                    const baseDate = currentExpiry > new Date() ? currentExpiry : new Date();
+                                                    const baseDate = currentExpiry.getTime() > Date.now() ? currentExpiry : new Date();
 
                                                     // Add 1 Month safely
                                                     const nextMonth = new Date(baseDate);
@@ -794,7 +786,7 @@ export default function DirectoryPage() {
                                                 <p className="text-[9px] text-gray-500 uppercase font-bold mb-1">History</p>
                                                 {editingUser.membershipHistory.map((h: any, i: number) => (
                                                     <div key={i} className="text-[9px] text-gray-400 border-b border-white/5 py-1">
-                                                        <span className="text-white">{new Date(h.date).toLocaleDateString()}</span> - {h.action} ({h.tier})
+                                                        <span className="text-white">{safetoLocaleDateString(h.date)}</span> - {h.action} ({h.tier})
                                                     </div>
                                                 ))}
                                             </div>
@@ -915,26 +907,26 @@ export default function DirectoryPage() {
                                             {/* Parent Row */}
                                             <div
                                                 onClick={() => handleEditClick(parent)}
-                                                className="p-5 flex items-center justify-between border-b border-white/5 bg-gradient-to-r from-purple-900/10 to-transparent group/row cursor-pointer hover:bg-purple-900/20 transition-colors"
+                                                className="p-5 flex flex-col md:flex-row md:items-center gap-4 justify-between border-b border-white/5 bg-gradient-to-r from-purple-900/10 to-transparent group/row cursor-pointer hover:bg-purple-900/20 transition-colors"
                                             >
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-12 h-12 rounded-full bg-purple-600/20 border border-purple-600/30 flex items-center justify-center">
                                                         <User className="text-purple-400" size={24} />
                                                     </div>
-                                                    <div>
-                                                        <h3 className="font-bold text-white text-lg">{parent.first_name} {parent.last_name}</h3>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-[9px] font-black italic text-purple-400 uppercase">{parent.role}</span>
+                                                    <div className="min-w-0">
+                                                        <h3 className="font-bold text-white text-lg truncate">{parent.first_name} {parent.last_name}</h3>
+                                                        <div className="flex items-center gap-2 truncate">
+                                                            <span className="text-[9px] font-black italic text-purple-400 uppercase shrink-0">{parent.role}</span>
                                                             <span className="text-gray-600 text-[10px]">•</span>
-                                                            <span className="text-gray-500 text-[10px]">{parent.contact_email}</span>
+                                                            <span className="text-gray-500 text-[10px] truncate">{parent.contact_email}</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-2 self-end md:self-auto">
                                                     <button onClick={() => {
                                                         setNewUser({ ...newUser, role: 'player', parentId: parent.id });
                                                         setShowAddForm(true);
-                                                    }} className="text-[10px] font-black italic text-[#28D160] uppercase bg-[#28D160]/10 px-3 py-1.5 rounded-lg hover:bg-[#28D160] hover:text-black transition-all">
+                                                    }} className="text-[10px] font-black italic text-[#28D160] uppercase bg-[#28D160]/10 px-3 py-1.5 rounded-lg hover:bg-[#28D160] hover:text-black transition-all whitespace-nowrap">
                                                         + Add Child
                                                     </button>
                                                     <button onClick={() => handleEditClick(parent)} className="p-2 text-gray-500 hover:text-white transition-colors">
@@ -1062,9 +1054,9 @@ export default function DirectoryPage() {
                                                 <div className="w-12 h-12 rounded-full bg-blue-600/10 border border-blue-600/20 flex items-center justify-center">
                                                     <Star className="text-blue-400" size={20} />
                                                 </div>
-                                                <div>
-                                                    <p className="font-bold text-white text-sm">{coach.first_name} {coach.last_name}</p>
-                                                    <p className="text-[10px] text-gray-500">{coach.contact_email}</p>
+                                                <div className="min-w-0">
+                                                    <p className="font-bold text-white text-sm truncate">{coach.first_name} {coach.last_name}</p>
+                                                    <p className="text-[10px] text-gray-500 truncate">{coach.contact_email}</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-1 transition-opacity">
@@ -1097,9 +1089,9 @@ export default function DirectoryPage() {
                                                 <div className="w-12 h-12 rounded-full bg-rose-600/10 border border-rose-600/20 flex items-center justify-center">
                                                     <Shield className="text-rose-400" size={20} />
                                                 </div>
-                                                <div>
-                                                    <p className="font-bold text-white text-sm">{admin.first_name} {admin.last_name}</p>
-                                                    <p className="text-[10px] text-gray-500 uppercase font-black italic text-rose-400">{admin.role}</p>
+                                                <div className="min-w-0">
+                                                    <p className="font-bold text-white text-sm truncate">{admin.first_name} {admin.last_name}</p>
+                                                    <p className="text-[10px] text-gray-500 uppercase font-black italic text-rose-400 truncate">{admin.role}</p>
                                                 </div>
                                             </div>
                                             <div className="flex gap-1 transition-opacity">

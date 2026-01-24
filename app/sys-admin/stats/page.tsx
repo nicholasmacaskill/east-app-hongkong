@@ -85,7 +85,7 @@ export default function ManualStatsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-black text-white p-6 font-montserrat pb-24">
+        <div className="min-h-screen bg-black text-white p-6 font-montserrat pb-24 w-full overflow-x-hidden">
             <h1 className="text-3xl font-black italic uppercase mb-8 text-east-light">Coach Stats Entry</h1>
 
             <div className="grid md:grid-cols-2 gap-8">
@@ -110,10 +110,10 @@ export default function ManualStatsPage() {
                                     : 'bg-white/5 border-white/10 hover:bg-white/10'
                                     }`}
                             >
-                                <div className="uppercase">{p.first_name} {p.last_name}</div>
+                                <div className="uppercase truncate">{p.first_name} {p.last_name}</div>
                                 <div className={`text-[8px] px-2 py-0.5 rounded-full inline-block border mt-1 font-black uppercase tracking-widest ${p.team === 'EAST HK' ? 'bg-east-light/10 text-east-light border-east-light/20' :
-                                        p.team === 'NORTH HK' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                            'bg-white/5 text-gray-500 border-white/5'
+                                    p.team === 'NORTH HK' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                        'bg-white/5 text-gray-500 border-white/5'
                                     }`}>
                                     {p.team || 'NO TEAM'}
                                 </div>

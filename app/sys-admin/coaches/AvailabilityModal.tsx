@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Save, Clock, Trash2, Plus, Info } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
+import { safeDate } from '@/app/lib/dateUtils';
 
 interface AvailabilityModalProps {
     coach: any;
@@ -128,8 +129,9 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
             // Exclude deleted ones
             if (s.id && deletedSlotIds.includes(s.id)) return false;
 
-            const sStart = new Date(s.start_time);
-            const sEnd = new Date(s.end_time);
+            const sStart = safeDate(s.start_time);
+            const sEnd = safeDate(s.end_time);
+            if (!sStart || !sEnd) return false;
             return (start >= sStart && start < sEnd) || (end > sStart && end <= sEnd);
         });
 
@@ -428,9 +430,9 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                         slotStart.setHours(hour, 0, 0, 0);
 
                                         const isAvailable = displaySlots.some(s => {
-                                            const sStart = new Date(s.start_time);
+                                            const sStart = safeDate(s.start_time);
                                             // Simple hour check
-                                            return slotStart.getTime() === sStart.getTime();
+                                            return sStart && slotStart.getTime() === sStart.getTime();
                                         });
 
                                         return (

@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Calendar, User, LayoutGrid, RefreshCw, Plus,
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { format, addDays, subDays, startOfWeek, isSameDay } from 'date-fns';
+import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
 import { useToast } from '@/app/components/ui/Toast';
 
 // Types
@@ -299,7 +300,7 @@ export default function MasterSchedule() {
                                 className={`
                                     flex flex-col items-center justify-center py-3 rounded-xl transition-all border
                                     ${isSelected
-                                        ? 'bg-[#28D160] border-[#28D160] text-black shadow-lg shadow-[#28D160]/20 scale-105 z-10'
+                                        ? 'bg-[#28D160] border-[#28D160] text-black shadow-lg shadow-[#28D160]/20 z-10'
                                         : 'bg-black/20 border-transparent text-gray-500 hover:border-white/10 hover:bg-white/5'}
                                 `}
                             >
@@ -339,10 +340,10 @@ export default function MasterSchedule() {
                             id: a.id, title: 'Open Slot', category: 'PRIVATE', instructor: `${a.profiles?.first_name} ${a.profiles?.last_name || ''}`.trim(), start_time: a.start_time, end_time: a.end_time, type: 'slot', coach_id: a.coach_id
                         }))
                     ].filter(item => activeCategory === 'ALL' || item.category === activeCategory)
-                        .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+                        .sort((a, b) => (safeDate(a.start_time)?.getTime() || 0) - (safeDate(b.start_time)?.getTime() || 0));
 
                     const grouped = mergedItems.reduce((acc: any, item: any) => {
-                        const dateKey = new Date(item.start_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+                        const dateKey = safetoLocaleDateString(item.start_time, undefined, { weekday: 'short', month: 'short', day: 'numeric' });
                         if (!acc[dateKey]) acc[dateKey] = [];
                         acc[dateKey].push(item);
                         return acc;
@@ -367,8 +368,8 @@ export default function MasterSchedule() {
                             <div className="space-y-3">
                                 {dayItems.map((item: any, idx: number) => {
                                     const isSlot = item.type === 'slot';
-                                    const startTime = new Date(item.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase();
-                                    const duration = Math.round((new Date(item.end_time).getTime() - new Date(item.start_time).getTime()) / 60000);
+                                    const startTime = safeDate(item.start_time)?.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase() || '--:--';
+                                    const duration = Math.round(((safeDate(item.end_time)?.getTime() || 0) - (safeDate(item.start_time)?.getTime() || 0)) / 60000);
                                     return (
                                         <div key={item.id || idx} onClick={() => {
                                             if (isSlot) {

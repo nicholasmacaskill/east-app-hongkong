@@ -170,9 +170,9 @@ export default function ManageServicesPage() {
     };
 
     return (
-        <div className="pb-32">
+        <div className="pb-32 w-full overflow-x-hidden">
             {/* Header */}
-            <div className="mb-8 flex items-center justify-between">
+            <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <Link href="/sys-admin" className="p-2 bg-gray-900 rounded-full hover:bg-gray-800 transition-colors">
                         <ArrowLeft size={20} className="text-gray-400" />
@@ -184,7 +184,7 @@ export default function ManageServicesPage() {
                 </div>
                 <button
                     onClick={openNew}
-                    className="flex items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-lg font-bold uppercase tracking-wider hover:bg-[#20aa4f] transition-colors"
+                    className="flex w-full md:w-auto justify-center items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-lg font-bold uppercase tracking-wider hover:bg-[#20aa4f] transition-colors self-start md:self-auto"
                 >
                     <Plus size={18} /> Add Service
                 </button>
@@ -202,7 +202,7 @@ export default function ManageServicesPage() {
                     </div>
                 ) : (
                     services.map(service => (
-                        <div key={service.id} className="bg-[#1e1e1e] border border-white/5 rounded-xl p-4 flex items-center gap-4 group hover:border-[#28D160] transition-colors">
+                        <div key={service.id} className="bg-[#1e1e1e] border border-white/5 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 group hover:border-[#28D160] transition-colors">
                             <div className="w-16 h-16 bg-gray-900 rounded-lg overflow-hidden flex-shrink-0 relative">
                                 {service.image_url ? (
                                     <img src={service.image_url} alt={service.title} className="w-full h-full object-cover" />
@@ -212,16 +212,18 @@ export default function ManageServicesPage() {
                                     </div>
                                 )}
                             </div>
-                            <div className="flex-1">
-                                <h3 className="font-bold text-lg">{service.title}</h3>
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded text-black uppercase ${service.category === 'CLASS' ? 'bg-blue-400' :
-                                    service.category === 'PRIVATE' ? 'bg-purple-400' :
-                                        'bg-[#28D160]'
-                                    }`}>
-                                    {service.category}
-                                </span>
+                            <div className="flex-1 min-w-0 w-full sm:w-auto">
+                                <h3 className="font-bold text-lg truncate">{service.title}</h3>
+                                <div className="flex flex-wrap gap-1">
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded text-black uppercase whitespace-nowrap ${service.category === 'CLASS' ? 'bg-blue-400' :
+                                        service.category === 'PRIVATE' ? 'bg-purple-400' :
+                                            'bg-[#28D160]'
+                                        }`}>
+                                        {service.category}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity self-end sm:self-auto">
                                 <button onClick={() => openEdit(service)} className="p-2 hover:bg-white/10 rounded-lg text-blue-400">
                                     <Edit2 size={18} />
                                 </button>

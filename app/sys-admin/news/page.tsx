@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { ArrowLeft, Plus, Edit2, Trash2, Calendar, Newspaper, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+import { safeDateFiles, safetoLocaleDateString } from '@/app/lib/dateUtils';
 
 type Announcement = {
     id: string;
@@ -159,7 +160,7 @@ export default function NewsManagementPage() {
             content: item.content,
             type: item.type,
             published: item.published,
-            event_date: item.event_date ? new Date(item.event_date).toISOString().split('T')[0] : '',
+            event_date: safeDateFiles(item.event_date),
             image_url: item.image_url || ''
         });
         setShowModal(true);
@@ -171,7 +172,7 @@ export default function NewsManagementPage() {
         <div className="flex flex-col gap-8 pb-20">
             <div className="flex flex-col gap-2">
                 <Link href="/sys-admin" className="self-start text-[10px] text-gray-500 font-bold uppercase tracking-widest hover:text-white mb-4 block transition-colors">← Back to Dashboard</Link>
-                <div className="flex justify-between items-end">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
                     <div>
                         <h1 className="text-3xl font-black italic uppercase tracking-tighter">News Management</h1>
                         <p className="text-gray-400 max-w-2xl">
@@ -191,7 +192,7 @@ export default function NewsManagementPage() {
                             });
                             setShowModal(true);
                         }}
-                        className="flex items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg"
+                        className="flex items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg w-full md:w-auto justify-center"
                     >
                         <Plus size={14} /> Add Announcement
                     </button>
@@ -253,7 +254,7 @@ export default function NewsManagementPage() {
 
                             {item.type === 'event' && item.event_date && (
                                 <div className="text-xs text-gray-500">
-                                    📅 {new Date(item.event_date).toLocaleDateString()}
+                                    📅 {safetoLocaleDateString(item.event_date)}
                                 </div>
                             )}
 

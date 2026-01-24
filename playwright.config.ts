@@ -89,7 +89,8 @@ export default defineConfig({
         'tests/family-schedule-sync.spec.ts',
         'tests/stripe-edge-cases.spec.ts',
         'tests/home-screen-integrity.spec.ts',
-        'tests/mobile-layout-audit.spec.ts'
+        'tests/mobile-layout-audit.spec.ts',
+        'tests/debug-overflow.spec.ts'
       ],
     },
 

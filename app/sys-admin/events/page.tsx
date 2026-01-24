@@ -5,6 +5,7 @@ import { supabase } from '@/app/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Plus, Trash2, Edit2, Upload, X, Save, Calendar, Clock, DollarSign } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
+import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
 
 interface EventItem {
     id: number;
@@ -94,8 +95,8 @@ export default function AdminEventsPage() {
             title: currentItem.title,
             description: currentItem.description,
             image_url: currentItem.image_url,
-            start_time: new Date(currentItem.start_time).toISOString(),
-            end_time: new Date(currentItem.end_time).toISOString(),
+            start_time: safeDate(currentItem.start_time)?.toISOString(),
+            end_time: safeDate(currentItem.end_time)?.toISOString(),
             credit_cost: Number(currentItem.credit_cost) || 0,
             instructor: currentItem.instructor || 'East HK',
             category: 'EVENT'
@@ -162,15 +163,15 @@ export default function AdminEventsPage() {
     };
 
     return (
-        <div className="p-8 text-white bg-black min-h-screen font-montserrat pb-24">
-            <div className="flex justify-between items-center mb-10">
+        <div className="p-4 md:p-8 text-white bg-black min-h-screen font-montserrat pb-24">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6 md:mb-10">
                 <div>
-                    <h1 className="text-3xl font-black italic uppercase tracking-tighter text-east-light">Event Management</h1>
+                    <h1 className="text-2xl md:text-3xl font-black italic uppercase tracking-tighter text-east-light">Event Management</h1>
                     <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">Special events and workshops</p>
                 </div>
                 <button
                     onClick={handleCreate}
-                    className="flex items-center gap-2 bg-east-light text-black px-6 py-3 rounded-full font-black italic uppercase tracking-wider hover:bg-white transition-all shadow-lg active:scale-95"
+                    className="flex w-full md:w-auto justify-center items-center gap-2 bg-east-light text-black px-6 py-3 rounded-full font-black italic uppercase tracking-wider hover:bg-white transition-all shadow-lg active:scale-95"
                 >
                     <Plus size={18} />
                     Create Event
@@ -183,10 +184,10 @@ export default function AdminEventsPage() {
                     <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest">Fetching Events</p>
                 </div>
             ) : (
-                <div className="grid gap-6">
+                <div className="grid gap-4 md:gap-6">
                     {events.map(item => (
-                        <div key={item.id} className="bg-[#111111] border border-white/5 p-5 rounded-2xl flex items-center gap-6 shadow-xl hover:border-white/10 transition-all group">
-                            <div className="w-28 h-28 bg-black rounded-xl overflow-hidden shrink-0 border border-white/5 relative">
+                        <div key={item.id} className="bg-[#111111] border border-white/5 p-4 md:p-5 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-4 md:gap-6 shadow-xl hover:border-white/10 transition-all group">
+                            <div className="w-full h-48 md:w-28 md:h-28 bg-black rounded-xl overflow-hidden shrink-0 border border-white/5 relative">
                                 {item.image_url ? (
                                     <img src={item.image_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                 ) : (
@@ -198,14 +199,14 @@ export default function AdminEventsPage() {
                             <div className="flex-1">
                                 <h3 className="font-black italic text-xl uppercase tracking-tight text-white mb-2">{item.title}</h3>
                                 <p className="text-gray-400 text-sm line-clamp-2 mb-4 font-medium leading-relaxed">{item.description}</p>
-                                <div className="flex items-center gap-5 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                <div className="flex flex-wrap items-center gap-3 md:gap-5 text-[10px] text-gray-400 font-bold uppercase tracking-widest">
                                     <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full">
                                         <Calendar size={12} className="text-east-light" />
-                                        {new Date(item.start_time).toLocaleDateString()}
+                                        {safetoLocaleDateString(item.start_time)}
                                     </span>
                                     <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full">
                                         <Clock size={12} className="text-east-light" />
-                                        {new Date(item.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {safeDate(item.start_time)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
                                     <span className="flex items-center gap-1.5 bg-east-light/10 text-east-light px-2.5 py-1 rounded-full border border-east-light/20">
                                         <DollarSign size={12} />
@@ -213,16 +214,16 @@ export default function AdminEventsPage() {
                                     </span>
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-row md:flex-col gap-2 mt-2 md:mt-0">
                                 <button
                                     onClick={() => handleEdit(item)}
-                                    className="p-3 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all"
+                                    className="flex-1 md:flex-none p-3 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all flex justify-center items-center"
                                 >
                                     <Edit2 size={20} />
                                 </button>
                                 <button
                                     onClick={() => handleDelete(item.id)}
-                                    className="p-3 bg-red-500/10 text-red-400 hover:text-white hover:bg-red-500 rounded-xl transition-all"
+                                    className="flex-1 md:flex-none p-3 bg-red-500/10 text-red-400 hover:text-white hover:bg-red-500 rounded-xl transition-all flex justify-center items-center"
                                 >
                                     <Trash2 size={20} />
                                 </button>
