@@ -310,7 +310,10 @@ export default function MasterSchedule() {
                                 <span className="text-sm font-black italic leading-none">
                                     {format(day, 'd')}
                                 </span>
-                                {isToday && !isSelected && <div className="w-1 h-1 bg-[#28D160] rounded-full mt-1 animate-pulse" />}
+                                {/* Fixed height indicator slot to prevent jitter */}
+                                <div className="h-1 mt-1 flex items-center justify-center">
+                                    {isToday && !isSelected && <div className="w-1 h-1 bg-[#28D160] rounded-full animate-pulse" />}
+                                </div>
                             </button>
                         );
                     })}
