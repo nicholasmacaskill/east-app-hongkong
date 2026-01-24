@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Share2, Send, CreditCard, AlertCircle, Check, ChevronLeft } from 'lucide-react';
 import { Session } from '@/app/types/session';
 import { supabase } from '@/app/lib/supabase';
+import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
 import { useToast } from '@/app/components/ui/Toast';
 
 interface ClassModalProps {
@@ -230,7 +231,7 @@ export default function ClassModal({
             setViewMode('SERVICE_SELECT');
             setFilterTitle(null);
             setFilterInstructor(null);
-        } else if (uniqueInstructorsSet.size > 1) {
+        } else if (uniqueInstructorsSet.size > 1 && displaySession.category !== 'FACILITY') {
             setViewMode('COACH_SELECT');
             setFilterInstructor(null);
             setFilterTitle(null);
@@ -702,23 +703,32 @@ export default function ClassModal({
                                                 <div className="flex flex-col gap-4">
                                                     {/* Date Tabs (Next 7 Days) */}
                                                     <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-                                                        {Array.from(new Set(filteredSessions.map(s => new Date(s.start_time).toDateString()))).slice(0, 7).map((dateStr) => {
-                                                            const date = new Date(dateStr);
+                                                        {Array.from(new Set(filteredSessions.map(s => {
+                                                            const d = safeDate(s.start_time);
+                                                            return d ? d.toISOString().split('T')[0] : '';
+                                                        }).filter(d => !!d))).slice(0, 7).map((dateISO) => {
+                                                            // dateISO is YYYY-MM-DD
+                                                            // We construct 'YYYY-MM-DDT00:00:00' to avoid timezone shifts if just date()
+                                                            const dateObj = new Date(`${dateISO}T00:00:00`);
+
                                                             // Check if there are any slots on this day
-                                                            const daySessions = filteredSessions.filter(s => new Date(s.start_time).toDateString() === dateStr);
+                                                            const daySessions = filteredSessions.filter(s => {
+                                                                const d = safeDate(s.start_time);
+                                                                return d && d.toISOString().split('T')[0] === dateISO;
+                                                            });
+
                                                             if (daySessions.length === 0) return null;
 
-                                                            // Determine the currently viewed date.
-                                                            // If a session is selected, use its date. Otherwise, default to the first available date.
-                                                            const currentViewDateStr = selectedSessionId
-                                                                ? new Date(filteredSessions.find(s => s.id === selectedSessionId)?.start_time || '').toDateString()
-                                                                : new Date(filteredSessions[0]?.start_time || '').toDateString();
+                                                            // Determine currently viewed date
+                                                            const currentSession = sessions.find(s => s.id === selectedSessionId);
+                                                            const currentD = currentSession ? safeDate(currentSession.start_time) : safeDate(filteredSessions[0]?.start_time);
+                                                            const currentViewISO = currentD ? currentD.toISOString().split('T')[0] : '';
 
-                                                            const isSelectedDate = currentViewDateStr === dateStr;
+                                                            const isSelectedDate = currentViewISO === dateISO;
 
                                                             return (
                                                                 <button
-                                                                    key={dateStr}
+                                                                    key={dateISO}
                                                                     onClick={() => {
                                                                         const firstSessionOfThisDay = daySessions[0];
                                                                         if (firstSessionOfThisDay) {
@@ -730,8 +740,8 @@ export default function ClassModal({
                                                                         : 'bg-white border-gray-200 hover:border-black'
                                                                         }`}
                                                                 >
-                                                                    <span className={`text-[9px] font-black uppercase ${isSelectedDate ? 'text-black' : 'text-gray-400'}`}>{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                                                                    <span className={`text-lg font-black italic ${isSelectedDate ? 'text-black' : 'text-gray-800'}`}>{date.getDate()}</span>
+                                                                    <span className={`text-[9px] font-black uppercase ${isSelectedDate ? 'text-black' : 'text-gray-400'}`}>{safetoLocaleDateString(dateObj, 'en-US', { weekday: 'short' })}</span>
+                                                                    <span className={`text-lg font-black italic ${isSelectedDate ? 'text-black' : 'text-gray-800'}`}>{dateObj.getDate()}</span>
                                                                 </button>
                                                             );
                                                         })}
@@ -739,29 +749,39 @@ export default function ClassModal({
 
                                                     <div className="flex flex-col gap-4">
                                                         {/* Group sessions by Date */}
-                                                        {Array.from(new Set(filteredSessions.map(s => new Date(s.start_time).toDateString()))).slice(0, 7).map(dateStr => {
-                                                            const daySessions = filteredSessions
-                                                                .filter(s => new Date(s.start_time).toDateString() === dateStr);
+                                                        {Array.from(new Set(filteredSessions.map(s => {
+                                                            const d = safeDate(s.start_time);
+                                                            return d ? d.toISOString().split('T')[0] : '';
+                                                        }).filter(d => !!d))).slice(0, 7).map(dateISO => {
+
+                                                            // Filter for this date
+                                                            const daySessions = filteredSessions.filter(s => {
+                                                                const d = safeDate(s.start_time);
+                                                                return d && d.toISOString().split('T')[0] === dateISO;
+                                                            });
 
                                                             if (daySessions.length === 0) return null;
 
-                                                            // Determine the currently viewed date for filtering the displayed times.
-                                                            const currentViewDateStr = selectedSessionId
-                                                                ? new Date(filteredSessions.find(s => s.id === selectedSessionId)?.start_time || '').toDateString()
-                                                                : new Date(filteredSessions[0]?.start_time || '').toDateString();
+                                                            // Determine currently viewed date
+                                                            const currentSession = sessions.find(s => s.id === selectedSessionId);
+                                                            const currentD = currentSession ? safeDate(currentSession.start_time) : safeDate(filteredSessions[0]?.start_time);
+                                                            const currentViewISO = currentD ? currentD.toISOString().split('T')[0] : '';
 
-                                                            // Only render sessions for the currently selected/viewed date tab
-                                                            if (dateStr !== currentViewDateStr) return null;
+                                                            if (dateISO !== currentViewISO) return null;
+
+                                                            const displayDateObj = new Date(`${dateISO}T00:00:00`);
 
                                                             return (
-                                                                <div key={dateStr}>
+                                                                <div key={dateISO}>
                                                                     <h4 className="font-black italic text-sm text-gray-300 uppercase mb-2 sticky top-0 bg-white z-10 py-1">
-                                                                        {new Date(dateStr).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                                                                        {safetoLocaleDateString(displayDateObj, 'en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
                                                                     </h4>
                                                                     <div className="grid grid-cols-3 gap-2">
                                                                         {daySessions.map(sess => {
                                                                             const isSelected = selectedSessionId === sess.id;
-                                                                            const timeStr = new Date(sess.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(' ', '').toLowerCase();
+                                                                            const d = safeDate(sess.start_time);
+                                                                            if (!d) return null;
+                                                                            const timeStr = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(' ', '').toLowerCase();
                                                                             return (
                                                                                 <button
                                                                                     key={sess.id}

@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
     ChevronLeft,
-    CheckCircle, X, Users, User as UserIcon, Heart, Calendar, Info
+    CheckCircle, X, Users, User as UserIcon, Heart, Calendar, Info, Check
 } from 'lucide-react';
 import type { Tab } from '../types';
 import { supabase } from '@/app/lib/supabase';
@@ -297,7 +297,11 @@ function MembershipContent() {
                                     {section.items.map((item, i) => (
                                         <div key={i} className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0 overflow-hidden">
                                             <span className="font-bold text-[11px] text-gray-700 uppercase tracking-tight truncate mr-2">{item.label}</span>
-                                            <span className="font-black text-[11px] uppercase italic text-black shrink-0">{item.value}</span>
+                                            {item.value === 'YES' || item.value === '7D' ? (
+                                                <Check size={14} className="text-[#28D160]" strokeWidth={4} />
+                                            ) : (
+                                                <span className="font-black text-[11px] uppercase italic text-black shrink-0">{item.value}</span>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
