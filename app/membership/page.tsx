@@ -193,7 +193,7 @@ function MembershipContent() {
                     </button>
                     <div className="text-right">
                         <h2 className="font-montserrat font-black italic text-2xl uppercase tracking-tighter leading-none">MEMBERSHIP</h2>
-                        <p className="font-bold text-[10px] text-gray-400 uppercase tracking-widest leading-none mt-1">THE PRO PASS</p>
+                        <p className="font-bold text-[10px] text-amber-500 uppercase tracking-widest leading-none mt-1">EARLY BIRD PRO PASS</p>
                     </div>
                 </div>
 
@@ -254,6 +254,9 @@ function MembershipContent() {
                     {/* Large Pricing Row */}
                     <div className="flex items-end justify-between border-b-2 border-dashed border-gray-100 pb-5 mb-5">
                         <div className="text-left">
+                            <div className="bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md inline-block mb-1.5 font-bold text-[8px] text-amber-600 uppercase tracking-widest">
+                                Early Bird Rates
+                            </div>
                             <h2 className="font-montserrat font-black italic text-5xl uppercase leading-none tracking-tighter">PRO</h2>
                             <p className="text-[9px] font-black text-east-light uppercase tracking-widest mt-1">
                                 {planType === 'family' ? `${memberCount} MEMBER FAMILY` : 'INDIVIDUAL PASS'}
