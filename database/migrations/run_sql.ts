@@ -1,7 +1,7 @@
 // run_sql.ts
 // Updated: Hyrox & EAST60 Prices (250 Credits)
 
-import getDbPool from './app/lib/db';
+import getDbPool from '../../app/lib/db';
 import { Pool } from 'pg';
 
 // --- CONFIGURATION: FIXED USER IDs ---
