@@ -348,9 +348,9 @@ export default function LeaderboardPage() {
                 {/* HYROX VIEW */}
                 {sport === 'hyrox' && (
                     <div className="animate-fadeIn">
-                        <div className="max-w-md mx-auto mb-8 px-2 flex justify-between items-end">
+                        <div className="max-w-md mx-auto mb-8 px-2 flex flex-col items-center text-center">
                             <h2 className="text-3xl font-black italic uppercase text-white tracking-tighter">Leaderboard</h2>
-                            <p className="text-[10px] font-black text-east-light uppercase tracking-widest mb-1 italic">World Ranking</p>
+                            <p className="text-[10px] font-black text-east-light uppercase tracking-widest italic mt-1">World Ranking</p>
                         </div>
 
                         <div className="flex justify-center gap-3 mb-10 overflow-x-auto no-scrollbar pb-2 px-2">
@@ -376,7 +376,7 @@ export default function LeaderboardPage() {
 
                         <div className="flex flex-col gap-3 max-w-md mx-auto">
                             {MOCK_HYROX.map((stat, i) => (
-                                <div key={stat.id} className="group relative flex items-center gap-4 p-6 rounded-2xl border border-white/5 bg-[#050505] hover:border-white/20 transition-all duration-500">
+                                <div key={stat.id} className="group relative flex items-center gap-4 p-4 rounded-2xl border border-white/5 bg-[#050505] hover:border-white/20 transition-all duration-500">
                                     <div className="w-10 font-black italic text-3xl text-white/10 group-hover:text-east-light transition-colors">{i + 1}</div>
                                     <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white/5 group-hover:border-east-light/50 transition-all shadow-2xl shrink-0">
                                         <img src={stat.avatar || "https://placehold.co/100"} className="w-full h-full object-cover" alt={stat.name} />
@@ -386,7 +386,7 @@ export default function LeaderboardPage() {
                                         <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic truncate">{stat.category}</p>
                                     </div>
                                     <div className="text-right pr-2 shrink-0">
-                                        <div className="font-black italic text-4xl text-east-light group-hover:scale-110 transition-transform duration-300">{stat.stats[hyroxFilter]}</div>
+                                        <div className="font-black italic text-3xl text-east-light group-hover:scale-110 transition-transform duration-300">{stat.stats[hyroxFilter]}</div>
                                         <div className="text-[8px] font-black text-gray-600 uppercase tracking-widest mt-1">TIME / REPS</div>
                                     </div>
                                 </div>
