@@ -215,46 +215,62 @@ function AppContent() {
     return () => clearTimeout(safetyTimeout);
   }, [refreshKey]);
 
-  // 2. Real-time Profile Listener
+  // 2. Real-time Profile Listener (Safe)
   useEffect(() => {
     if (!currentUserId) return;
 
     console.log("🚀 Initializing real-time profile listener for:", currentUserId);
+    let channel: any = null;
 
-    const channel = supabase
-      .channel(`profile-updates-${currentUserId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=eq.${currentUserId}`
-        },
-        (payload) => {
-          console.log('🔄 Profile update detected:', payload.new);
-          const newData = payload.new;
+    try {
+      channel = supabase
+        .channel(`profile-updates-${currentUserId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `id=eq.${currentUserId}`
+          },
+          (payload) => {
+            console.log('🔄 Profile update detected:', payload.new);
+            const newData = payload.new;
 
-          // Debug hook for Playwright
-          if (typeof window !== 'undefined') {
-            (window as any).lastProfileUpdate = newData;
-          }
+            // Debug hook for Playwright
+            if (typeof window !== 'undefined') {
+              (window as any).lastProfileUpdate = newData;
+            }
 
-          if (isWaitingForCreditsRef.current) {
-            console.log("💰 Webhook pulse detected while waiting for credits.");
-            setUserProfile(prev => {
-              // If credits increased, we're done waiting
-              if (newData.credits > prev.credits) {
-                console.log("✅ Credits confirmed! Clearing wait state.");
-                isWaitingForCreditsRef.current = false;
-                setIsProcessingPayment(false);
-                if (processingToastIdRef.current) {
-                  removeToast(processingToastIdRef.current);
-                  processingToastIdRef.current = null;
+            if (isWaitingForCreditsRef.current) {
+              console.log("💰 Webhook pulse detected while waiting for credits.");
+              setUserProfile(prev => {
+                // If credits increased, we're done waiting
+                if (newData.credits > prev.credits) {
+                  console.log("✅ Credits confirmed! Clearing wait state.");
+                  isWaitingForCreditsRef.current = false;
+                  setIsProcessingPayment(false);
+                  if (processingToastIdRef.current) {
+                    removeToast(processingToastIdRef.current);
+                    processingToastIdRef.current = null;
+                  }
+                  addToast("Credits Authenticated! You're ready to book.", "success");
                 }
-                addToast("Credits Authenticated! You're ready to book.", "success");
-              }
-              return {
+                return {
+                  ...prev,
+                  credits: newData.credits ?? prev.credits,
+                  subscription_status: newData.subscription_status ?? prev.subscription_status,
+                  account_status: newData.account_status ?? prev.account_status,
+                  membership_expires: newData.membership_expires ?? prev.membership_expires,
+                  role: newData.role ?? prev.role,
+                  first_name: newData.first_name ?? prev.first_name,
+                  last_name: newData.last_name ?? prev.last_name,
+                  name: newData.first_name ?? prev.name,
+                  surname: newData.last_name ?? prev.surname,
+                };
+              });
+            } else {
+              setUserProfile(prev => ({
                 ...prev,
                 credits: newData.credits ?? prev.credits,
                 subscription_status: newData.subscription_status ?? prev.subscription_status,
@@ -265,31 +281,23 @@ function AppContent() {
                 last_name: newData.last_name ?? prev.last_name,
                 name: newData.first_name ?? prev.name,
                 surname: newData.last_name ?? prev.surname,
-              };
-            });
-          } else {
-            setUserProfile(prev => ({
-              ...prev,
-              credits: newData.credits ?? prev.credits,
-              subscription_status: newData.subscription_status ?? prev.subscription_status,
-              account_status: newData.account_status ?? prev.account_status,
-              membership_expires: newData.membership_expires ?? prev.membership_expires,
-              role: newData.role ?? prev.role,
-              first_name: newData.first_name ?? prev.first_name,
-              last_name: newData.last_name ?? prev.last_name,
-              name: newData.first_name ?? prev.name,
-              surname: newData.last_name ?? prev.surname,
-            }));
+              }));
+            }
           }
-        }
-      )
-      .subscribe((status) => {
-        console.log(`📡 Real-time channel status for ${currentUserId}:`, status);
-      });
+        )
+        .subscribe((status) => {
+          console.log(`📡 Real-time channel status for ${currentUserId}:`, status);
+        });
+    } catch (e) {
+      console.warn("⚠️ WebSocket/Realtime initialization failed (insecure/blocked). Degrading gracefully to polling/manual refresh.", e);
+      // Do not crash the app. The user just loses instant credit updates.
+    }
 
     return () => {
-      console.log("🔌 Cleaning up profile listener");
-      supabase.removeChannel(channel);
+      if (channel) {
+        console.log("🔌 Cleaning up profile listener");
+        supabase.removeChannel(channel);
+      }
     };
   }, [currentUserId]);
 
