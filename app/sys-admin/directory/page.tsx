@@ -857,6 +857,27 @@ export default function DirectoryPage() {
                                     </div>
                                 )}
 
+                                {(editingUser.role === 'coach') && (
+                                    <div className="mb-4">
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Profile Picture URL</label>
+                                        <div className="flex gap-4">
+                                            <input
+                                                value={editingUser.avatar_url || ''}
+                                                onChange={e => setEditingUser({ ...editingUser, avatar_url: e.target.value })}
+                                                className="flex-1 bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                placeholder="https://..."
+                                            />
+                                            <div className="w-10 h-10 rounded-full border border-white/10 overflow-hidden bg-black/50 shrink-0">
+                                                {editingUser.avatar_url ? (
+                                                    <img src={editingUser.avatar_url} alt="Preview" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-700 text-[8px]">NONE</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Service Assignment for Coaches */}
                                 {editingUser.role === 'coach' && (
                                     <div className="border-t border-white/10 pt-4">
