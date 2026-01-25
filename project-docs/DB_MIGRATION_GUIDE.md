@@ -4,10 +4,14 @@
 On **January 24, 2026**, the project's primary Supabase database was migrated from the US West (Oregon) region to **Southeast Asia (Singapore)**.
 
 ## Rationale: Why Migrate?
-The primary driver for this migration was **latency reduction**.
-- **User Location**: As East App HK serves users primarily in Hong Kong, hosting the database in Oregon (US-West) introduced a minimum of 150-200ms of round-trip latency for every database query.
-- **Performance**: Moving to the Singapore region reduces this latency to ~30-50ms for users in Hong Kong, significantly improving the responsiveness of the application and the "snappiness" of the UI.
-- **Server Parity**: Aligning the database region with the target user base ensures better performance for real-time features and Edge Functions.
+The primary driver for this migration was **latency reduction** and resolving persistent **"Technical Fouls"**.
+
+- **Latency & Technical Fouls**: Hosting in Oregon (US-West) for a Hong Kong user base resulted in 150-200ms of base latency. This led to:
+    - **Request Timeouts**: Critical database operations intermittently timing out before completion.
+    - **Race Conditions**: High latency increased the "vulnerability window" for concurrent transactions, causing atomic operations to occasionally fail or result in inconsistent states.
+    - **Connection Instability**: Increased risk of dropped connections over the long geographic distance.
+- **User Location**: Aligning the database with the Southeast Asia region (Singapore) brings latency down to ~30ms, effectively eliminating these timeout-related "fouls".
+- **Performance**: Significant improvement in the "snappiness" of the UI and the reliability of real-time features.
 
 ## Migration Details
 - **Source Project**: `hxbsnplotkiohcbmvsjf` (Oregon)
