@@ -5,6 +5,7 @@ import { X, Share2, Send, CreditCard, AlertCircle, Check, ChevronLeft } from 'lu
 import { Session } from '@/app/types/session';
 import { supabase } from '@/app/lib/supabase';
 import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
+import { safeFetch } from '@/app/lib/apiUtils';
 import { useToast } from '@/app/components/ui/Toast';
 
 interface ClassModalProps {
@@ -15,12 +16,12 @@ interface ClassModalProps {
     onScheduleChange: () => void;
     onShare?: (session: Session) => void;
     initialAttendeeId?: string | null;
-    origin?: 'facilities' | 'coaches'; // NEW
+    origin?: 'facilities' | 'coaches';
     coachBio?: string;
     coachName?: string;
     initialSessionId?: number;
     serviceDescription?: string | null;
-    serviceId?: string | null; // NEW
+    serviceId?: string | null;
     subscriptionStatus?: string;
     accountStatus?: string;
     role?: string;
@@ -48,6 +49,7 @@ export default function ClassModal({
     const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
     const [showTopUp, setShowTopUp] = useState(false);
     const [myChildren, setMyChildren] = useState<{ id: string; first_name: string; last_name: string; role: string }[]>([]);
+
     // Multi-Select State
     const [selectedAttendeeIds, setSelectedAttendeeIds] = useState<string[]>([]);
     // Facility Date Filter State
@@ -79,7 +81,6 @@ export default function ClassModal({
     // Set initial selection
     useEffect(() => {
         if (currentUserId && selectedAttendeeIds.length === 0) {
-            // If passed an initial ID, use it. Else default to JUST the parent (safe default).
             if (initialAttendeeId) {
                 setSelectedAttendeeIds([initialAttendeeId]);
             } else {
@@ -102,13 +103,12 @@ export default function ClassModal({
     const isNews = displaySession.category === 'NEWS';
     const isPrivate = displaySession.category === 'PRIVATE';
 
-    // Normalize Instructor Names: collapse whitespace, trim, lowercase
+    // Normalize Instructor Names
     const normalize = (name: string) => name?.replace(/\s+/g, ' ').trim().toLowerCase() || '';
 
     // Helpers
     const selectedSession = sessions.find(s => s.id === selectedSessionId);
     const creditCostPerPerson = selectedSession ? selectedSession.credit_cost || 10 : 10;
-
 
     const [allowedCoaches, setAllowedCoaches] = useState<string[] | null>(null);
 
@@ -119,7 +119,6 @@ export default function ClassModal({
                 setAllowedCoaches(null);
                 return;
             }
-
             // 1. Get coach IDs assigned to this service
             const { data: assignments } = await supabase
                 .from('coach_services')
@@ -127,7 +126,6 @@ export default function ClassModal({
                 .eq('session_type_id', serviceId);
 
             if (!assignments || assignments.length === 0) {
-                // If defined service but no coaches, assume strict 0.
                 setAllowedCoaches([]);
                 return;
             }
@@ -148,13 +146,12 @@ export default function ClassModal({
                 setAllowedCoaches(names);
             }
         }
-
         fetchAllowedCoaches();
     }, [serviceId]);
 
     // Filter sessions by allowed coaches first
     const visibleSessions = sessions.filter(s => {
-        if (!allowedCoaches) return true; // No strict filter active
+        if (!allowedCoaches) return true;
         if (!s.instructor) return false;
         return allowedCoaches.includes(normalize(s.instructor));
     });
@@ -163,12 +160,11 @@ export default function ClassModal({
     const uniqueInstructors = new Set(visibleSessions.map(s => normalize(s.instructor)));
     const isCoachView = uniqueInstructors.size === 1 && uniqueTitles.size > 1;
 
-    // Dynamic Header Logic (Gradient Bar)
+    // Dynamic Header Logic
     let modalHeaderTitle = filterTitle || (selectedSession?.title) || displaySession.title;
     if (origin === 'coaches' && coachName && !filterTitle) {
         modalHeaderTitle = coachName;
     }
-
     if (showTopUp) {
         modalHeaderTitle = "TOP UP NEEDED";
     }
@@ -182,11 +178,9 @@ export default function ClassModal({
         }
     }, [visibleSessions, initialSessionId]);
 
-    // Check who is ALREADY booked for the SELECTED session
-    // bookedSessions contains objects with session details AND attendee details (from my-schedule API)
+    // Check who is ALREADY booked
     const getBookedStatus = (attendeeId: string) => {
         if (!selectedSessionId) return false;
-        // Check if there is a booking matching this session AND this attendee
         return bookedSessions.some(
             booking => booking.id === selectedSessionId && booking.attendee?.id === attendeeId
         );
@@ -194,11 +188,6 @@ export default function ClassModal({
 
     // Derived State
     const totalCost = (selectedAttendeeIds.length * creditCostPerPerson);
-
-    // Are ALL selected attendees already booked? if so, show "Manage" or "Cancel"
-    // Usually if you select multiple, some might be booked, some not.
-    // If ANY selected is NOT booked, show BOOK button for them.
-    // If ALL selected are booked, show CANCEL button.
     const allSelectedAreBooked = selectedAttendeeIds.length > 0 && selectedAttendeeIds.every(id => getBookedStatus(id));
 
     const filteredSessions = visibleSessions.filter(s =>
@@ -206,20 +195,15 @@ export default function ClassModal({
         (!filterTitle || s.title === filterTitle)
     );
 
+    // View Mode Effect
     useEffect(() => {
         if (!sessions || sessions.length === 0) return;
-
-        // Normalize Instructor Names: collapse whitespace and trim
         const normalize = (name: string) => name?.replace(/\s+/g, ' ').trim() || '';
 
         const uniqueInstructorsSet = new Set(
-            sessions
-                .filter(s => !!s.instructor)
-                .map(s => normalize(s.instructor))
+            sessions.filter(s => !!s.instructor).map(s => normalize(s.instructor))
         );
-        const uniqueTitlesSet = new Set(sessions.map(s => s.title));
 
-        // If we arrived with a specific session (e.g. from calendar), jump straight to it
         if (initialSessionId) {
             setViewMode('SESSION_SELECT');
             return;
@@ -251,7 +235,6 @@ export default function ClassModal({
     const toggleAttendee = (id: string) => {
         setSelectedAttendeeIds(prev => {
             if (prev.includes(id)) {
-                // Don't allow deselecting everything? Or allow it? allow it.
                 return prev.filter(x => x !== id);
             } else {
                 return [...prev, id];
@@ -263,7 +246,6 @@ export default function ClassModal({
     const handleBookSession = async () => {
         if (!selectedSessionId || isNews || !currentUserId || selectedAttendeeIds.length === 0) return;
 
-        // CHECK LOCKED STATUS
         const isSubscriber = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
         const isManuallyActive = accountStatus === 'active';
         const isUnlocked = isSubscriber || isManuallyActive;
@@ -275,7 +257,6 @@ export default function ClassModal({
             return;
         }
 
-        // Filter out those who are already booked to avoid double booking error noise
         const attendeesToBook = selectedAttendeeIds.filter(id => !getBookedStatus(id));
 
         if (attendeesToBook.length === 0) {
@@ -285,11 +266,10 @@ export default function ClassModal({
 
         setIsProcessing(true);
         try {
-            // Get Auth Token for Security
             const { data: { session } } = await supabase.auth.getSession();
             const token = session?.access_token;
 
-            const res = await fetch('/api/sessions/book', {
+            const res = await safeFetch('/api/sessions/book', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -298,33 +278,29 @@ export default function ClassModal({
                 body: JSON.stringify({
                     userId: currentUserId,
                     sessionId: selectedSessionId,
-                    attendeeIds: attendeesToBook, // Send Array
-                    coachId: null, // Removed feature
-                    origin: origin // Pass origin to backend
+                    attendeeIds: attendeesToBook,
+                    coachId: null,
+                    origin: origin
                 })
             });
-            const data = await res.json();
+
             setIsProcessing(false);
 
-            if (!res.ok) {
-                if (data.error && data.error.includes('Insufficient credits')) {
+            if (!res.success) {
+                const errorMsg = res.error || 'Unknown error';
+                if (errorMsg.includes('Insufficient credits')) {
                     setShowTopUp(true);
                     return;
                 }
-
-                // NEW: Handle Locked/Inactive Subscription
-                if (data.code === 'SUBSCRIPTION_LOCKED' || (data.error && data.error.includes('Account Locked'))) {
+                if (errorMsg.includes('Account Locked')) {
                     addToast("Account Locked: active subscription required.", "error");
                     return;
                 }
-
-                addToast(data.error || 'A critical error occurred.', 'error');
+                addToast(errorMsg, 'error');
                 return;
             }
 
-            // Success
-            // data.message might say "Booked 2 session(s)"
-            addToast(data.message || `Success! Session booked.`, 'success');
+            addToast(res.data.message || `Success! Session booked.`, 'success');
             if (onScheduleChange) onScheduleChange();
             onClose();
         } catch (error: any) {
@@ -339,15 +315,8 @@ export default function ClassModal({
         setIsProcessing(true);
         try {
             const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP;
-            console.log("DEBUG: Env Var Value:", priceId);
             if (!priceId) {
-                addToast("CRITICAL ERROR: Limit Reached. (Missing TopUp Price ID)", "error");
-                setIsProcessing(false);
-                return;
-            }
-            console.log("DEBUG: Using Price ID:", priceId);
-            if (!priceId) {
-                addToast('Top Up not configured', 'error');
+                addToast("Top Up not configured", "error");
                 setIsProcessing(false);
                 return;
             }
@@ -356,17 +325,16 @@ export default function ClassModal({
             const { data: { user } } = await supabase.auth.getUser();
             const email = profile?.contact_email || user?.email;
 
-            const res = await fetch('/api/checkout', {
+            const res = await safeFetch('/api/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ priceId, userId: currentUserId, userEmail: email })
             });
 
-            const data = await res.json();
-            if (data.url) {
-                window.location.href = data.url;
+            if (res.success && res.data.url) {
+                window.location.href = res.data.url;
             } else {
-                addToast(`Checkout Failed: ${data.error || 'Unknown error'}`, 'error');
+                addToast(`Checkout Failed: ${res.error || 'Unknown error'}`, 'error');
                 setIsProcessing(false);
             }
         } catch (e) {
@@ -376,46 +344,25 @@ export default function ClassModal({
         }
     };
 
-    // Cancel logic 
-    // If multiple are selected, cancel all of them? Or just warn?
-    // Let's iterate.
+    // Cancel logic
     const handleCancelSession = async () => {
         if (!selectedSessionId || isNews || !currentUserId || selectedAttendeeIds.length === 0) return;
         setIsProcessing(true);
 
-        // We need to call cancel for EACH selected attendee
-        // Current cancel API might not support batch? 
-        // Let's assume loop for now or batch if API supports. 
-        // The API we have is /api/sessions/cancel -> { userId, sessionId }
-        // BUT my updated schema uses `cancel_session_and_refund(attendee_id, session_id)`.
-        // The API likely calls this.
-        // Let's check API. If it takes `userId` as param which is used as attendee, we need to loop.
-
-        /* 
-           NOTE: Since I haven't updated the cancel API route to handle array, I'll loop frontend side.
-           Wait, I need to check the cancel route.
-           Given I can't check it right now without interrupting, I'll assume standard loop is safer.
-        */
-
         let successCount = 0;
         for (const attendeeId of selectedAttendeeIds) {
-            // Only cancel if booked
             if (getBookedStatus(attendeeId)) {
                 try {
-                    console.log(`[CANCEL REQUEST] Sending DELETE for User ${attendeeId}, Session ${selectedSessionId}`);
-                    const res = await fetch('/api/sessions/cancel', {
+                    const res = await safeFetch('/api/sessions/cancel', {
                         method: 'DELETE',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ userId: attendeeId, sessionId: selectedSessionId })
                     });
-                    const data = await res.json();
-                    console.log(`[CANCEL RESPONSE] Status: ${res.status}, Success: ${data.success}, Error: ${data.error}`);
 
-                    if (res.ok && data.success) {
+                    if (res.success && res.data.success) {
                         successCount++;
                     } else {
-                        console.error(`[CANCEL ERROR] User ${attendeeId}:`, data.error || data.message);
-                        addToast(`Failed to cancel: ${data.error || data.message}`, "error");
+                        addToast(`Failed to cancel: ${res.error || res.data?.message}`, "error");
                     }
                 } catch (e) {
                     console.error(e);
@@ -466,8 +413,6 @@ export default function ClassModal({
         }
     }, [selectedSessionId]);
 
-
-
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn overscroll-y-none">
             <div className="w-full max-w-sm bg-white rounded-3xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl relative">
@@ -513,7 +458,6 @@ export default function ClassModal({
 
                                     <div className="grid grid-cols-3 gap-3">
                                         {Array.from(uniqueInstructors).filter(i => !!i).map(instructorName => {
-                                            // Find a session example to get the image
                                             const exampleSession = sessions.find(s => s.instructor === instructorName);
                                             const imgUrl = exampleSession?.coach_image_url || exampleSession?.image_url;
 
@@ -601,7 +545,7 @@ export default function ClassModal({
                                         </p>
                                     )}
 
-                                    {/* Coach Bio or Description */}
+                                    {/* Coach Bio */}
                                     {origin === 'coaches' && coachBio ? (
                                         <div className="mb-6">
                                             <p className="font-opensans text-xs font-bold leading-relaxed text-gray-800 italic">"{coachBio}"</p>
@@ -612,10 +556,7 @@ export default function ClassModal({
                                         </p>
                                     )}
 
-                                    {/* Image (Only show if NOT manually filtered, OR if layout demands it. 
-                                        If we filtered by instructor, user just saw the face. Maybe skip large hero image to save space?
-                                        Let's keep it for context if it's the specific session image) 
-                                    */}
+                                    {/* Image */}
                                     {(!filterInstructor || filterTitle) && (displaySession.image_url || displaySession.coach_image_url) && (
                                         <div className="w-full aspect-video rounded-xl overflow-hidden bg-gray-100 mb-6 shadow-inner border border-gray-200">
                                             <img
@@ -626,7 +567,7 @@ export default function ClassModal({
                                         </div>
                                     )}
 
-                                    {/* ATTENDEE SELECTOR (Multi-Select) */}
+                                    {/* ATTENDEE SELECTOR */}
                                     {myChildren.length > 0 && (
                                         <div className="mb-6">
                                             <p className="font-montserrat font-bold text-[10px] mb-2 uppercase text-gray-400">WHO IS ATTENDING?</p>
@@ -653,7 +594,6 @@ export default function ClassModal({
                                                                 </div>
                                                                 <span className="text-xs font-bold uppercase">{person.name}</span>
                                                             </div>
-
                                                             {isAlreadyBooked && (
                                                                 <span className="text-[10px] font-black italic text-green-500 uppercase tracking-wide">BOOKED</span>
                                                             )}
@@ -664,7 +604,7 @@ export default function ClassModal({
                                         </div>
                                     )}
 
-                                    {/* Session Times (Date Picker for FACILITIES, List for Others) */}
+                                    {/* Session Times */}
                                     {!isNews && (
                                         <div className="mb-6">
                                             <p className="font-montserrat font-bold text-[10px] mb-2 uppercase text-gray-400">
@@ -674,29 +614,22 @@ export default function ClassModal({
                                             {/* FACILITY: DATE PICKER UI */}
                                             {displaySession.category === 'FACILITY' ? (
                                                 <div className="flex flex-col gap-4">
-                                                    {/* Date Tabs (Next 7 Days) */}
+                                                    {/* Date Tabs */}
                                                     <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
                                                         {Array.from(new Set(filteredSessions.map(s => {
                                                             const d = safeDate(s.start_time);
                                                             return d ? d.toISOString().split('T')[0] : '';
                                                         }).filter(d => !!d))).slice(0, 7).map((dateISO) => {
-                                                            // dateISO is YYYY-MM-DD
-                                                            // We construct 'YYYY-MM-DDT00:00:00' to avoid timezone shifts if just date()
-                                                            const dateObj = new Date(`${dateISO}T00:00:00`);
-
-                                                            // Check if there are any slots on this day
+                                                            const dateObj = safeDate(`${dateISO}T00:00:00`);
+                                                            if (!dateObj) return null;
                                                             const daySessions = filteredSessions.filter(s => {
                                                                 const d = safeDate(s.start_time);
                                                                 return d && d.toISOString().split('T')[0] === dateISO;
                                                             });
-
                                                             if (daySessions.length === 0) return null;
-
-                                                            // Determine currently viewed date
                                                             const currentSession = sessions.find(s => s.id === selectedSessionId);
                                                             const currentD = currentSession ? safeDate(currentSession.start_time) : safeDate(filteredSessions[0]?.start_time);
                                                             const currentViewISO = currentD ? currentD.toISOString().split('T')[0] : '';
-
                                                             const isSelectedDate = currentViewISO === dateISO;
 
                                                             return (
@@ -704,9 +637,7 @@ export default function ClassModal({
                                                                     key={dateISO}
                                                                     onClick={() => {
                                                                         const firstSessionOfThisDay = daySessions[0];
-                                                                        if (firstSessionOfThisDay) {
-                                                                            setSelectedSessionId(firstSessionOfThisDay.id);
-                                                                        }
+                                                                        if (firstSessionOfThisDay) setSelectedSessionId(firstSessionOfThisDay.id);
                                                                     }}
                                                                     className={`min-w-[60px] p-2 rounded-xl flex flex-col items-center border transition-all ${isSelectedDate
                                                                         ? 'bg-east-light border-east-light shadow-md'
@@ -721,28 +652,20 @@ export default function ClassModal({
                                                     </div>
 
                                                     <div className="flex flex-col gap-4">
-                                                        {/* Group sessions by Date */}
                                                         {Array.from(new Set(filteredSessions.map(s => {
                                                             const d = safeDate(s.start_time);
                                                             return d ? d.toISOString().split('T')[0] : '';
                                                         }).filter(d => !!d))).slice(0, 7).map(dateISO => {
-
-                                                            // Filter for this date
                                                             const daySessions = filteredSessions.filter(s => {
                                                                 const d = safeDate(s.start_time);
                                                                 return d && d.toISOString().split('T')[0] === dateISO;
                                                             });
-
                                                             if (daySessions.length === 0) return null;
-
-                                                            // Determine currently viewed date
                                                             const currentSession = sessions.find(s => s.id === selectedSessionId);
                                                             const currentD = currentSession ? safeDate(currentSession.start_time) : safeDate(filteredSessions[0]?.start_time);
                                                             const currentViewISO = currentD ? currentD.toISOString().split('T')[0] : '';
-
                                                             if (dateISO !== currentViewISO) return null;
-
-                                                            const displayDateObj = new Date(`${dateISO}T00:00:00`);
+                                                            const displayDateObj = safeDate(`${dateISO}T00:00:00`);
 
                                                             return (
                                                                 <div key={dateISO}>
@@ -775,42 +698,41 @@ export default function ClassModal({
                                                     </div>
                                                 </div>
                                             ) : (
-                                                /* NORMAL LIST (Classes / Private) - FILTERED BY INSTRUCTOR */
+                                                /* NORMAL LIST (Classes / Private) */
                                                 <div className="flex flex-col gap-2">
-                                                    {filteredSessions
-                                                        .map((sess) => {
-                                                            const isSelected = selectedSessionId === sess.id;
-                                                            const dateObj = new Date(sess.start_time);
-                                                            const sessionCost = (sess as any).credit_cost || 10;
+                                                    {filteredSessions.map((sess) => {
+                                                        const isSelected = selectedSessionId === sess.id;
+                                                        const dateObj = safeDate(sess.start_time);
+                                                        if (!dateObj) return null;
+                                                        const sessionCost = (sess as any).credit_cost || 10;
+                                                        const myBookingsAtTime = bookedSessions.filter(b => {
+                                                            const bd = safeDate(b.start_time);
+                                                            return bd && bd.getTime() === dateObj.getTime();
+                                                        });
+                                                        const isBooked = myBookingsAtTime.some(b => b.id === sess.id);
+                                                        const totalPaid = myBookingsAtTime.reduce((sum, b) => sum + (b.credit_cost || 0), 0);
 
-                                                            // Check for "Total Paid" logic (Facility + Coach)
-                                                            // Find all my bookings that start at this EXACT time
-                                                            const myBookingsAtTime = bookedSessions.filter(b => new Date(b.start_time).getTime() === dateObj.getTime());
-                                                            const isBooked = myBookingsAtTime.some(b => b.id === sess.id);
-                                                            const totalPaid = myBookingsAtTime.reduce((sum, b) => sum + (b.credit_cost || 0), 0);
-
-                                                            return (
-                                                                <button key={sess.id} onClick={() => setSelectedSessionId(sess.id)} className={`w-full py-3 px-4 rounded-lg border transition-all relative flex items-center justify-between ${isSelected ? 'bg-east-light text-black border-east-light shadow-md scale-[1.01]' : 'bg-white text-gray-600 border-gray-300 hover:border-east-light hover:text-black'}`}>
-                                                                    <div className="flex flex-col items-start">
-                                                                        {!filterInstructor && uniqueInstructors.size > 1 && (
-                                                                            <span className="font-black italic uppercase text-xs text-east-dark mb-0.5">{sess.instructor}</span>
-                                                                        )}
-                                                                        {isPrivate && isCoachView && <span className="font-black italic uppercase text-xs text-east-dark mb-0.5">{sess.title}</span>}
-                                                                        <span className="font-bold uppercase text-xs tracking-wide">
-                                                                            {dateObj.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} <span className="mx-1 opacity-50">@</span> {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(/^0/, '')}
-                                                                        </span>
-                                                                    </div>
-                                                                    <span className={`text-xs font-bold ${isSelected ? 'text-black' : (isBooked ? 'text-green-600' : 'text-east-dark')}`}>
-                                                                        {isBooked ? `PAID: ${totalPaid}` : `${sessionCost} Credits`}
+                                                        return (
+                                                            <button key={sess.id} onClick={() => setSelectedSessionId(sess.id)} className={`w-full py-3 px-4 rounded-lg border transition-all relative flex items-center justify-between ${isSelected ? 'bg-east-light text-black border-east-light shadow-md scale-[1.01]' : 'bg-white text-gray-600 border-gray-300 hover:border-east-light hover:text-black'}`}>
+                                                                <div className="flex flex-col items-start">
+                                                                    {!filterInstructor && uniqueInstructors.size > 1 && (
+                                                                        <span className="font-black italic uppercase text-xs text-east-dark mb-0.5">{sess.instructor}</span>
+                                                                    )}
+                                                                    {isPrivate && isCoachView && <span className="font-black italic uppercase text-xs text-east-dark mb-0.5">{sess.title}</span>}
+                                                                    <span className="font-bold uppercase text-xs tracking-wide">
+                                                                        {safetoLocaleDateString(dateObj, 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })} <span className="mx-1 opacity-50">@</span> {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(/^0/, '')}
                                                                     </span>
-                                                                </button>
-                                                            );
-                                                        })}
+                                                                </div>
+                                                                <span className={`text-xs font-bold ${isSelected ? 'text-black' : (isBooked ? 'text-green-600' : 'text-east-dark')}`}>
+                                                                    {isBooked ? `PAID: ${totalPaid}` : `${sessionCost} Credits`}
+                                                                </span>
+                                                            </button>
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </div>
                                     )}
-
 
                                 </div>
 
@@ -846,6 +768,6 @@ export default function ClassModal({
                     </>
                 )}
             </div>
-        </div>
+        </div >
     );
 }

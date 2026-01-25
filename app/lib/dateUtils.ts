@@ -1,93 +1,94 @@
-import { format, toZonedTime } from 'date-fns-tz';
 
-const HK_TIMEZONE = 'Asia/Hong_Kong';
+import { format, parseISO, isValid } from 'date-fns';
 
 /**
- * Safely parses a date string that might be in SQL format (YYYY-MM-DD HH:MM:SS)
- * or ISO format. Handles Safari's strict parsing requirements.
+ * Safely parses a date string, handling iOS/Safari specific format issues.
+ * Replaces space separators with 'T' for ISO-8601 compliance.
+ * 
+ * @param dateString The date string to parse
+ * @returns A Date object, or null if invalid
  */
-export function safeDate(dateInput: string | number | Date | null | undefined): Date | null {
-    if (!dateInput && dateInput !== 0) return null;
-    if (dateInput instanceof Date) return isNaN(dateInput.getTime()) ? null : dateInput;
+export function safeDate(dateString: string | null | undefined): Date | null {
+    if (!dateString) return null;
 
-    let d: Date;
-    if (typeof dateInput === 'number') {
-        d = new Date(dateInput);
-    } else {
-        let dateStr = dateInput as string;
-        // Fix SQL format "2023-01-01 10:00:00" -> "2023-01-01T10:00:00"
-        if (dateStr.includes(' ') && !dateStr.includes('T')) {
-            dateStr = dateStr.replace(' ', 'T');
-        }
-        d = new Date(dateStr);
+    // Fix "YYYY-MM-DD HH:mm:ss" format for Safari which demands "YYYY-MM-DDTHH:mm:ss"
+    let cleanString = dateString.trim();
+
+    // Check if it matches approximate SQL timestamp format "YYYY-MM-DD HH:..."
+    if (/^\d{4}-\d{2}-\d{2}\s\d{2}:/.test(cleanString)) {
+        cleanString = cleanString.replace(' ', 'T');
     }
 
-    return isNaN(d.getTime()) ? null : d;
+    const parsed = new Date(cleanString);
+
+    // If native parsing fails, try date-fns parseISO which is more robust
+    if (!isValid(parsed)) {
+        try {
+            const isoParsed = parseISO(cleanString);
+            if (isValid(isoParsed)) return isoParsed;
+        } catch (e) {
+            console.warn("safeDate: Failed to parse", dateString);
+        }
+        return null; // Return null instead of Invalid Date to allow checks
+    }
+
+    return parsed;
 }
 
 /**
- * Gets the current time in Hong Kong
+ * Safely formats a date, returning a fallback string on error instead of throwing.
+ * 
+ * @param date The date to format (Date object or string)
+ * @param formatStr The date-fns format string
+ * @param fallback Fallback string if parsing fails
  */
-export function getNowHK(): Date {
-    return toZonedTime(new Date(), HK_TIMEZONE);
-}
+export function formatDateSafe(
+    date: string | Date | null | undefined,
+    formatStr: string = 'PP',
+    fallback: string = 'Invalid Date'
+): string {
+    if (!date) return fallback;
 
-/**
- * Converts a UTC date to Hong Kong time
- */
-export function toHKTime(date: Date | string | number | null | undefined): Date {
-    const d = safeDate(date) || new Date();
-    return toZonedTime(d, HK_TIMEZONE);
-}
+    const dateObj = typeof date === 'string' ? safeDate(date) : date;
 
-/**
- * Formats a date for Hong Kong display
- * Default: 'h:mm aa' (e.g., 2:30 PM)
- */
-export function formatHK(date: Date | string | number | null | undefined, pattern: string = 'h:mm aa'): string {
-    const zonedDate = toHKTime(date);
-    return format(zonedDate, pattern, { timeZone: HK_TIMEZONE });
-}
+    if (!dateObj || !isValid(dateObj)) {
+        return fallback;
+    }
 
-/**
- * Formats a date for Audit Logs in Hong Kong
- * Format: 'yyyy-MM-dd HH:mm:ss'
- */
-export function formatAuditHK(date: Date | string | number | null | undefined): string {
-    return formatHK(date, 'yyyy-MM-dd HH:mm:ss');
-}
-
-/**
- * Formats a date for readable session display
- */
-export function formatSessionHK(date: Date | string | number | null | undefined): string {
-    return formatHK(date, 'EEEE, MMM do @ h:mm aa');
-}
-
-export function safeISO(dateInput: string | number | Date | null | undefined): string {
-    const d = safeDate(dateInput);
-    if (!d) return '';
-    return d.toISOString();
-}
-
-/**
- * Returns YYYY-MM-DD for input[type="date"]
- */
-export function safeDateFiles(dateInput: string | number | Date | null | undefined): string {
-    const d = safeDate(dateInput);
-    if (!d) return '';
-    return d.toISOString().split('T')[0];
-}
-
-/**
- * Safe wrapper for toLocaleDateString
- */
-export function safetoLocaleDateString(dateInput: string | number | Date | null | undefined, locale?: string | string[], options?: Intl.DateTimeFormatOptions): string {
-    const d = safeDate(dateInput);
-    if (!d) return 'N/A';
     try {
-        return d.toLocaleDateString(locale, options);
-    } catch (e) {
-        return 'Invalid Date';
+        return format(dateObj, formatStr);
+    } catch (error) {
+        console.warn(`formatDateSafe: Error formatting date`, error);
+        return fallback;
+    }
+}
+
+/**
+ * Safely formats a date using toLocaleDateString, handling invalid inputs gracefully.
+ * 
+ * @param date The date to format (Date object, string, or null/undefined)
+ * @param locales Optional locales argument for toLocaleDateString
+ * @param options Optional options argument for toLocaleDateString
+ * @param fallback Fallback string if parsing fails (default: '')
+ */
+export function safetoLocaleDateString(
+    date: string | Date | null | undefined,
+    locales?: string | string[],
+    options?: Intl.DateTimeFormatOptions,
+    fallback: string = ''
+): string {
+    if (!date) return fallback;
+
+    const dateObj = typeof date === 'string' ? safeDate(date) : date;
+
+    if (!dateObj || !isValid(dateObj)) {
+        return fallback;
+    }
+
+    try {
+        return dateObj.toLocaleDateString(locales, options);
+    } catch (error) {
+        console.warn(`safetoLocaleDateString: Error formatting date`, error);
+        return fallback;
     }
 }

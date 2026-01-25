@@ -1,8 +1,11 @@
+// app/components/screens/CoachDashboard.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send } from 'lucide-react';
+import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
+import { safeFetch } from '@/app/lib/apiUtils'; // NEW
 
 interface Attendee {
     id: string;
@@ -48,19 +51,18 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
         try {
             setRefreshing(true);
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
+            const token = session?.access_token;
 
-            const res = await fetch('/api/coach/master-schedule', {
+            const res = await safeFetch('/api/coach/master-schedule', {
                 headers: {
-                    'Authorization': `Bearer ${session.access_token}`
+                    'Authorization': token ? `Bearer ${token}` : ''
                 }
             });
 
-            if (res.ok) {
-                const data = await res.json();
-                setAllSessions(data);
+            if (res.success) {
+                setAllSessions(res.data);
             } else {
-                console.error("Failed to fetch schedule");
+                console.error("Failed to fetch schedule", res.error);
             }
         } catch (e) {
             console.error(e);
@@ -118,13 +120,14 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
         setExistingNotes([]);
         // Fetch notes
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-        const res = await fetch(`/api/coach/notes?playerId=${attendee.id}`, {
-            headers: { 'Authorization': `Bearer ${session.access_token}` }
+        const token = session?.access_token;
+
+        const res = await safeFetch(`/api/coach/notes?playerId=${attendee.id}`, {
+            headers: { 'Authorization': token ? `Bearer ${token}` : '' }
         });
-        if (res.ok) {
-            const data = await res.json();
-            setExistingNotes(data);
+
+        if (res.success) {
+            setExistingNotes(res.data);
         }
     };
 
@@ -132,16 +135,18 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
         if (!selectedAttendeeForNote || !noteContent.trim()) return;
         setSavingNote(true);
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) return;
-        const res = await fetch('/api/coach/notes', {
+        const token = session?.access_token;
+
+        const res = await safeFetch('/api/coach/notes', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${session.access_token}`,
+                'Authorization': token ? `Bearer ${token}` : '',
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ playerId: selectedAttendeeForNote.id, content: noteContent })
         });
-        if (res.ok) {
+
+        if (res.success) {
             setNoteContent('');
             openNoteModal(selectedAttendeeForNote); // Refresh list
         }
@@ -155,7 +160,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
 
     // Helper to group by date
     const groupedSessions = filteredSessions.reduce((acc, session) => {
-        const dateKey = new Date(session.start_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+        const dateKey = safetoLocaleDateString(safeDate(session.start_time), undefined, { weekday: 'short', month: 'short', day: 'numeric' });
         if (!acc[dateKey]) acc[dateKey] = [];
         acc[dateKey].push(session);
         return acc;
@@ -199,7 +204,14 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                         <span className="text-xl font-black italic text-[#28D160] leading-none">
                             {allSessions
                                 .filter(s => s.type === 'slot' && s.coach_id === currentUserId)
-                                .reduce((acc, curr) => acc + (new Date(curr.end_time).getTime() - new Date(curr.start_time).getTime()) / (1000 * 60 * 60), 0)
+                                .reduce((acc, curr) => {
+                                    const end = safeDate(curr.end_time);
+                                    const start = safeDate(curr.start_time);
+                                    if (end && start) {
+                                        return acc + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+                                    }
+                                    return acc;
+                                }, 0)
                                 .toFixed(1)} <span className="text-xs text-gray-600 not-italic">HRS</span>
                         </span>
                     </div>
@@ -284,9 +296,9 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
 
                                             {/* Time Column */}
                                             <div className="flex flex-col items-center justify-center min-w-[60px] border-r border-white/5 pr-4">
-                                                <span className="text-lg font-black italic leading-none">{new Date(session.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(' ', '').toLowerCase()}</span>
+                                                <span className="text-lg font-black italic leading-none">{safeDate(session.start_time)?.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(' ', '').toLowerCase()}</span>
                                                 <span className="text-[9px] font-bold text-gray-600 uppercase mt-1">
-                                                    {Math.round((new Date(session.end_time).getTime() - new Date(session.start_time).getTime()) / 60000)} MIN
+                                                    {Math.round(((safeDate(session.end_time)?.getTime() || 0) - (safeDate(session.start_time)?.getTime() || 0)) / 60000)} MIN
                                                 </span>
                                             </div>
 
@@ -416,10 +428,10 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                     <div key={note.id} className="bg-white/5 rounded-2xl p-4 border border-white/5 animate-slideDown">
                                         <div className="flex justify-between items-center mb-2">
                                             <span className="text-[8px] font-black text-east-light uppercase tracking-tighter">
-                                                {new Date(note.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                {safetoLocaleDateString(safeDate(note.created_at), [], { month: 'short', day: 'numeric', year: 'numeric' })}
                                             </span>
                                             <span className="text-[8px] font-bold text-gray-600 uppercase">
-                                                {new Date(note.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {safeDate(note.created_at)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
                                         <p className="text-xs text-white/90 leading-relaxed font-medium">{note.content}</p>

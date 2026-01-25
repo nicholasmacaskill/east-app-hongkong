@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { ArrowLeft, Plus, Edit2, Trash2, Calendar, Newspaper, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { safeDateFiles, safetoLocaleDateString } from '@/app/lib/dateUtils';
+import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
 
 type Announcement = {
     id: string;
@@ -160,7 +160,7 @@ export default function NewsManagementPage() {
             content: item.content,
             type: item.type,
             published: item.published,
-            event_date: safeDateFiles(item.event_date),
+            event_date: item.event_date ? safeDate(item.event_date)?.toISOString().split('T')[0] || '' : '',
             image_url: item.image_url || ''
         });
         setShowModal(true);

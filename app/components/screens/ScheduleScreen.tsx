@@ -16,6 +16,7 @@ import {
   isBefore,
   isAfter
 } from 'date-fns';
+import { safeFetch } from '@/app/lib/apiUtils'; // NEW
 
 export default function ScheduleScreen({
   onPreviewClick,
@@ -59,15 +60,21 @@ export default function ScheduleScreen({
     }
   };
 
-  const loadSchedule = useCallback(() => {
+
+
+  // ...
+
+  const loadSchedule = useCallback(async () => {
     if (!currentUserId) return;
     setLoading(true);
 
-    fetch(`/api/my-schedule?userId=${currentUserId}`)
-      .then(res => res.json())
-      .then(data => { if (Array.isArray(data)) setMySchedule(data); })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    const res = await safeFetch(`/api/my-schedule?userId=${currentUserId}`);
+    if (res.success) {
+      if (Array.isArray(res.data)) setMySchedule(res.data);
+    } else {
+      console.error(res.error);
+    }
+    setLoading(false);
   }, [currentUserId]);
 
   useEffect(() => { loadSchedule(); }, [loadSchedule, refreshKey]);

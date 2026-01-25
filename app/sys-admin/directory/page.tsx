@@ -7,7 +7,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { UserRole } from '@/app/types';
 import AvailabilityModal from '../coaches/AvailabilityModal';
 import { useToast } from '@/app/components/ui/Toast';
-import { safeDate, safeDateFiles, safetoLocaleDateString } from '@/app/lib/dateUtils';
+import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
 
 export default function DirectoryPage() {
     const [profiles, setProfiles] = useState<any[]>([]);
@@ -140,8 +140,8 @@ export default function DirectoryPage() {
             parentId: profile.parent_id || '',
             mobile: profile.mobile || '',
             bio: profile.bio || '',
-            membershipStart: safeDateFiles(profile.membership_start),
-            membershipExpires: safeDateFiles(profile.membership_expires),
+            membershipStart: safeDate(profile.membership_start),
+            membershipExpires: safeDate(profile.membership_expires),
             membershipHistory: profile.membership_history || []
         });
 

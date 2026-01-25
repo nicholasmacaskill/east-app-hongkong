@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { sendEmail } from '@/app/lib/email';
-import { formatHK } from '@/app/lib/dateUtils';
+import { safetoLocaleDateString } from '@/app/lib/dateUtils';
 
 // This route checks for sessions starting in ~1 hour and emails attendees
 export async function GET() {
@@ -52,7 +52,7 @@ export async function GET() {
         html: `
           <p>Hi ${userProfile.first_name || 'Member'},</p>
           <p>Get ready! <strong>${session.title}</strong> is starting soon.</p>
-          <p>Time: ${formatHK(session.start_time)}</p>
+          <p>Time: ${safetoLocaleDateString(session.start_time, 'en-HK', { timeZone: 'Asia/Hong_Kong', hour: '2-digit', minute: '2-digit' })}</p>
           <p>See you there!</p>
         `
       });

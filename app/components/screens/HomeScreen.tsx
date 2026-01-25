@@ -7,6 +7,7 @@ import { useToast } from '../ui/Toast';
 import Link from 'next/link';
 import AppHeader from '../AppHeader';
 import Skeleton from '../ui/Skeleton';
+import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils'; // NEW
 
 const SectionHeader = ({ title, className = "" }: { title: string, className?: string }) => (
   <h2 className={`font-montserrat font-black italic text-2xl uppercase text-white mb-4 tracking-tight ${className}`}>
@@ -144,7 +145,9 @@ export default function HomeScreen({
       const pA = a.priority || 0;
       const pB = b.priority || 0;
       if (pA !== pB) return pB - pA;
-      return new Date(b.start_time).getTime() - new Date(a.start_time).getTime();
+      const dateA = safeDate(a.start_time);
+      const dateB = safeDate(b.start_time);
+      return (dateB?.getTime() || 0) - (dateA?.getTime() || 0);
     });
 
   // --- News and Events Normalization ---
@@ -162,7 +165,11 @@ export default function HomeScreen({
         category: 'NEWS',
         start_time: a.created_at
       }))
-  ].sort((a, b) => new Date(b.start_time || 0).getTime() - new Date(a.start_time || 0).getTime());
+  ].sort((a, b) => {
+    const dateA = safeDate(a.start_time);
+    const dateB = safeDate(b.start_time);
+    return (dateB?.getTime() || 0) - (dateA?.getTime() || 0);
+  });
 
   // Combine event sessions with event announcements
   const combinedEvents = [
@@ -177,7 +184,11 @@ export default function HomeScreen({
         category: 'EVENT',
         start_time: a.event_date || a.created_at
       }))
-  ].sort((a, b) => new Date(a.start_time || 0).getTime() - new Date(b.start_time || 0).getTime());
+  ].sort((a, b) => {
+    const dateA = safeDate(a.start_time);
+    const dateB = safeDate(b.start_time);
+    return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
+  });
 
   // Derive Service Lists
   const serviceClasses = allServices.filter(s => s.category === 'CLASS');
@@ -215,7 +226,11 @@ export default function HomeScreen({
       if (matching.length === 0) {
         addToast(`No upcoming slots for ${service.title} yet.`, 'info');
       } else {
-        matching.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+        matching.sort((a, b) => {
+          const dateA = safeDate(a.start_time);
+          const dateB = safeDate(b.start_time);
+          return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
+        });
         onClassClick(matching, service.description);
       }
 
@@ -232,7 +247,11 @@ export default function HomeScreen({
       if (matching.length === 0) {
         addToast(`No upcoming sessions scheduled for ${service.title} yet.`, 'info');
       } else {
-        matching.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+        matching.sort((a, b) => {
+          const dateA = safeDate(a.start_time);
+          const dateB = safeDate(b.start_time);
+          return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
+        });
         onClassClick(matching, service.description);
       }
 
@@ -252,7 +271,11 @@ export default function HomeScreen({
       if (matching.length === 0) {
         addToast(`No upcoming private slots for ${service.title} yet.`, 'info');
       } else {
-        matching.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+        matching.sort((a, b) => {
+          const dateA = safeDate(a.start_time);
+          const dateB = safeDate(b.start_time);
+          return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
+        });
         onClassClick(matching, service.description);
       }
     }
@@ -269,7 +292,11 @@ export default function HomeScreen({
     }
 
     const allSlots = sessions.filter(s => s[groupByKey] === item[groupByKey] && s.category === item.category);
-    allSlots.sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+    allSlots.sort((a, b) => {
+      const dateA = safeDate(a.start_time);
+      const dateB = safeDate(b.start_time);
+      return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
+    });
 
     // Find matching service description - prioritise session_type_id matches
     const service = allServices.find((svc: ServiceType) =>
