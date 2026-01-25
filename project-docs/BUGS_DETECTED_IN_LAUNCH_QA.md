@@ -122,3 +122,14 @@
     *   Refactored the modal header in `app/components/modals/TransactionHistoryModal.tsx` to use Flexbox (`justify-between`).
     *   The close button is now part of the document flow, ensuring the title text wraps automatically if space is tight, preventing overlap.
 *   **Status**: **CLEARED**. Header layout is responsive.
+
+### 18. Coach Dashboard Schedule Clutter
+*   **Date**: 2026-01-25
+*   **Issue**: Newly created coaches (e.g., "Ben") were seeing sessions assigned to other coaches (e.g., "Coach Ben" or "Bennett") in their "My Schedule" view. This was caused by loose substring matching filters (`instructor.includes(name)`).
+*   **Resolution**:
+    *   Updated `CoachDashboard.tsx` to use **strict equality checks**:
+        *   Matches exact Full Name.
+        *   Matches exact "Coach [Full Name]".
+        *   Matches exact First Name (only if no last name is set).
+    *   Eliminated partial matches, ensuring clean, personalized schedules.
+*   **Status**: **CLEARED**. Schedule leak fixed.
