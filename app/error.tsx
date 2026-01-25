@@ -12,6 +12,8 @@ export default function Error({
     reset: () => void;
 }) {
     const [copied, setCopied] = useState(false);
+    const [showManualCopy, setShowManualCopy] = useState(false);
+    const [debugData, setDebugData] = useState('');
 
     useEffect(() => {
         console.error(error);
@@ -29,6 +31,7 @@ export default function Error({
             const debugInfo = {
                 timestamp: new Date().toISOString(),
                 url: typeof window !== 'undefined' ? window.location.href : 'server-side',
+                userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
                 error: {
                     message: error.message,
                     stack: error.stack,
@@ -37,19 +40,21 @@ export default function Error({
                 userId: user?.id || 'anonymous/unauthenticated'
             };
 
-            await navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2));
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            const text = JSON.stringify(debugInfo, null, 2);
+            setDebugData(text);
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            } else {
+                setShowManualCopy(true);
+            }
         } catch (err) {
             console.error('Failed to copy debug info:', err);
-            // Fallback: minimal info if auth/complex stuff fails
-            const minimalInfo = {
-                error: error.message,
-                timestamp: new Date().toISOString()
-            };
-            await navigator.clipboard.writeText(JSON.stringify(minimalInfo));
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            // Even if logic fails, show what we have (fallback)
+            setDebugData(JSON.stringify({ error: error.message, timestamp: new Date().toISOString() }, null, 2));
+            setShowManualCopy(true);
         }
     };
 
