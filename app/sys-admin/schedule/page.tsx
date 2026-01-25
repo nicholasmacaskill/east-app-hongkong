@@ -257,7 +257,8 @@ export default function MasterSchedule() {
     return (
         <div className="flex flex-col gap-6 animate-fadeIn pb-20 select-none">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <Link href="/sys-admin" className="p-2 bg-[#1e1e1e] rounded-lg hover:bg-[#28D160] hover:text-black transition-colors">
                         <ChevronLeft size={20} />
@@ -267,8 +268,8 @@ export default function MasterSchedule() {
                         <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Global Facility Editor</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center bg-[#1e1e1e] rounded-xl px-2 py-1 border border-white/10">
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <div className="flex items-center justify-between bg-[#1e1e1e] rounded-xl px-2 py-1 border border-white/10 flex-1 md:flex-initial">
                         <button onClick={handlePrevWeek} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-500 hover:text-white">
                             <ChevronLeft size={16} />
                         </button>
