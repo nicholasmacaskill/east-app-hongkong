@@ -198,6 +198,64 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
         addToast(`Generated ${newBulkSlots.length} ${typeLabel} from ${bulkConfig.startDate} to ${bulkConfig.endDate}. Click Save.`, 'success');
     };
 
+    const clearBulkSlots = () => {
+        // Parse dates as Local Noon
+        const [startYear, startMonth, startDay] = bulkConfig.startDate.split('-').map(Number);
+        const [endYear, endMonth, endDay] = bulkConfig.endDate.split('-').map(Number);
+
+        const start = new Date(startYear, startMonth - 1, startDay, 12, 0, 0);
+        const end = new Date(endYear, endMonth - 1, endDay, 12, 0, 0);
+
+        let localRemoved = 0;
+        let dbRemoved = 0;
+        const newDeletedIds: string[] = [];
+
+        // 1. Identify DB Slots to delete
+        const slotsToDelete = slots.filter(s => {
+            // Exclude already deleted
+            if (s.id && deletedSlotIds.includes(s.id)) return false;
+
+            const sDate = safeDate(s.start_time);
+            if (!sDate) return false;
+
+            // Date Range Check
+            if (sDate < start || sDate > end) return false;
+
+            // Day Check
+            if (!bulkConfig.selectedDays.includes(sDate.getDay())) return false;
+
+            // Hour Check (Simple: if start hour is within range)
+            const h = sDate.getHours();
+            if (h < bulkConfig.startHour || h >= bulkConfig.endHour) return false;
+
+            return true;
+        });
+
+        slotsToDelete.forEach(s => {
+            if (s.id) newDeletedIds.push(s.id);
+            dbRemoved++;
+        });
+
+        // 2. Filter addedSlots (Local)
+        const newAddedSlots = addedSlots.filter(s => {
+            const sDate = safeDate(s.start_time);
+            if (!sDate) return true; // Keep invalid ones?
+
+            if (sDate < start || sDate > end) return true;
+            if (!bulkConfig.selectedDays.includes(sDate.getDay())) return true;
+            const h = sDate.getHours();
+            if (h < bulkConfig.startHour || h >= bulkConfig.endHour) return true;
+
+            localRemoved++;
+            return false;
+        });
+
+        setDeletedSlotIds([...deletedSlotIds, ...newDeletedIds]);
+        setAddedSlots(newAddedSlots);
+        setShowBulkTool(false);
+        addToast(`Cleared ${dbRemoved + localRemoved} slots in range. Click Save to confirm.`, 'info');
+    };
+
     const handleSave = async () => {
         setSaving(true);
         try {
@@ -391,12 +449,18 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                     />
                                 </div>
 
-                                <div className="md:col-span-3">
+                                <div className="md:col-span-3 flex gap-2">
+                                    <button
+                                        onClick={clearBulkSlots}
+                                        className="flex-1 bg-red-500/20 text-red-500 font-black uppercase text-xs py-2.5 rounded-xl hover:bg-red-500 hover:text-white transition-all border border-red-500/30"
+                                    >
+                                        Clear Range
+                                    </button>
                                     <button
                                         onClick={generateBulkSlots}
-                                        className="w-full bg-[#28D160] text-black font-black uppercase text-xs py-2.5 rounded-xl hover:bg-white transition-all shadow-lg active:scale-95"
+                                        className="flex-1 bg-[#28D160] text-black font-black uppercase text-xs py-2.5 rounded-xl hover:bg-white transition-all shadow-lg active:scale-95"
                                     >
-                                        Generate Slots
+                                        Generate
                                     </button>
                                 </div>
                             </div>
