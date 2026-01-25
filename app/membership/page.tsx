@@ -159,7 +159,7 @@ function MembershipContent() {
 
             const data = await res.json();
             if (data.url) {
-                window.location.href = data.url;
+                window.location.replace(data.url);
             } else {
                 addToast(`Checkout Failed: ${data.error || 'Unknown error'}`, "error");
             }

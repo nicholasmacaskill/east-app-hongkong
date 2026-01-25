@@ -332,7 +332,7 @@ export default function ClassModal({
             });
 
             if (res.success && res.data.url) {
-                window.location.href = res.data.url;
+                window.location.replace(res.data.url);
             } else {
                 addToast(`Checkout Failed: ${res.error || 'Unknown error'}`, 'error');
                 setIsProcessing(false);

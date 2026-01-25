@@ -73,7 +73,7 @@ export default function TopUpPage() {
             });
 
             const data = await res.json();
-            if (data.url) window.location.href = data.url;
+            if (data.url) window.location.replace(data.url);
             else throw new Error(data.error || 'Checkout failed');
 
         } catch (e: any) {
