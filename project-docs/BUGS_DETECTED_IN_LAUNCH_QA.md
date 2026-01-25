@@ -114,3 +114,11 @@
     *   Wrapped the Supabase Realtime subscription logic in `app/page.tsx` with a `try-catch` block.
     *   **Graceful Degradation**: If WebSocket initialization fails, the app now catches the error, logs a warning, and continues running normally (without real-time updates) instead of crashing.
 *   **Status**: **CLEARED**. App is resilient to network restrictions.
+
+### 17. Transaction History Modal Overlap
+*   **Date**: 2026-01-25
+*   **Issue**: On mobile screens, the long title "TRANSACTION HISTORY" overlapped with the "X" close button because the button was absolutely positioned without reserving space in the header.
+*   **Resolution**:
+    *   Refactored the modal header in `app/components/modals/TransactionHistoryModal.tsx` to use Flexbox (`justify-between`).
+    *   The close button is now part of the document flow, ensuring the title text wraps automatically if space is tight, preventing overlap.
+*   **Status**: **CLEARED**. Header layout is responsive.
