@@ -3,6 +3,8 @@
 -- =============================================
 -- Logs origin and credits_paid
 
+DROP FUNCTION IF EXISTS book_coach_atomic(uuid, uuid, bigint, int, uuid, text);
+
 CREATE OR REPLACE FUNCTION book_coach_atomic(
   p_user_id uuid,
   p_coach_id uuid,

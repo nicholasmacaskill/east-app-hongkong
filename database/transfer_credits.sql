@@ -4,6 +4,8 @@
 -- Purpose: Allow parents to transfer credits to their children
 -- Security: Verifies parent_id relationship before transfer
 
+DROP FUNCTION IF EXISTS transfer_credits(uuid, uuid, int);
+
 CREATE OR REPLACE FUNCTION transfer_credits(
   p_from_user_id uuid,
   p_to_user_id uuid,

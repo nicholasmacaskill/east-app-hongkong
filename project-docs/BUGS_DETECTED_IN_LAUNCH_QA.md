@@ -82,3 +82,27 @@
     *   **UI**: Disabled manual click-to-add. Enforced "Bulk Add" only.
     *   **UI**: Added "Clear Range" tool to surgically remove slots by service type.
     *   **UI**: Color-coded slots (Green=Generic, Blue=Session) for clarity.
+
+### 13. Mobile Admin Crash (Client Side Exception)
+*   **Date**: 2026-01-25
+*   **Issue**: Admin Panel (and Login Redirect) crashed on mobile devices with a "Technical Foul" or "Application Error". This was caused by a **Hydration Mismatch** in the `QRCodeSVG` library, which attempted to access `window.location.origin` during the initial Server-Side Render (SSR) where `window` is undefined.
+*   **Resolution**:
+    *   Created `app/components/ClientOnly.tsx`, a robust wrapper that ensures its children only render after the component has mounted on the client.
+    *   Wrapped all `QRCodeSVG` instances (in `sys-admin/directory` and `sys-admin/qr`) with `<ClientOnly>`.
+*   **Status**: **CLEARED**. Mobile login and Admin Dashboard are now stable.
+
+### 14. Mobile Schedule Layout Refinement
+*   **Date**: 2026-01-25
+*   **Issue**: Time pickers and input fields in the Admin Schedule Modal were "cramped" and unreadable on mobile devices due to a fixed 2-column grid layout. Additionally, the Month Selector was squashed next to the header title.
+*   **Resolution**:
+    *   **Modal**: Converted input grids to `grid-cols-1 md:grid-cols-2`, enforcing full-width stacked inputs on mobile for better touch targets and readability.
+    *   **Header**: Moved the Month Selector below the page title on mobile (`flex-col`) while keeping it inline on desktop (`md:flex-row`).
+*   **Status**: **CLEARED**. Improved mobile responsiveness and usability.
+
+### 15. Admin Logout Crash
+*   **Date**: 2026-01-25
+*   **Issue**: Clicking "Logout" from the Admin Panel resulted in a "Technical Foul" (Application Error) on the landing page. This was likely due to a race condition in `router.push('/')` combined with `router.refresh()` retaining stale authentication state or causing hydration mismatches during the transition.
+*   **Resolution**:
+    *   Updated `app/components/AdminLogoutButton.tsx` to use `window.location.href = '/'`.
+    *   This forces a hard browser reload, ensuring the client state is completely cleared and the landing page mounts in a pristine, unauthenticated state.
+*   **Status**: **CLEARED**. Logout is now safe and stable.

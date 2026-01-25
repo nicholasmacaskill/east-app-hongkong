@@ -4,6 +4,8 @@
 -- Purpose: Cancel a registration and refund the EXACT amount paid
 -- Logic: Looks up credits_paid from registration, refunds to payer_id
 
+DROP FUNCTION IF EXISTS cancel_session_and_refund(uuid, bigint);
+
 CREATE OR REPLACE FUNCTION cancel_session_and_refund(
   p_user_id uuid,
   p_session_id bigint
