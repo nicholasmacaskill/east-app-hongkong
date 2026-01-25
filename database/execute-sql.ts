@@ -1,3 +1,4 @@
+// @ts-nocheck
 
 const { Client } = require('pg');
 const fs = require('fs');
