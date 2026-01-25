@@ -439,10 +439,9 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                             return (
                                                 <div
                                                     key={`${day}-${hour}`}
-                                                    onClick={() => handleSlotClick(day, hour)}
                                                     className={`
-                                                    h-14 border-b border-r border-white/5 cursor-pointer transition-all hover:bg-white/5
-                                                    ${isAvailable ? 'bg-[#28D160]/20 border-[#28D160]/30 hover:bg-[#28D160]/30' : ''}
+                                                    h-14 border-b border-r border-white/5 transition-all
+                                                    ${isAvailable ? 'bg-[#28D160]/20 border-[#28D160]/30' : ''}
                                                 `}
                                                 >
                                                     {isAvailable && (

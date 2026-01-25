@@ -13,14 +13,55 @@ export async function GET(request: Request) {
     const supabaseAdmin = getSupabaseAdmin();
 
     try {
-        const { data, error } = await supabaseAdmin
+        // 1. Fetch Availability Records
+        const { data: availabilityData, error: availError } = await supabaseAdmin
             .from('availability')
             .select('*')
             .eq('coach_id', coachId);
 
-        if (error) throw error;
+        if (availError) throw availError;
 
-        return NextResponse.json({ success: true, data });
+        // 2. Fetch Sessions (via Instructor Name match)
+        // Note: Legacy schema relies on name string, not foreign key.
+        const { data: profile } = await supabaseAdmin.from('profiles').select('first_name, last_name').eq('id', coachId).single();
+        const coachName = profile ? `${profile.first_name} ${profile.last_name}` : '';
+
+        let sessionData: any[] = [];
+        if (coachName) {
+            const { data: sessions, error: sessionError } = await supabaseAdmin
+                .from('sessions')
+                .select('*')
+                .eq('instructor', coachName);
+
+            if (!sessionError && sessions) {
+                sessionData = sessions;
+            }
+        }
+
+        // 3. Merge and Normalize
+        const normalizedSlots = [
+            ...(availabilityData || []).map(a => ({
+                id: a.id,
+                coach_id: a.coach_id,
+                start_time: a.start_time,
+                end_time: a.end_time,
+                is_recurring: a.is_recurring,
+                status: a.status
+            })),
+            ...sessionData.map(s => ({
+                id: s.id.toString(), // Ensure string ID for frontend
+                coach_id: coachId,
+                start_time: s.start_time,
+                end_time: s.end_time,
+                is_recurring: false,
+                status: 'available',
+                session_type_id: s.session_type_id,
+                credit_cost: s.credit_cost,
+                capacity: 1 // Default or from DB if added later
+            }))
+        ];
+
+        return NextResponse.json({ success: true, data: normalizedSlots });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
@@ -38,18 +79,25 @@ export async function POST(request: Request) {
         const supabaseAdmin = getSupabaseAdmin();
 
         // 1. Delete removed slots
+        // Needs careful handling: deletedSlots might contain UUIDs (availability) or numeric Strings (sessions)
         if (deletedSlots && deletedSlots.length > 0) {
-            const { error: deleteError } = await supabaseAdmin
-                .from('availability')
-                .delete()
-                .in('id', deletedSlots);
+            const availIds = deletedSlots.filter((id: string) => id.length > 10 && isNaN(Number(id))); // Rough UUID check
+            const sessionIds = deletedSlots.filter((id: string) => !isNaN(Number(id)));
 
-            if (deleteError) throw deleteError;
+            if (availIds.length > 0) {
+                await supabaseAdmin.from('availability').delete().in('id', availIds);
+            }
+            if (sessionIds.length > 0) {
+                await supabaseAdmin.from('sessions').delete().in('id', sessionIds);
+            }
         }
 
-        // 2. Process Slots (Split into Availability and Sessions)
+        // 2. Process Slots (Only insert NEW ones)
+        // We filter for slots without IDs (newly generated bulk slots)
         if (slots && slots.length > 0) {
-            const availabilityToUpsert: any[] = [];
+            const newSlots = slots.filter((s: any) => !s.id);
+
+            const availabilityToInsert: any[] = [];
             const sessionsToInsert: any[] = [];
 
             // Helper to get Coach Name
@@ -59,7 +107,7 @@ export async function POST(request: Request) {
             // Cache for session types
             const sessionTypeCache: Record<string, any> = {};
 
-            for (const slot of slots) {
+            for (const slot of newSlots) {
                 if (slot.session_type_id) {
                     // It's a SESSION
                     if (!sessionTypeCache[slot.session_type_id]) {
@@ -84,9 +132,11 @@ export async function POST(request: Request) {
 
                 } else {
                     // It's AVAILABILITY
-                    availabilityToUpsert.push({
-                        ...slot,
+                    availabilityToInsert.push({
                         coach_id: coachId,
+                        start_time: slot.start_time,
+                        end_time: slot.end_time,
+                        is_recurring: false,
                         status: 'available'
                     });
                 }
@@ -98,10 +148,10 @@ export async function POST(request: Request) {
                 if (sessionError) throw sessionError;
             }
 
-            // Upsert Availability
-            if (availabilityToUpsert.length > 0) {
-                const { error: upsertError } = await supabaseAdmin.from('availability').upsert(availabilityToUpsert);
-                if (upsertError) throw upsertError;
+            // Insert Availability
+            if (availabilityToInsert.length > 0) {
+                const { error: insertError } = await supabaseAdmin.from('availability').insert(availabilityToInsert);
+                if (insertError) throw insertError;
             }
         }
 
