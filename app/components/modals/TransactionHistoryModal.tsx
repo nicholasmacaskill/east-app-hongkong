@@ -57,21 +57,22 @@ export default function TransactionHistoryModal({ onClose }: TransactionHistoryM
     return (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-[#1e1e1e] p-6 rounded-[2rem] w-full max-w-md border border-white/10 relative shadow-2xl flex flex-col max-h-[80vh]">
-                <button
-                    onClick={onClose}
-                    className="absolute top-6 right-6 bg-white/10 text-white p-2 rounded-full hover:bg-white/20 transition-all shadow-lg active:scale-95 z-50"
-                >
-                    <X size={20} />
-                </button>
-
-                <div className="flex items-center gap-3 mb-6 px-2">
-                    <div className="w-10 h-10 rounded-full bg-east-light/10 flex items-center justify-center text-east-light border border-east-light/20">
-                        <Receipt size={20} />
+                <div className="flex items-start justify-between mb-6 px-2 pt-2">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-east-light/10 flex items-center justify-center text-east-light border border-east-light/20 shrink-0">
+                            <Receipt size={20} />
+                        </div>
+                        <div>
+                            <h2 className="font-black italic text-xl uppercase text-white leading-none">Transaction History</h2>
+                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1">Your recent activity</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="font-black italic text-xl uppercase text-white leading-none">Transaction History</h2>
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mt-1">Your recent activity</p>
-                    </div>
+                    <button
+                        onClick={onClose}
+                        className="bg-white/10 text-white p-2 rounded-full hover:bg-white/20 transition-all shadow-lg active:scale-95 shrink-0"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
