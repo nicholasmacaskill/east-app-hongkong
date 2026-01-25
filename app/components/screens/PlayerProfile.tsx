@@ -213,8 +213,8 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
             <div className="grid grid-cols-3 w-full gap-2">
               {[
                 { l: 'CREDITS\nAVAILABLE', v: profileData.credits || 0, icon: Coins, action: onShowHistory },
-                { l: 'TOP SCORER\n(TEAM)', icon: Award },
-                { l: 'MOST SHOTS\n(TEAM)', icon: Award },
+                { l: 'TOP SCORER\n(TEAM)', v: 'coming soon', icon: Award },
+                { l: 'MOST SHOTS\n(TEAM)', v: 'coming soon', icon: Award },
               ].map((badge: any, i) => (
                 <div
                   key={i}
@@ -224,10 +224,19 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                   <div className="w-10 h-10 rounded-full border border-east-light/30 bg-black/40 flex items-center justify-center mb-2 shadow-lg group-hover:scale-110 transition-transform p-1">
                     <badge.icon size={20} className="text-white drop-shadow-md" />
                   </div>
-                  {badge.v !== undefined && (
-                    <span className="font-black text-lg text-white italic leading-none mb-1">{badge.v}</span>
+                  {badge.v === 'coming soon' ? (
+                    <>
+                      <span className="text-[7px] font-black uppercase text-center leading-tight text-gray-400 whitespace-pre-line group-hover:text-white transition-colors mb-1">{badge.l}</span>
+                      <span className="text-[10px] text-white/50 lowercase italic">{badge.v}</span>
+                    </>
+                  ) : (
+                    <>
+                      {badge.v !== undefined && (
+                        <span className="font-black text-lg text-white italic leading-none mb-1">{badge.v}</span>
+                      )}
+                      <span className="text-[7px] font-black uppercase text-center leading-tight text-gray-400 whitespace-pre-line group-hover:text-white transition-colors">{badge.l}</span>
+                    </>
                   )}
-                  <span className="text-[7px] font-black uppercase text-center leading-tight text-gray-400 whitespace-pre-line group-hover:text-white transition-colors">{badge.l}</span>
                 </div>
               ))}
             </div>
@@ -237,15 +246,15 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
           <div className="w-full bg-gradient-to-r from-east-light to-east-dark py-4 px-8 flex justify-between items-center shadow-lg border-y border-white/10 relative z-30">
             <div className="text-center">
               <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">AGE</div>
-              <div className="font-black text-xl text-white mt-0.5 italic uppercase">{stats?.age || '31'}</div>
+              <span className="text-xs text-white/50 lowercase italic">coming soon</span>
             </div>
             <div className="text-center">
               <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">SEASON</div>
-              <div className="font-black text-xl text-white mt-0.5 italic uppercase">{stats?.season || '3'}</div>
+              <span className="text-xs text-white/50 lowercase italic">coming soon</span>
             </div>
             <div className="text-center">
               <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">TEAM</div>
-              <div className="font-black text-xl text-white mt-0.5 italic uppercase">{stats?.team || 'RHINOS'}</div>
+              <span className="text-xs text-white/50 lowercase italic">coming soon</span>
             </div>
           </div>
         </div>
@@ -324,9 +333,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                     ].map((item, index) => (
                       <div key={index} className={`flex flex-col items-center justify-center p-6 gap-4 hover:bg-white/5 transition-colors ${index % 2 === 0 ? 'border-r border-white/10' : ''} ${index < 2 ? 'border-b border-white/10' : ''}`}>
                         <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{item.label}</span>
-                        <div className="w-12 h-12 rounded-full border-2 border-east-light/50 bg-black flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
-                          <Award size={24} className="text-white drop-shadow-md" />
-                        </div>
+                        <span className="text-xs text-white/50 lowercase italic">coming soon</span>
                       </div>
                     ))}
                   </div>
