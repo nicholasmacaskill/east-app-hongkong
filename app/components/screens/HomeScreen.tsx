@@ -197,24 +197,24 @@ export default function HomeScreen({
 
   // Check for "Orphan" Admin Sessions (Private sessions with no matching Service ID)
   // These are often manually created via Admin Panel with title but no Service Type.
-  const orphanSessions = sessions.filter(s =>
-    s.category === 'PRIVATE' &&
-    !s.session_type_id
-  );
+  // const orphanSessions = sessions.filter(s =>
+  //   s.category === 'PRIVATE' &&
+  //   !s.session_type_id
+  // );
 
-  if (orphanSessions.length > 0) {
-    // Check if we already have a generic "Private Coaching" tile
-    const hasGeneric = servicePrivate.some(s => s.title === 'Private Coaching');
-    if (!hasGeneric) {
-      servicePrivate.push({
-        id: 'orphan_private_generic',
-        title: 'Private Coaching',
-        category: 'PRIVATE',
-        image_url: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400',
-        description: 'One-on-one sessions with our expert coaches.'
-      });
-    }
-  }
+  // if (orphanSessions.length > 0) {
+  //   // Check if we already have a generic "Private Coaching" tile
+  //   const hasGeneric = servicePrivate.some(s => s.title === 'Private Coaching');
+  //   if (!hasGeneric) {
+  //     servicePrivate.push({
+  //       id: 'orphan_private_generic',
+  //       title: 'Private Coaching',
+  //       category: 'PRIVATE',
+  //       image_url: 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400',
+  //       description: 'One-on-one sessions with our expert coaches.'
+  //     });
+  //   }
+  // }
 
   const handleServiceClick = async (service: ServiceType) => {
     if (service.category === 'FACILITY') {

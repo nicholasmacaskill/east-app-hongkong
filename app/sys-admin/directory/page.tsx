@@ -142,7 +142,8 @@ export default function DirectoryPage() {
             bio: profile.bio || '',
             membershipStart: safeDate(profile.membership_start),
             membershipExpires: safeDate(profile.membership_expires),
-            membershipHistory: profile.membership_history || []
+            membershipHistory: profile.membership_history || [],
+            avatar_url: profile.avatar_url || ''
         });
 
         if (profile.role === 'coach') {
@@ -238,13 +239,13 @@ export default function DirectoryPage() {
                     position: editingUser.position,
                     username: editingUser.username,
                     role: editingUser.role,
-                    parentId: editingUser.parentId,
                     mobile: editingUser.mobile,
                     bio: editingUser.bio,
                     password: editingUser.password,
                     membershipStart: safeDate(editingUser.membershipStart)?.toISOString() || null,
                     membershipExpires: safeDate(editingUser.membershipExpires)?.toISOString() || null,
-                    accountStatus: (editingUser.membershipExpires && (safeDate(editingUser.membershipExpires)?.getTime() || 0) > Date.now()) ? 'active' : undefined
+                    accountStatus: (editingUser.membershipExpires && (safeDate(editingUser.membershipExpires)?.getTime() || 0) > Date.now()) ? 'active' : undefined,
+                    avatarUrl: editingUser.avatar_url
                 })
             });
 
