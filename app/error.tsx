@@ -60,21 +60,40 @@ export default function Error({
             <p className="text-gray-400 max-w-md mb-8 text-sm">
                 Something went wrong on our end. We've logged the error.
             </p>
-            <div className="flex flex-col gap-4">
-                <button
-                    onClick={() => reset()}
-                    className="bg-east-light text-black font-black italic uppercase px-8 py-3 rounded-full hover:bg-white transition-colors"
-                >
-                    Try Again
-                </button>
-                <button
-                    onClick={handleCopyDebugInfo}
-                    className="flex items-center justify-center gap-2 text-xs font-bold uppercase text-gray-500 hover:text-white transition-colors"
-                >
-                    <Copy size={12} />
-                    {copied ? 'Copied!' : 'Copy Debug Info'}
-                </button>
-            </div>
+
+            {showManualCopy ? (
+                <div className="w-full max-w-md bg-gray-900 p-4 rounded-lg mb-4 text-left">
+                    <p className="text-xs text-yellow-500 mb-2">Clipboard API unavailable. Please select all and copy:</p>
+                    <textarea
+                        readOnly
+                        value={debugData || error.message}
+                        className="w-full h-32 bg-black text-green-400 text-xs font-mono p-2 rounded border border-gray-700 focus:outline-none"
+                        onClick={(e) => e.currentTarget.select()}
+                    />
+                    <button
+                        onClick={() => setShowManualCopy(false)}
+                        className="mt-2 text-xs text-gray-500 hover:text-white underline"
+                    >
+                        Close Debug View
+                    </button>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-4">
+                    <button
+                        onClick={() => reset()}
+                        className="bg-east-light text-black font-black italic uppercase px-8 py-3 rounded-full hover:bg-white transition-colors"
+                    >
+                        Try Again
+                    </button>
+                    <button
+                        onClick={handleCopyDebugInfo}
+                        className="flex items-center justify-center gap-2 text-xs font-bold uppercase text-gray-500 hover:text-white transition-colors"
+                    >
+                        <Copy size={12} />
+                        {copied ? 'Copied!' : 'Copy Debug Info'}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
