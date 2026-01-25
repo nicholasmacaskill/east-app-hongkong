@@ -157,18 +157,23 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
     };
 
     const generateBulkSlots = () => {
-        const start = new Date(bulkConfig.startDate);
-        const end = new Date(bulkConfig.endDate);
+        // Parse dates as Local Noon to avoid UTC/timezone shifting issues
+        const [startYear, startMonth, startDay] = bulkConfig.startDate.split('-').map(Number);
+        const [endYear, endMonth, endDay] = bulkConfig.endDate.split('-').map(Number);
+
+        const start = new Date(startYear, startMonth - 1, startDay, 12, 0, 0);
+        const end = new Date(endYear, endMonth - 1, endDay, 12, 0, 0);
+
         const newBulkSlots: TimeSlot[] = [];
 
-        // Iterate through each day in range
+        // Iterate
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            // Check if day of week matches (0=Sun, 1=Mon...)
+            // Check day of week (Local 0-6)
             if (bulkConfig.selectedDays.includes(d.getDay())) {
-                // Generate slots for hours
                 for (let h = bulkConfig.startHour; h < bulkConfig.endHour; h++) {
                     const slotStart = new Date(d);
                     slotStart.setHours(h, 0, 0, 0);
+
                     const slotEnd = new Date(d);
                     slotEnd.setHours(h + 1, 0, 0, 0);
 
@@ -190,7 +195,7 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
         setAddedSlots([...addedSlots, ...newBulkSlots]);
         setShowBulkTool(false);
         const typeLabel = bulkConfig.selectedServiceId ? 'SESSIONS' : 'Availability Slots';
-        addToast(`Generated ${newBulkSlots.length} ${typeLabel}. Click Save to confirm.`, 'success');
+        addToast(`Generated ${newBulkSlots.length} ${typeLabel} from ${bulkConfig.startDate} to ${bulkConfig.endDate}. Click Save.`, 'success');
     };
 
     const handleSave = async () => {
