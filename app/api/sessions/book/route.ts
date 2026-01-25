@@ -77,32 +77,37 @@ interface BookingRequest {
 }
 
 export async function POST(request: Request) {
-  const { sessionId, userId, attendeeId, attendeeIds, coachId, origin = 'facilities', coachTier = 'junior' } = await request.json() as BookingRequest;
-
-  // SECURITY NOTE: In production, verify that 'userId' matches the authenticated user token.
-  // Currently, this blindly trusts the client-provided userId.
-
-  if (!sessionId || !userId) {
-    return NextResponse.json({ error: 'Missing sessionId or userId' }, { status: 400 });
-  }
-
-  // Normalize to array: usage of single attendeeId or multiple attendeeIds
-  const targets = attendeeIds && Array.isArray(attendeeIds) ? attendeeIds : (attendeeId ? [attendeeId] : []);
-
-  // If nothing provided, default to booking the user themselves
-  if (targets.length === 0) targets.push(userId);
-
-  // SECURITY CHECK
-  const isVerified = await verifyUser(request, userId);
-  if (!isVerified) {
-    console.warn(`[SECURITY WARNING] User ${userId} failed auth check from IP ${request.headers.get('x-forwarded-for') || 'unknown'}`);
-    // TODO: Strict security enforced
-    return NextResponse.json({ error: 'Unauthorized: ID mismatch' }, { status: 401 });
-  }
-
-  console.log(`[BOOKING] Origin: ${origin}, User: ${userId}, Session: ${sessionId}, Targets:`, targets, `Coach: ${coachId}, Tier: ${coachTier}`);
-
   try {
+    const { sessionId, userId, attendeeId, attendeeIds, coachId, origin = 'facilities', coachTier = 'junior' } = await request.json() as BookingRequest;
+
+    // SECURITY NOTE: In production, verify that 'userId' matches the authenticated user token.
+    // Currently, this blindly trusts the client-provided userId.
+
+    if (!sessionId || !userId) {
+      return NextResponse.json({ error: 'Missing sessionId or userId' }, { status: 400 });
+    }
+
+    // Normalize to array: usage of single attendeeId or multiple attendeeIds
+    const targets = attendeeIds && Array.isArray(attendeeIds) ? attendeeIds : (attendeeId ? [attendeeId] : []);
+
+    // If nothing provided, default to booking the user themselves
+    if (targets.length === 0) targets.push(userId);
+
+    // SECURITY CHECK
+    try {
+      const isVerified = await verifyUser(request, userId);
+      if (!isVerified) {
+        console.warn(`[SECURITY WARNING] User ${userId} failed auth check from IP ${request.headers.get('x-forwarded-for') || 'unknown'}`);
+        return NextResponse.json({ error: 'Unauthorized: ID mismatch' }, { status: 401 });
+      }
+    } catch (e: any) {
+      console.error('VerifyUser crashed:', e);
+      // Fail open or closed? Closed.
+      return NextResponse.json({ error: 'Auth Verification Failed: ' + e.message }, { status: 500 });
+    }
+
+    console.log(`[BOOKING] Origin: ${origin}, User: ${userId}, Session: ${sessionId}, Targets:`, targets, `Coach: ${coachId}, Tier: ${coachTier}`);
+
     // 1. Call the Atomic Master Booking RPC
     const supabaseAdmin = getSupabaseAdmin();
     const { data: result, error: rpcError } = await supabaseAdmin.rpc('master_book_atomic', {
@@ -116,7 +121,7 @@ export async function POST(request: Request) {
 
     if (rpcError) {
       console.error(`[BOOKING] RPC Error:`, rpcError);
-      return NextResponse.json({ error: rpcError.message }, { status: 500 });
+      return NextResponse.json({ error: rpcError.message, details: rpcError }, { status: 500 });
     }
 
     if (!result.success) {
@@ -167,7 +172,7 @@ export async function POST(request: Request) {
     });
 
   } catch (err: any) {
-    console.error('Booking error:', err);
-    return NextResponse.json({ error: 'Internal server error: ' + err.message }, { status: 500 });
+    console.error('Booking error (Top Level):', err);
+    return NextResponse.json({ error: 'Internal server error: ' + (err.message || 'Unknown') }, { status: 500 });
   }
 }
