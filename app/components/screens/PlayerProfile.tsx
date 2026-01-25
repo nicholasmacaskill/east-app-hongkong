@@ -284,7 +284,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                     ].map((item, index) => (
                       <div key={index} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors ${index % 2 === 0 ? 'border-r border-white/10' : ''} ${index < 2 ? 'border-b border-white/10' : ''}`}>
                         <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{item.label}</span>
-                        <span className="font-black text-2xl text-white italic">{item.value}</span>
+                        <span className="text-xs text-white/50 lowercase italic">coming soon</span>
                       </div>
                     ))}
                   </div>
@@ -304,7 +304,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                     ].map((item, index) => (
                       <div key={index} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors ${index % 2 === 0 ? 'border-r border-white/10' : ''} ${index < 2 ? 'border-b border-white/10' : ''}`}>
                         <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{item.label}</span>
-                        <span className="font-black text-2xl text-white italic">{item.value}</span>
+                        <span className="text-xs text-white/50 lowercase italic">coming soon</span>
                       </div>
                     ))}
                   </div>
@@ -348,7 +348,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                     {[{ l: 'GP', v: 3 }, { l: 'GOALS', v: 3 }, { l: 'ASSISTS', v: 4 }, { l: 'POINTS', v: 6 }].map((stat, i) => (
                       <div key={i} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors ${i % 2 === 0 ? 'border-r border-white/10' : ''} ${i < 2 ? 'border-b border-white/10' : ''}`}>
                         <span className="font-black text-[8px] tracking-wider text-white/80 uppercase">{stat.l}</span>
-                        <span className="font-black text-2xl text-white italic">{stat.v}</span>
+                        <span className="text-xs text-white/50 lowercase italic">coming soon</span>
                       </div>
                     ))}
                   </div>
@@ -363,7 +363,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                     {[{ l: 'GWG', v: 1 }, { l: 'PPG', v: 1 }, { l: 'SHG', v: 34 }, { l: 'PIM', v: 10 }].map((stat, i) => (
                       <div key={i} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors ${i % 2 === 0 ? 'border-r border-white/10' : ''} ${i < 2 ? 'border-b border-white/10' : ''}`}>
                         <span className="font-black text-[8px] tracking-wider text-white/80 uppercase">{stat.l}</span>
-                        <span className="font-black text-2xl text-white italic">{stat.v}</span>
+                        <span className="text-xs text-white/50 lowercase italic">coming soon</span>
                       </div>
                     ))}
                   </div>

@@ -228,6 +228,13 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
             const h = sDate.getHours();
             if (h < bulkConfig.startHour || h >= bulkConfig.endHour) return false;
 
+            // SERVICE TYPE CHECK (Surgical Clear)
+            if (bulkConfig.selectedServiceId) {
+                if (s.session_type_id !== bulkConfig.selectedServiceId) return false;
+            } else {
+                if (s.session_type_id) return false; // Don't delete sessions when clearing generic
+            }
+
             return true;
         });
 
@@ -246,14 +253,25 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
             const h = sDate.getHours();
             if (h < bulkConfig.startHour || h >= bulkConfig.endHour) return true;
 
+            // SERVICE TYPE CHECK
+            if (bulkConfig.selectedServiceId) {
+                if (s.session_type_id !== bulkConfig.selectedServiceId) return true;
+            } else {
+                if (s.session_type_id) return true;
+            }
+
             localRemoved++;
             return false;
         });
 
         setDeletedSlotIds([...deletedSlotIds, ...newDeletedIds]);
         setAddedSlots(newAddedSlots);
+
+        // Match user expectation: surgical delete doesn't close tool? 
+        // Or close it to show result? Let's close it.
         setShowBulkTool(false);
-        addToast(`Cleared ${dbRemoved + localRemoved} slots in range. Click Save to confirm.`, 'info');
+        const typeLabel = bulkConfig.selectedServiceId ? 'matching Sessions' : 'Generic Slots';
+        addToast(`Cleared ${dbRemoved + localRemoved} ${typeLabel}. Click Save to confirm.`, 'info');
     };
 
     const handleSave = async () => {
@@ -499,23 +517,39 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                             const slotStart = new Date(day);
                                             slotStart.setHours(hour, 0, 0, 0);
 
-                                            const isAvailable = displaySlots.some(s => {
+                                            const foundSlot = displaySlots.find(s => {
                                                 const sStart = safeDate(s.start_time);
                                                 // Simple hour check
                                                 return sStart && slotStart.getTime() === sStart.getTime();
                                             });
+
+                                            // Determine Style based on Type
+                                            let bgClass = '';
+                                            let iconColor = '';
+
+                                            if (foundSlot) {
+                                                if (foundSlot.session_type_id) {
+                                                    // Detailed Session (Blue)
+                                                    bgClass = 'bg-blue-500/20 border-blue-500/30';
+                                                    iconColor = 'text-blue-500';
+                                                } else {
+                                                    // Generic Availability (Green)
+                                                    bgClass = 'bg-[#28D160]/20 border-[#28D160]/30';
+                                                    iconColor = 'text-[#28D160]';
+                                                }
+                                            }
 
                                             return (
                                                 <div
                                                     key={`${day}-${hour}`}
                                                     className={`
                                                     h-14 border-b border-r border-white/5 transition-all
-                                                    ${isAvailable ? 'bg-[#28D160]/20 border-[#28D160]/30' : ''}
+                                                    ${bgClass} ${bgClass ? 'border' : ''}
                                                 `}
                                                 >
-                                                    {isAvailable && (
+                                                    {foundSlot && (
                                                         <div className="w-full h-full flex items-center justify-center">
-                                                            <Clock size={12} className="text-[#28D160]" />
+                                                            <Clock size={12} className={iconColor} />
                                                         </div>
                                                     )}
                                                 </div>
