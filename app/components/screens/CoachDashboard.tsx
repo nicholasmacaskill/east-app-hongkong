@@ -88,24 +88,27 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                 if (s.type === 'slot') {
                     return s.coach_id === currentUserId;
                 } else {
-                    // Session: check if instructor string contains name parts or exact match
-                    const instructorName = s.instructor?.toLowerCase() || '';
-                    const coachFirst = userName?.toLowerCase() || '';
-                    const coachLast = userLastName?.toLowerCase() || '';
+                    // Session: check if instructor string matches name exactly or "Coach [Name]"
+                    // This prevents "Ben" from matching "Bennett" or "Benson"
+                    const instructorName = s.instructor?.trim() || '';
+                    const coachFirst = userName?.trim() || '';
+                    const coachLast = userLastName?.trim() || '';
+                    const fullName = `${coachFirst} ${coachLast}`.trim();
 
-                    // Match Logic
-                    // 1. If last name exists, require match of First+Last OR First & Last parts
-                    if (coachLast) {
-                        if (instructorName.includes(`${coachFirst} ${coachLast}`)) return true;
-                        if (instructorName.includes(coachFirst) && instructorName.includes(coachLast)) return true;
-                    }
-                    // 2. If no last name, match first name (weak match, but best we can do)
-                    else {
-                        if (instructorName.includes(coachFirst)) return true;
-                    }
+                    // 1. Exact Full Name Match (e.g. "Ben Smith" === "Ben Smith")
+                    if (instructorName.toLowerCase() === fullName.toLowerCase()) return true;
 
-                    // 3. Keep "You" logic for legacy or direct assignment if API changes
-                    if (instructorName === 'you') return true;
+                    // 2. Exact "Coach [First] [Last]" Match
+                    if (instructorName.toLowerCase() === `coach ${fullName}`.toLowerCase()) return true;
+
+                    // 3. Exact First Name Match (if no last name provided)
+                    if (!coachLast && instructorName.toLowerCase() === coachFirst.toLowerCase()) return true;
+
+                    // 4. Exact "Coach [First]" Match (if no last name provided)
+                    if (!coachLast && instructorName.toLowerCase() === `coach ${coachFirst}`.toLowerCase()) return true;
+
+                    // 5. Explicit "You" check
+                    if (instructorName.toLowerCase() === 'you') return true;
 
                     return false;
                 }
@@ -175,9 +178,9 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
     };
 
     const getStatusBadge = (s: MasterSession) => {
-        if (s.type === 'slot') return <span className="bg-gray-800 text-gray-400 text-[9px] font-black px-2 py-0.5 rounded uppercase">OPEN SLOT</span>;
-        if (s.attendees.length > 0) return <span className="bg-yellow-400/20 text-yellow-400 text-[9px] font-black px-2 py-0.5 rounded uppercase">{s.attendees.length} Attendees</span>;
-        return <span className="bg-emerald-500/20 text-emerald-500 text-[9px] font-black px-2 py-0.5 rounded uppercase">OPEN CLASS</span>;
+        if (s.type === 'slot') return <span className="bg-gray-800 text-gray-400 text-[9px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">OPEN SLOT</span>;
+        if (s.attendees.length > 0) return <span className="bg-yellow-400/20 text-yellow-400 text-[9px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">{s.attendees.length} Attendees</span>;
+        return <span className="bg-emerald-500/20 text-emerald-500 text-[9px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">OPEN CLASS</span>;
     };
 
     if (loading) return <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center font-black animate-pulse uppercase tracking-widest">Loading Master Schedule...</div>;
