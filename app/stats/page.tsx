@@ -213,11 +213,11 @@ export default function LeaderboardPage() {
                                             <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/5 group-hover:border-east-light/50 transition-all shadow-xl shrink-0">
                                                 <img src={player.avatar || "https://placehold.co/100"} className="w-full h-full object-cover" alt={player.name} />
                                             </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-black italic uppercase text-base text-white tracking-tight">{player.name}</h3>
-                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{player.team}</p>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="font-black italic uppercase text-base text-white tracking-tight truncate">{player.name}</h3>
+                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{player.team}</p>
                                             </div>
-                                            <div className="text-right pr-2">
+                                            <div className="text-right pr-2 shrink-0">
                                                 <div className="font-black italic text-3xl text-white group-hover:scale-110 transition-transform duration-300">
                                                     {filter === 'points' ? player.stats.points : filter === 'goals' ? player.stats.goals : player.stats.assists}
                                                 </div>
@@ -253,11 +253,11 @@ export default function LeaderboardPage() {
                                             <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/5 group-hover:border-east-light/50 transition-all shrink-0">
                                                 <img src={goalie.avatar || "https://placehold.co/100"} className="w-full h-full object-cover" alt={goalie.name} />
                                             </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-black italic uppercase text-base text-white tracking-tight">{goalie.name}</h3>
-                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{goalie.team}</p>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="font-black italic uppercase text-base text-white tracking-tight truncate">{goalie.name}</h3>
+                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{goalie.team}</p>
                                             </div>
-                                            <div className="text-right pr-2">
+                                            <div className="text-right pr-2 shrink-0">
                                                 <div className="font-black italic text-3xl text-white group-hover:scale-110 transition-transform">
                                                     {goalieFilter === 'sv' ? goalie.stats.sv.toFixed(3) : goalie.stats[goalieFilter]}
                                                 </div>
@@ -279,7 +279,7 @@ export default function LeaderboardPage() {
                                 {MOCK_TEAMS.map((team, i) => (
                                     <div key={i} className="relative grid grid-cols-12 gap-2 items-center p-6 rounded-2xl border border-white/5 bg-[#050505] hover:border-white/20 transition-all group">
                                         <div className="col-span-1 font-black italic text-xl text-east-light">{team.rank}</div>
-                                        <div className="col-span-6 flex items-center gap-4 pl-4 font-black italic uppercase text-white tracking-wider">{team.name}</div>
+                                        <div className="col-span-6 flex items-center gap-4 pl-4 font-black italic uppercase text-white tracking-wider truncate">{team.name}</div>
                                         <div className="col-span-2 font-black text-gray-500 text-sm text-center italic">{team.gp}</div>
                                         <div className="col-span-3 font-black italic text-white text-3xl text-right group-hover:scale-110 transition-transform">{team.pts}</div>
                                     </div>
@@ -330,11 +330,11 @@ export default function LeaderboardPage() {
                                         <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/10 group-hover:border-white/40 transition-all shrink-0">
                                             <img src={stat.profiles?.avatar_url || "https://placehold.co/100"} className="w-full h-full object-cover" alt="Avatar" />
                                         </div>
-                                        <div className="flex-1">
-                                            <h3 className="font-black italic uppercase text-base text-white tracking-tight">{stat.profiles?.first_name} {stat.profiles?.last_name}</h3>
-                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">PRO DIVISION</p>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-black italic uppercase text-base text-white tracking-tight truncate">{stat.profiles?.first_name} {stat.profiles?.last_name}</h3>
+                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest truncate">PRO DIVISION</p>
                                         </div>
-                                        <div className="text-right pr-2">
+                                        <div className="text-right pr-2 shrink-0">
                                             <div className="font-black italic text-4xl text-white group-hover:scale-110 transition-transform">{stat[golfFilter]}</div>
                                             <div className="text-[8px] font-black text-white/30 uppercase tracking-widest italic">{golfFilter.replace('_', ' ')}</div>
                                         </div>
@@ -381,11 +381,11 @@ export default function LeaderboardPage() {
                                     <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white/5 group-hover:border-east-light/50 transition-all shadow-2xl shrink-0">
                                         <img src={stat.avatar || "https://placehold.co/100"} className="w-full h-full object-cover" alt={stat.name} />
                                     </div>
-                                    <div className="flex-1">
-                                        <h3 className="font-black italic uppercase text-lg text-white tracking-tight">{stat.name}</h3>
-                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">{stat.category}</p>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-black italic uppercase text-lg text-white tracking-tight truncate">{stat.name}</h3>
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic truncate">{stat.category}</p>
                                     </div>
-                                    <div className="text-right pr-2">
+                                    <div className="text-right pr-2 shrink-0">
                                         <div className="font-black italic text-4xl text-east-light group-hover:scale-110 transition-transform duration-300">{stat.stats[hyroxFilter]}</div>
                                         <div className="text-[8px] font-black text-gray-600 uppercase tracking-widest mt-1">TIME / REPS</div>
                                     </div>
