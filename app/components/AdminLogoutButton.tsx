@@ -10,8 +10,8 @@ export default function AdminLogoutButton() {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        router.push('/');
-        router.refresh();
+        // Force full reload to clear all client state/cache
+        window.location.href = '/';
     };
 
     return (
