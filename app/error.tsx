@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 import { AlertTriangle, Copy } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
