@@ -208,9 +208,9 @@ export default function LeaderboardPage() {
                                 </div>
                                 <div className="flex flex-col gap-3 max-w-md mx-auto">
                                     {sortedHockeyPlayers.map((player, i) => (
-                                        <div key={player.id} className={`group relative flex items-center p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${i === 0 ? 'bg-gray-900/50 border-east-light' : 'bg-[#050505] border-white/5 hover:border-white/20'}`}>
+                                        <div key={player.id} className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${i === 0 ? 'bg-gray-900/50 border-east-light' : 'bg-[#050505] border-white/5 hover:border-white/20'}`}>
                                             <div className="w-10 font-black italic text-2xl text-white/20 group-hover:text-east-light transition-colors">{i + 1}</div>
-                                            <div className="w-12 h-12 rounded-xl overflow-hidden mr-5 border-2 border-white/5 group-hover:border-east-light/50 transition-all shadow-xl">
+                                            <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/5 group-hover:border-east-light/50 transition-all shadow-xl shrink-0">
                                                 <img src={player.avatar || "https://placehold.co/100"} className="w-full h-full object-cover" alt={player.name} />
                                             </div>
                                             <div className="flex-1">
@@ -248,9 +248,9 @@ export default function LeaderboardPage() {
                                 </div>
                                 <div className="flex flex-col gap-3 max-w-md mx-auto">
                                     {sortedGoalies.map((goalie, i) => (
-                                        <div key={goalie.id} className="group relative flex items-center p-4 rounded-2xl border border-white/5 bg-[#050505] hover:border-white/20 transition-all duration-500">
+                                        <div key={goalie.id} className="group relative flex items-center gap-4 p-4 rounded-2xl border border-white/5 bg-[#050505] hover:border-white/20 transition-all duration-500">
                                             <div className="w-10 font-black italic text-2xl text-white/20">{i + 1}</div>
-                                            <div className="w-12 h-12 rounded-xl overflow-hidden mr-5 border-2 border-white/5 group-hover:border-east-light/50 transition-all">
+                                            <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/5 group-hover:border-east-light/50 transition-all shrink-0">
                                                 <img src={goalie.avatar || "https://placehold.co/100"} className="w-full h-full object-cover" alt={goalie.name} />
                                             </div>
                                             <div className="flex-1">
@@ -325,9 +325,9 @@ export default function LeaderboardPage() {
                         ) : (
                             <div className="flex flex-col gap-3 max-w-md mx-auto">
                                 {sortedGolfPlayers.map((stat, i) => (
-                                    <div key={stat.id} className={`group relative flex items-center p-5 rounded-2xl border transition-all duration-500 ${i === 0 ? 'bg-gray-900/40 border-white/40 shadow-[0_0_30px_rgba(255,255,255,0.05)]' : 'bg-[#050505] border-white/5 hover:border-white/20'}`}>
+                                    <div key={stat.id} className={`group relative flex items-center gap-4 p-5 rounded-2xl border transition-all duration-500 ${i === 0 ? 'bg-gray-900/40 border-white/40 shadow-[0_0_30px_rgba(255,255,255,0.05)]' : 'bg-[#050505] border-white/5 hover:border-white/20'}`}>
                                         <div className={`w-10 font-black italic text-2xl ${i === 0 ? 'text-white' : 'text-white/10'} group-hover:text-white transition-colors`}>{i + 1}</div>
-                                        <div className="w-12 h-12 rounded-xl overflow-hidden mr-5 border-2 border-white/10 group-hover:border-white/40 transition-all">
+                                        <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/10 group-hover:border-white/40 transition-all shrink-0">
                                             <img src={stat.profiles?.avatar_url || "https://placehold.co/100"} className="w-full h-full object-cover" alt="Avatar" />
                                         </div>
                                         <div className="flex-1">
@@ -376,9 +376,9 @@ export default function LeaderboardPage() {
 
                         <div className="flex flex-col gap-3 max-w-md mx-auto">
                             {MOCK_HYROX.map((stat, i) => (
-                                <div key={stat.id} className="group relative flex items-center p-6 rounded-2xl border border-white/5 bg-[#050505] hover:border-white/20 transition-all duration-500">
+                                <div key={stat.id} className="group relative flex items-center gap-4 p-6 rounded-2xl border border-white/5 bg-[#050505] hover:border-white/20 transition-all duration-500">
                                     <div className="w-10 font-black italic text-3xl text-white/10 group-hover:text-east-light transition-colors">{i + 1}</div>
-                                    <div className="w-14 h-14 rounded-2xl overflow-hidden mr-6 border-2 border-white/5 group-hover:border-east-light/50 transition-all shadow-2xl">
+                                    <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white/5 group-hover:border-east-light/50 transition-all shadow-2xl shrink-0">
                                         <img src={stat.avatar || "https://placehold.co/100"} className="w-full h-full object-cover" alt={stat.name} />
                                     </div>
                                     <div className="flex-1">
