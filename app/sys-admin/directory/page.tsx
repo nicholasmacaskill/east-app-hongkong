@@ -8,6 +8,7 @@ import { UserRole } from '@/app/types';
 import AvailabilityModal from '../coaches/AvailabilityModal';
 import { useToast } from '@/app/components/ui/Toast';
 import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
+import ClientOnly from '@/app/components/ClientOnly';
 
 export default function DirectoryPage() {
     const [profiles, setProfiles] = useState<any[]>([]);
@@ -974,7 +975,9 @@ export default function DirectoryPage() {
                                                             >
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="w-10 h-10 rounded-xl bg-white p-1">
-                                                                        <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : ''}/profile/${child.id}`} size={32} />
+                                                                        <ClientOnly>
+                                                                            <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : ''}/profile/${child.id}`} size={32} />
+                                                                        </ClientOnly>
                                                                     </div>
                                                                     <div>
                                                                         <p className="font-bold text-white text-sm">{child.first_name} {child.last_name}</p>
@@ -1031,7 +1034,9 @@ export default function DirectoryPage() {
                                                 >
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-10 h-10 rounded-xl bg-white p-1">
-                                                            <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : ''}/profile/${player.id}`} size={32} />
+                                                            <ClientOnly>
+                                                                <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : ''}/profile/${player.id}`} size={32} />
+                                                            </ClientOnly>
                                                         </div>
                                                         <div>
                                                             <p className="font-bold text-white text-sm">{player.first_name} {player.last_name}</p>
@@ -1147,7 +1152,9 @@ export default function DirectoryPage() {
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-xl bg-white p-1">
-                                                        <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : ''}/profile/${player.id}`} size={32} />
+                                                        <ClientOnly>
+                                                            <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : ''}/profile/${player.id}`} size={32} />
+                                                        </ClientOnly>
                                                     </div>
                                                     <div>
                                                         <p className="font-bold text-white text-sm">{player.first_name} {player.last_name}</p>
