@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { ArrowLeft, CheckCircle, CreditCard, Building } from 'lucide-react';
 import Link from 'next/link';
+import ClientOnly from '@/app/components/ClientOnly';
 
 export default function QRGenerator() {
     const [activeTab, setActiveTab] = useState<'checkin' | 'payment'>('checkin');
@@ -125,12 +126,14 @@ export default function QRGenerator() {
                 {/* Preview Area */}
                 <div className="flex flex-col items-center justify-center">
                     <div className="bg-white p-8 rounded-3xl shadow-2xl transform hover:scale-105 transition-transform duration-500 border-4 border-[#28D160]">
-                        <QRCodeSVG
-                            value={activeTab === 'checkin' ? checkInPayload : paymentPayload}
-                            size={250}
-                            level="H"
-                            includeMargin={true}
-                        />
+                        <ClientOnly>
+                            <QRCodeSVG
+                                value={activeTab === 'checkin' ? checkInPayload : paymentPayload}
+                                size={250}
+                                level="H"
+                                includeMargin={true}
+                            />
+                        </ClientOnly>
                     </div>
                     <div className="mt-8 text-center opacity-50">
                         <p className="font-mono text-xs max-w-xs break-all">
