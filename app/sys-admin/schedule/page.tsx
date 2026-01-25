@@ -470,7 +470,7 @@ export default function MasterSchedule() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Assign Coach</label>
                                     <select value={editingSession.instructor} onChange={e => setEditingSession({ ...editingSession, instructor: e.target.value })} disabled={editingSession.lockInstructor} className={`w-full bg-black/50 border border-white/10 p-3 rounded-xl text-xs font-bold outline-none focus:border-[#28D160] ${editingSession.lockInstructor ? 'opacity-50 cursor-not-allowed border-east-light/30' : ''}`}>
@@ -497,7 +497,7 @@ export default function MasterSchedule() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 bg-black/20 p-4 rounded-2xl border border-white/5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-black/20 p-4 rounded-2xl border border-white/5">
                                 <div>
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block flex items-center gap-1"><Clock size={10} /> Start Time</label>
                                     <input
