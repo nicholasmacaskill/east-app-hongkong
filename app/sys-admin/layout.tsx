@@ -109,40 +109,81 @@ export default function AdminLayout({
                         </div>
 
                         {/* Mobile Menu Toggle */}
-                        <div className="md:hidden relative group" tabIndex={0}>
-                            <button className="p-2 -mr-2 text-white/70 hover:text-white">
-                                <div className="space-y-1.5">
-                                    <div className="w-5 h-0.5 bg-current"></div>
-                                    <div className="w-5 h-0.5 bg-current"></div>
-                                    <div className="w-5 h-0.5 bg-current"></div>
-                                </div>
-                            </button>
-
-                            <div className="absolute right-0 top-full mt-4 w-64 bg-[#1e1e1e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden hidden group-focus-within:block animate-fadeIn">
-                                <div className="flex flex-col py-3 gap-1">
-                                    <Link href="/sys-admin" className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors">
-                                        <Home size={16} /> Dashboard
-                                    </Link>
-                                    <Link href="/sys-admin/schedule" className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors">
-                                        <Calendar size={16} /> Schedule
-                                    </Link>
-                                    <Link href="/sys-admin/qr" className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors">
-                                        <QrCode size={16} /> Check-In
-                                    </Link>
-                                    <Link href="/sys-admin/news" className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors">
-                                        <Newspaper size={16} /> News
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-
-                        <AdminLogoutButton />
+                        <MobileMenu />
                     </div>
                 </div>
             </header>
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full overflow-x-hidden">
                 {children}
             </main>
+        </div>
+    );
+}
+
+function MobileMenu() {
+    const [isOpen, setIsOpen] = useState(false);
+    const menuRef = React.useRef<HTMLDivElement>(null);
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
+    return (
+        <div className="md:hidden relative" ref={menuRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="p-2 -mr-2 text-white/70 hover:text-white transition-colors"
+            >
+                <div className="space-y-1.5">
+                    <div className={`w-5 h-0.5 bg-current transition-transform duration-300 ${isOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
+                    <div className={`w-5 h-0.5 bg-current transition-opacity duration-300 ${isOpen ? 'opacity-0' : ''}`}></div>
+                    <div className={`w-5 h-0.5 bg-current transition-transform duration-300 ${isOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
+                </div>
+            </button>
+
+            {isOpen && (
+                <div className="absolute right-0 top-full mt-4 w-64 bg-[#1e1e1e] border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-fadeIn z-[100]">
+                    <div className="flex flex-col py-3 gap-1">
+                        <Link
+                            href="/sys-admin"
+                            onClick={() => setIsOpen(false)}
+                            className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors"
+                        >
+                            <Home size={16} /> Dashboard
+                        </Link>
+                        <Link
+                            href="/sys-admin/schedule"
+                            onClick={() => setIsOpen(false)}
+                            className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors"
+                        >
+                            <Calendar size={16} /> Schedule
+                        </Link>
+                        <Link
+                            href="/sys-admin/qr"
+                            onClick={() => setIsOpen(false)}
+                            className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors"
+                        >
+                            <QrCode size={16} /> Check-In
+                        </Link>
+                        <Link
+                            href="/sys-admin/news"
+                            onClick={() => setIsOpen(false)}
+                            className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors"
+                        >
+                            <Newspaper size={16} /> News
+                        </Link>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
