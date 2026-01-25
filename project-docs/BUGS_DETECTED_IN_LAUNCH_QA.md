@@ -106,3 +106,11 @@
     *   Updated `app/components/AdminLogoutButton.tsx` to use `window.location.href = '/'`.
     *   This forces a hard browser reload, ensuring the client state is completely cleared and the landing page mounts in a pristine, unauthenticated state.
 *   **Status**: **CLEARED**. Logout is now safe and stable.
+
+### 16. Player Profile Crash (WebSocket Insecure)
+*   **Date**: 2026-01-25
+*   **Issue**: Player Profile crashed with "Technical Foul: WebSocket not available: The operation is insecure". This occurs mainly on specific mobile networks/browsers (like Mobile Safari in strict mode) where WSS connections to Supabase Realtime are blocked or certificates are rejected.
+*   **Resolution**:
+    *   Wrapped the Supabase Realtime subscription logic in `app/page.tsx` with a `try-catch` block.
+    *   **Graceful Degradation**: If WebSocket initialization fails, the app now catches the error, logs a warning, and continues running normally (without real-time updates) instead of crashing.
+*   **Status**: **CLEARED**. App is resilient to network restrictions.
