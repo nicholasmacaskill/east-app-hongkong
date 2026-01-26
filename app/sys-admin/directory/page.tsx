@@ -47,7 +47,12 @@ export default function DirectoryPage() {
     const [selectedCoach, setSelectedCoach] = useState<any>(null);
 
     // Normalization helper for search
-    const normalize = (val: any) => val?.toString().toLowerCase().trim() || '';
+    const normalize = (val: any) => {
+        if (val == null) return '';
+        if (typeof val === 'string') return val.toLowerCase().trim();
+        if (typeof val === 'number') return val.toString();
+        return '';
+    };
 
     useEffect(() => {
         fetchProfiles();
