@@ -149,15 +149,29 @@ export async function POST(request: Request) {
                     expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // +30 days
                     console.log(`🧪 TEST MODE: Using test_price_id: ${priceId}`);
                 } else {
-                    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-                    priceId = subscription.items.data[0].price.id;
+                    // Retry fetching subscription with delay to allow Stripe to populate data
+                    let subscription;
+                    let periodEnd;
+
+                    for (let attempt = 0; attempt < 3; attempt++) {
+                        subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                        periodEnd = (subscription as any).current_period_end;
+
+                        if (periodEnd && typeof periodEnd === 'number') {
+                            break; // Success!
+                        }
+
+                        if (attempt < 2) {
+                            console.log(`⏳ Subscription data incomplete (attempt ${attempt + 1}/3), retrying in 2s...`);
+                            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+                        }
+                    }
+
+                    priceId = subscription!.items.data[0].price.id;
                     plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
 
-                    // Defensive: Check if current_period_end exists
-                    const periodEnd = (subscription as any).current_period_end;
                     if (!periodEnd || typeof periodEnd !== 'number') {
-                        console.warn(`⚠️ Subscription missing current_period_end, using default (+30 days). Subscription:`, subscription.id);
-                        // Fallback: Default to 30 days from now (monthly subscription)
+                        console.warn(`⚠️ Subscription still missing current_period_end after retries. Using default (+30 days). Subscription:`, subscriptionId);
                         expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
                     } else {
                         expiresAt = new Date(periodEnd * 1000).toISOString();
