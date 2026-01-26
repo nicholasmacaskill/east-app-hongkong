@@ -26,26 +26,17 @@ export async function POST(request: Request) {
     }
 
     // Determine mode based on Price ID (Top Up is one-time payment)
-    const TOPUP_RATES: Record<string, number> = {
-      // 500 Credits ($500)
-      'price_1SkINl12ap1SCxTolaVPqdzA': 500,
-      // 1000 Credits ($1000) / Standard Top-up
-      'price_1SkINl12ap1SCxToIyvikBgt': 1000,
-      'price_1SkINl12ap1SCxToSkb1jrWV': 1200, // Current NEXT_PUBLIC_STRIPE_PRICE_TOPUP
-      // 2500 Credits ($2500)
-      'price_1SkINl12ap1SCxTodZWHrIQm': 2500,
-      // 5000 Credits ($5000)
-      'price_1SkINl12ap1SCxToJvTqg6wj': 5000,
-      // 10000 Credits ($10000)
-      'price_1SkINl12ap1SCxTotmD50PGA': 10000
-    };
+    const TOPUP_RATES: Record<string, number> = {};
 
-    // Check if provided ID is in our known Top Up list
-    // Fallback: Check environment variable just in case legacy env check is needed
-    const LEGACY_TOPUP_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP;
-    if (LEGACY_TOPUP_ID && !TOPUP_RATES[LEGACY_TOPUP_ID]) {
-      TOPUP_RATES[LEGACY_TOPUP_ID] = 1200; // Default legacy amount
-    }
+    // Dynamic mapping from Env Vars
+    if (process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER) TOPUP_RATES[process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER] = 500;
+    if (process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD) TOPUP_RATES[process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD] = 1000;
+    if (process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO) TOPUP_RATES[process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO] = 2500;
+    if (process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE) TOPUP_RATES[process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE] = 5000;
+    if (process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE) TOPUP_RATES[process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE] = 10000;
+
+    // Legacy Support (Optional - can be removed if strictly using new env vars)
+    // if (process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP) TOPUP_RATES[process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP] = 1200;
 
     const topUpAmount = TOPUP_RATES[priceId];
     const isTopUp = !!topUpAmount;
