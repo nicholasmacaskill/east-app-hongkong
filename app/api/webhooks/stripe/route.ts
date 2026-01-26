@@ -9,6 +9,7 @@ import { checkRateLimit, paymentRateLimit, getClientIdentifier } from '@/app/lib
 // 1. Setup Stripe
 // 1. Setup Stripe
 // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!); (Lazy init below)
+// Webhook secret (Updated: 2026-01-25)
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 // 2. Setup Supabase Admin (Bypass RLS)
