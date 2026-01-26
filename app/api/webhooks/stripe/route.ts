@@ -256,12 +256,34 @@ export async function POST(request: Request) {
                 const supabaseAdmin = getSupabaseAdmin();
                 const { data: profile } = await supabaseAdmin
                     .from('profiles')
-                    .select('id')
+                    .select('id, tier')
                     .eq('stripe_customer_id', customerId)
                     .single();
 
                 if (profile) {
                     await handleRenewal(profile.id, plan.credits, 'membership', invoice.id, `Monthly renewal: ${plan.credits} credits`, currentPeriodEnd);
+
+                    // NEW: If family plan, extend children's membership too
+                    if (profile.tier && profile.tier.startsWith('family')) {
+                        console.log(`🚸 Family renewal: Extending children's membership for parent ${profile.id}`);
+
+                        const expiresAt = new Date(currentPeriodEnd * 1000).toISOString();
+                        const { data: children, error: childError } = await supabaseAdmin
+                            .from('profiles')
+                            .select('id, name')
+                            .eq('parent_id', profile.id);
+
+                        if (children && children.length > 0) {
+                            for (const child of children) {
+                                await supabaseAdmin
+                                    .from('profiles')
+                                    .update({ membership_expires: expiresAt })
+                                    .eq('id', child.id);
+
+                                console.log(`✅ Extended child membership: ${child.name || child.id}`);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -277,13 +299,42 @@ export async function POST(request: Request) {
 
             // We keep the expiry date as is (user access remains until end of period),
             // but mark status as canceled so no new credits/charges occur.
-            await supabaseAdmin
+            const { data: parentProfile } = await supabaseAdmin
                 .from('profiles')
-                .update({
-                    subscription_status: 'canceled',
-                    // Optional: You could ensure expires matches subscription.current_period_end * 1000
-                })
-                .eq('stripe_customer_id', customerId);
+                .select('id, tier')
+                .eq('stripe_customer_id', customerId)
+                .single();
+
+            if (parentProfile) {
+                await supabaseAdmin
+                    .from('profiles')
+                    .update({
+                        subscription_status: 'canceled',
+                        // Optional: You could ensure expires matches subscription.current_period_end * 1000
+                    })
+                    .eq('id', parentProfile.id);
+
+                // NEW: If family plan, cancel children's subscriptions too
+                if (parentProfile.tier && parentProfile.tier.startsWith('family')) {
+                    console.log(`🚸 Family cancellation: Marking children as canceled for parent ${parentProfile.id}`);
+
+                    const { data: children } = await supabaseAdmin
+                        .from('profiles')
+                        .select('id, name')
+                        .eq('parent_id', parentProfile.id);
+
+                    if (children && children.length > 0) {
+                        for (const child of children) {
+                            await supabaseAdmin
+                                .from('profiles')
+                                .update({ subscription_status: 'canceled' })
+                                .eq('id', child.id);
+
+                            console.log(`✅ Canceled child subscription: ${child.name || child.id}`);
+                        }
+                    }
+                }
+            }
         }
 
         // ====================================================
@@ -360,6 +411,42 @@ async function updateProfile(userId: string, creditsToAdd: number, tier: string,
 
     // 3. Log Transaction
     await logTransaction(userId, creditsToAdd, 'membership', subscriptionId, `Initial membership purchase: ${creditsToAdd} credits`);
+
+    // 4. NEW: If family plan, activate all associated children
+    if (tier.startsWith('family')) {
+        console.log(`🚸 Family plan detected (${tier}). Activating children for parent: ${userId}`);
+
+        const { data: children, error: childError } = await supabaseAdmin
+            .from('profiles')
+            .select('id, name, email')
+            .eq('parent_id', userId);
+
+        if (childError) {
+            console.error(`❌ Error fetching children:`, childError);
+        } else if (children && children.length > 0) {
+            console.log(`📝 Found ${children.length} children to activate`);
+
+            for (const child of children) {
+                const { error: updateError } = await supabaseAdmin
+                    .from('profiles')
+                    .update({
+                        subscription_status: 'active',
+                        account_status: 'active',
+                        membership_start: new Date().toISOString(),
+                        membership_expires: expiresAt
+                    })
+                    .eq('id', child.id);
+
+                if (updateError) {
+                    console.error(`❌ Failed to activate child ${child.id}:`, updateError);
+                } else {
+                    console.log(`✅ Activated child: ${child.name || child.email || child.id}`);
+                }
+            }
+        } else {
+            console.log(`⚠️ No children found for parent ${userId} (family plan purchased but no linked children yet)`);
+        }
+    }
 }
 
 // Handles Renewals
