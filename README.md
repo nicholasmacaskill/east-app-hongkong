@@ -49,7 +49,7 @@ This project follows a **high-quality, maintainable-first approach**:
 - **Mandatory Test IDs**: `data-testid` attributes on all critical paths for reliable, maintainable selectors
 - **Zero Tolerance for Flaky Tests**: Tests must pass consistently or be fixed/removed—no "sometimes fails" accepted
 
-**AI-Assisted Engineering:**
+**AI-First Engineering:**
 - **Agent Orchestration**: Leverages specialized agents (Architect, Auditor, Executor) with defined roles and protocols
 - **Human Oversight**: Critical paths (payments, security, data migrations) require manual review and approval
 - **Automated Standards**: AI enforces Definition of Done, but cannot bypass security or testing requirements
