@@ -5,10 +5,10 @@ const { Client } = require('pg');
 ['PGUSER', 'PGPASSWORD', 'PGHOST', 'PGPORT', 'PGDATABASE', 'DATABASE_URL'].forEach(e => delete process.env[e]);
 
 const client = new Client({
-    connectionString: 'postgresql://postgres.ktlicvvczrlppqkcqedv:J0YqJq1EnDuyEF6X@aws-1-ap-southeast-1.pooler.supabase.com:5432/postgres',
-    ssl: {
-        rejectUnauthorized: false
-    }
+  connectionString: process.env.DATABASE_URL || process.env.SUPABASE_DB_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 const sql = `
@@ -94,18 +94,18 @@ $$;
 `;
 
 async function main() {
-    try {
-        console.log("🔌 Connecting to Supabase...");
-        await client.connect();
-        console.log("📊 Adding max_capacity column and updating booking function...");
-        await client.query(sql);
-        console.log("✅ Successfully added session capacity constraints!");
-    } catch (err) {
-        console.error("❌ Error:", err.message);
-        process.exit(1);
-    } finally {
-        await client.end();
-    }
+  try {
+    console.log("🔌 Connecting to Supabase...");
+    await client.connect();
+    console.log("📊 Adding max_capacity column and updating booking function...");
+    await client.query(sql);
+    console.log("✅ Successfully added session capacity constraints!");
+  } catch (err) {
+    console.error("❌ Error:", err.message);
+    process.exit(1);
+  } finally {
+    await client.end();
+  }
 }
 
 main();
