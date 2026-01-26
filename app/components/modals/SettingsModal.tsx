@@ -8,6 +8,7 @@ import {
     ChevronDown, Save, Camera
 } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
+import { compressImage } from '@/app/lib/image-utils';
 
 // Define UserRole locally or import from types if available, but to be safe and avoid circular dep issues in this modal:
 // We will treat role as string for UI purposes, but ideally it matches the main app types.
@@ -164,10 +165,13 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
 
         let finalAvatarUrl = profileData.avatar_url;
         if (selectedFile) {
-            const fileExt = selectedFile.name.split('.').pop();
+            // Compress image before upload
+            const compressedFile = await compressImage(selectedFile);
+
+            const fileExt = compressedFile.name.split('.').pop();
             const fileName = `avatar-${Date.now()}.${fileExt}`;
             const filePath = `${fileName}`;
-            const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, selectedFile);
+            const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, compressedFile);
 
             if (uploadError) {
                 console.error('Upload error:', uploadError);

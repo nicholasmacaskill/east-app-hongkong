@@ -3,6 +3,7 @@ import { Edit2, Activity, Award, Camera, Coins } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '../ui/Toast';
 import UploadGolfStatsModal from '../modals/UploadGolfStatsModal';
+import { compressImage } from '@/app/lib/image-utils';
 
 // Simple Card Wrapper
 const Card = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
@@ -107,7 +108,10 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
+    const originalFile = e.target.files[0];
+
+    // Compress image before upload
+    const file = await compressImage(originalFile);
 
     const fileExt = file.name.split('.').pop();
     const fileName = `avatar-${profileData.id}-${Date.now()}.${fileExt}`;

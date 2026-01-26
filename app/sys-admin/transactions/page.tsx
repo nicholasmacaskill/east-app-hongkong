@@ -48,18 +48,28 @@ export default function AdminTransactionsPage() {
     const handleDownloadCSV = () => {
         if (!transactions.length) return;
 
+        // Formula Injection Sanitization Helper
+        const sanitize = (val: any) => {
+            const str = String(val || '');
+            // If starts with =, +, -, @, tab or carriage return, prepend ' to force text mode
+            if (/^[=+\-@\t\r]/.test(str)) {
+                return `'${str}`;
+            }
+            return str;
+        };
+
         // Define headers
         const headers = ['Date', 'User Name', 'User Email', 'Type', 'Amount', 'Description', 'Stripe ID'];
 
         // Map data to rows
         const rows = filtered.map(t => [
             safetoLocaleDateString(t.created_at, 'en-GB'),
-            `"${(t.profiles?.first_name || '')} ${(t.profiles?.last_name || '')}"`.trim(), // Quote names to handle commas
-            t.profiles?.contact_email || t.profiles?.email || '',
-            t.type || '',
+            `"${sanitize(`${(t.profiles?.first_name || '')} ${(t.profiles?.last_name || '')}`.trim())}"`,
+            sanitize(t.profiles?.contact_email || t.profiles?.email || ''),
+            sanitize(t.type || ''),
             t.amount || 0,
-            `"${(t.description || '').replace(/"/g, '""')}"`, // Escape quotes in description
-            t.stripe_session_id || ''
+            `"${sanitize((t.description || '').replace(/"/g, '""'))}"`,
+            sanitize(t.stripe_session_id || '')
         ]);
 
         // Combine into CSV string

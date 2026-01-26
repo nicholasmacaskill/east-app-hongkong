@@ -7,6 +7,7 @@ import { useGallery } from '@/app/hooks/useGallery';
 import Lightbox from '@/app/components/ui/Lightbox';
 import ClassModal from '@/app/components/modals/ClassModal';
 import { Session } from '@/app/types/session';
+import { compressImage } from '@/app/lib/image-utils';
 
 // Mock Data for redesign (Keep stats for now/remove later)
 const PROFILE_STATS = {
@@ -107,8 +108,11 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
     // Avatar Upload
     const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
-        const file = e.target.files[0];
+        const originalFile = e.target.files[0];
         setUploading(true);
+
+        // Compress image before upload
+        const file = await compressImage(originalFile);
 
         const fileExt = file.name.split('.').pop();
         const fileName = `avatar-${profileData.id}-${Date.now()}.${fileExt}`;
@@ -168,8 +172,11 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
     // Gallery Upload
     const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
-        const file = e.target.files[0];
+        const originalFile = e.target.files[0];
         setUploading(true);
+
+        // Compress image before upload
+        const file = await compressImage(originalFile);
 
         const fileExt = file.name.split('.').pop();
         const fileName = `gallery-${profileData.id}-${Date.now()}.${fileExt}`;

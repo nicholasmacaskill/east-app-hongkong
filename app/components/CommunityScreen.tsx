@@ -5,6 +5,7 @@ import { ChevronDown, ChevronLeft, Trash2, Camera, Image as ImageIcon, Paperclip
 import { useToast } from './ui/Toast';
 import Link from 'next/link';
 import { Post, Message, Profile } from '@/app/types/community';
+import { compressImage } from '@/app/lib/image-utils';
 
 // --- HELPER: Safely Format Post Data ---
 // ✅ UPDATED: Accepts currentUserId and now constructs full name from First/Last
@@ -241,10 +242,13 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
     // --- ACTIONS ---
 
     const uploadImage = async (file: File) => {
-        const fileExt = file.name.split('.').pop();
+        // Compress image before upload
+        const compressedFile = await compressImage(file);
+
+        const fileExt = compressedFile.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `${fileName}`;
-        const { error } = await supabase.storage.from('uploads').upload(filePath, file);
+        const { error } = await supabase.storage.from('uploads').upload(filePath, compressedFile);
         if (error) { console.error('Upload error:', error); return null; }
         const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
         return data.publicUrl;

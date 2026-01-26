@@ -1,5 +1,6 @@
 // app/lib/email.ts
 import { Resend } from 'resend';
+import { getSupabaseAdmin } from './supabaseAdmin';
 
 // Initialize Resend with the key from env.local
 // const resend = new Resend(process.env.RESEND_API_KEY); (Lazy init below)
@@ -15,9 +16,33 @@ interface EmailParams {
   to: string;
   subject: string;
   html: string;
+  source?: string; // Optional: track where the email came from (e.g., 'booking', 'password-reset')
 }
 
-export async function sendEmail({ to, subject, html }: EmailParams) {
+// Log email to database for Playwright testing
+async function logEmailToDatabase(params: EmailParams) {
+  if (process.env.LOG_EMAILS_TO_DB !== 'true') {
+    return; // Skip if not enabled
+  }
+
+  try {
+    const supabaseAdmin = getSupabaseAdmin();
+    await supabaseAdmin.from('test_emails').insert({
+      to_address: params.to,
+      subject: params.subject,
+      html_body: params.html,
+      trigger_source: params.source || 'unknown',
+    });
+  } catch (err) {
+    console.error('Failed to log email to database:', err);
+    // Don't fail the email send if logging fails
+  }
+}
+
+export async function sendEmail({ to, subject, html, source }: EmailParams) {
+  // Log to database for testing (non-blocking)
+  await logEmailToDatabase({ to, subject, html, source });
+
   // Check for API Key first
   if (!process.env.RESEND_API_KEY) {
     if (process.env.NODE_ENV !== 'production') {
@@ -37,9 +62,10 @@ export async function sendEmail({ to, subject, html }: EmailParams) {
 
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
+    const fromAddress = process.env.EMAIL_FROM || 'EAST Training <onboarding@eastsportsgroup.com>';
 
     const { data, error } = await resend.emails.send({
-      from: 'EAST Training <onboarding@resend.dev>',
+      from: fromAddress,
       to,
       subject,
       html,
