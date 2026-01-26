@@ -284,7 +284,7 @@ export async function POST(request: Request) {
                         const expiresAt = new Date(currentPeriodEnd * 1000).toISOString();
                         const { data: children, error: childError } = await supabaseAdmin
                             .from('profiles')
-                            .select('id, name')
+                            .select('id, first_name')
                             .eq('parent_id', profile.id);
 
                         if (children && children.length > 0) {
@@ -294,7 +294,7 @@ export async function POST(request: Request) {
                                     .update({ membership_expires: expiresAt })
                                     .eq('id', child.id);
 
-                                console.log(`✅ Extended child membership: ${child.name || child.id}`);
+                                console.log(`✅ Extended child membership: ${child.first_name || child.id}`);
                             }
                         }
                     }
@@ -334,7 +334,7 @@ export async function POST(request: Request) {
 
                     const { data: children } = await supabaseAdmin
                         .from('profiles')
-                        .select('id, name')
+                        .select('id, first_name')
                         .eq('parent_id', parentProfile.id);
 
                     if (children && children.length > 0) {
@@ -344,7 +344,7 @@ export async function POST(request: Request) {
                                 .update({ subscription_status: 'canceled' })
                                 .eq('id', child.id);
 
-                            console.log(`✅ Canceled child subscription: ${child.name || child.id}`);
+                            console.log(`✅ Canceled child subscription: ${child.first_name || child.id}`);
                         }
                     }
                 }
@@ -432,7 +432,7 @@ async function updateProfile(userId: string, creditsToAdd: number, tier: string,
 
         const { data: children, error: childError } = await supabaseAdmin
             .from('profiles')
-            .select('id, name, email')
+            .select('id, first_name, contact_email')
             .eq('parent_id', userId);
 
         if (childError) {
@@ -454,7 +454,7 @@ async function updateProfile(userId: string, creditsToAdd: number, tier: string,
                 if (updateError) {
                     console.error(`❌ Failed to activate child ${child.id}:`, updateError);
                 } else {
-                    console.log(`✅ Activated child: ${child.name || child.email || child.id}`);
+                    console.log(`✅ Activated child: ${child.first_name || child.contact_email || child.id}`);
                 }
             }
         } else {
