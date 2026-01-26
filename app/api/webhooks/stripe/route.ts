@@ -365,16 +365,42 @@ export async function POST(request: Request) {
 
             // Sync status. 'past_due'/'unpaid' will trigger Locked UI.
             // 'active' will Unlock UI.
-            const { error } = await supabaseAdmin
+            // Sync status. 'past_due'/'unpaid' will trigger Locked UI.
+            // 'active' will Unlock UI.
+            const { data: parentProfile, error } = await supabaseAdmin
                 .from('profiles')
                 .update({ subscription_status: status })
-                .eq('stripe_customer_id', customerId);
+                .eq('stripe_customer_id', customerId)
+                .select('id, tier')
+                .single();
 
             if (error) {
                 console.error(`❌ DB Error updating subscription status: ${error.message}`);
                 return NextResponse.json({ error: error.message }, { status: 500 });
             }
             console.log(`✅ DB Success: Updated subscription_status to '${status}'`);
+
+            // NEW: Propagate status to children for family plans
+            if (parentProfile && parentProfile.tier && parentProfile.tier.startsWith('family')) {
+                console.log(`🚸 Family status update: Syncing children to '${status}' for parent ${parentProfile.id}`);
+
+                // Find children
+                const { data: children } = await supabaseAdmin
+                    .from('profiles')
+                    .select('id, first_name')
+                    .eq('parent_id', parentProfile.id);
+
+                if (children && children.length > 0) {
+                    for (const child of children) {
+                        await supabaseAdmin
+                            .from('profiles')
+                            .update({ subscription_status: status })
+                            .eq('id', child.id);
+
+                        console.log(`✅ Synced child status: ${child.first_name || child.id} -> ${status}`);
+                    }
+                }
+            }
         }
 
         return NextResponse.json({ received: true });
