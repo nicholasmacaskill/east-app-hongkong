@@ -62,6 +62,19 @@ export async function POST(request: Request) {
 
         const body = await request.text();
 
+        // 🔍 DEBUG LOGGING 🔍
+        const supabaseAdmin = getSupabaseAdmin();
+        const { error: logError } = await supabaseAdmin.from('webhook_debug_logs').insert({
+            event_type: 'INBOUND_REQUEST',
+            payload: {
+                method: request.method,
+                url: request.url,
+                body_snippet: body.substring(0, 500) // First 500 chars
+            },
+            status: 'RECEIVED'
+        });
+        if (logError) console.error("DB Log Failed:", logError);
+
         // 1. Diagnostics & Runtime Check
         console.log(`[STRIPE WEBHOOK] Inbound Request. Method: ${request.method}, URL: ${request.url}`);
 
@@ -138,7 +151,17 @@ export async function POST(request: Request) {
                     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
                     priceId = subscription.items.data[0].price.id;
                     plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
-                    expiresAt = new Date((subscription as any).current_period_end * 1000).toISOString();
+
+                    // Defensive: Check if current_period_end exists
+                    const periodEnd = (subscription as any).current_period_end;
+                    if (!periodEnd || typeof periodEnd !== 'number') {
+                        console.error(`❌ Invalid subscription period_end: ${periodEnd}`, subscription);
+                        return NextResponse.json({
+                            error: 'Invalid subscription data',
+                            details: 'Missing current_period_end'
+                        }, { status: 400 });
+                    }
+                    expiresAt = new Date(periodEnd * 1000).toISOString();
                 }
 
                 if (!plan.tier || plan.tier === 'individual' && !PLAN_DETAILS[priceId]) {
