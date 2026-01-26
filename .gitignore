@@ -27,3 +27,6 @@ debug_*.png
 # Test artifacts
 test-results/
 playwright-report/
+*.env.*
+.env.production
+.env.preview

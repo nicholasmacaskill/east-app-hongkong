@@ -107,6 +107,8 @@ function MembershipContent() {
     const [isLoading, setIsLoading] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+    const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
 
     useEffect(() => {
         const getUser = async () => {
@@ -116,12 +118,24 @@ function MembershipContent() {
 
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('role')
+                    .select('role, subscription_status, subscription_tier, subscription_expires_at')
                     .eq('id', user.id)
                     .single();
 
                 const finalRole = profile?.role || user.user_metadata?.role;
                 if (finalRole) setUserRole(finalRole);
+
+                // Check if user has an active subscription
+                if (profile?.subscription_status === 'active' && profile?.subscription_expires_at) {
+                    const expiryDate = new Date(profile.subscription_expires_at);
+                    if (expiryDate > new Date()) {
+                        setHasActiveSubscription(true);
+                        setSubscriptionInfo({
+                            tier: profile.subscription_tier,
+                            expires: expiryDate
+                        });
+                    }
+                }
             }
         };
         getUser();
@@ -314,18 +328,32 @@ function MembershipContent() {
 
                 {/* FOOTER BUTTON */}
                 <div className="px-7 pb-8 pt-4 bg-gradient-to-t from-white via-white to-white/90 shrink-0">
-                    <button
-                        onClick={handlePurchase}
-                        disabled={isLoading}
-                        className="w-full bg-black text-white font-montserrat font-black italic text-[13px] py-4.5 rounded-2xl uppercase tracking-widest hover:bg-east-light hover:text-black transition-all shadow-2xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3 h-[60px]"
-                    >
-                        {isLoading ? 'WORKING...' : (
-                            <>
-                                <span>{billingCycle === 'yearly' ? 'ACTIVATE YEARLY' : 'ACTIVATE MONTHLY'}</span>
+                    {hasActiveSubscription ? (
+                        <div className="w-full bg-green-50 border-2 border-green-500 text-green-700 font-montserrat font-black italic text-[13px] py-4.5 rounded-2xl uppercase tracking-widest flex flex-col items-center justify-center gap-2 h-[60px]">
+                            <div className="flex items-center gap-2">
                                 <CheckCircle size={18} />
-                            </>
-                        )}
-                    </button>
+                                <span>ACTIVE MEMBER</span>
+                            </div>
+                            {subscriptionInfo && (
+                                <p className="text-[9px] font-bold text-green-600 uppercase tracking-wider">
+                                    Renews {new Date(subscriptionInfo.expires).toLocaleDateString()}
+                                </p>
+                            )}
+                        </div>
+                    ) : (
+                        <button
+                            onClick={handlePurchase}
+                            disabled={isLoading}
+                            className="w-full bg-black text-white font-montserrat font-black italic text-[13px] py-4.5 rounded-2xl uppercase tracking-widest hover:bg-east-light hover:text-black transition-all shadow-2xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3 h-[60px]"
+                        >
+                            {isLoading ? 'WORKING...' : (
+                                <>
+                                    <span>{billingCycle === 'yearly' ? 'ACTIVATE YEARLY' : 'ACTIVATE MONTHLY'}</span>
+                                    <CheckCircle size={18} />
+                                </>
+                            )}
+                        </button>
+                    )}
                     <p className="text-[8px] text-center text-gray-400 mt-4 font-bold uppercase tracking-widest">SECURE CHECKOUT VIA STRIPE</p>
                 </div>
             </div>

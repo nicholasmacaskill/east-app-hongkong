@@ -19,6 +19,10 @@ export default function PaymentSuccessHandler() {
 
         if (success === 'true') {
             hasFired.current = true;
+
+            // Force router refresh to reload all server data (credits, profile, etc.)
+            router.refresh();
+
             addToast('Payment Successful! Credits Added.', 'success');
 
             // Clean URL without refresh
