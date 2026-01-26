@@ -5,14 +5,24 @@ const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 
-// Load .env.local
-const envPath = path.resolve(process.cwd(), '.env.local');
-if (fs.existsSync(envPath)) {
-    dotenv.config({ path: envPath });
+// Load .env.preview or .env.local or .env.production
+const envPreviewPath = path.resolve(process.cwd(), '.env.preview');
+const envProductionPath = path.resolve(process.cwd(), '.env.production');
+const envLocalPath = path.resolve(process.cwd(), '.env.local');
+
+if (fs.existsSync(envProductionPath)) {
+    console.log("Loading .env.production");
+    dotenv.config({ path: envProductionPath });
+} else if (fs.existsSync(envPreviewPath)) {
+    console.log("Loading .env.preview");
+    dotenv.config({ path: envPreviewPath });
+} else if (fs.existsSync(envLocalPath)) {
+    console.log("Loading .env.local");
+    dotenv.config({ path: envLocalPath });
 }
 
 async function executeSqlFile(filePath) {
-    const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    let connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
     if (!connectionString) {
         console.error("❌ Error: No DATABASE_URL or POSTGRES_URL found in .env.local");

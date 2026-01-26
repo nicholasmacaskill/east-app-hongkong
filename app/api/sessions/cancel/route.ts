@@ -80,26 +80,19 @@ export async function DELETE(request: Request) {
         .eq('session_id', targetSesId)
         .single();
 
+      let refundAmount = 0;
       if (reg) {
         const originalPaid = reg.credits_paid || 0;
-        const refundAmount = Math.floor(originalPaid * refundMultiplier);
+        refundAmount = Math.floor(originalPaid * refundMultiplier);
 
         console.log(`[CANCEL] ID ${targetSesId}: Paid ${originalPaid}, Refund ${refundAmount} (Mult: ${refundMultiplier})`);
-
-        // Apply calculated refund if different (updates DB for RPC to read)
-        if (originalPaid !== refundAmount) {
-          await supabaseAdmin
-            .from('registrations')
-            .update({ credits_paid: refundAmount })
-            .eq('user_id', userId)
-            .eq('session_id', targetSesId);
-        }
       }
 
-      // C. Execute Cancellation RPC
-      const { data: result, error } = await supabaseAdmin.rpc('cancel_session_and_refund', {
-        p_attendee_id: userId, // Corrected from p_user_id
-        p_session_id: targetSesId
+      // C. Execute Cancellation RPC with Explicit Refund Amount
+      const { data: result, error } = await supabaseAdmin.rpc('cancel_session_and_refund_v2', {
+        p_attendee_id: userId,
+        p_session_id: targetSesId,
+        p_refund_amount: refundAmount
       });
 
       if (error) {
