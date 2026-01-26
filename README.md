@@ -36,12 +36,28 @@ A single, reliable platform that:
 ### Development Philosophy
 This project follows a **high-quality, maintainable-first approach**:
 
+**Architecture & Security:**
 - **Zero-Trust Security**: Role-based access control (RBAC) enforced at database level with Row-Level Security (RLS)
 - **Definition of Done Compliance**: Every feature must pass 6 criteria before merge (schema sync, API logic, type safety, UI flow, regression audit, empty states)
 - **Risk-Driven Development**: Active `LAUNCH_RISKS.md` tracking and mitigation of production risks before they materialize
-- **AI-Assisted Engineering**: Leverages agent-based development with clear protocols, but human oversight on critical paths
-- **Test-First Mindset**: Playwright E2E tests for critical flows, database constraint testing, and automated regression checks
-- **Progressive Enhancement**: Mobile-first design that degrades gracefully and works offline where possible
+
+**Testing Approach:**
+- **E2E-First**: Playwright tests for all critical user flows (authentication, payments, bookings, admin operations)
+- **Database Constraint Testing**: Verify business rules at the DB level (capacity limits, credit balances, role permissions)
+- **Test Data Isolation**: Dedicated `test_emails` table and test-specific cleanup to prevent production contamination
+- **Visual Verification**: Headed mode validation before committing tests to catch selector issues early
+- **Mandatory Test IDs**: `data-testid` attributes on all critical paths for reliable, maintainable selectors
+- **Zero Tolerance for Flaky Tests**: Tests must pass consistently or be fixed/removed—no "sometimes fails" accepted
+
+**AI-Assisted Engineering:**
+- **Agent Orchestration**: Leverages specialized agents (Architect, Auditor, Executor) with defined roles and protocols
+- **Human Oversight**: Critical paths (payments, security, data migrations) require manual review and approval
+- **Automated Standards**: AI enforces Definition of Done, but cannot bypass security or testing requirements
+
+**Progressive Enhancement:**
+- Mobile-first design that degrades gracefully
+- Client-side optimizations (image compression, offline-ready components)
+- Performance budgets and monitoring
 
 ---
 
