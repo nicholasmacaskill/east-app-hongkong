@@ -45,6 +45,41 @@ export default function AdminTransactionsPage() {
         (t.type || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const handleDownloadCSV = () => {
+        if (!transactions.length) return;
+
+        // Define headers
+        const headers = ['Date', 'User Name', 'User Email', 'Type', 'Amount', 'Description', 'Stripe ID'];
+
+        // Map data to rows
+        const rows = filtered.map(t => [
+            safetoLocaleDateString(t.created_at, 'en-GB'),
+            `"${(t.profiles?.first_name || '')} ${(t.profiles?.last_name || '')}"`.trim(), // Quote names to handle commas
+            t.profiles?.contact_email || t.profiles?.email || '',
+            t.type || '',
+            t.amount || 0,
+            `"${(t.description || '').replace(/"/g, '""')}"`, // Escape quotes in description
+            t.stripe_session_id || ''
+        ]);
+
+        // Combine into CSV string
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(r => r.join(','))
+        ].join('\n');
+
+        // Create Blob and download link
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `transactions_export_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="flex flex-col gap-8 w-full overflow-x-hidden">
             <div className="flex flex-col gap-2">
@@ -57,7 +92,7 @@ export default function AdminTransactionsPage() {
                         </p>
                     </div>
                     <button
-                        onClick={() => {/* CSV Export logic */ }}
+                        onClick={handleDownloadCSV}
                         className="flex items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg"
                     >
                         <Download size={14} /> Export CSV
