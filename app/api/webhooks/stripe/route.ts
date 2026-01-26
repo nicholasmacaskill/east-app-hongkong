@@ -19,21 +19,35 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 // Export for testing
 export const PLAN_DETAILS: Record<string, { credits: number; tier: string }> = {};
 
-// Individual (Pro) & Family 1 (Same Price)
+// Individual (Pro)
 const INDIVIDUAL_PRICES = [
     process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY,
-    process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_1_MONTHLY
 ].filter(Boolean);
 INDIVIDUAL_PRICES.forEach(id => {
     PLAN_DETAILS[id!] = { credits: 1000, tier: 'individual' };
 });
 
+// Family 1 (Same price as Individual, but for parents)
+const FAMILY_1_PRICES = [
+    process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_1_MONTHLY
+].filter(Boolean);
+FAMILY_1_PRICES.forEach(id => {
+    PLAN_DETAILS[id!] = { credits: 1000, tier: 'family_1' };
+});
+
 const INDIVIDUAL_YEARLY = [
     process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY,
-    process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_1_YEARLY
 ].filter(Boolean);
 INDIVIDUAL_YEARLY.forEach(id => {
     PLAN_DETAILS[id!] = { credits: 15000, tier: 'individual' }; // Yearly 15,000 credits
+});
+
+// Family 1 Yearly
+const FAMILY_1_YEARLY = [
+    process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_1_YEARLY
+].filter(Boolean);
+FAMILY_1_YEARLY.forEach(id => {
+    PLAN_DETAILS[id!] = { credits: 15000, tier: 'family_1' };
 });
 
 // Family 2
