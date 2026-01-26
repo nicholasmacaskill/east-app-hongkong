@@ -156,7 +156,7 @@ export default function ScheduleScreen({
 
   return (
     <div className="min-h-screen bg-black pb-24 animate-fadeIn relative">
-      <div className="relative z-10">
+      <div className="relative z-10 pt-16">
         <div className="mx-4 mb-4 flex flex-col gap-3">
 
 

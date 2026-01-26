@@ -91,10 +91,16 @@ export default function DirectoryPage() {
         const passwordToUse = newUser.password || Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
             const apiEndpoint = newUser.role === 'coach' ? '/api/admin/create-coach' : '/api/admin/create-player';
             const response = await fetch(apiEndpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
                 body: JSON.stringify({
                     firstName: newUser.first_name,
                     lastName: newUser.last_name,
@@ -181,9 +187,15 @@ export default function DirectoryPage() {
         if (!confirmed) return;
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
             const response = await fetch('/api/admin/delete-player', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
                 body: JSON.stringify({ userId: profileId })
             });
 
@@ -232,9 +244,15 @@ export default function DirectoryPage() {
         if (!editingUser || !editingUser.id) return;
 
         try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
             const response = await fetch('/api/admin/update-player', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
                 body: JSON.stringify({
                     userId: editingUser.id,
                     firstName: editingUser.first_name,
@@ -960,7 +978,10 @@ export default function DirectoryPage() {
                                                     <button onClick={() => handleEditClick(parent)} className="p-2 text-gray-500 hover:text-white transition-colors">
                                                         <Edit2 size={16} />
                                                     </button>
-                                                    <button onClick={() => handleDeleteProfile(parent.id, `${parent.first_name} ${parent.last_name}`)} className="p-2 text-gray-500 hover:text-red-500 transition-colors">
+                                                    <button onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteProfile(parent.id, `${parent.first_name} ${parent.last_name}`);
+                                                    }} className="p-2 text-gray-500 hover:text-red-500 transition-colors">
                                                         <Trash2 size={16} />
                                                     </button>
                                                 </div>
@@ -1013,7 +1034,10 @@ export default function DirectoryPage() {
                                                                     <button onClick={() => handleEditClick(child)} className="p-1.5 text-gray-400 hover:text-[#28D160]">
                                                                         <Edit2 size={14} />
                                                                     </button>
-                                                                    <button onClick={() => handleDeleteProfile(child.id, `${child.first_name} ${child.last_name}`)} className="p-1.5 text-gray-400 hover:text-red-500">
+                                                                    <button onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleDeleteProfile(child.id, `${child.first_name} ${child.last_name}`);
+                                                                    }} className="p-1.5 text-gray-400 hover:text-red-500">
                                                                         <Trash2 size={14} />
                                                                     </button>
                                                                 </div>
@@ -1101,7 +1125,10 @@ export default function DirectoryPage() {
                                                 <button onClick={() => handleEditClick(coach)} className="p-1.5 text-gray-400 hover:text-[#28D160]">
                                                     <Edit2 size={14} />
                                                 </button>
-                                                <button onClick={() => handleDeleteProfile(coach.id, `${coach.first_name} ${coach.last_name}`)} className="p-1.5 text-gray-400 hover:text-red-500">
+                                                <button onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteProfile(coach.id, `${coach.first_name} ${coach.last_name}`);
+                                                }} className="p-1.5 text-gray-400 hover:text-red-500">
                                                     <Trash2 size={14} />
                                                 </button>
                                             </div>
@@ -1130,7 +1157,10 @@ export default function DirectoryPage() {
                                                 <button onClick={() => handleEditClick(admin)} className="p-1.5 text-gray-400 hover:text-[#28D160]">
                                                     <Edit2 size={14} />
                                                 </button>
-                                                <button onClick={() => handleDeleteProfile(admin.id, `${admin.first_name} ${admin.last_name}`)} className="p-1.5 text-gray-400 hover:text-red-500">
+                                                <button onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteProfile(admin.id, `${admin.first_name} ${admin.last_name}`)
+                                                }} className="p-1.5 text-gray-400 hover:text-red-500">
                                                     <Trash2 size={14} />
                                                 </button>
                                             </div>

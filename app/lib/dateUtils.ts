@@ -11,6 +11,20 @@ import { format, parseISO, isValid } from 'date-fns';
 export function safeDate(dateString: string | null | undefined): Date | null {
     if (!dateString) return null;
 
+    // If it's already a Date object, return it if valid
+    if (Object.prototype.toString.call(dateString) === '[object Date]') {
+        return isValid(dateString as any) ? (dateString as any) : null;
+    }
+
+    if (typeof dateString !== 'string') {
+        // If it's a number (timestamp), try to parse it
+        if (typeof dateString === 'number') {
+            const d = new Date(dateString);
+            return isValid(d) ? d : null;
+        }
+        return null;
+    }
+
     // Fix "YYYY-MM-DD HH:mm:ss" format for Safari which demands "YYYY-MM-DDTHH:mm:ss"
     let cleanString = dateString.trim();
 
