@@ -1,8 +1,6 @@
-# EAST Training App - High-Performance Community
+# EAST Sports Group - Training Management Platform
 
-EAST Training App is a comprehensive, mobile-first web application designed to manage and enhance the experience of members (Players and Parents) within a dedicated sports training and community group. Built on a modern, robust full-stack foundation, the application seamlessly integrates scheduling, personalized statistics, payments, and real-time social networking.
-
-Born from the need for a unified digital platform, EAST empowers members with self-service tools, rich statistical insights into their performance, and a central hub for community engagement.
+A production-grade, mobile-first web application for managing sports training programs, athlete development, and community engagement in Hong Kong. Built for EAST Sports Group to streamline operations, enhance athlete experience, and create a unified digital ecosystem for coaches, parents, and players.
 
 ## 📋 Table of Contents
 
@@ -17,11 +15,33 @@ Born from the need for a unified digital platform, EAST empowers members with se
 
 ## About the Project
 
-The EAST Training App moves beyond simple scheduling to create a holistic, high-performance ecosystem.
+EAST Sports Group operates multiple ice hockey training programs across Hong Kong, serving youth and adult athletes with professional coaching, facility access, and competitive development pathways. This platform replaces fragmented manual processes with a cohesive digital experience.
 
-* **The Problem:** Traditional community sports organizations often struggle with fragmented communication, outdated booking systems, difficulty providing personalized athlete feedback, and manual payment tracking.
-* **The Reality:** Modern athletes expect instant access to their schedules, performance data, and community interactions in one slick interface.
-* **EAST's Solution:** A single source of truth for all member activities—registration, performance tracking, payments, and real-time community engagement.
+### The Challenge
+Traditional sports program management suffers from:
+- **Fragmented Communication**: WhatsApp groups, email chains, and phone calls create information silos
+- **Manual Booking Systems**: Spreadsheets and paper sign-ups lead to overbooking and confusion
+- **Payment Friction**: Cash handling, manual receipt tracking, and delayed reconciliation
+- **No Athlete Insights**: Parents and players lack visibility into progress and statistics
+- **Administrative Overhead**: Coaches spend hours on admin instead of coaching
+
+### The Solution
+A single, reliable platform that:
+- **Automates Operations**: Credit-based booking system with automated payment processing via Stripe
+- **Empowers Athletes**: Real-time statistics tracking, personalized profiles, and performance insights
+- **Builds Community**: Integrated social feed and messaging for team cohesion
+- **Reduces Admin**: Self-service scheduling, automated notifications, and digital check-in via QR codes
+- **Scales Safely**: Built with production-grade standards, zero-trust security, and comprehensive testing
+
+### Development Philosophy
+This project follows a **high-quality, maintainable-first approach**:
+
+- **Zero-Trust Security**: Role-based access control (RBAC) enforced at database level with Row-Level Security (RLS)
+- **Definition of Done Compliance**: Every feature must pass 6 criteria before merge (schema sync, API logic, type safety, UI flow, regression audit, empty states)
+- **Risk-Driven Development**: Active `LAUNCH_RISKS.md` tracking and mitigation of production risks before they materialize
+- **AI-Assisted Engineering**: Leverages agent-based development with clear protocols, but human oversight on critical paths
+- **Test-First Mindset**: Playwright E2E tests for critical flows, database constraint testing, and automated regression checks
+- **Progressive Enhancement**: Mobile-first design that degrades gracefully and works offline where possible
 
 ---
 
