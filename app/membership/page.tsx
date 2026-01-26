@@ -202,7 +202,18 @@ function MembershipContent() {
 
                 {/* MODERATE HEADER */}
                 <div className="flex items-center justify-between px-7 pt-6 pb-3 shrink-0">
-                    <button onClick={() => router.back()} className="p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                    <button
+                        onClick={() => {
+                            // If user just completed purchase, go home instead of back to Stripe
+                            const success = searchParams.get('success');
+                            if (success === 'true') {
+                                router.push('/');
+                            } else {
+                                router.back();
+                            }
+                        }}
+                        className="p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                    >
                         <ChevronLeft size={20} strokeWidth={3} />
                     </button>
                     <div className="text-right">
