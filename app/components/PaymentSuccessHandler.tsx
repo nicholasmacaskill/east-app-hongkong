@@ -20,6 +20,9 @@ export default function PaymentSuccessHandler() {
         if (success === 'true') {
             hasFired.current = true;
 
+            // Track that purchase was successful (persists even after URL cleanup)
+            sessionStorage.setItem('just_purchased', 'true');
+
             // Force router refresh to reload all server data (credits, profile, etc.)
             router.refresh();
 

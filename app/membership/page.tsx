@@ -205,8 +205,9 @@ function MembershipContent() {
                     <button
                         onClick={() => {
                             // If user just completed purchase, go home instead of back to Stripe
-                            const success = searchParams.get('success');
-                            if (success === 'true') {
+                            const justPurchased = sessionStorage.getItem('just_purchased');
+                            if (justPurchased === 'true') {
+                                sessionStorage.removeItem('just_purchased'); // Clear flag
                                 router.push('/');
                             } else {
                                 router.back();
