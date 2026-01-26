@@ -156,13 +156,12 @@ export async function POST(request: Request) {
                     // Defensive: Check if current_period_end exists
                     const periodEnd = (subscription as any).current_period_end;
                     if (!periodEnd || typeof periodEnd !== 'number') {
-                        console.error(`❌ Invalid subscription period_end: ${periodEnd}`, subscription);
-                        return NextResponse.json({
-                            error: 'Invalid subscription data',
-                            details: 'Missing current_period_end'
-                        }, { status: 400 });
+                        console.warn(`⚠️ Subscription missing current_period_end, using default (+30 days). Subscription:`, subscription.id);
+                        // Fallback: Default to 30 days from now (monthly subscription)
+                        expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+                    } else {
+                        expiresAt = new Date(periodEnd * 1000).toISOString();
                     }
-                    expiresAt = new Date(periodEnd * 1000).toISOString();
                 }
 
                 if (!plan.tier || plan.tier === 'individual' && !PLAN_DETAILS[priceId]) {
