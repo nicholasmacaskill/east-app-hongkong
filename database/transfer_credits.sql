@@ -71,8 +71,15 @@ BEGIN
   SET credits = credits - p_amount 
   WHERE id = p_from_user_id;
 
+  -- Update child credits AND sync status with parent
   UPDATE profiles 
-  SET credits = credits + p_amount 
+  SET 
+    credits = credits + p_amount,
+    -- Only set to active if parent is active; otherwise keep existing status (or stay locked)
+    subscription_status = CASE 
+        WHEN (SELECT subscription_status FROM profiles WHERE id = p_from_user_id) = 'active' THEN 'active'
+        ELSE subscription_status
+    END
   WHERE id = p_to_user_id;
 
   -- Return success
