@@ -15,7 +15,34 @@ A production-grade, mobile-first web application for managing sports training pr
 
 ## About the Project
 
-EAST Sports Group operates multiple ice hockey training programs across Hong Kong, serving youth and adult athletes with professional coaching, facility access, and competitive development pathways. This platform replaces fragmented manual processes with a cohesive digital experience.
+EAST Sports Group operates multiple ice hockey training programs across Hong Kong, serving youth and adult athletes with professional coaching, facility access, and competitive development pathways. This platform is a **complete operational system**—not just a website, but the digital backbone of the entire organization.
+
+### What Makes This Different
+
+**Smart Family Management:**
+- Parents manage multiple children from a single account
+- Book sessions on behalf of specific athletes with one-click selection
+- Each child maintains their own stats, QR code, and profile
+- Automatic credit deduction from parent's wallet, attributed to the correct child
+
+**Credit-Based Booking Economy:**
+- Stripe-integrated payment system with automated top-ups and membership purchases
+- Credits as internal currency eliminate cash handling and reconciliation overhead
+- Real-time balance updates and transparent transaction history
+- Webhook-driven automation ensures zero manual payment processing
+
+**Professional Admin Portal:**
+- Comprehensive `/sys-admin` dashboard for facility managers
+- Session creation, editing, and capacity management
+- User role management (player → parent → coach → admin promotion)
+- Transaction monitoring and refund processing
+- QR scanner for physical facility check-ins
+
+**Intelligent Scheduling:**
+- Capacity-enforced bookings prevent overbooking at database level
+- Multi-role access: coaches view their sessions, parents see children's schedules, admins see everything
+- Automated email confirmations via Resend for every booking and cancellation
+- Calendar view with filters by athlete, session type, and date range
 
 ### The Challenge
 Traditional sports program management suffers from:
@@ -26,12 +53,12 @@ Traditional sports program management suffers from:
 - **Administrative Overhead**: Coaches spend hours on admin instead of coaching
 
 ### The Solution
-A single, reliable platform that:
-- **Automates Operations**: Credit-based booking system with automated payment processing via Stripe
-- **Empowers Athletes**: Real-time statistics tracking, personalized profiles, and performance insights
-- **Builds Community**: Integrated social feed and messaging for team cohesion
-- **Reduces Admin**: Self-service scheduling, automated notifications, and digital check-in via QR codes
-- **Scales Safely**: Built with production-grade standards, zero-trust security, and comprehensive testing
+A unified platform that replaces 5+ separate tools:
+- ✅ **Replaces**: Spreadsheet booking systems → Self-service credit-based scheduling
+- ✅ **Replaces**: Cash/bank transfer payments → Automated Stripe checkout with instant confirmation
+- ✅ **Replaces**: Manual attendance tracking → QR code check-in system
+- ✅ **Replaces**: Email blasts → Automated transactional notifications
+- ✅ **Replaces**: Static websites → Real-time social feed and direct messaging
 
 ### Development Philosophy
 This project follows a **high-quality, maintainable-first approach**:
