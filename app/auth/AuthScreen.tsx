@@ -33,12 +33,7 @@ interface AuthScreenProps {
 }
 
 const AuthHeader = ({ title }: { title: string }) => (
-    <div className="flex flex-col items-center mb-10">
-        <img
-            src="/east-logo-transparent.png"
-            alt="East Sports Group"
-            className="w-32 h-auto object-contain mb-8 drop-shadow-[0_0_15px_rgba(40,209,96,0.3)]"
-        />
+    <div className="flex flex-col items-center mb-10 text-center">
         <h2 className="text-sm font-black italic text-white/40 uppercase tracking-[0.3em]">{title}</h2>
     </div>
 );
