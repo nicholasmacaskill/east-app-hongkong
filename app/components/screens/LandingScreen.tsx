@@ -1,6 +1,6 @@
 'use client';
+
 import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { UserRole } from '@/app/types';
 
 interface LandingScreenProps {
@@ -24,13 +24,10 @@ export default function LandingScreen({ onSelectRole }: LandingScreenProps) {
             <div className="relative z-10 flex flex-col items-center w-full max-w-sm px-6">
                 {/* LOGO */}
                 <div className={`mb-8 transition-opacity duration-[2000ms] ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
-                    <Image
+                    <img
                         src="/east-logo-transparent.png"
                         alt="East Sports Group"
-                        width={180}
-                        height={180}
-                        className="object-contain" // Simple, clean display
-                        priority
+                        className="w-[180px] h-auto object-contain"
                     />
                 </div>
 
