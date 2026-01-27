@@ -60,7 +60,8 @@ export async function middleware(request: NextRequest) {
         const isApiRequest = request.nextUrl.pathname.startsWith('/api/');
         const isAuthPage = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/forgot-password');
         const isWebhook = request.nextUrl.pathname.startsWith('/api/webhooks');
-        const isPublicPage = request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/public') || isAuthPage || isWebhook;
+        const isStaticAsset = /\.(png|jpg|jpeg|gif|webp|svg|ico)$/i.test(request.nextUrl.pathname);
+        const isPublicPage = request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/public') || isAuthPage || isWebhook || isStaticAsset;
 
         if (!user && !isPublicPage) {
             if (isApiRequest) {
@@ -136,6 +137,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
     matcher: [
-        '/((?!_next/static|_next/image|favicon.ico).*)',
+        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
     ],
 };
