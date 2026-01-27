@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Montserrat, Open_Sans } from "next/font/google";
 import { PHProvider } from './providers/PostHogProvider';
 import PostHogPageView from './components/PostHogPageView';
+import { Analytics } from "@vercel/analytics/react"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Suspense } from 'react';
 import { ToastProvider } from '@/app/components/ui/Toast';
@@ -33,8 +34,9 @@ export default function RootLayout({
               <PaymentSuccessHandler />
             </Suspense>
             {children}
+            <Analytics />
+            <SpeedInsights />
           </ToastProvider>
-          <SpeedInsights />
         </PHProvider>
       </body>
     </html>
