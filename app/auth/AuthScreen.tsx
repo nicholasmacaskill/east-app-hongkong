@@ -187,14 +187,14 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
                             <InputField label="Email Address" name="email" type="email" value={formData.email} icon={Mail} onChange={handleChange} placeholder="Enter your email" />
                             <InputField label="Password" name="password" type="password" value={formData.password} icon={Lock} onChange={handleChange} placeholder="Enter your password" />
                             <div className="pt-4">
-                                <button 
-                                    type="submit" 
-                                    disabled={loading} 
+                                <button
+                                    type="submit"
+                                    disabled={loading}
                                     className="group relative overflow-hidden w-full bg-east-light disabled:opacity-50 text-black font-black italic text-lg py-5 rounded-2xl transition-all duration-500 hover:bg-white active:scale-95 shadow-[0_10px_20px_-5px_rgba(40,209,96,0.3)]"
                                 >
                                     {/* Hover Glimmer */}
                                     <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-                                    
+
                                     <span className="relative z-10 uppercase tracking-tighter">
                                         {loading ? 'LOGGING IN...' : 'LOGIN'}
                                     </span>
@@ -207,7 +207,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
                                     New Member? <button onClick={() => setStep('register')} className="text-east-light hover:text-white transition-colors border-b border-east-light/30 hover:border-white">JOIN NOW</button>
                                 </p>
                             )}
-                            <Link href="/forgot-password" opacity-40 hover:opacity-100 className="text-[10px] text-white/20 hover:text-east-light transition-all uppercase font-bold tracking-[0.2em] block">Forgot Password?</Link>
+                            <Link href="/forgot-password" className="text-[10px] text-white/20 hover:text-east-light opacity-40 hover:opacity-100 transition-all uppercase font-bold tracking-[0.2em] block">Forgot Password?</Link>
                         </div>
                     </>
                 )}
@@ -222,14 +222,14 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
                             <InputField label="Email Address" name="email" type="email" value={formData.email} icon={Mail} onChange={handleChange} placeholder="Enter email" />
                             <InputField label="Password" name="password" type="password" value={formData.password} icon={Lock} onChange={handleChange} placeholder="Create password" />
                             <div className="pt-4">
-                                <button 
-                                    type="submit" 
-                                    disabled={loading} 
+                                <button
+                                    type="submit"
+                                    disabled={loading}
                                     className="group relative overflow-hidden w-full bg-east-light disabled:opacity-50 text-black font-black italic text-lg py-5 rounded-2xl transition-all duration-500 hover:bg-white active:scale-95 shadow-[0_10px_20px_-5px_rgba(40,209,96,0.3)]"
                                 >
                                     {/* Hover Glimmer */}
                                     <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-                                    
+
                                     <span className="relative z-10 uppercase tracking-tighter">
                                         {loading ? 'CREATING ACCT...' : 'CREATE ACCOUNT'}
                                     </span>
@@ -248,20 +248,20 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
                         </div>
                         <h2 className="font-montserrat font-black italic text-3xl text-white tracking-tighter mb-4 uppercase leading-none">WELCOME TO EAST</h2>
                         <p className="text-xs text-white/40 uppercase font-black tracking-widest leading-relaxed mb-10 px-4">Your account has been created! Please check your email to confirm your address before logging in.</p>
-                        
-                        <button 
-                            onClick={() => setStep('login')} 
+
+                        <button
+                            onClick={() => setStep('login')}
                             className="group relative overflow-hidden w-full bg-east-light text-black font-black italic text-lg py-5 rounded-2xl transition-all duration-500 hover:bg-white active:scale-95 shadow-[0_10px_20px_-5px_rgba(40,209,96,0.3)]"
                         >
                             {/* Hover Glimmer */}
                             <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-                            
+
                             <span className="relative z-10 uppercase tracking-tighter">GO TO LOGIN</span>
                         </button>
                     </div>
                 )}
             </div>
-            
+
             <style jsx global>{`
                 .animate-fadeIn {
                     animation: fadeIn 1s ease-out forwards;
