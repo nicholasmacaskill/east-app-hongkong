@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { fetchSessions } from '@/app/services/dataFetcher';
-import { Session } from '@/app/types/session';
+import { Session } from '@/app/types';
 import { Plus } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import Link from 'next/link';

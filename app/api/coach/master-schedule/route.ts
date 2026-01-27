@@ -75,7 +75,7 @@ export async function GET(request: Request) {
         }
 
         // 3. TRANSFORM & MERGE DATA
-        // Use shared types from app/types.ts to ensure consistency
+        // Use shared types from app/types to ensure consistency
         const formattedSessions: any[] = (sessions || []).map((s: any) => ({
             id: s.id, // bigint
             type: 'session',

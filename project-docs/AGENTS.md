@@ -22,7 +22,7 @@
 - **Role:** Dedicated Security, Logic, and Test Quality Auditor.
 - **Workflow:** Type **`@Auditor`** in chat to trigger security review or test validation.
 - **Focus:**  
-  - RLS bypasses and permissions (`app/types.ts`)
+  - RLS bypasses and permissions (`app/types`)
   - Security vulnerabilities and role-based access control
   - **Playwright Test Oversight:** Enforces zero-tolerance policy for false test failures
   - Pre-test UI inspection to ensure correct selectors before test creation

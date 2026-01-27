@@ -1,4 +1,4 @@
-import getDbPool from '../app/lib/db';
+import getDbPool from '../../app/lib/db';
 
 const UPDATE_RPC_SQL = `
 DROP FUNCTION IF EXISTS book_session_with_credits(uuid, bigint);

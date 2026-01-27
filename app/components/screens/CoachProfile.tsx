@@ -6,7 +6,7 @@ import { supabase } from '@/app/lib/supabase';
 import { useGallery } from '@/app/hooks/useGallery';
 import Lightbox from '@/app/components/ui/Lightbox';
 import ClassModal from '@/app/components/modals/ClassModal';
-import { Session } from '@/app/types/session';
+import { Session } from '@/app/types';
 import { compressImage } from '@/app/lib/image-utils';
 
 // Mock Data for redesign (Keep stats for now/remove later)

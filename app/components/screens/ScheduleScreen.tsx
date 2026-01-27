@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
-import { Session } from '@/app/types/session';
+import { Session } from '@/app/types/index';
 import { ChevronLeft, ChevronRight, Activity } from 'lucide-react';
 import {
   addDays,
@@ -278,7 +278,7 @@ export default function ScheduleScreen({
             </div>
           ) : eventsForSelectedDay.length > 0 ? (
             eventsForSelectedDay.map((event, idx) => {
-              const theme = getTheme(event.category);
+              const theme = getTheme(event.category || 'general');
               return (
                 <div key={idx} className="flex gap-4 animate-fadeIn cursor-pointer group" onClick={() => onPreviewClick(event)}>
                   <div className="flex-1 transition-all duration-300 group-hover:translate-x-1">

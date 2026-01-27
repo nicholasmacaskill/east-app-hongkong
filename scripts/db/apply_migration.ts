@@ -1,4 +1,4 @@
-import getDbPool from '../app/lib/db';
+import getDbPool from '../../app/lib/db';
 import { Pool } from 'pg';
 
 const migrationCommands = [

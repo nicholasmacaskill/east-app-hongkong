@@ -1,6 +1,6 @@
 import { supabase } from '@/app/lib/supabase';
 import { MOCK_SESSIONS } from '@/app/mocking/sessions';
-import { Session } from '@/app/types/session';
+import { Session } from '@/app/types/index';
 
 // IMPORTANT: This flag must be read from NEXT_PUBLIC_... for client-side components to work.
 const isMockMode = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
@@ -16,7 +16,7 @@ async function fetchSessionsReal(): Promise<Session[]> {
     const { data, error } = await supabase
         .from('sessions')
         .select('*')
-        .gte('end_time', now) 
+        .gte('end_time', now)
         .order('start_time', { ascending: true });
 
     if (error) {
@@ -35,8 +35,8 @@ async function fetchSessionsReal(): Promise<Session[]> {
 async function fetchSessionsMock(): Promise<Session[]> {
     console.log("--- DEBUG: Using Mock Data for Sessions ---");
     // Simulate network delay for realism
-    await new Promise(resolve => setTimeout(resolve, 500)); 
-    
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     return MOCK_SESSIONS;
 }
 

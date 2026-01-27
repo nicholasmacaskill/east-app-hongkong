@@ -2,7 +2,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { X, Share2, Send, CreditCard, AlertCircle, Check, ChevronLeft } from 'lucide-react';
-import { Session } from '@/app/types/session';
+import { Session } from '@/app/types/index';
 import { supabase } from '@/app/lib/supabase';
 import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
 import { safeFetch } from '@/app/lib/apiUtils';
@@ -157,7 +157,7 @@ export default function ClassModal({
     });
 
     const uniqueTitles = new Set(visibleSessions.map(s => s.title));
-    const uniqueInstructors = new Set(visibleSessions.map(s => normalize(s.instructor)));
+    const uniqueInstructors = new Set(visibleSessions.map(s => normalize(s.instructor || '')));
     const isCoachView = uniqueInstructors.size === 1 && uniqueTitles.size > 1;
 
     // Dynamic Header Logic
@@ -191,7 +191,7 @@ export default function ClassModal({
     const allSelectedAreBooked = selectedAttendeeIds.length > 0 && selectedAttendeeIds.every(id => getBookedStatus(id));
 
     const filteredSessions = visibleSessions.filter(s =>
-        (!filterInstructor || normalize(s.instructor) === normalize(filterInstructor)) &&
+        (!filterInstructor || normalize(s.instructor || '') === normalize(filterInstructor)) &&
         (!filterTitle || s.title === filterTitle)
     );
 
@@ -201,7 +201,7 @@ export default function ClassModal({
         const normalize = (name: string) => name?.replace(/\s+/g, ' ').trim() || '';
 
         const uniqueInstructorsSet = new Set(
-            sessions.filter(s => !!s.instructor).map(s => normalize(s.instructor))
+            sessions.filter(s => !!s.instructor).map(s => normalize(s.instructor || ''))
         );
 
         if (initialSessionId) {
@@ -218,7 +218,7 @@ export default function ClassModal({
                 const normTarget = normalize(coachName);
                 const matchingSession = sessions.find(s => s.instructor && normalize(s.instructor).includes(normTarget));
                 if (matchingSession) {
-                    setFilterInstructor(matchingSession.instructor);
+                    setFilterInstructor(matchingSession.instructor || null);
                 } else {
                     setFilterInstructor(null);
                 }

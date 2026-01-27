@@ -1,4 +1,4 @@
-import getDbPool from '../app/lib/db';
+import getDbPool from '../../app/lib/db';
 
 const REPAIR_RPC_SQL = `
 -- Drop ALL potential variations to ensure clean slate

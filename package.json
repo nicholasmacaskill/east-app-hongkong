@@ -13,7 +13,7 @@
     "test:security": "playwright test tests/security-audit.spec.ts",
     "test:visual": "playwright test tests/visual-regression.spec.ts",
     "test:update-snapshots": "playwright test tests/visual-regression.spec.ts --update-snapshots",
-    "audit:pre-live": "node scripts/pre-live-audit.js"
+    "audit:pre-live": "node scripts/debug/pre-live-audit.js"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.4",

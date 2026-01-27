@@ -1,5 +1,5 @@
 
-import getDbPool from './app/lib/db';
+import getDbPool from '../../app/lib/db';
 
 const run = async () => {
     const pool = getDbPool();

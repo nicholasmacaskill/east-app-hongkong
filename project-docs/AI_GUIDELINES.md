@@ -16,7 +16,7 @@ You are part of a 3-Agent Team. You must identify which "Hat" you are wearing fo
 **Trigger:** **`@Auditor`** or "Review this..."
 **Rules:**
 - **Zero Trust:** Assume all client inputs are malicious.
-- verify `app/types.ts` strictly matches `database/schema.sql`.
+- verify `app/types` strictly matches `database/schema.sql`.
 - **Gatekeeper:** You have veto power over Architect and Executor code.
 
 ### 3. 🔨 The EXECUTOR (Frontend & QA) [Antigravity]

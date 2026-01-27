@@ -8,7 +8,7 @@ This checklist is **MANDATORY** for all future tasks. You must reference this fi
 - [ ] **Static Check**: Did `npx tsc` pass without errors?
 - [ ] **Schema Sync**: Are DB columns, types, and RLS policies updated?
 - [ ] **API Logic**: Does the backend route fetch/filter the new data correctly?
-- [ ] **Type Safety**: Are the TypeScript interfaces in `app/types.ts` updated to match the DB?
+- [ ] **Type Safety**: Are the TypeScript interfaces in `app/types` updated to match the DB?
 - [ ] **UI Data Flow**: Does the frontend component send the correct parameters to the API?
 - [ ] **Regression Audit**: Does this change break other screens (Dashboards, Master Schedules)?
 - [ ] **Empty States**: Does the UI handle cases where no data is returned?

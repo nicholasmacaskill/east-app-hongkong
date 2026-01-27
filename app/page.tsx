@@ -28,7 +28,7 @@ import ProcessingOverlay from '@/app/components/ui/ProcessingOverlay';
 
 // 25: deleted
 import type { UserRole, Tab, UserProfileData } from './types';
-import { Session } from './types/session';
+import { Session } from '@/app/types/index';
 import { fetchProfileResilient } from '@/app/lib/authProfile';
 
 // 1. Updated Interface to include credits and role

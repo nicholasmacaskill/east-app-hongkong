@@ -1,6 +1,16 @@
+// Unified Type Definitions
+export * from './calendar';
+export * from './community';
+export * from './facility';
+export * from './stats';
+
+// --- Shared Core Types ---
+
 export type UserRole = 'player' | 'parent' | 'coach' | 'admin' | 'sys-admin';
 
 export type Tab = 'home' | 'profile' | 'qr' | 'schedule' | 'community';
+
+export type ServiceCategory = 'CLASS' | 'PRIVATE' | 'FACILITY' | 'EVENT' | 'NEWS' | 'ADULT' | 'YOUTH' | 'general';
 
 export interface NewsItem {
     id: string;
@@ -47,19 +57,34 @@ export interface Session {
     id: number;
     title: string;
     description?: string;
-    category?: string;
-    instructor?: string; // Legacy string match, will be reinforced by logic
+
+    // Unified Category (String fallback for legacy, but prefers Union)
+    category?: ServiceCategory | string;
+
+    instructor?: string; // Legacy string match
     start_time: string;
     end_time: string;
     image_url?: string;
     coach_image_url?: string;
+
     max_capacity?: number;
     credit_cost?: number;
+    session_type_id?: number | null | string; // Handled as string in legacy, number in DB
+
+    facility_id?: string;
+    facility?: {
+        id: string;
+        name: string;
+        image_url?: string;
+    };
+
+    // Relations
     registrations?: Registration[];
-    session_type_id?: number | null;
-    // Computed/Client-side props
+
+    // Client-side / Computed
     type?: 'session';
-    attendees?: { id: string; name: string; role?: string }[];
+    attendees?: { id: string; name: string; role?: string }[]; // Admin view
+    attendee?: { id: string; first_name: string; last_name: string; role: string }; // User view
 }
 
 export interface Availability {
@@ -71,6 +96,7 @@ export interface Availability {
     status: 'available' | 'booked' | 'unavailable';
     created_at?: string;
     profiles?: UserProfileData; // Joined coach data
+
     // Computed/Client-side props
     type?: 'slot';
     title?: string;

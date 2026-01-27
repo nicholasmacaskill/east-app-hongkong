@@ -106,3 +106,9 @@ export function safetoLocaleDateString(
         return fallback;
     }
 }
+
+export function formatAuditHK(date: Date | string): string {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    // Simple ISO return for audit logs to ensure consistency
+    return d.toISOString();
+}

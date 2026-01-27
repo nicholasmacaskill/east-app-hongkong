@@ -1,4 +1,4 @@
-import { Session } from '@/app/types/session';
+import { Session } from '@/app/types';
 
 // Helper to ensure mock data shows up as "upcoming" in the UI
 const MS_PER_HOUR = 3600000;

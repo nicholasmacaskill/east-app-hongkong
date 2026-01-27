@@ -4,8 +4,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { addMonths, startOfMonth, format } from 'date-fns';
 import Calendar from '../components/Calendar/index';
 import LockedOverlay from '../components/ui/LockedOverlay';
-import { CalendarEvent } from '../types/calendar';
-import { Session } from '../types/session'; // Import Session type
+import { CalendarEvent } from '@/app/types/index';
+import { Session } from '@/app/types/index';
 import { useRouter } from 'next/navigation';
 import Footer from '../components/Footer';
 import { useToast } from '../components/ui/Toast';
