@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { UserRole } from '@/app/types';
 
 interface LandingScreenProps {
@@ -21,8 +22,20 @@ export default function LandingScreen({ onSelectRole }: LandingScreenProps) {
 
             {/* 2. CONTENT CONTAINER */}
             <div className="relative z-10 flex flex-col items-center w-full max-w-sm px-6">
+                {/* LOGO */}
+                <div className={`mb-8 transition-opacity duration-[2000ms] ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+                    <Image
+                        src="/east-logo-transparent.png"
+                        alt="East Sports Group"
+                        width={180}
+                        height={180}
+                        className="object-contain" // Simple, clean display
+                        priority
+                    />
+                </div>
+
                 {/* CALL TO ACTION */}
-                <div className={`mt-6 w-full space-y-4 transition-all duration-[2000ms] delay-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                <div className={`w-full space-y-4 transition-all duration-[2000ms] delay-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
                     <h2 className="text-[10px] font-black tracking-[0.4em] text-white/40 uppercase text-center mb-10">
                         Select Your Portal
                     </h2>

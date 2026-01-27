@@ -53,6 +53,7 @@ export async function GET() {
     .from('sessions')
     .select('*')
     .gt('start_time', new Date().toISOString())
+    .neq('status', 'voided') // Filter out voided sessions
     .order('start_time', { ascending: true });
 
   if (error) {
@@ -135,6 +136,51 @@ export async function POST(request: Request) {
     console.log(`[BOOKING] Success: ${result.message}`);
     const results = result.results;
     const successCount = targets.length;
+
+    // --- SMART BOOKING EXCLUSIVITY (Soft Void) ---
+    // If successfully booked, void overlapping empty sessions for the same instructor
+    try {
+      if (successCount > 0) {
+        const { data: bookedSession } = await supabaseAdmin
+          .from('sessions')
+          .select('instructor, start_time, end_time')
+          .eq('id', sessionId)
+          .single();
+
+        if (bookedSession && bookedSession.instructor) {
+          // Find conflicting sessions (same instructor, overlaps time, not this session)
+          const { data: conflicts } = await supabaseAdmin
+            .from('sessions')
+            .select('id, bookings:registrations(count)')
+            .eq('instructor', bookedSession.instructor)
+            .neq('id', sessionId)
+            .neq('status', 'voided') // Don't re-void
+            // Time Overlap Logic: (StartB < EndA) AND (EndB > StartA)
+            .lt('start_time', bookedSession.end_time)
+            .gt('end_time', bookedSession.start_time);
+
+          if (conflicts && conflicts.length > 0) {
+            const idsToVoid = conflicts
+              .filter((s: any) => s.bookings?.[0]?.count === 0) // Only void if EMPTY
+              .map((s: any) => s.id);
+
+            if (idsToVoid.length > 0) {
+              console.log(`[SMART BOOKING] Voiding conflicting empty sessions: ${idsToVoid.join(', ')}`);
+              await supabaseAdmin
+                .from('sessions')
+                .update({ status: 'voided' })
+                .in('id', idsToVoid);
+            } else {
+              console.warn(`[SMART BOOKING] Conflicts found but not voided (they have bookings):`, conflicts.map((s: any) => s.id));
+            }
+          }
+        }
+      }
+    } catch (voidError) {
+      console.error('[SMART BOOKING] Error during post-booking void:', voidError);
+      // Do not fail the request, this is a side effect
+    }
+    // ---------------------------------------------
 
     // Attempt to send email summary (optional, best effort)
     try {

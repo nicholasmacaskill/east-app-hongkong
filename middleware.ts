@@ -43,9 +43,18 @@ export async function middleware(request: NextRequest) {
         );
 
         // Refresh session
-        const {
+        let {
             data: { user },
         } = await supabase.auth.getUser();
+
+        // Fallback: Check for Bearer Token (for API routes)
+        if (!user && request.headers.get('Authorization')) {
+            const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+            if (token) {
+                const { data: { user: headerUser } } = await supabase.auth.getUser(token);
+                user = headerUser;
+            }
+        }
 
         // 1. GLOBAL PROTECTION (Unauthenticated)
         const isApiRequest = request.nextUrl.pathname.startsWith('/api/');

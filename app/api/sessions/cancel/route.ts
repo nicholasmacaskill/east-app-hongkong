@@ -32,7 +32,7 @@ export async function DELETE(request: Request) {
     // 1. Fetch Session Details (Start/End) to find linked bookings
     const { data: mainSession, error: sessError } = await supabaseAdmin
       .from('sessions')
-      .select('start_time, end_time, title')
+      .select('start_time, end_time, title, instructor')
       .eq('id', sessionId)
       .single();
 
@@ -129,6 +129,34 @@ export async function DELETE(request: Request) {
         } catch (err) { console.error("Email error", err); }
       })();
     }
+
+    // --- SMART EXCLUSIVITY RESTORATION ---
+    // If successfully cancelled, restore voided sessions for the same instructor/time
+    if (overallSuccess && mainSession?.instructor) {
+      try {
+        const supabaseAdminRestore = getSupabaseAdmin(); // Use fresh client for background task
+        const { data: voidedSessions } = await supabaseAdminRestore
+          .from('sessions')
+          .select('id')
+          .eq('instructor', mainSession.instructor)
+          .eq('status', 'voided')
+          // Time Overlap Logic: (StartB < EndA) AND (EndB > StartA)
+          .lt('start_time', mainSession.end_time)
+          .gt('end_time', mainSession.start_time);
+
+        if (voidedSessions && voidedSessions.length > 0) {
+          const idsToRestore = voidedSessions.map((s: any) => s.id);
+          console.log(`[SMART RESTORE] Restoring voided sessions: ${idsToRestore.join(', ')}`);
+          await supabaseAdminRestore
+            .from('sessions')
+            .update({ status: 'active' })
+            .in('id', idsToRestore);
+        }
+      } catch (restoreErr) {
+        console.error('[SMART RESTORE] Error:', restoreErr);
+      }
+    }
+    // -------------------------------------
 
     return NextResponse.json({
       success: overallSuccess,
