@@ -52,6 +52,7 @@ export default function MasterSchedule() {
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
     const [viewStartDate, setViewStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 })); // Monday
     const [activeCategory, setActiveCategory] = useState<string>(searchParams?.get('category')?.toUpperCase() || 'ALL');
+    const [filterCoachId, setFilterCoachId] = useState<string>('ALL');
 
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(viewStartDate, i));
 
@@ -321,13 +322,28 @@ export default function MasterSchedule() {
                 </div>
             </div>
 
-            {/* Category Toggles */}
-            <div className="flex overflow-x-auto no-scrollbar gap-2 pb-2">
-                {['ALL', 'PRIVATE', 'FACILITY', 'CLASS', 'EVENT'].map(cat => (
-                    <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${activeCategory === cat ? 'bg-[#28D160] border-[#28D160] text-black shadow-lg shadow-[#28D160]/20' : 'bg-[#1e1e1e] border-white/5 text-gray-500 hover:border-white/20'}`}>
-                        {cat === 'ALL' ? 'Everything' : cat.replace('_', ' ')}
-                    </button>
-                ))}
+            {/* Filters Row */}
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between pb-2">
+                {/* Category Toggles */}
+                <div className="flex overflow-x-auto no-scrollbar gap-2 w-full md:w-auto">
+                    {['ALL', 'PRIVATE', 'FACILITY', 'CLASS', 'EVENT'].map(cat => (
+                        <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${activeCategory === cat ? 'bg-[#28D160] border-[#28D160] text-black shadow-lg shadow-[#28D160]/20' : 'bg-[#1e1e1e] border-white/5 text-gray-500 hover:border-white/20'}`}>
+                            {cat === 'ALL' ? 'Everything' : cat.replace('_', ' ')}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Coach Filter */}
+                <select
+                    value={filterCoachId}
+                    onChange={(e) => setFilterCoachId(e.target.value)}
+                    className="bg-[#1e1e1e] border border-white/10 text-white text-[10px] font-bold uppercase p-2 rounded-xl outline-none focus:border-[#28D160] w-full md:w-48"
+                >
+                    <option value="ALL">All Coaches</option>
+                    {coaches.map(c => (
+                        <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
+                    ))}
+                </select>
             </div>
 
             {/* Timeline View */}
@@ -338,12 +354,37 @@ export default function MasterSchedule() {
                         <p className="font-bold uppercase tracking-widest text-xs">Syncing Schedule...</p>
                     </div>
                 ) : (() => {
-                    const mergedItems = [
+                    const mergedItems: any[] = [
                         ...sessions.map(s => ({ ...s, type: 'session' })),
                         ...availability.map(a => ({
-                            id: a.id, title: 'Open Slot', category: 'PRIVATE', instructor: `${a.profiles?.first_name} ${a.profiles?.last_name || ''}`.trim(), start_time: a.start_time, end_time: a.end_time, type: 'slot', coach_id: a.coach_id
+                            id: a.id,
+                            title: 'Open Slot',
+                            category: 'PRIVATE',
+                            instructor: `${a.profiles?.first_name} ${a.profiles?.last_name || ''}`.trim(),
+                            start_time: a.start_time,
+                            end_time: a.end_time,
+                            type: 'slot',
+                            coach_id: a.coach_id
                         }))
-                    ].filter(item => activeCategory === 'ALL' || item.category === activeCategory)
+                    ].filter((item: any) => {
+                        // Category Filter
+                        if (activeCategory !== 'ALL' && item.category !== activeCategory) return false;
+
+                        // Coach Filter
+                        if (filterCoachId !== 'ALL') {
+                            // For slots: check coach_id directly
+                            if (item.type === 'slot') return item.coach_id === filterCoachId;
+
+                            // For sessions: match by name (hacky but consistent with current architecture)
+                            const coach = coaches.find(c => c.id === filterCoachId);
+                            if (coach) {
+                                const instructorName = (item.instructor || '').trim().toLowerCase();
+                                const fullName = `${coach.first_name} ${coach.last_name}`.trim().toLowerCase();
+                                if (instructorName !== fullName && instructorName !== `coach ${fullName}`) return false;
+                            }
+                        }
+                        return true;
+                    })
                         .sort((a, b) => (safeDate(a.start_time)?.getTime() || 0) - (safeDate(b.start_time)?.getTime() || 0));
 
                     const grouped = mergedItems.reduce((acc: any, item: any) => {

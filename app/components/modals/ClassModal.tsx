@@ -212,7 +212,19 @@ export default function ClassModal({
         if (origin === 'coaches') {
             setViewMode('SERVICE_SELECT');
             setFilterTitle(null);
-            setFilterInstructor(null);
+
+            // Try to auto-select the instructor that matches the coachName
+            if (coachName) {
+                const normTarget = normalize(coachName);
+                const matchingSession = sessions.find(s => s.instructor && normalize(s.instructor).includes(normTarget));
+                if (matchingSession) {
+                    setFilterInstructor(matchingSession.instructor);
+                } else {
+                    setFilterInstructor(null);
+                }
+            } else {
+                setFilterInstructor(null);
+            }
         } else if (uniqueInstructorsSet.size > 1 && displaySession.category !== 'FACILITY') {
             setViewMode('COACH_SELECT');
             setFilterInstructor(null);

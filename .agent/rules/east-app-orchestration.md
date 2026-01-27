@@ -17,6 +17,14 @@ trigger: always_on
     {
       "name": "User Role Boundaries",
       "content": "Respect the 4 user roles: sys-admin (full access), coach (team/schedule), parent (payments/permissions), player (read-only stats)."
+    },
+    {
+      "name": "Definition of Done",
+      "content": "You MUST check 'project-docs/DEFINITION_OF_DONE.md' before starting and finishing every task. Ensure all mandatory checks are met."
+    },
+    {
+      "name": "Multi-Variate Verification Standard",
+      "content": "Any complexity involving multiple system layers (e.g., DB + API, API + UI, Auth + Data) is defined as a 'Multi-Variate Change'. These MUST be verified by a dedicated automated E2E test (Playwright) to ensure integration integrity. Single-layer unit tests are insufficient."
     }
   ],
   "source_of_truth": "AGENTS.md"

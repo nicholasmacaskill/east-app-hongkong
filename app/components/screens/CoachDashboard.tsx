@@ -90,25 +90,31 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                 } else {
                     // Session: check if instructor string matches name exactly or "Coach [Name]"
                     // This prevents "Ben" from matching "Bennett" or "Benson"
-                    const instructorName = s.instructor?.trim() || '';
-                    const coachFirst = userName?.trim() || '';
-                    const coachLast = userLastName?.trim() || '';
+                    const instructorName = (s.instructor || '').trim().toLowerCase();
+                    const coachFirst = (userName || '').trim().toLowerCase();
+                    const coachLast = (userLastName || '').trim().toLowerCase();
                     const fullName = `${coachFirst} ${coachLast}`.trim();
 
+                    // Safety: If your name is just "Coach", do NOT match "Coach Ben" etc.
+                    // Only match "Coach" exactly.
+                    if (coachFirst === 'coach' && !coachLast && instructorName !== 'coach') {
+                        return false;
+                    }
+
                     // 1. Exact Full Name Match (e.g. "Ben Smith" === "Ben Smith")
-                    if (instructorName.toLowerCase() === fullName.toLowerCase()) return true;
+                    if (instructorName === fullName) return true;
 
                     // 2. Exact "Coach [First] [Last]" Match
-                    if (instructorName.toLowerCase() === `coach ${fullName}`.toLowerCase()) return true;
+                    if (instructorName === `coach ${fullName}`) return true;
 
                     // 3. Exact First Name Match (if no last name provided)
-                    if (!coachLast && instructorName.toLowerCase() === coachFirst.toLowerCase()) return true;
+                    if (!coachLast && instructorName === coachFirst) return true;
 
                     // 4. Exact "Coach [First]" Match (if no last name provided)
-                    if (!coachLast && instructorName.toLowerCase() === `coach ${coachFirst}`.toLowerCase()) return true;
+                    if (!coachLast && instructorName === `coach ${coachFirst}`) return true;
 
                     // 5. Explicit "You" check
-                    if (instructorName.toLowerCase() === 'you') return true;
+                    if (instructorName === 'you') return true;
 
                     return false;
                 }

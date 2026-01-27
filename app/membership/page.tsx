@@ -294,8 +294,7 @@ function MembershipContent() {
                                 <span className="font-montserrat font-black italic text-[10px] text-gray-400 uppercase tracking-tighter">HKD</span>
                             </div>
                             <p className="text-[9px] font-bold text-gray-400 uppercase mt-0.5">PER {billingCycle === 'monthly' ? 'MONTH' : 'YEAR'}</p>
-                            {/* DEBUG: Verify loaded ID */}
-                            <p className="text-[8px] text-red-500 font-mono mt-1 opacity-50">{activeDetails.id}</p>
+
                         </div>
                     </div>
 

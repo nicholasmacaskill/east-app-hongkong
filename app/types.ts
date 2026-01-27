@@ -7,6 +7,7 @@ export interface NewsItem {
     title: string;
     subtitle: string;
     image: string;
+    description?: string;
 }
 
 export interface UserProfileData {
@@ -32,3 +33,50 @@ export interface UserProfileData {
     membership_expires?: string;
     membership_history?: any[];
 }
+
+export interface Registration {
+    id?: number;
+    user_id: string;
+    session_id: number;
+    registered_at?: string;
+    payer_id?: string;
+    profiles?: UserProfileData; // Joined profile data
+}
+
+export interface Session {
+    id: number;
+    title: string;
+    description?: string;
+    category?: string;
+    instructor?: string; // Legacy string match, will be reinforced by logic
+    start_time: string;
+    end_time: string;
+    image_url?: string;
+    coach_image_url?: string;
+    max_capacity?: number;
+    credit_cost?: number;
+    registrations?: Registration[];
+    session_type_id?: number | null;
+    // Computed/Client-side props
+    type?: 'session';
+    attendees?: { id: string; name: string; role?: string }[];
+}
+
+export interface Availability {
+    id: string;
+    coach_id: string;
+    start_time: string;
+    end_time: string;
+    is_recurring?: boolean;
+    status: 'available' | 'booked' | 'unavailable';
+    created_at?: string;
+    profiles?: UserProfileData; // Joined coach data
+    // Computed/Client-side props
+    type?: 'slot';
+    title?: string;
+    instructor?: string;
+    coach_image_url?: string;
+    category?: string;
+}
+
+export type ScheduleItem = Session | Availability;

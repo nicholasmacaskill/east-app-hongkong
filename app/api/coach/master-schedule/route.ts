@@ -75,7 +75,8 @@ export async function GET(request: Request) {
         }
 
         // 3. TRANSFORM & MERGE DATA
-        const formattedSessions = (sessions || []).map((s: any) => ({
+        // Use shared types from app/types.ts to ensure consistency
+        const formattedSessions: any[] = (sessions || []).map((s: any) => ({
             id: s.id, // bigint
             type: 'session',
             title: s.title,
@@ -85,6 +86,8 @@ export async function GET(request: Request) {
             end_time: s.end_time,
             image_url: s.image_url,
             coach_image_url: s.coach_image_url,
+            credit_cost: s.credit_cost,
+            max_capacity: s.max_capacity,
             // Map registrations to a clean 'attendees' array
             attendees: (s.registrations || []).map((r: any) => ({
                 id: r.user_id,
@@ -93,17 +96,18 @@ export async function GET(request: Request) {
             }))
         }));
 
-        const formattedAvailability = (availability || []).map((a: any) => ({
+        const formattedAvailability: any[] = (availability || []).map((a: any) => ({
             id: a.id, // uuid
             type: 'slot',
             title: 'Open Slot',
-            category: 'PRIVATE_SLOT',
+            category: 'PRIVATE', // Standardized category for slots
             instructor: a.profiles ? `${a.profiles.first_name} ${a.profiles.last_name || ''}`.trim() : 'Unknown Coach',
             start_time: a.start_time,
             end_time: a.end_time,
             image_url: null,
             coach_image_url: a.profiles?.avatar_url,
             coach_id: a.coach_id, // Useful for frontend filtering
+            status: a.status,
             attendees: []
         }));
 

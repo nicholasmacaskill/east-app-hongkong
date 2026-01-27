@@ -427,6 +427,10 @@ export default function HomeScreen({
                     const i = instructor.toLowerCase();
                     const f = first.toLowerCase();
                     const l = last.toLowerCase();
+
+                    // Safety: generic words shouldn't trigger weak matches
+                    if (f === 'coach' && !l) return false;
+
                     // Strong match: instructor contains "First Last"
                     if (l && i.includes(`${f} ${l}`)) return true;
                     // Standard match: instructor contains "First" AND "Last" (if last exists)

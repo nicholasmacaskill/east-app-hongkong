@@ -20,7 +20,7 @@ export interface AuditLogEntry {
     userAgent?: string;
 }
 
-import { formatAuditHK } from '@/app/lib/dateUtils';
+import { formatAuditHK } from './dateUtils';
 
 /**
  * Logs a critical system action for audit purposes.
