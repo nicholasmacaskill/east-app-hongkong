@@ -33,18 +33,33 @@ interface AuthScreenProps {
 }
 
 const AuthHeader = ({ title }: { title: string }) => (
-    <div className="text-center mb-6">
-        {/* Logo */}
-        <h2 className="text-xl font-bold italic text-gray-400 uppercase tracking-widest mt-4">{title}</h2>
+    <div className="flex flex-col items-center mb-10">
+        <img
+            src="/east-logo-transparent.png"
+            alt="East Sports Group"
+            className="w-32 h-auto object-contain mb-8 drop-shadow-[0_0_15px_rgba(40,209,96,0.3)]"
+        />
+        <h2 className="text-sm font-black italic text-white/40 uppercase tracking-[0.3em]">{title}</h2>
     </div>
 );
 
 const InputField: React.FC<{ label: string; name: keyof FormData; type: string; value: string; icon: React.ElementType; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder: string; }> = ({ label, name, type, value, icon: Icon, onChange, placeholder }) => (
-    <div className="relative mb-4">
-        <label htmlFor={name} className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{label}</label>
+    <div className="relative mb-5 group">
+        <label htmlFor={name} className="block text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-2 px-1 group-focus-within:text-east-light transition-colors">{label}</label>
         <div className="relative">
-            <Icon size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-east-light" />
-            <input type={type} id={name} name={name} value={value} onChange={onChange} placeholder={placeholder} required className="w-full bg-gray-800 text-white border border-gray-700 rounded-lg py-3 pl-10 pr-4 focus:border-east-light focus:ring-1 focus:ring-east-light transition-colors placeholder:text-gray-500" />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
+                <Icon size={18} className="text-white/20 group-focus-within:text-east-light transition-colors" />
+            </div>
+            <input
+                type={type}
+                id={name}
+                name={name}
+                value={value}
+                onChange={onChange}
+                placeholder={placeholder}
+                required
+                className="w-full bg-white/[0.03] text-white border border-white/10 rounded-2xl py-4 pl-12 pr-4 focus:border-east-light/50 focus:bg-white/[0.07] focus:ring-4 focus:ring-east-light/5 outline-none transition-all duration-300 placeholder:text-white/10"
+            />
         </div>
     </div>
 );
@@ -145,35 +160,54 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
     };
 
     return (
-        <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-montserrat">
             {/* Background Image Layer */}
             <div className="fixed inset-0 z-0">
                 <img
                     src="https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=1200"
-                    className="w-full h-full object-cover opacity-20 grayscale"
+                    className="w-full h-full object-cover opacity-10 grayscale mix-blend-luminosity"
                     alt="bg"
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90" />
+                {/* Visual Depth Gradients */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black" />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/60" />
             </div>
 
-            <div className="w-full max-w-sm bg-[#0a0a0a] rounded-2xl p-8 shadow-2xl border border-gray-800 animate-fadeIn relative z-10">
+            <div className="w-full max-w-sm bg-white/[0.03] backdrop-blur-2xl rounded-[2.5rem] p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] border border-white/10 animate-fadeIn relative z-10 overflow-hidden">
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-east-light/5 blur-[50px] -mr-16 -mt-16" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-east-light/5 blur-[50px] -ml-16 -mb-16" />
+
 
                 {/* --- LOGIN --- */}
                 {step === 'login' && (
                     <>
                         <AuthHeader title={expectedRole === 'admin' ? "Admin Portal Access" : "Member Login"} />
-                        <form onSubmit={handleLogin}>
+                        <form onSubmit={handleLogin} className="space-y-2">
                             <InputField label="Email Address" name="email" type="email" value={formData.email} icon={Mail} onChange={handleChange} placeholder="Enter your email" />
                             <InputField label="Password" name="password" type="password" value={formData.password} icon={Lock} onChange={handleChange} placeholder="Enter your password" />
-                            <button type="submit" disabled={loading} className="w-full bg-east-light text-black font-montserrat font-black italic text-lg py-3 rounded-full uppercase tracking-wider shadow-lg hover:bg-east-dark hover:text-white transition-all disabled:opacity-50 mt-2">
-                                {loading ? 'LOGGING IN...' : 'LOGIN'}
-                            </button>
+                            <div className="pt-4">
+                                <button 
+                                    type="submit" 
+                                    disabled={loading} 
+                                    className="group relative overflow-hidden w-full bg-east-light disabled:opacity-50 text-black font-black italic text-lg py-5 rounded-2xl transition-all duration-500 hover:bg-white active:scale-95 shadow-[0_10px_20px_-5px_rgba(40,209,96,0.3)]"
+                                >
+                                    {/* Hover Glimmer */}
+                                    <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+                                    
+                                    <span className="relative z-10 uppercase tracking-tighter">
+                                        {loading ? 'LOGGING IN...' : 'LOGIN'}
+                                    </span>
+                                </button>
+                            </div>
                         </form>
-                        <div className="text-center mt-6 space-y-3">
+                        <div className="text-center mt-8 space-y-4">
                             {expectedRole !== 'admin' && (
-                                <p className="text-sm text-gray-400">Need an account? <button onClick={() => setStep('register')} className="text-east-light underline font-bold hover:text-white transition-colors">Register Now</button></p>
+                                <p className="text-xs text-white/40 uppercase font-bold tracking-widest">
+                                    New Member? <button onClick={() => setStep('register')} className="text-east-light hover:text-white transition-colors border-b border-east-light/30 hover:border-white">JOIN NOW</button>
+                                </p>
                             )}
-                            <Link href="/forgot-password" className="text-[10px] text-gray-500 hover:text-east-light transition-colors uppercase tracking-wider block">Forgot Password?</Link>
+                            <Link href="/forgot-password" opacity-40 hover:opacity-100 className="text-[10px] text-white/20 hover:text-east-light transition-all uppercase font-bold tracking-[0.2em] block">Forgot Password?</Link>
                         </div>
                     </>
                 )}
@@ -182,31 +216,61 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
                 {step === 'register' && (
                     <>
                         <AuthHeader title="Create Account" />
-                        <form onSubmit={handleRegister}>
+                        <form onSubmit={handleRegister} className="space-y-1">
                             <InputField label="Full Name" name="fullName" type="text" value={formData.fullName} icon={User} onChange={handleChange} placeholder="First and Last Name" />
                             <InputField label="Mobile Number" name="phone" type="tel" value={formData.phone} icon={Phone} onChange={handleChange} placeholder="+852 1234 5678" />
                             <InputField label="Email Address" name="email" type="email" value={formData.email} icon={Mail} onChange={handleChange} placeholder="Enter email" />
                             <InputField label="Password" name="password" type="password" value={formData.password} icon={Lock} onChange={handleChange} placeholder="Create password" />
-                            <button type="submit" disabled={loading} className="w-full bg-east-light text-black font-montserrat font-black italic text-lg py-3 rounded-full uppercase tracking-wider shadow-lg hover:bg-east-dark hover:text-white transition-all disabled:opacity-50 mt-2">
-                                {loading ? 'CREATING ACCT...' : 'CREATE ACCOUNT'}
-                            </button>
+                            <div className="pt-4">
+                                <button 
+                                    type="submit" 
+                                    disabled={loading} 
+                                    className="group relative overflow-hidden w-full bg-east-light disabled:opacity-50 text-black font-black italic text-lg py-5 rounded-2xl transition-all duration-500 hover:bg-white active:scale-95 shadow-[0_10px_20px_-5px_rgba(40,209,96,0.3)]"
+                                >
+                                    {/* Hover Glimmer */}
+                                    <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+                                    
+                                    <span className="relative z-10 uppercase tracking-tighter">
+                                        {loading ? 'CREATING ACCT...' : 'CREATE ACCOUNT'}
+                                    </span>
+                                </button>
+                            </div>
                         </form>
-                        <button onClick={() => setStep('login')} className="w-full text-center text-gray-500 text-xs mt-4 hover:text-white uppercase tracking-widest">Back to Login</button>
+                        <button onClick={() => setStep('login')} className="w-full text-center text-white/20 text-[10px] font-black uppercase tracking-[0.2em] mt-8 hover:text-east-light transition-colors">Back to Login</button>
                     </>
                 )}
 
                 {/* --- SUCCESS --- */}
                 {step === 'success' && (
-                    <div className="text-center py-4">
-                        <CheckCircle size={80} className="text-east-light mx-auto mb-6 animate-bounce" />
-                        <h2 className="font-montserrat font-black italic text-2xl text-white tracking-tighter mb-4 uppercase">WELCOME TO EAST</h2>
-                        <p className="text-sm text-gray-400 mb-8">Your account has been created! Please check your email to confirm your address before logging in.</p>
-                        <button onClick={() => setStep('login')} className="w-full bg-east-light text-black font-montserrat font-black italic text-lg py-3 rounded-full uppercase tracking-wider shadow-lg hover:bg-east-dark hover:text-white transition-all">
-                            GO TO LOGIN
+                    <div className="text-center py-6">
+                        <div className="w-24 h-24 bg-east-light/10 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(40,209,96,0.2)]">
+                            <CheckCircle size={48} className="text-east-light animate-pulse" />
+                        </div>
+                        <h2 className="font-montserrat font-black italic text-3xl text-white tracking-tighter mb-4 uppercase leading-none">WELCOME TO EAST</h2>
+                        <p className="text-xs text-white/40 uppercase font-black tracking-widest leading-relaxed mb-10 px-4">Your account has been created! Please check your email to confirm your address before logging in.</p>
+                        
+                        <button 
+                            onClick={() => setStep('login')} 
+                            className="group relative overflow-hidden w-full bg-east-light text-black font-black italic text-lg py-5 rounded-2xl transition-all duration-500 hover:bg-white active:scale-95 shadow-[0_10px_20px_-5px_rgba(40,209,96,0.3)]"
+                        >
+                            {/* Hover Glimmer */}
+                            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+                            
+                            <span className="relative z-10 uppercase tracking-tighter">GO TO LOGIN</span>
                         </button>
                     </div>
                 )}
             </div>
+            
+            <style jsx global>{`
+                .animate-fadeIn {
+                    animation: fadeIn 1s ease-out forwards;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
         </div>
     );
 }
