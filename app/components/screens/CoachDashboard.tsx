@@ -81,12 +81,17 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
         if (viewMode === 'master_view') {
             setFilteredSessions(allSessions);
         } else {
-            // My Schedule: 
-            // 1. Sessions where instructor name matches (stricter check)
-            // 2. Slots where coach_id matches currentUserId
+            // LOGGING START
+            console.log("🔍 CoachDashboard Debug:");
+            console.log("CurrentUserID:", currentUserId);
+            console.log("UserName:", userName, "LastName:", userLastName);
+            console.log("Total Sessions:", allSessions.length);
+
             const myData = allSessions.filter(s => {
                 if (s.type === 'slot') {
-                    return s.coach_id === currentUserId;
+                    const match = s.coach_id === currentUserId;
+                    // console.log(`Slot ${s.id} match: ${match} (coach_id: ${s.coach_id})`);
+                    return match;
                 } else {
                     const normalize = (name: string) => name?.replace(/\s+/g, ' ').trim().toLowerCase() || '';
 
@@ -95,19 +100,27 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                     const coachLast = (userLastName || '').trim().toLowerCase();
                     const fullName = normalize(`${coachFirst} ${coachLast}`);
 
+                    let isMatch = false;
+
                     if (coachFirst === 'coach' && !coachLast && instructorName !== 'coach') {
-                        return false;
+                        isMatch = false;
+                    } else if (instructorName === fullName) isMatch = true;
+                    else if (instructorName === `coach ${fullName}`) isMatch = true;
+                    else if (!coachLast && instructorName === normalize(coachFirst)) isMatch = true;
+                    else if (!coachLast && instructorName === `coach ${normalize(coachFirst)}`) isMatch = true;
+                    else if (instructorName === 'you') isMatch = true;
+
+                    // Log sessions that FAIL the match but imply they are for this coach (debug helper)
+                    if (!isMatch && instructorName.includes(coachFirst)) {
+                        console.log(`❌ Filter Dropped Session: "${s.title}" | Instructor: "${s.instructor}" (Norm: "${instructorName}") vs Coach: "${fullName}"`);
                     }
 
-                    if (instructorName === fullName) return true;
-                    if (instructorName === `coach ${fullName}`) return true;
-                    if (!coachLast && instructorName === normalize(coachFirst)) return true;
-                    if (!coachLast && instructorName === `coach ${normalize(coachFirst)}`) return true;
-                    if (instructorName === 'you') return true;
-
-                    return false;
+                    return isMatch;
                 }
             });
+            console.log("Filtered Sessions:", myData.length);
+            // LOGGING END
+
             setFilteredSessions(myData);
         }
     }, [viewMode, allSessions, currentUserId, userName, userLastName]);

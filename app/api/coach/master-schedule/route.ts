@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         const supabaseAdmin = getSupabaseAdmin();
         const { data: profile } = await supabaseAdmin
             .from('profiles')
-            .select('role')
+            .select('role, first_name, last_name')
             .eq('id', user.id)
             .single();
 
@@ -35,10 +35,16 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Forbidden: Coaches only.' }, { status: 403 });
         }
 
-        // 2. FETCH SESSIONS (Today & Future)
+        // 2. FETCH DATA (Today & Next 60 Days)
+        // Since the user increased the Supabase limit to 10,000, we can now fetch 
+        // a broader range (60 days) to show a comprehensive Master Schedule.
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
         const startTimeFilter = todayStart.toISOString();
+
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 60);
+        const endTimeFilter = endDate.toISOString();
 
         // 2A. Fetch Sessions
         const { data: sessions, error: sessionError } = await supabaseAdmin
@@ -51,11 +57,13 @@ export async function GET(request: Request) {
                 )
             `)
             .gte('start_time', startTimeFilter)
-            .order('start_time', { ascending: true });
+            .lte('start_time', endTimeFilter)
+            .order('start_time', { ascending: true })
+            .limit(5000); // Safety limit
 
         if (sessionError) {
             console.error('Master Schedule Error (Sessions):', sessionError);
-            return NextResponse.json({ error: sessionError.message }, { status: 500 });
+            return NextResponse.json({ error: (sessionError as any).message }, { status: 500 });
         }
 
         // 2B. Fetch Availability (Open Slots)
@@ -66,8 +74,10 @@ export async function GET(request: Request) {
                 profiles:coach_id ( first_name, last_name, avatar_url )
             `)
             .gte('start_time', startTimeFilter)
+            .lte('start_time', endTimeFilter)
             .eq('status', 'available')
-            .order('start_time', { ascending: true });
+            .order('start_time', { ascending: true })
+            .limit(2000);
 
         if (availError) {
             console.error('Master Schedule Error (Availability):', availError);
