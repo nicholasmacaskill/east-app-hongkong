@@ -36,7 +36,7 @@ import { fetchProfileResilient } from '@/app/lib/authProfile';
 
 // 2. Updated Initial State
 const initialProfileData: UserProfileData = {
-  name: '', surname: '', first_name: '', last_name: '', username: '', bio: '', email: '', mobile: '', avatar_url: '', credits: 0, gallery_images: [], schedule_photo_url: '', intro_video_url: '', role: undefined, preferences: {}, subscription_status: 'inactive', account_status: 'active', membership_start: undefined, membership_expires: undefined, membership_history: []
+  name: '', surname: '', first_name: '', last_name: '', username: '', bio: '', email: '', mobile: '', avatar_url: '', credits: 0, gallery_images: [], schedule_photo_url: '', intro_video_url: '', role: undefined, preferences: {}, subscription_status: 'inactive', account_status: 'active', membership_start: undefined, membership_expires: undefined, membership_history: [], parent_id: undefined
 };
 
 function AppContent() {
@@ -107,6 +107,23 @@ function AppContent() {
 
 
           if (profileData) {
+            // membership inheritance for child accounts
+            let inheritedSubStatus = profileData.subscription_status;
+            let inheritedAccStatus = profileData.account_status;
+
+            if (profileData.parent_id) {
+              const { data: parentProfile } = await supabase
+                .from('profiles')
+                .select('subscription_status, account_status')
+                .eq('id', profileData.parent_id)
+                .single();
+
+              if (parentProfile) {
+                inheritedSubStatus = parentProfile.subscription_status;
+                inheritedAccStatus = parentProfile.account_status;
+              }
+            }
+
             // FIX: Ensure admins/coaches land on the correct dashboard
             if (profileData.role === 'admin' || profileData.role === 'coach' || profileData.role === 'sys-admin') {
               setSelectedRole(profileData.role as UserRole);
@@ -129,8 +146,9 @@ function AppContent() {
               role: profileData.role as UserRole,
               id: profileData.id,
               preferences: profileData.preferences || {},
-              subscription_status: profileData.subscription_status,
-              account_status: profileData.account_status,
+              subscription_status: inheritedSubStatus,
+              account_status: inheritedAccStatus,
+              parent_id: profileData.parent_id,
               membership_start: profileData.membership_start,
               membership_expires: profileData.membership_expires,
               membership_history: profileData.membership_history || []

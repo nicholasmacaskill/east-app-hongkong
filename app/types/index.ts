@@ -42,6 +42,7 @@ export interface UserProfileData {
     membership_start?: string;
     membership_expires?: string;
     membership_history?: any[];
+    parent_id?: string;
 }
 
 export interface Registration {
