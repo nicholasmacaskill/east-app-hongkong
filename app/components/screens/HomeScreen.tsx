@@ -443,7 +443,6 @@ export default function HomeScreen({
                   };
 
                   const coachSessions = sessions.filter(s =>
-                    s.category === 'PRIVATE' &&
                     s.instructor &&
                     scoreMatch(s.instructor, coach.first_name, coach.last_name || '')
                   );
