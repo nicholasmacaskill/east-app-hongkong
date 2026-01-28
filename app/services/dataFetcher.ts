@@ -10,13 +10,15 @@ async function fetchSessionsReal(): Promise<Session[]> {
     const now = new Date().toISOString();
 
     // ✅ THE FIX: Fetch everything where end_time is in the future.
-    // This grabs:
-    // 1. Future classes (Start > Now)
-    // 2. Active News (Start < Now, but End > Now)
+    // AND limit to 45 days to stay well under the 10,000 row limit and keep the app fast.
+    const fortyFiveDaysLater = new Date();
+    fortyFiveDaysLater.setDate(fortyFiveDaysLater.getDate() + 45);
+
     const { data, error } = await supabase
         .from('sessions')
         .select('*')
         .gte('end_time', now)
+        .lte('start_time', fortyFiveDaysLater.toISOString())
         .order('start_time', { ascending: true });
 
     if (error) {

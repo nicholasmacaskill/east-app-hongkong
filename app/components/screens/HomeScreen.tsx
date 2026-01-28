@@ -423,19 +423,21 @@ export default function HomeScreen({
               {coaches.map((coach) => (
                 <div key={coach.id} onClick={() => {
                   // Unified Flow: Click coach directly -> View ALL their private slots
+                  const normalize = (name: string) => name?.replace(/\s+/g, ' ').trim().toLowerCase() || '';
+
                   const scoreMatch = (instructor: string, first: string, last: string) => {
-                    const i = instructor.toLowerCase();
-                    const f = first.toLowerCase();
-                    const l = last.toLowerCase();
+                    const i = normalize(instructor);
+                    const f = normalize(first);
+                    const l = normalize(last);
 
                     // Safety: generic words shouldn't trigger weak matches
                     if (f === 'coach' && !l) return false;
 
-                    // Strong match: instructor contains "First Last"
+                    // Strong match: instructor contains "first last"
                     if (l && i.includes(`${f} ${l}`)) return true;
-                    // Standard match: instructor contains "First" AND "Last" (if last exists)
+                    // Standard match: instructor contains "first" AND "last" (if last exists)
                     if (l && i.includes(f) && i.includes(l)) return true;
-                    // Weak match: instructor contains First (only if no Last name)
+                    // Weak match: instructor contains first (only if no last name)
                     if (!l && i.includes(f)) return true;
                     return false;
                   };

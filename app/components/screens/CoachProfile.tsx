@@ -58,7 +58,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
             .eq('coach_id', profileData.id)
             .gte('start_time', new Date().toISOString())
             .order('start_time', { ascending: true })
-            .limit(9);
+            .limit(50);
 
         if (data) setAvailability(data);
     };
@@ -91,15 +91,23 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
         const coachName = profileData.first_name || profileData.username;
         if (!coachName) return;
 
-        // Fetch sessions where instructor name matches (simple text match for now)
-        const { data, error } = await supabase
+        const { data: allSessions } = await supabase
             .from('sessions')
             .select('*')
-            .ilike('instructor', `%${coachName}%`)
             .gte('start_time', new Date().toISOString())
-            .order('start_time', { ascending: true }); // Removed Limit to show all upcoming
+            .order('start_time', { ascending: true });
 
-        if (data) setUpcomingSessions(data as Session[]);
+        if (allSessions) {
+            const normalize = (name: string) => name?.replace(/\s+/g, ' ').trim().toLowerCase() || '';
+            const coachFullName = normalize(`${profileData.first_name || ''} ${profileData.last_name || ''}`);
+            const coachFirstName = normalize(profileData.first_name || '');
+
+            const filtered = allSessions.filter((s: Session) => {
+                const instr = normalize(s.instructor || '');
+                return instr.includes(coachFullName) || (profileData.first_name && instr.includes(coachFirstName));
+            });
+            setUpcomingSessions(filtered as Session[]);
+        }
     };
 
 
