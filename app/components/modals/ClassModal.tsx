@@ -550,7 +550,7 @@ export default function ClassModal({
 
                                     {/* Details */}
                                     <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{modalHeaderTitle}</h2>
-                                    {origin !== 'coaches' && (
+                                    {origin !== 'coaches' && displaySession.category !== 'FACILITY' && (
                                         <p className="font-montserrat font-bold text-[10px] mb-4 uppercase text-gray-500 tracking-wider">
                                             INSTRUCTOR: {selectedSession?.instructor || filterInstructor || 'VARIOUS'}
                                         </p>
