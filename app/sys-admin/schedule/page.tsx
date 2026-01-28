@@ -100,32 +100,38 @@ export default function MasterSchedule() {
         fetchCoaches();
         fetchServices();
         fetchCoachServices();
-    }, [selectedDate, activeCategory]);
+    }, [viewStartDate, activeCategory]); // Fetch by week, not just day
 
     const fetchSchedule = async () => {
         setLoading(true);
-        const startOfDay = new Date(selectedDate);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(selectedDate);
-        endOfDay.setHours(23, 59, 59, 999);
+        // Fetch the ENTIRE week starting from viewStartDate to avoid timezone shift issues
+        // and provide a smoother experience when switching days in the strip.
+        const startOfView = new Date(viewStartDate);
+        startOfView.setHours(0, 0, 0, 0);
+
+        const endOfView = new Date(viewStartDate);
+        endOfView.setDate(endOfView.getDate() + 7);
+        endOfView.setHours(23, 59, 59, 999);
 
         let query = supabase.from('sessions').select('*');
         if (activeCategory === 'EVENT') {
             const now = new Date();
             query = query.gte('start_time', now.toISOString()).eq('category', 'EVENT');
         } else {
-            query = query.gte('start_time', startOfDay.toISOString()).lte('start_time', endOfDay.toISOString());
+            query = query.gte('start_time', startOfView.toISOString()).lte('start_time', endOfView.toISOString());
         }
 
-        const { data: sessData } = await query.order('start_time');
+        const { data: sessData } = await query.order('start_time').limit(2000);
         setSessions(sessData || []);
 
         const { data: availData } = await supabase
             .from('availability')
             .select('*, profiles:coach_id ( first_name, last_name, avatar_url )')
-            .gte('start_time', startOfDay.toISOString())
-            .lte('start_time', endOfDay.toISOString())
-            .eq('status', 'available');
+            .gte('start_time', startOfView.toISOString())
+            .lte('start_time', endOfView.toISOString())
+            .eq('status', 'available')
+            .limit(1000);
+
         setAvailability(availData || []);
         setLoading(false);
     };
@@ -369,6 +375,10 @@ export default function MasterSchedule() {
                             coach_id: a.coach_id
                         }))
                     ].filter((item: any) => {
+                        // Date Filter: Ensure we only show items for the selected day in the local timezone
+                        const sDate = safeDate(item.start_time);
+                        if (!sDate || !isSameDay(sDate, new Date(selectedDate))) return false;
+
                         // Category Filter
                         if (activeCategory !== 'ALL' && item.category !== activeCategory) return false;
 
