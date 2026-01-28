@@ -40,7 +40,11 @@
   "exclude": [
     "node_modules",
     "database",
-    "gcp-agent.ts"
+    "gcp-agent.ts",
+    "website",
+    "scripts",
+    "project-docs",
+    "tests"
   ],
   // ⬅️ THIS BLOCK IS THE FIX FOR @/app ALIASES 
   "ts-node": {

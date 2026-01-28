@@ -30,7 +30,7 @@ export async function GET(request: Request) {
         if (coachName) {
             const { data: sessions, error: sessionError } = await supabaseAdmin
                 .from('sessions')
-                .select('*')
+                .select('*, bookings(id)')
                 .eq('instructor', coachName);
 
             if (!sessionError && sessions) {
@@ -57,7 +57,8 @@ export async function GET(request: Request) {
                 status: 'available',
                 session_type_id: s.session_type_id,
                 credit_cost: s.credit_cost,
-                capacity: 1 // Default or from DB if added later
+                capacity: s.max_capacity || 1,
+                booking_count: s.bookings?.length || 0
             }))
         ];
 
