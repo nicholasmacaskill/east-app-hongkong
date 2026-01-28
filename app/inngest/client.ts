@@ -1,7 +1,7 @@
 // app/inngest/client.ts
 
 import { Inngest } from "inngest";
-import { Resend } from 'resend';
+import { sendEmail } from "@/app/lib/email";
 
 // Initialize the Inngest client with an ID for your application
 export const inngest = new Inngest({ id: "east-training-app" });
@@ -19,15 +19,11 @@ export const sendConfirmationEmail = inngest.createFunction(
 
     // Use step.run() to make this operation retriable and observable
     await step.run("send-confirmation-email", async () => {
-      // NOTE: You must import Resend here, or from a separate utility file 
-      // where it's not run directly in the route handler.
-      const resend = new Resend(process.env.RESEND_API_KEY); 
-
-      await resend.emails.send({
-        from: 'EAST Training <onboarding@resend.dev>', // Update this
+      await sendEmail({
         to: contact_email,
         subject: 'Booking Confirmed - EAST Training',
-        html: `<p>Hi ${first_name},</p><p>Your spot is confirmed! You have ${remainingCredits} credits remaining.</p>`
+        html: `<p>Hi ${first_name},</p><p>Your spot is confirmed! You have ${remainingCredits} credits remaining.</p>`,
+        source: 'booking'
       });
     });
 

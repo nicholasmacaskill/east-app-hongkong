@@ -211,15 +211,13 @@ function AppContent() {
               .eq('parent_id', user.id);
 
             if (childrenData) {
-              // Map sport from bio if needed, or just pass raw
               const childrenWithTeams = childrenData.map(c => ({
                 ...c,
-                team: c.bio?.replace(' Player', '') || 'Athlete' // Simple extraction or default
+                team: c.bio?.replace(' Player', '') || 'Athlete'
               }));
               setMyChildren(childrenWithTeams);
             }
           }
-
         }
       } catch (error) {
         console.error("Initialization error:", error);
@@ -252,7 +250,6 @@ function AppContent() {
             filter: `id=eq.${currentUserId}`
           },
           (payload) => {
-            console.log('🔄 Profile update detected:', payload.new);
             const newData = payload.new;
 
             // Debug hook for Playwright
@@ -261,7 +258,6 @@ function AppContent() {
             }
 
             if (isWaitingForCreditsRef.current) {
-              console.log("💰 Webhook pulse detected while waiting for credits.");
               setUserProfile(prev => {
                 // If credits increased, we're done waiting
                 if (newData.credits > prev.credits) {
@@ -313,7 +309,6 @@ function AppContent() {
 
     return () => {
       if (channel) {
-        console.log("🔌 Cleaning up profile listener");
         supabase.removeChannel(channel);
       }
     };
