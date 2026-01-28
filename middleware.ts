@@ -88,7 +88,7 @@ export async function middleware(request: NextRequest) {
             let profile = null;
             let role = null;
 
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < 2; i++) {
                 const { data } = await serviceRoleSupabase
                     .from('profiles')
                     .select('role')
@@ -101,8 +101,8 @@ export async function middleware(request: NextRequest) {
                     break;
                 }
 
-                // Wait 150ms before retry
-                if (i < 2) await new Promise(resolve => setTimeout(resolve, 150));
+                // Shorter wait for better responsiveness
+                if (i < 1) await new Promise(resolve => setTimeout(resolve, 50));
             }
 
             // Admin only

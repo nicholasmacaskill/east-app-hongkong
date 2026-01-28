@@ -168,7 +168,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
                 <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/60" />
             </div>
 
-            <div className="w-full max-w-sm bg-white/[0.03] backdrop-blur-2xl rounded-[2.5rem] p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] border border-white/10 animate-fadeIn relative z-10 overflow-hidden">
+            <div className="w-full max-w-sm bg-white/[0.03] backdrop-blur-xl rounded-[2.5rem] p-10 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] border border-white/10 animate-fadeIn relative z-10 overflow-hidden">
                 {/* Decorative Elements */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-east-light/5 blur-[50px] -mr-16 -mt-16" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-east-light/5 blur-[50px] -ml-16 -mb-16" />
