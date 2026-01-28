@@ -354,6 +354,8 @@ export default function MasterSchedule() {
                         <p className="font-bold uppercase tracking-widest text-xs">Syncing Schedule...</p>
                     </div>
                 ) : (() => {
+                    const normalizeName = (name: string) => name?.replace(/\s+/g, ' ').trim().toLowerCase() || '';
+
                     const mergedItems: any[] = [
                         ...sessions.map(s => ({ ...s, type: 'session' })),
                         ...availability.map(a => ({
@@ -378,8 +380,8 @@ export default function MasterSchedule() {
                             // For sessions: match by name (hacky but consistent with current architecture)
                             const coach = coaches.find(c => c.id === filterCoachId);
                             if (coach) {
-                                const instructorName = (item.instructor || '').trim().toLowerCase();
-                                const fullName = `${coach.first_name} ${coach.last_name}`.trim().toLowerCase();
+                                const instructorName = normalizeName(item.instructor || '');
+                                const fullName = normalizeName(`${coach.first_name} ${coach.last_name}`);
                                 if (instructorName !== fullName && instructorName !== `coach ${fullName}`) return false;
                             }
                         }

@@ -88,32 +88,21 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                 if (s.type === 'slot') {
                     return s.coach_id === currentUserId;
                 } else {
-                    // Session: check if instructor string matches name exactly or "Coach [Name]"
-                    // This prevents "Ben" from matching "Bennett" or "Benson"
-                    const instructorName = (s.instructor || '').trim().toLowerCase();
+                    const normalize = (name: string) => name?.replace(/\s+/g, ' ').trim().toLowerCase() || '';
+
+                    const instructorName = normalize(s.instructor || '');
                     const coachFirst = (userName || '').trim().toLowerCase();
                     const coachLast = (userLastName || '').trim().toLowerCase();
-                    const fullName = `${coachFirst} ${coachLast}`.trim();
+                    const fullName = normalize(`${coachFirst} ${coachLast}`);
 
-                    // Safety: If your name is just "Coach", do NOT match "Coach Ben" etc.
-                    // Only match "Coach" exactly.
                     if (coachFirst === 'coach' && !coachLast && instructorName !== 'coach') {
                         return false;
                     }
 
-                    // 1. Exact Full Name Match (e.g. "Ben Smith" === "Ben Smith")
                     if (instructorName === fullName) return true;
-
-                    // 2. Exact "Coach [First] [Last]" Match
                     if (instructorName === `coach ${fullName}`) return true;
-
-                    // 3. Exact First Name Match (if no last name provided)
-                    if (!coachLast && instructorName === coachFirst) return true;
-
-                    // 4. Exact "Coach [First]" Match (if no last name provided)
-                    if (!coachLast && instructorName === `coach ${coachFirst}`) return true;
-
-                    // 5. Explicit "You" check
+                    if (!coachLast && instructorName === normalize(coachFirst)) return true;
+                    if (!coachLast && instructorName === `coach ${normalize(coachFirst)}`) return true;
                     if (instructorName === 'you') return true;
 
                     return false;

@@ -308,7 +308,9 @@ export default function ScheduleScreen({
                       <div className="bg-white/5 p-3 flex justify-between items-center border-t border-white/5">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded-full bg-gray-800" />
-                          <span className="text-[9px] font-black italic text-gray-400 uppercase tracking-widest">{event.instructor}</span>
+                          <span className="text-[9px] font-black italic text-gray-400 uppercase tracking-widest">
+                            {event.instructor?.replace(/\s+/g, ' ').trim()}
+                          </span>
                         </div>
                         <button className="bg-white text-black text-[9px] font-black italic px-4 py-1.5 rounded-full hover:bg-east-light transition-colors">DETAILS</button>
                       </div>

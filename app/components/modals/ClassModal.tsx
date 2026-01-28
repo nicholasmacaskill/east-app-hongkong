@@ -198,7 +198,6 @@ export default function ClassModal({
     // View Mode Effect
     useEffect(() => {
         if (!sessions || sessions.length === 0) return;
-        const normalize = (name: string) => name?.replace(/\s+/g, ' ').trim() || '';
 
         const uniqueInstructorsSet = new Set(
             sessions.filter(s => !!s.instructor).map(s => normalize(s.instructor || ''))
