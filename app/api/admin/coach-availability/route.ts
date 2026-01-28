@@ -6,6 +6,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const coachId = searchParams.get('coachId');
 
+    console.log("🔍 GET /api/admin/coach-availability called with coachId:", coachId);
+
     if (!coachId) {
         return NextResponse.json({ success: false, error: 'Coach ID is required' }, { status: 400 });
     }
@@ -19,22 +21,34 @@ export async function GET(request: Request) {
             .select('*')
             .eq('coach_id', coachId);
 
-        if (availError) throw availError;
+        if (availError) {
+            console.error("❌ Error fetching availability:", availError);
+            throw availError;
+        }
 
         // 2. Fetch Sessions (via Instructor Name match)
         // Note: Legacy schema relies on name string, not foreign key.
         const { data: profile } = await supabaseAdmin.from('profiles').select('first_name, last_name').eq('id', coachId).single();
         const coachName = profile ? `${profile.first_name} ${profile.last_name}` : '';
 
+        console.log(`👤 Resolved Coach Name for Sessions: "${coachName}"`);
+
         let sessionData: any[] = [];
         if (coachName) {
             const { data: sessions, error: sessionError } = await supabaseAdmin
                 .from('sessions')
-                .select('*, bookings(id)')
+                .select('*, registrations(id)') // Fixed: Use 'registrations' table, not 'bookings'
                 .eq('instructor', coachName);
+
+            if (sessionError) {
+                console.error("❌ Error fetching sessions:", sessionError);
+            }
 
             if (!sessionError && sessions) {
                 sessionData = sessions;
+                console.log(`✅ Found ${sessions.length} sessions for instructor "${coachName}"`);
+            } else {
+                console.log(`⚠️ No sessions found for instructor "${coachName}" (or silent error)`);
             }
         }
 
@@ -58,12 +72,13 @@ export async function GET(request: Request) {
                 session_type_id: s.session_type_id,
                 credit_cost: s.credit_cost,
                 capacity: s.max_capacity || 1,
-                booking_count: s.bookings?.length || 0
+                booking_count: s.registrations?.length || 0 // Fixed: Map from registrations
             }))
         ];
 
         return NextResponse.json({ success: true, data: normalizedSlots });
     } catch (error: any) {
+        console.error("❌ Fatal Error in GET:", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
@@ -72,6 +87,12 @@ export async function POST(request: Request) {
     try {
         const body = await request.json();
         const { coachId, slots, deletedSlots } = body;
+
+        console.log("📥 POST /api/admin/coach-availability received payload:", {
+            coachId,
+            newSlotsCount: slots?.length,
+            deletedSlotsCount: deletedSlots?.length
+        });
 
         if (!coachId) {
             return NextResponse.json({ success: false, error: 'Coach ID is required' }, { status: 400 });
@@ -105,6 +126,8 @@ export async function POST(request: Request) {
             const { data: coachProfile } = await supabaseAdmin.from('profiles').select('first_name, last_name, avatar_url').eq('id', coachId).single();
             const coachName = coachProfile ? `${coachProfile.first_name} ${coachProfile.last_name}` : 'Coach';
 
+            console.log(`👤 Inserting for Coach: "${coachName}"`);
+
             // Cache for session types
             const sessionTypeCache: Record<string, any> = {};
 
@@ -116,6 +139,7 @@ export async function POST(request: Request) {
                         sessionTypeCache[slot.session_type_id] = typeData;
                     }
                     const serviceType = sessionTypeCache[slot.session_type_id];
+                    console.log(`ℹ️ Preparing Session Insert for Type: ${slot.session_type_id}`, serviceType);
 
                     sessionsToInsert.push({
                         title: serviceType?.title || 'Private Session',
@@ -128,7 +152,7 @@ export async function POST(request: Request) {
                         description: `Booked via Coach Availability`,
                         credit_cost: slot.credit_cost || 10,
                         session_type_id: slot.session_type_id,
-                        capacity: slot.capacity || 1
+                        max_capacity: slot.capacity || 1 // FIXED: use correct column name 'max_capacity'
                     });
 
                 } else {
@@ -145,8 +169,14 @@ export async function POST(request: Request) {
 
             // Insert Sessions
             if (sessionsToInsert.length > 0) {
+                console.log("🚀 Inserting Sessions Table payload:", sessionsToInsert);
                 const { error: sessionError } = await supabaseAdmin.from('sessions').insert(sessionsToInsert);
-                if (sessionError) throw sessionError;
+                if (sessionError) {
+                    console.error("❌ Error Inserting Sessions:", sessionError);
+                    throw sessionError;
+                } else {
+                    console.log("✅ Sessions Inserted Successfully");
+                }
             }
 
             // Insert Availability

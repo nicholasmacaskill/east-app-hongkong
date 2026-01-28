@@ -151,7 +151,7 @@ export async function POST(request: Request) {
           // Find conflicting sessions (same instructor, overlaps time, not this session)
           const { data: conflicts } = await supabaseAdmin
             .from('sessions')
-            .select('id, bookings:registrations(count)')
+            .select('id, registrations(count)')
             .eq('instructor', bookedSession.instructor)
             .neq('id', sessionId)
             .neq('status', 'voided') // Don't re-void
@@ -161,7 +161,7 @@ export async function POST(request: Request) {
 
           if (conflicts && conflicts.length > 0) {
             const idsToVoid = conflicts
-              .filter((s: any) => s.bookings?.[0]?.count === 0) // Only void if EMPTY
+              .filter((s: any) => s.registrations?.[0]?.count === 0) // Only void if EMPTY
               .map((s: any) => s.id);
 
             if (idsToVoid.length > 0) {

@@ -125,12 +125,12 @@ test.describe('Database Consistency Verification', () => {
             await expect(page.locator('text=/Success|Confirmed/i')).toBeVisible();
 
             // VERIFY DATABASE STATE
-            // Check if booking entry exists
+            // Check if registration entry exists
             const { data: bookings } = await supabase
-                .from('bookings')
+                .from('registrations')
                 .select('*')
-                .eq('profile_id', childId)
-                .order('created_at', { ascending: false })
+                .eq('user_id', childId)
+                .order('registered_at', { ascending: false })
                 .limit(1);
 
             expect(bookings?.length).toBe(1);

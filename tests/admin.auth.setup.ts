@@ -48,6 +48,9 @@ setup('authenticate as admin', async ({ page }) => {
     console.log(`Created test admin: ${email} (${user.user.id})`);
 
     // 2. Login via UI (Admin Protocol)
+    // Small delay to ensure DB propagation
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
     await page.goto('/');
 
     // Select ADMIN PORTAL

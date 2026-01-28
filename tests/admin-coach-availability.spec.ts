@@ -222,7 +222,7 @@ test.describe('Coach Availability Management', () => {
         // Verify session details
         const session = sessions![0];
         expect(session.credit_cost).toBe(20);
-        expect(session.capacity).toBe(1);
+        expect(session.max_capacity).toBe(1);
         expect(session.session_type_id).toBe(testServiceTypeId);
         expect(session.category).toBe('PRIVATE');
     });
