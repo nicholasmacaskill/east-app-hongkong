@@ -13,6 +13,11 @@ export async function POST(request: Request) {
 
         const supabaseAdmin = getSupabaseAdmin();
 
+        // Split fullName into first and last for database trigger compatibility
+        const nameParts = fullName.trim().split(/\s+/);
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
         // 1. Create the user via Admin API (doesn't trigger standard emails if configured correctly)
         // Note: Creating with auto-confirm false so we can send our own link
         const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -21,6 +26,8 @@ export async function POST(request: Request) {
             email_confirm: false,
             user_metadata: {
                 full_name: fullName,
+                first_name: firstName,
+                last_name: lastName,
                 mobile: phone,
                 role: role
             }
@@ -31,7 +38,21 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: authError?.message || 'Failed to create user' }, { status: 500 });
         }
 
-        // 2. Generate the signup/confirmation link
+        // 2. Explicitly update profile to ensure name and contact sync
+        // (Triggers can sometimes have mismatches; this is safer)
+        await supabaseAdmin
+            .from('profiles')
+            .update({
+                first_name: firstName,
+                last_name: lastName,
+                name: firstName,
+                surname: lastName,
+                contact_email: email,
+                mobile: phone
+            })
+            .eq('id', authUser.user.id);
+
+        // 3. Generate the signup/confirmation link
         // We Use 'signup' type for a new user
         const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
             type: 'signup',
