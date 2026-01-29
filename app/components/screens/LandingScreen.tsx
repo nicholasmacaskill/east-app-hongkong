@@ -32,14 +32,14 @@ export default function LandingScreen({ onSelectRole }: LandingScreenProps) {
                 </div>
 
                 {/* CALL TO ACTION */}
-                <div className={`w-full space-y-4 transition-all duration-[2000ms] delay-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                    <h2 className="text-[10px] font-black tracking-[0.4em] text-white/40 uppercase text-center mb-10">
+                <div className={`w-full transition-all duration-[2000ms] delay-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+                    <h2 className="text-[10px] font-black tracking-[0.5em] text-white/40 uppercase text-center mb-12">
                         Select Your Portal
                     </h2>
 
-                    <div className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-8">
                         <div className="animate-fadeIn" style={{ animationDelay: '0ms' }}>
-                            <p className="text-[10px] font-black tracking-[0.2em] text-white/30 uppercase mb-3 ml-1">coach</p>
+                            <p className="text-[10px] font-black tracking-[0.2em] text-white/30 uppercase mb-3 ml-1 text-center">coach</p>
                             <LoginButton
                                 label="LOGIN"
                                 onClick={() => onSelectRole('coach')}
@@ -47,7 +47,7 @@ export default function LandingScreen({ onSelectRole }: LandingScreenProps) {
                         </div>
 
                         <div className="animate-fadeIn" style={{ animationDelay: '200ms' }}>
-                            <p className="text-[10px] font-black tracking-[0.2em] text-white/30 uppercase mb-3 ml-1">parent</p>
+                            <p className="text-[10px] font-black tracking-[0.2em] text-white/30 uppercase mb-3 ml-1 text-center">parent</p>
                             <LoginButton
                                 label="LOGIN OR REGISTER"
                                 onClick={() => onSelectRole('parent')}
@@ -55,14 +55,14 @@ export default function LandingScreen({ onSelectRole }: LandingScreenProps) {
                         </div>
 
                         <div className="animate-fadeIn" style={{ animationDelay: '400ms' }}>
-                            <p className="text-[10px] font-black tracking-[0.2em] text-white/30 uppercase mb-3 ml-1">athlete</p>
+                            <p className="text-[10px] font-black tracking-[0.2em] text-white/30 uppercase mb-3 ml-1 text-center">athlete</p>
                             <LoginButton
                                 label="LOGIN OR REGISTER"
                                 onClick={() => onSelectRole('player')}
                             />
                         </div>
 
-                        <div className="pt-8 mt-4 border-t border-white/10 w-full animate-fadeIn" style={{ animationDelay: '600ms' }}>
+                        <div className="pt-10 mt-6 border-t border-white/10 w-full animate-fadeIn" style={{ animationDelay: '600ms' }}>
                             <LoginButton
                                 label="ADMIN PORTAL"
                                 onClick={() => onSelectRole('admin')}
@@ -73,8 +73,8 @@ export default function LandingScreen({ onSelectRole }: LandingScreenProps) {
                 </div>
 
                 {/* FOOTER */}
-                <div className={`mt-12 transition-all duration-[2000ms] delay-[3000ms] ${isLoaded ? 'opacity-40' : 'opacity-0'}`}>
-                    <p className="text-[8px] font-bold tracking-widest text-white uppercase">
+                <div className={`mt-16 transition-all duration-[2000ms] delay-[3000ms] ${isLoaded ? 'opacity-40' : 'opacity-0'}`}>
+                    <p className="text-[8px] font-bold tracking-widest text-white uppercase text-center">
                         East Sports Group • Hong Kong
                     </p>
                 </div>
@@ -101,18 +101,24 @@ function LoginButton({ label, onClick, isAdmin = false }: { label: string; onCli
     return (
         <button
             onClick={onClick}
-            className={`group relative overflow-hidden w-full backdrop-blur-md border ${isAdmin ? 'bg-white/10 border-white/20 hover:border-white/50' : 'bg-white/5 border-white/10 hover:border-east-light/50'} py-6 rounded-2xl transition-all duration-500 hover:bg-white/15 active:scale-95`}
+            className={`group relative overflow-hidden w-full transition-all duration-500 active:scale-95 rounded-2xl py-5
+                ${isAdmin
+                    ? 'bg-white/10 border border-white/20 text-white hover:bg-white/20'
+                    : 'bg-east-light text-black shadow-[0_10px_20px_-5px_rgba(40,209,96,0.3)] hover:bg-white'
+                }`}
         >
             {/* Hover Glimmer */}
-            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
 
-            <span className={`relative z-10 font-black italic text-lg tracking-tighter ${isAdmin ? 'text-white' : 'text-white group-hover:text-east-light'} transition-colors duration-500`}>
+            <span className="relative z-10 font-black italic text-lg tracking-tighter uppercase">
                 {label}
             </span>
 
-            <div className={`absolute right-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-500`}>
-                <div className={`w-1.5 h-1.5 rounded-full ${isAdmin ? 'bg-white shadow-[0_0_10px_#fff]' : 'bg-east-light shadow-[0_0_10px_#4ade80]'}`} />
-            </div>
+            {!isAdmin && (
+                <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                    <div className="w-1.5 h-1.5 rounded-full bg-black shadow-[0_0_10px_rgba(0,0,0,0.5)]" />
+                </div>
+            )}
         </button>
     );
 }
