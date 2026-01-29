@@ -665,7 +665,7 @@ export default function DirectoryPage() {
                                 </div>
 
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase">New Password (Optional)</label>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Enter New Password</label>
                                     <input
                                         type="password"
                                         value={editingUser.password || ''}
@@ -673,6 +673,13 @@ export default function DirectoryPage() {
                                         className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                         placeholder="Leave blank to keep current"
                                     />
+
+                                    <div className="flex items-center gap-4 my-2">
+                                        <div className="h-[1px] flex-1 bg-white/5"></div>
+                                        <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">OR</span>
+                                        <div className="h-[1px] flex-1 bg-white/5"></div>
+                                    </div>
+
                                     <button
                                         onClick={async (e) => {
                                             e.preventDefault();
@@ -694,7 +701,7 @@ export default function DirectoryPage() {
                                                 addToast('Error: ' + err.message, 'error');
                                             }
                                         }}
-                                        className="mt-2 w-full bg-blue-500/10 text-blue-400 py-2 rounded-lg text-[10px] font-black uppercase italic hover:bg-blue-500 hover:text-white transition-colors"
+                                        className="w-full bg-blue-500/10 text-blue-400 py-2 rounded-lg text-[10px] font-black uppercase italic hover:bg-blue-500 hover:text-white transition-colors"
                                     >
                                         Send Password Reset Email
                                     </button>
