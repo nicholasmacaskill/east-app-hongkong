@@ -47,6 +47,7 @@ function AppContent() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const [selectedAuthStep, setSelectedAuthStep] = useState<'login' | 'register'>('login');
 
   // App State
   const [showClassModal, setShowClassModal] = useState(false);
@@ -403,7 +404,14 @@ function AppContent() {
 
   if (!currentUserId) {
     if (!selectedRole) {
-      return <LandingScreen onSelectRole={setSelectedRole} />;
+      return (
+        <LandingScreen
+          onSelectAuth={(role: UserRole, step: 'login' | 'register') => {
+            setSelectedRole(role);
+            setSelectedAuthStep(step);
+          }}
+        />
+      );
     }
     return (
       <div className="relative min-h-screen bg-black">
@@ -415,6 +423,7 @@ function AppContent() {
         </button>
         <AuthScreen
           expectedRole={selectedRole || undefined}
+          initialStep={selectedAuthStep}
           onAuthSuccess={(role) => {
             if (role === 'admin' || role === 'sys-admin') {
               window.location.href = '/sys-admin';

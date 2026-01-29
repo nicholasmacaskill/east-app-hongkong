@@ -30,6 +30,7 @@ const initialFormData: FormData = {
 interface AuthScreenProps {
     onAuthSuccess: (role: UserRole) => void;
     expectedRole?: UserRole;
+    initialStep?: AuthStep;
 }
 
 const AuthHeader = ({ title }: { title: string }) => (
@@ -59,9 +60,9 @@ const InputField: React.FC<{ label: string; name: keyof FormData; type: string; 
     </div>
 );
 
-export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenProps) {
+export default function AuthScreen({ onAuthSuccess, expectedRole, initialStep }: AuthScreenProps) {
     const { addToast } = useToast();
-    const [step, setStep] = useState<AuthStep>('login');
+    const [step, setStep] = useState<AuthStep>(initialStep || 'login');
     const [formData, setFormData] = useState<FormData>({
         ...initialFormData,
         role: (expectedRole === 'parent' || expectedRole === 'coach' || expectedRole === 'player') ? expectedRole : 'player'
