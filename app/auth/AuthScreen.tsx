@@ -155,7 +155,12 @@ export default function AuthScreen({ onAuthSuccess, expectedRole, initialStep }:
                 {/* --- LOGIN --- */}
                 {step === 'login' && (
                     <>
-                        <AuthHeader title={expectedRole === 'admin' ? "Admin Portal Access" : "Member Login"} />
+                        <AuthHeader title={
+                            expectedRole === 'admin' ? "Admin Portal Access" :
+                                expectedRole === 'coach' ? "Coach Login" :
+                                    expectedRole === 'parent' ? "Parent Login" :
+                                        "Athlete Login"
+                        } />
                         <form onSubmit={handleLogin} className="space-y-2">
                             <InputField label="Email Address" name="email" type="email" value={formData.email} icon={Mail} onChange={handleChange} placeholder="Enter your email" />
                             <InputField label="Password" name="password" type="password" value={formData.password} icon={Lock} onChange={handleChange} placeholder="Enter your password" />
@@ -188,7 +193,11 @@ export default function AuthScreen({ onAuthSuccess, expectedRole, initialStep }:
                 {/* --- REGISTER (SINGLE STEP) --- */}
                 {step === 'register' && (
                     <>
-                        <AuthHeader title="Create Account" />
+                        <AuthHeader title={
+                            formData.role === 'parent' ? "Create Parent Account" :
+                                formData.role === 'coach' ? "Create Coach Account" :
+                                    "Create Athlete Account"
+                        } />
                         <form onSubmit={handleRegister} className="space-y-4">
                             <InputField label="Full Name" name="fullName" type="text" value={formData.fullName} icon={User} onChange={handleChange} placeholder="First and Last Name" />
                             <InputField label="Mobile Number" name="phone" type="tel" value={formData.phone} icon={Phone} onChange={handleChange} placeholder="+852 1234 5678" />
