@@ -61,7 +61,7 @@ export default function AppHeader({
                     </button>
                 ) : (
                     showLogo && (
-                        <div className="relative w-48 h-20">
+                        <div className="relative w-32 h-12">
                             <Image
                                 src="/eastedited.png"
                                 alt="EAST"
