@@ -1,360 +1,97 @@
-# EAST Sports Group - Training Management Platform
+# EAST Sports Group - Operational Core
 
-A production-grade, mobile-first web application for managing sports training programs, athlete development, and community engagement in Hong Kong. Built for EAST Sports Group to streamline operations, enhance athlete experience, and create a unified digital ecosystem for coaches, parents, and players.
-
-## 📋 Table of Contents
-
-1. [About the Project](#about-the-project)
-2. [✨ Core Features](#-core-features)
-3. [🚀 Getting Started (Zero-to-Hero Setup)](#-getting-started-zero-to-hero-setup)
-4. [🛠️ Tech Stack](#-tech-stack)
-5. [🏛️ Primary Screens](#️-primary-screens)
-6. [🗄️ Database & Automation](#️-database--automation)
+**System Status**: 🟢 **LIVE** (Production)
+**Domain**: [`app.eastsportsgroup.com`](https://app.eastsportsgroup.com)
 
 ---
 
-## About the Project
+## 🚀 The Vision: A High-Performance Digital Ecosystem
 
-EAST Sports Group operates multiple ice hockey training programs across Hong Kong, serving youth and adult athletes with professional coaching, facility access, and competitive development pathways. This platform is a **complete operational system**—not just a website, but the digital backbone of the entire organization.
+**The EAST App** is not just a scheduling tool—it is the digital nervous system of EAST Sports Group. Designed to professionalize youth sports management in Hong Kong, it replaces fragmented legacy systems with a unified, self-service platform that empowers three key groups:
 
-### What Makes This Different
+1.  **Athletes**: Gain a professional-grade profile with tracked statistics (Goals, Assists, XP), milestones, and a clear path to high-performance development.
+2.  **Parents**: Experience a frictionless, "Amazon-like" booking experience. Managing multiple children, purchasing recurring memberships, and booking complex sessions is handled in seconds, not email chains.
+3.  **Coaches & Admins**: Reclaim hundreds of hours of administrative time through automated rosters, capacity enforcement, and zero-touch payment reconciliation.
 
-**Smart Family Management:**
-- Parents manage multiple children from a single account
-- Book sessions on behalf of specific athletes with one-click selection
-- Each child maintains their own stats, QR code, and profile
-- Automatic credit deduction from parent's wallet, attributed to the correct child
-
-**Credit-Based Booking Economy:**
-- Stripe-integrated payment system with automated top-ups and membership purchases
-- Credits as internal currency eliminate cash handling and reconciliation overhead
-- Real-time balance updates and transparent transaction history
-- Webhook-driven automation ensures zero manual payment processing
-
-**Professional Admin Portal:**
-- Comprehensive `/sys-admin` dashboard for facility managers
-- Session creation, editing, and capacity management
-- User role management (player → parent → coach → admin promotion)
-- Transaction monitoring and refund processing
-- QR scanner for physical facility check-ins
-
-**Intelligent Scheduling:**
-- Capacity-enforced bookings prevent overbooking at database level
-- Multi-role access: coaches view their sessions, parents see children's schedules, admins see everything
-- Automated email confirmations via Resend for every booking and cancellation
-- Calendar view with filters by athlete, session type, and date range
-
-### The Challenge
-Traditional sports program management suffers from:
-- **Fragmented Communication**: WhatsApp groups, email chains, and phone calls create information silos
-- **Manual Booking Systems**: Spreadsheets and paper sign-ups lead to overbooking and confusion
-- **Payment Friction**: Cash handling, manual receipt tracking, and delayed reconciliation
-- **No Athlete Insights**: Parents and players lack visibility into progress and statistics
-- **Administrative Overhead**: Coaches spend hours on admin instead of coaching
-
-### The Solution
-A unified platform that replaces 5+ separate tools:
-- ✅ **Replaces**: Spreadsheet booking systems → Self-service credit-based scheduling
-- ✅ **Replaces**: Cash/bank transfer payments → Automated Stripe checkout with instant confirmation
-- ✅ **Replaces**: Manual attendance tracking → QR code check-in system
-- ✅ **Replaces**: Email blasts → Automated transactional notifications
-- ✅ **Replaces**: Static websites → Real-time social feed and direct messaging
-
-### Development Philosophy
-This project follows a **high-quality, maintainable-first approach**:
-
-**Architecture & Security:**
-- **Zero-Trust Security**: Role-based access control (RBAC) enforced at database level with Row-Level Security (RLS)
-- **Definition of Done Compliance**: Every feature must pass 6 criteria before merge (schema sync, API logic, type safety, UI flow, regression audit, empty states)
-- **Risk-Driven Development**: Active `LAUNCH_RISKS.md` tracking and mitigation of production risks before they materialize
-
-**Testing Approach:**
-- **E2E-First**: Playwright tests for all critical user flows (authentication, payments, bookings, admin operations)
-- **Database Constraint Testing**: Verify business rules at the DB level (capacity limits, credit balances, role permissions)
-- **Test Data Isolation**: Dedicated `test_emails` table and test-specific cleanup to prevent production contamination
-- **Visual Verification**: Headed mode validation before committing tests to catch selector issues early
-- **Mandatory Test IDs**: `data-testid` attributes on all critical paths for reliable, maintainable selectors
-- **Zero Tolerance for Flaky Tests**: Tests must pass consistently or be fixed/removed—no "sometimes fails" accepted
-
-**AI-First Engineering:**
-- **Agent Orchestration**: Leverages specialized agents (Architect, Auditor, Executor) with defined roles and protocols
-- **Human Oversight**: Critical paths (payments, security, data migrations) require manual review and approval
-- **Automated Standards**: AI enforces Definition of Done, but cannot bypass security or testing requirements
-
-**Progressive Enhancement:**
-- Mobile-first design that degrades gracefully
-- Client-side optimizations (image compression, offline-ready components)
-- Performance budgets and monitoring
+This system moves EAST from a service provider to a **Tech-Enabled Sports Organization**, setting a new standard for operational excellence in the region.
 
 ---
 
-## ✨ Core Features
+## ✨ Core Product Pillars
 
-The app is structured around five main pillars, enhanced by robust payment and notification systems.
+The application is architected around five interconnected pillars, ensuring data consistency and user engagement.
 
-### 💳 Payments & Credits (NEW)
-* **Integrated Stripe Checkout:** Seamlessly purchase Memberships and Credit Top-Ups directly within the app.
-* **Smart Credit System:** Credits are the internal currency for booking. Top-ups are automagically added to the user's balance via secure Webhooks.
-* **Transactional Emails:** Instant confirmation emails for purchases, bookings, and cancellations powered by **Resend**.
+### 1. The Credit Economy (Financial Engine)
+We replaced cash and bank transfers with a seamless digital economy.
+*   **Stripe Integration**: Deep integration with Stripe for both recurring subscriptions (Memberships) and ad-hoc purchases (Top-Ups).
+*   **Credit Abstraction**: Users transact in "Credits" rather than cash. This decouples booking from billing, allowing for bulk discounts, easy refunds, and instant booking speed.
+*   **Zero-Touch Reconciliation**: Every transaction is verified via Webhooks, debiting/crediting wallets automatically without manual oversight.
 
-### 📊 Dashboard (Home & Schedule)
-* **Dynamic Booking Feed:** Displays upcoming Adult/Youth Classes, Private Coaches, and Facility Bookings.
-* **Modal Session Details:** Provides full descriptions, images, instructor bios, and one-click booking.
-* **Calendar View:** Dedicated screen to visualize all registered events in a weekly calendar format.
+### 2. Smart Family Management (Identity)
+We solved the complex "Parent-Child" data problem.
+*   **Multi-Profile Accounts**: A single Parent login controls unlimited Child profiles.
+*   **Context-Aware Booking**: When a parent selects a session, the system intelligently asks *"Who is this for?"*, ensuring attendance records and statistics are attributed to the child, while the payment comes from the parent.
+*   **Granular Statistics**: Each child maintains their own distinct statistical history and progression, fostering a sense of ownership and achievement.
 
-### 👤 Profile & Statistics
-* **Player Stats:** Visual display of key hockey statistics (Goals, Assists, PIM, Games Played, Milestones).
-* **Self-Service Settings:** Users can update their profile, view credit balance, and access top-up options.
+### 3. Intelligent Scheduling (Operations)
+We eliminated overbooking and admin chaos.
+*   **Real-Time Capacity**: Database-enforced session limits prevent overbooking instantly.
+*   **Role-Based Views**:
+    *   *Players/Parents* see a curated feed of available training.
+    *   *Coaches* access their specific rosters.
+    *   *Admins* maintain a god-view of the entire organization.
+*   **Automated Communication**: Every booking, cancellation, and waitlist movement triggers a branded transactional email via **Resend**, keeping everyone aligned.
 
-### 📱 Community & Messaging
-* **Real-time Social Feed:** Users can create posts, upload images (Supabase Storage), and interact via likes.
-* **Messenger:** Direct messaging system with image support and real-time updates.
+### 4. Community & Engagement (Retention)
+We turned a booking tool into a social hub.
+*   **Live Feed**: A social-media style feed for internal announcements, photos, and team updates.
+*   **Direct Messaging**: Secure, internal communication channels between families and staff, centralizing support and reducing WhatsApp clutter.
+*   **Leaderboards**: Automated statistical leaderboards for Golf and Hockey training gamify the development process.
 
-### 🔑 Check-In & Access
-* **QR Code Access:** Dedicated QR screen for members to display their unique code for facility check-in.
-* **QR Scanner:** Admin tool for staff to scan and verify member access.
-
----
-
-## 🚀 Getting Started (Zero-to-Hero Setup)
-
-We have created an automated, "Agentic" implementation plan to help new developers (and AI agents) set up the environment from scratch.
-
-### 🤖 Automated Setup (Recommended)
-This method allows your AI Agent to set up the entire environment for you.
-
-1.  **Open the Setup Guide:** Open **[`SETUP_GUIDE.md`](./SETUP_GUIDE.md)** in your editor.
-2.  **Copy the Instructions:** Copy the entire contents of the file.
-3.  **Open AI Chat:** Open your Agent Interface (Sidebar or `Cmd+L`).
-4.  **Prompt the Agent:** Paste the text and type:
-    > *"Follow these instructions to set up my local environment."*
-
-The Agent will handle installing tools, getting keys, and configuring the database.
-
-### Quick Commands (For Manual Setup)
-```bash
-# Install dependencies
-pnpm install
-
-# Start Dev Server
-pnpm dev
-
-# Reset Database (if needed)
-npx tsx run_sql.ts
-```
+### 5. Facility Access Control (Security)
+We digitized physical security.
+*   **Dynamic QR Codes**: The user's "Wallet" generates a secure, rotatable QR code.
+*   **Admin Scanner**: Facility staff use the built-in scanner to verify active membership status and check-in athletes in milliseconds.
 
 ---
 
-## 🧪 Debugging & Automated Testing
+## 🛠️ Technology Stack
 
-We use **Playwright** for End-to-End (E2E) testing to ensure stability across critical flows, including Payments and Admin actions.
+Built on a modern, type-safe stack designed for reliability and speed.
 
-### Running Tests
-```bash
-# Run all tests (Headless)
-npx playwright test
-
-# Run specific payment tests (bypassing Stripe signature verification)
-npx playwright test tests/stripe-payments.spec.ts --project=no-auth
-
-# View visual report of last run
-npx playwright show-report
-```
-
-### 🆘 Admin Recovery
-If you lose access to the Admin portal or need to set up a fresh admin in production (since we removed the default `admin@east.com`):
-```bash
-node database/create_admin.cjs <your-email> <new-password>
-```
+| Layer | Technology | Key Function |
+| :--- | :--- | :--- |
+| **Framework** | **Next.js 16** (App Router) | High-performance Server Side Rendering & API Routes. |
+| **Language** | **TypeScript** | Strict type safety across the entire codebase. |
+| **Database** | **Supabase** (PostgreSQL) | Relational data, complex queries, and Row Guard Security. |
+| **Payments** | **Stripe** | PCI-compliant payment processing & subscription logic. |
+| **Emails** | **Resend** | High-deliverability transactional email infrastructure. |
+| **Styling** | **Tailwind CSS 4** | rapid, consistent, and responsive UI design. |
 
 ---
 
+## 🏛️ Documentation Index
 
-## 🛠️ Tech Stack
+For developers and system administrators, please refer to the specific guides below:
 
-| Layer | Technology | Service/Library | Purpose |
+*   **[`project-docs/OPERATIONS.md`](project-docs/OPERATIONS.md)**: **(NEW)** The Runbook. How to manage the live system, process refunds, edit schedules, and troubleshoot common issues.
+*   **[`project-docs/API_OVERVIEW.md`](project-docs/API_OVERVIEW.md)**: **(NEW)** Technical reference for the Payment and Webhook API endpoints.
+*   **[`project-docs/SETUP_GUIDE.md`](project-docs/SETUP_GUIDE.md)**: Instructions for setting up a local development environment.
+*   **[`project-docs/DB_MIGRATION_GUIDE.md`](project-docs/DB_MIGRATION_GUIDE.md)**: How to modify the database schema safely.
+*   **[`project-docs/PLAYWRIGHT_TESTING_STANDARDS.md`](project-docs/PLAYWRIGHT_TESTING_STANDARDS.md)**: Standards for our E2E testing suite.
+
+---
+
+## 🟢 Live System Status
+
+| Service | Environment | Status | Configuration |
 | :--- | :--- | :--- | :--- |
-| **Framework** | Next.js 16 | App Router | Core Application & API |
-| **Language** | TypeScript | - | Type Safety |
-| **Styling** | Tailwind CSS 4 | - | Utility-first Design |
-| **Backend** | Supabase | PostgreSQL | Auth, DB, Realtime, Storage |
-| **Payments** | Stripe | Checkout & Webhooks | Payment Processing |
-| **Email** | Resend | API | Transactional Notifications |
-| **Icons** | Lucide React | - | UI Iconography |
+| **Frontend** | Vercel | 🟢 **Production** | `app.eastsportsgroup.com` |
+| **Database** | Supabase | 🟢 **Production** | Hosted (Singapore Region) |
+| **Payments** | Stripe | 🟢 **Live Mode** | Processing real cards (HKD) |
+| **Webhooks** | Stripe | 🟢 **Active** | `checkout` & `invoice` events enabled |
+| **Emails** | Resend | 🟢 **Active** | Sending via `eastsportsgroup.com` |
 
 ---
 
-## 🏛️ Primary Screens
-
-| Screen | Focus | Primary Files |
-| :--- | :--- | :--- |
-| **Home** | Discover & Register for events/news. | `app/components/screens/HomeScreen.tsx` |
-| **Profile** | User details, Credits, & Top-Up. | `app/components/screens/PlayerProfile.tsx` |
-| **Check-In** | QR Code management & Scanning. | `app/components/screens/QRScreen.tsx` |
-| **Schedule** | Calendar view of registered sessions. | `app/components/screens/ScheduleScreen.tsx` |
-| **Community** | Social feed & direct messaging. | `app/components/CommunityScreen.tsx` |
-
----
-
-## 🗄️ Database & Automation
-
-We utilize **Supabase (PostgreSQL)** not just for storage, but for automation.
-
-### 🤖 Intelligent Triggers
-* **`handle_new_user`**: Automatically triggers when a user registers via Supabase Auth. It creates a corresponding row in the `public.profiles` table and populates their `contact_email`, ensuring they are instantly ready for Stripe billing without manual admin intervention.
-
-### Key Tables
-* **`profiles`**: Stores user identity, credit balance, and Stripe Customer IDs.
-* **`sessions`**: Catalog of all classes, events, and facilities.
-* **`registrations`**: Link table handling user bookings (with Cascade Delete support).
-* **`players_stats`**: High-performance data storage for athlete metrics.
-
----
-
-# East App Hongkong - Comprehensive QA Manual
-
-This guide provides a structured approach to manually testing the East App Hongkong application. It covers environment setup, user role verification, and critical workflows.
-
-## 1. Environment Verification
-**Objective**: Ensure the local environment is correctly configured for testing.
-
-| Component | Check | Expected Result |
-| :--- | :--- | :--- |
-| **Server** | Terminal: `npm run dev` | Running on `http://localhost:3000` without errors. |
-| **Database** | Terminal: `npx supabase status` | All services (Auth, DB, APIs) are **active**. |
-| **Stripe** | `.env.local` | Stripe Publishable/Secret keys are present. |
-| **Admin Seeding** | DB (`auth.users`) | Admin user (`admin@east.com`) exists. |
-
----
-
-## 2. User Roles & Profiles
-**Objective**: Verify that each user role has access to the correct profile features and data.
-
-### A. Player Scenario
-**Credentials**: Log in as a standard player (e.g., `player@example.com`).
-
-| Feature | Action | QA Check |
-| :--- | :--- | :--- |
-| **Profile View** | Navigate to Profile tab. | • Avatar, Name, and Team are visible.<br>• "XP" progress bar is rendered.<br>• **Stats Section**: Check for Season/Career stats (GP, Goals, Assists). |
-| **Public Link** | Open `http://localhost:3000/player/[PLAYER_ID]` in incognito. | • Public profile loads.<br>• Restricted actions (Edit) are hidden. |
-| **Wallet** | Navigate to Wallet/QR tab. | • Current credit balance is displayed.<br>• QR code is generated. |
-
-### B. Parent Scenario
-**Credentials**: Log in as a parent (e.g., `parent@example.com`).
-
-| Feature | Action | QA Check |
-| :--- | :--- | :--- |
-| **Family Dashboard** | Navigate to Profile tab. | • "PARENT" badge is visible.<br>• **Athletes Tab**: Lists all registered children. |
-| **Add Child** | Click `+ Register New Athlete`. | • Modal opens.<br>• Enter Name > Save.<br>• New child appears in the list immediately. |
-| **Child Management** | Click on a child card. | • Child is selected (visually highlighted).<br>• Stats/Info updates to reflect selected child. |
-
-### C. Coach Scenario
-**Credentials**: Log in as a coach (e.g., `coach@example.com`).
-
-| Feature | Action | QA Check |
-| :--- | :--- | :--- |
-| **Coach Profile** | Navigate to Profile tab. | • **Schedule Tab**: Shows upcoming coaching sessions.<br>• **My Teams**: Lists assigned teams. |
-| **Availability** | Navigate to Availability settings. | • Ability to toggle available time slots. |
-
-### D. Admin Scenario
-**Credentials**: Log in as Admin.
-
-| Feature | Action | QA Check |
-| :--- | :--- | :--- |
-| **Dashboard** | Navigate to `/sys-admin`. | • Access granted (no redirect to home).<br>• Admin sidebar is visible. |
-| **Session Mgmt** | Go to `/sys-admin/schedule`. | • Create a new session.<br>• Verify it appears on the main app schedule. |
-
----
-
-## 3. Critical Workflows
-
-### A. Wallet & Membership
-**Goal**: Verify top-up and plan purchasing.
-
-1.  **Top-Up Credits**:
-    *   **Action**: Go to Wallet > Tap "Top Up" (or Credits display).
-    *   **QA Check**: Redirects to Stripe Checkout. Completing (test mode) adds credits to balance.
-2.  **Purchase Membership**:
-    *   **Action**: Go to Wallet > Click "View Membership Options".
-    *   **UI Check**: "Elite Pass" is the only visible option.
-    *   **Action**: Click to Purchase.
-    *   **QA Check**: Redirects to Stripe. After success, user is returned to app with updated status/credits.
-
-### B. Booking System (Standard)
-**Goal**: Verify a user can book a class for themselves.
-
-1.  **Browse Schedule**:
-    *   **Action**: Go to Schedule tab.
-    *   **QA Check**: Classes are listed correctly by date.
-2.  **Book Session**:
-    *   **Action**: Tap a class > Tap "Pay X Credits".
-    *   **QA Check**: Success message appears. Credits deducted from wallet.
-    *   **Verification**: "My Booking" status appears on the class.
-
-### C. Booking System (Parent-Child)
-**Goal**: Verify a parent can book for a specific child.
-
-> [!IMPORTANT]
-> **Prerequisite**: Logged in as Parent with at least one child registered.
-
-1.  **Select Child**:
-    *   **Action**: Tap a class in Schedule to open modal.
-    *   **UI Check**: "WHO IS THIS FOR?" selector is visible.
-2.  **Book**:
-    *   **Action**: Select "Child Name" > Confirm Booking.
-    *   **QA Check**: Booking is confirmed.
-    *   **API Verification**: In Database (`registrations` table), `user_id` should match the **Child's ID**, not the Parent's ID.
-
-### D. Community & Posts
-**Goal**: Verify social features (if applicable).
-
-1.  **View Feed**:
-    *   **Action**: Go to Community tab.
-    *   **QA Check**: Posts feed loads correctly.
-2.  **Create Post**:
-    *   **Action**: Tap "New Post" (if available).
-    *   **QA Check**: Post appears in feed.
-
----
-
-## 4. Troubleshooting Guide
-
-| Issue | Potential Cause | Fix |
-| :--- | :--- | :--- |
-| **"Insufficient Credits" Error** | User balance is lower than session cost. | Use Admin or DB to manually increase `credits` in `profiles` table. |
-| **Admin Access Denied** | Middleware blocking or wrong role. | Check `role` column in `profiles` table is 'admin'. Temporarily disable middleware. |
-| **Stripe Error** | Invalid keys or secrets. | Verify `.env.local` matches Stripe Dashboard (Test Mode). |
-| **White Screen / Crash** | React runtime error. | Check terminal running `npm run dev` for stack trace. |
-
----
-
-## 5. Deployment QA Checklist (Pre-Live)
-
-Use this checklist to ensure a smooth transition from development to a live production environment.
-
-### 🔐 1. Environment & Auth
-- [ ] **NEXT_PUBLIC_BASE_URL**: Updated from `localhost:3000` to the actual production domain (e.g., `https://east-app-hongkong.vercel.app`).
-- [ ] **Supabase URL/Anon Key**: Switched from local containers to a hosted Supabase project.
-- [ ] **SUPABASE_SERVICE_ROLE_KEY**: Present in production environment but **NEVER** exposed in public-facing code or client-side logs.
-- [ ] **Redirect URLs**: Added production domain to Supabase Auth > URL Configuration > Redirect URLs.
-
-### 💳 2. Payment Integration (Stripe)
-- [ ] **Live Mode Toggle**: Switched from `pk_test_...` and `sk_test_...` to production `pk_live_...` and `sk_live_...`.
-- [ ] **Webhook Endpoint**: Created a new Webhook in Stripe Dashboard pointing to `https://your-domain.com/api/webhooks/stripe`.
-- [ ] **STRIPE_WEBHOOK_SECRET**: Updated to match the "Signing Secret" of the new live webhook endpoint.
-- [ ] **Price IDs**: Verified that `price_...` IDs in `.env` match the products created in the **Stripe Live Environment**.
-
-### 📧 3. Email Delivery (Resend)
-- [ ] **Domain Authentication**: Added and verified your sending domain in the Resend Dashboard.
-- [ ] **API Key**: Switched to a production Resend API Key.
-- [ ] **Onboarding Check**: Verified that emails can be sent to non-owner addresses.
-
-### 🗄️ 4. Data & Logic
-- [ ] **Database Migrations**: Ran `npx tsx run_sql.ts` against the production DB to ensure all tables, triggers, and the `preferences` column are present.
-- [ ] **Admin Account**: Run `node database/create_admin.cjs <email> <password>` to create/promote the main admin.
-- [ ] **CORS/CSP**: Enabled restricted CORS settings in Supabase and Next.js to only allow requests from the production domain.
-
-### 🖼️ 5. Assets & UX
-- [ ] **Image Hosting**: Verified that gallery images/avatars are stored correctly in a public Supabase Storage bucket.
-- [ ] **Build Check**: Ran `npm run build` locally to ensure zero TypeScript or Linting errors exist.
-
+*This operational core is property of EAST Sports Group.*
