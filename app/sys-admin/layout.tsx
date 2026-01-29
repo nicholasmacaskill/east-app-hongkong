@@ -93,7 +93,7 @@ export default function AdminLayout({
             <header className="bg-[#1e1e1e] border-b border-white/10 py-5 px-6 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <span className="font-black italic text-2xl tracking-tighter text-white">EAST</span>
+                        <img src="/east-logo-transparent.png" alt="EAST Logo" className="h-8 w-auto object-contain" />
                         <div className="bg-[#28D160] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase">
                             Admin
                         </div>
