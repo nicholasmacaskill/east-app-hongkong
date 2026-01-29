@@ -33,9 +33,14 @@ export default function LandingScreen({ onSelectRole }: LandingScreenProps) {
 
                 {/* CALL TO ACTION */}
                 <div className={`w-full transition-all duration-[2000ms] delay-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                    <h2 className="text-[10px] font-black tracking-[0.5em] text-white/40 uppercase text-center mb-12">
-                        Select Your Portal
-                    </h2>
+                    <div className="flex flex-col items-center mb-10">
+                        <p className="text-[8px] font-bold tracking-[0.5em] text-white/40 uppercase mb-4 opacity-100">
+                            East Sports Group • Hong Kong
+                        </p>
+                        <h2 className="text-[10px] font-black tracking-[0.5em] text-white/60 uppercase text-center">
+                            Select Your Portal
+                        </h2>
+                    </div>
 
                     <div className="flex flex-col gap-8">
                         <div className="animate-fadeIn" style={{ animationDelay: '0ms' }}>
@@ -72,12 +77,8 @@ export default function LandingScreen({ onSelectRole }: LandingScreenProps) {
                     </div>
                 </div>
 
-                {/* FOOTER */}
-                <div className={`mt-16 transition-all duration-[2000ms] delay-[3000ms] ${isLoaded ? 'opacity-40' : 'opacity-0'}`}>
-                    <p className="text-[8px] font-bold tracking-widest text-white uppercase text-center">
-                        East Sports Group • Hong Kong
-                    </p>
-                </div>
+                {/* FOOTER - Spacer */}
+                <div className="mt-16 h-8" />
             </div>
 
             <style jsx global>{`

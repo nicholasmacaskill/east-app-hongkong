@@ -11,6 +11,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
+        // Security: Prevent self-registration as coach or admin
+        if (['coach', 'admin', 'sys-admin'].includes(role)) {
+            return NextResponse.json({ error: 'Coaches and Admins must be invited by an Administrator' }, { status: 403 });
+        }
+
         const supabaseAdmin = getSupabaseAdmin();
 
         // Split fullName into first and last for database trigger compatibility

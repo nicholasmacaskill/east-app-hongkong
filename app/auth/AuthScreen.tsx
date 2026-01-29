@@ -174,7 +174,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
                             </div>
                         </form>
                         <div className="text-center mt-8 space-y-4">
-                            {expectedRole !== 'admin' && (
+                            {expectedRole !== 'admin' && expectedRole !== 'coach' && (
                                 <p className="text-xs text-white/40 uppercase font-bold tracking-widest">
                                     New Member? <button onClick={() => setStep('register')} className="text-east-light hover:text-white transition-colors border-b border-east-light/30 hover:border-white">JOIN NOW</button>
                                 </p>
