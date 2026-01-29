@@ -39,15 +39,65 @@ async function logEmailToDatabase(params: EmailParams) {
   }
 }
 
+/**
+ * Wraps raw HTML content in the premium EAST App layout
+ */
+export function wrapEmailHtml(content: string, title?: string) {
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${title || 'EAST App'}</title>
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #0c0c0c; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+        <div style="background-color: #0c0c0c; padding: 40px 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #000000; color: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);">
+                <!-- Header / Logo Area -->
+                <div style="padding: 40px 40px 20px 40px; text-align: left;">
+                    <div style="display: inline-block;">
+                        <span style="color: #28d160; font-style: italic; font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: -0.05em;">EAST <span style="background-color: #28d160; color: #000000; padding: 2px 6px; border-radius: 4px; font-style: normal;">APP</span></span>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div style="padding: 0 40px 40px 40px;">
+                    ${content}
+                </div>
+
+                <!-- Footer -->
+                <div style="padding: 30px 40px; background-color: #111111; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: left;">
+                    <p style="margin: 0; font-size: 14px; color: #666666; line-height: 1.6;">
+                        &copy; ${new Date().getFullYear()} EAST Sports Group. All rights reserved.<br/>
+                        Hong Kong's Premier Athletic Training Platform.
+                    </p>
+                </div>
+            </div>
+            
+            <div style="max-width: 600px; margin: 30px auto 0; text-align: center;">
+                <p style="font-size: 12px; color: #444444;">
+                    If you didn't expect this email, please ignore it.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+  `;
+}
+
 export async function sendEmail({ to, subject, html, source }: EmailParams) {
+  // 1. Wrap HTML if it's not already a full document
+  const finalHtml = html.includes('<html') ? html : wrapEmailHtml(html, subject);
+
   // Log to database for testing (non-blocking)
-  await logEmailToDatabase({ to, subject, html, source });
+  await logEmailToDatabase({ to, subject, html: finalHtml, source });
 
   // Check for API Key first
   if (!process.env.RESEND_API_KEY) {
     if (process.env.NODE_ENV !== 'production') {
       console.warn('⚠️ [MOCK] RESEND_API_KEY missing in Non-Production. Simulating success.');
-      return { id: 'mock-email-id' }; // Corrected typo: mock-emai-id -> mock-email-id
+      return { id: 'mock-email-id' };
     }
     console.error('❌ RESEND_API_KEY is missing in PRODUCTION. Email failed.');
     return null;
@@ -57,7 +107,7 @@ export async function sendEmail({ to, subject, html, source }: EmailParams) {
   if (process.env.NODE_ENV !== 'production') {
     console.log(`📧 [DEV LOG] Sending Real Email to: ${to}`);
     console.log(`Subject: ${subject}`);
-    console.log(`HTML Preview: ${html.substring(0, 100)}...`);
+    console.log(`HTML Preview: ${finalHtml.substring(0, 100)}...`);
   }
 
   try {
@@ -68,7 +118,7 @@ export async function sendEmail({ to, subject, html, source }: EmailParams) {
       from: fromAddress,
       to,
       subject,
-      html,
+      html: finalHtml,
     });
 
     // ✅ FIX: Check for API-level errors (like invalid email, domain issues)

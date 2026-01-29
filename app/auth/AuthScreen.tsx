@@ -188,7 +188,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
                 {step === 'register' && (
                     <>
                         <AuthHeader title="Create Account" />
-                        <form onSubmit={handleRegister} className="space-y-1">
+                        <form onSubmit={handleRegister} className="space-y-4">
                             <InputField label="Full Name" name="fullName" type="text" value={formData.fullName} icon={User} onChange={handleChange} placeholder="First and Last Name" />
                             <InputField label="Mobile Number" name="phone" type="tel" value={formData.phone} icon={Phone} onChange={handleChange} placeholder="+852 1234 5678" />
                             <InputField label="Email Address" name="email" type="email" value={formData.email} icon={Mail} onChange={handleChange} placeholder="Enter email" />

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
-import { sendEmail } from '@/app/lib/email';
+import { sendEmail, BASE_URL } from '@/app/lib/email';
 
 export async function POST(request: Request) {
     try {
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
         }
 
         const supabaseAdmin = getSupabaseAdmin();
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const baseUrl = BASE_URL;
 
         // 1. Generate Recovery Link via Supabase Admin
         const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({

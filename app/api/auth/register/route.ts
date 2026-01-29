@@ -79,39 +79,30 @@ export async function POST(request: Request) {
             to: email,
             subject: 'Verify Your Email Address for EAST App',
             html: `
-                <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #000000; color: #ffffff; padding: 40px; border-radius: 20px; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #28d160; font-style: italic; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 30px;">Verify Your Email</h2>
-                    
-                    <p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">Hi ${fullName},</p>
-                    
-                    <p style="font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
-                        Thank you for registering for the EAST App, and congratulations on joining our community! 
-                        Please verify your email address by clicking the link below:
-                    </p>
-                    
-                    <div style="text-align: center; margin-bottom: 40px;">
-                        <a href="${verificationLink}" style="background-color: #28d160; color: #000000; padding: 18px 32px; border-radius: 12px; font-weight: 900; font-style: italic; text-decoration: none; display: inline-block; font-size: 18px; text-transform: uppercase;">
-                            Verify My Email
-                        </a>
-                    </div>
-                    
-                    <p style="font-size: 14px; color: #666666; line-height: 1.6; margin-bottom: 20px;">
-                        If the button above does not work, you can copy and paste the following URL into your browser:
-                    </p>
-                    
-                    <p style="font-size: 12px; color: #28d160; word-break: break-all; margin-bottom: 40px;">
-                        ${verificationLink}
-                    </p>
-                    
-                    <p style="font-size: 14px; color: #666666; line-height: 1.6;">
-                        This helps us ensure that your account is secure and allows you to fully access all features of the app.
-                    </p>
-                    
-                    <p style="font-size: 16px; font-weight: bold; margin-top: 40px;">
-                        Thank you,<br/>
-                        <span style="color: #28d160;">The EAST Team</span>
-                    </p>
+                <p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">Hi ${fullName},</p>
+                
+                <p style="font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+                    Thank you for registering for the EAST App, and congratulations on joining our community! 
+                    Please verify your email address by clicking the link below:
+                </p>
+                
+                <div style="text-align: center; margin-bottom: 40px;">
+                    <a href="${verificationLink}" style="background-color: #28d160; color: #000000; padding: 18px 32px; border-radius: 12px; font-weight: 900; font-style: italic; text-decoration: none; display: inline-block; font-size: 18px; text-transform: uppercase;">
+                        Verify My Email
+                    </a>
                 </div>
+                
+                <p style="font-size: 14px; color: #666666; line-height: 1.6; margin-bottom: 20px;">
+                    If the button above does not work, you can copy and paste the following URL into your browser:
+                </p>
+                
+                <p style="font-size: 12px; color: #28d160; word-break: break-all; margin-bottom: 40px;">
+                    ${verificationLink}
+                </p>
+                
+                <p style="font-size: 14px; color: #666666; line-height: 1.6;">
+                    This helps us ensure that your account is secure and allows you to fully access all features of the app.
+                </p>
             `,
             source: 'registration'
         });

@@ -1,6 +1,7 @@
 // app/api/checkout/route.ts
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { BASE_URL } from '@/app/lib/email';
 
 // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!); (Lazy init below)
 
@@ -46,8 +47,7 @@ export async function POST(request: Request) {
     console.log("Session Mode:", mode, "Credit Amount:", topUpAmount);
 
     // Default URLs if not provided
-    const origin = request.headers.get('origin');
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || origin || 'http://localhost:3000';
+    const baseUrl = BASE_URL;
 
     let defaultSuccessPath = '/?success=true';
     if (mode === 'subscription') {

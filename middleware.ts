@@ -58,7 +58,9 @@ export async function middleware(request: NextRequest) {
 
         // 1. GLOBAL PROTECTION (Unauthenticated)
         const isApiRequest = request.nextUrl.pathname.startsWith('/api/');
-        const isAuthPage = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/forgot-password');
+        const isAuthPage = request.nextUrl.pathname.startsWith('/login') ||
+            request.nextUrl.pathname.startsWith('/forgot-password') ||
+            request.nextUrl.pathname.startsWith('/api/auth');
         const isWebhook = request.nextUrl.pathname.startsWith('/api/webhooks');
         const isStaticAsset = /\.(png|jpg|jpeg|gif|webp|svg|ico)$/i.test(request.nextUrl.pathname);
         const isPublicPage = request.nextUrl.pathname === '/' || request.nextUrl.pathname.startsWith('/public') || isAuthPage || isWebhook || isStaticAsset;
