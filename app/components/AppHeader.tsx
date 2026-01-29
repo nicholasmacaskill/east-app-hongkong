@@ -61,9 +61,9 @@ export default function AppHeader({
                     </button>
                 ) : (
                     showLogo && (
-                        <div className="relative w-40 h-16">
+                        <div className="relative w-48 h-20">
                             <Image
-                                src="/east-logo-transparent.png"
+                                src="/eastedited.png"
                                 alt="EAST"
                                 fill
                                 className="object-contain object-left opacity-100"
@@ -75,30 +75,40 @@ export default function AppHeader({
             </div>
 
             {/* Center Area - Now for Credits or Title */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10">
+            <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center">
                 {title ? (
                     <h1 className="font-montserrat font-black italic text-lg text-white uppercase tracking-tight">{title}</h1>
                 ) : (
                     credits !== undefined && setTab && (
-                        <button
-                            onClick={() => setTab('qr')}
-                            className={`flex items-center justify-center gap-3 border rounded-full px-8 py-2.5 transition-all active:scale-95 group backdrop-blur-md shadow-2xl min-w-[140px]
-                                ${isLocked ? 'bg-red-900/20 border-red-500/50 hover:bg-red-900/30' : 'bg-[#1a1a1a] border-white/20 hover:bg-white/10 hover:border-east-light'}
-                            `}
-                        >
-                            {isLocked ? (
-                                <>
-                                    <Lock size={16} className="text-red-500" />
-                                    <span className="text-red-500 font-black italic text-xl drop-shadow-md">LOCKED</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span className="text-white font-black italic text-xl drop-shadow-md">{credits}</span>
-                                    <span className="text-[10px] font-black text-east-light uppercase tracking-[0.2em]">CREDITS</span>
-                                    <Plus size={12} className="text-gray-500 group-hover:text-white transition-colors" />
-                                </>
+                        <div className="flex flex-col items-center gap-2">
+                            <button
+                                onClick={() => setTab('qr')}
+                                className={`flex items-center justify-center gap-3 border rounded-full px-8 py-2.5 transition-all active:scale-95 group backdrop-blur-md shadow-2xl min-w-[140px]
+                                    ${isLocked ? 'bg-red-900/20 border-red-500/50 hover:bg-red-900/30' : 'bg-[#1a1a1a] border-white/20 hover:bg-white/10 hover:border-east-light'}
+                                `}
+                            >
+                                {isLocked ? (
+                                    <>
+                                        <Lock size={16} className="text-red-500" />
+                                        <span className="text-red-500 font-black italic text-xl drop-shadow-md">LOCKED</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="text-white font-black italic text-xl drop-shadow-md">{credits}</span>
+                                        <span className="text-[10px] font-black text-east-light uppercase tracking-[0.2em]">CREDITS</span>
+                                        <Plus size={12} className="text-gray-500 group-hover:text-white transition-colors" />
+                                    </>
+                                )}
+                            </button>
+                            {isLocked && (
+                                <Link
+                                    href="/membership"
+                                    className="text-[10px] font-montserrat font-black italic text-gray-500 uppercase tracking-wider text-center hover:text-white transition-colors animate-pulse"
+                                >
+                                    purchase membership to unlock bookings
+                                </Link>
                             )}
-                        </button>
+                        </div>
                     )
                 )}
             </div>

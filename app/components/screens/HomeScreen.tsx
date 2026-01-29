@@ -318,14 +318,6 @@ export default function HomeScreen({
       />
 
       <div className="relative z-10 px-5 space-y-10 pt-4">
-        {/* Membership Prompt */}
-        {(subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && accountStatus !== 'active') && (
-          <div className="flex flex-col items-center -mt-2 -mb-4">
-            <span className="text-[10px] font-montserrat font-black italic text-gray-500 uppercase tracking-wider text-center">
-              become a member to unlock session bookings
-            </span>
-          </div>
-        )}
 
         {/* Breaking News */}
         <div>

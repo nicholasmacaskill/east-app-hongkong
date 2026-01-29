@@ -15,6 +15,24 @@ const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-opensans" });
 export const metadata: Metadata = {
   title: "EAST Sports Group",
   description: "Official application for EAST Sports Group",
+  openGraph: {
+    title: "EAST Sports Group",
+    description: "Official application for EAST Sports Group",
+    images: [
+      {
+        url: "/EAST-BLACK-BACKGROUND.png",
+        width: 1200,
+        height: 630,
+        alt: "EAST Sports Group Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "EAST Sports Group",
+    description: "Official application for EAST Sports Group",
+    images: ["/EAST-BLACK-BACKGROUND.png"],
+  },
 };
 
 export default function RootLayout({
