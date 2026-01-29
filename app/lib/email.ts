@@ -57,7 +57,7 @@ export function wrapEmailHtml(content: string, title?: string) {
                 <!-- Header / Logo Area -->
                 <div style="padding: 40px 40px 20px 40px; text-align: left;">
                     <div style="display: inline-block;">
-                        <span style="color: #28d160; font-style: italic; font-weight: 900; font-size: 24px; text-transform: uppercase; letter-spacing: -0.05em;">EAST <span style="background-color: #28d160; color: #000000; padding: 2px 6px; border-radius: 4px; font-style: normal;">APP</span></span>
+                        <img src="${BASE_URL}/east-logo-transparent.png" alt="EAST Logo" style="height: 48px; width: auto; display: block;" />
                     </div>
                 </div>
 
