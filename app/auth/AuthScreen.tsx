@@ -102,54 +102,31 @@ export default function AuthScreen({ onAuthSuccess, expectedRole }: AuthScreenPr
         e.preventDefault();
         setLoading(true);
 
-        const { data, error } = await supabase.auth.signUp({
-            email: formData.email,
-            password: formData.password,
-            options: {
-                data: {
-                    full_name: formData.fullName,
-                    mobile: formData.phone,
-                    role: formData.role
-                }
-            }
-        });
-
-        if (error) {
-            addToast(error.message, 'error');
-            setLoading(false);
-        } else {
-            // Send welcome email
-            if (data.user?.id) {
-                try {
-                    await fetch('/api/auth/send-welcome-email', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId: data.user.id })
-                    });
-                } catch (emailErr) {
-                    console.error('Welcome email failed:', emailErr);
-                    // Don't block registration if email fails
-                }
-            }
-
-            // Check for immediate session
-            if (data.session) {
-                await fetchProfileResilient(data.user!.id, { select: 'role' });
-                onAuthSuccess(formData.role);
-            } else {
-                // Try immediate login
-                const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
                     email: formData.email,
                     password: formData.password,
-                });
+                    fullName: formData.fullName,
+                    phone: formData.phone,
+                    role: formData.role
+                })
+            });
 
-                if (loginData?.session) {
-                    await fetchProfileResilient(loginData.user!.id, { select: 'role' });
-                    onAuthSuccess(formData.role);
-                } else {
-                    setStep('success');
-                }
+            const result = await response.json();
+
+            if (!response.ok) {
+                addToast(result.error || 'Registration failed', 'error');
+            } else {
+                setStep('success');
+                addToast('Account created! Please verify your email.', 'success');
             }
+        } catch (err: any) {
+            console.error('Registration failed:', err);
+            addToast('An unexpected error occurred', 'error');
+        } finally {
             setLoading(false);
         }
     };
