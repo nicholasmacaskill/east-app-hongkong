@@ -201,10 +201,40 @@ export async function POST(request: Request) {
                     await updateProfile(userId, plan.credits, plan.tier, customerId, subscriptionId, expiresAt);
                     if (customerEmail) {
                         try {
+                            const userName = session.customer_details?.name || 'there';
+                            const amount = session.amount_total ? (session.amount_total / 100).toLocaleString('en-HK', { style: 'currency', currency: 'HKD' }) : 'N/A';
+                            const startDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+                            const renewalDate = new Date(expiresAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+                            const tierName = plan.tier.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
                             await sendEmail({
                                 to: customerEmail,
-                                subject: `Welcome to EAST - ${plan.tier.toUpperCase()} Member`,
-                                html: `<h1>Membership Confirmed!</h1><p>Thank you for joining. Your account has been credited with <strong>${plan.credits} credits</strong>.</p>`
+                                subject: `Welcome to the EAST ${tierName} Membership`,
+                                html: `
+                                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                                        <h2>Welcome to the EAST ${tierName} Membership</h2>
+                                        <p>Hi ${userName},</p>
+                                        <p>Thank you for signing up for a membership with the EAST App!</p>
+                                        <p>We're excited to have you on board. Your payment has been successfully processed, and your membership is now active. Here are the details of your subscription:</p>
+                                        <ul>
+                                            <li><strong>Membership Type:</strong> ${tierName}</li>
+                                            <li><strong>Start Date:</strong> ${startDate}</li>
+                                            <li><strong>Renewal Date:</strong> ${renewalDate}</li>
+                                            <li><strong>Payment Amount:</strong> ${amount}</li>
+                                            <li><strong>Credits:</strong> ${plan.credits}</li>
+                                        </ul>
+                                        <p>You can access your membership benefits immediately:</p>
+                                        <ul>
+                                            <li>Access to the High Performance Centre Gym & Lounge</li>
+                                            <li>Bookings</li>
+                                            <li>Calendar</li>
+                                            <li>Special Events</li>
+                                        </ul>
+                                        <p>If you have any questions or need assistance, feel free to reach out to our support team.</p>
+                                        <p>Thank you for choosing EAST!</p>
+                                        <p>Best regards,<br>The EAST App Team</p>
+                                    </div>
+                                `
                             });
                         } catch (e) { console.error("Email failed, but DB updated."); }
                     }
