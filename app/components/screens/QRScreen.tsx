@@ -2,6 +2,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { QrCode, User as UserIcon } from 'lucide-react';
+import Link from 'next/link';
 
 export default function QRScreen({ credits, currentUserId, subscriptionStatus, accountStatus, role }: { credits: number, currentUserId: string | null, subscriptionStatus?: string, accountStatus?: string, role?: string }) {
   const router = useRouter();
@@ -55,7 +56,7 @@ export default function QRScreen({ credits, currentUserId, subscriptionStatus, a
               return (
                 <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-3 mb-4">
                   <p className="text-[10px] font-bold text-red-400 text-center uppercase tracking-wide">
-                    ⚠️ Credits locked until subscription is purchased or reactivated
+                    ⚠️ Credits locked until subscription is purchased or reactivated. <Link href="/membership" className="underline hover:text-white transition-colors">renew or purchase new membership here</Link>
                   </p>
                 </div>
               );
