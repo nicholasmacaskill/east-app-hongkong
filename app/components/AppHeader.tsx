@@ -63,7 +63,7 @@ export default function AppHeader({
                     showLogo && (
                         <div className="relative w-32 h-12">
                             <Image
-                                src="/eastedited.png"
+                                src="/east-logo-transparent.png"
                                 alt="EAST"
                                 fill
                                 className="object-contain object-left opacity-100"
@@ -100,14 +100,6 @@ export default function AppHeader({
                                     </>
                                 )}
                             </button>
-                            {isLocked && (
-                                <Link
-                                    href="/membership"
-                                    className="text-[10px] font-montserrat font-black italic text-gray-500 uppercase tracking-wider text-center hover:text-white transition-colors animate-pulse"
-                                >
-                                    purchase membership to unlock bookings
-                                </Link>
-                            )}
                         </div>
                     )
                 )}

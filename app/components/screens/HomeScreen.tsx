@@ -318,6 +318,17 @@ export default function HomeScreen({
       />
 
       <div className="relative z-10 px-5 space-y-10 pt-4">
+        {/* Membership Prompt */}
+        {!(subscriptionStatus === 'active' || subscriptionStatus === 'trialing' || accountStatus === 'active') && (
+          <div className="flex flex-col items-center -mb-6">
+            <Link
+              href="/membership"
+              className="text-[10px] font-montserrat font-black italic text-gray-500 uppercase tracking-wider text-center hover:text-white transition-colors animate-pulse bg-white/5 py-2 px-6 rounded-full border border-white/5"
+            >
+              purchase membership to unlock bookings
+            </Link>
+          </div>
+        )}
 
         {/* Breaking News */}
         <div>
