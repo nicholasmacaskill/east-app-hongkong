@@ -206,25 +206,33 @@ export async function POST(request: Request) {
                             const startDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
                             const renewalDate = new Date(expiresAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
                             const tierName = plan.tier.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                            const appUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://east-app-hongkong.vercel.app';
 
                             await sendEmail({
                                 to: customerEmail,
                                 subject: `Welcome to the EAST ${tierName} Membership`,
                                 html: `
-                                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-                                        <h2>Welcome to the EAST ${tierName} Membership</h2>
+                                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #ffffff; font-size: 16px; line-height: 1.6;">
+                                        <h2 style="font-size: 24px; color: #ffffff; margin-bottom: 20px;">Welcome to the EAST ${tierName} Membership</h2>
                                         <p>Hi ${userName},</p>
                                         <p>Thank you for signing up for a membership with the EAST App!</p>
                                         <p>We're excited to have you on board. Your payment has been successfully processed, and your membership is now active. Here are the details of your subscription:</p>
-                                        <ul>
+                                        <ul style="padding-left: 20px; margin-bottom: 30px;">
                                             <li><strong>Membership Type:</strong> ${tierName}</li>
                                             <li><strong>Start Date:</strong> ${startDate}</li>
                                             <li><strong>Renewal Date:</strong> ${renewalDate}</li>
                                             <li><strong>Payment Amount:</strong> ${amount}</li>
                                             <li><strong>Credits:</strong> ${plan.credits}</li>
                                         </ul>
+
+                                        <div style="text-align: center; margin: 40px 0;">
+                                            <a href="${appUrl}/sessions" style="background-color: #ffffff; color: #000000; padding: 16px 32px; border-radius: 12px; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; font-size: 14px; display: inline-block;">
+                                                Book your first session
+                                            </a>
+                                        </div>
+
                                         <p>You can access your membership benefits immediately:</p>
-                                        <ul>
+                                        <ul style="padding-left: 20px; margin-bottom: 30px;">
                                             <li>Access to the High Performance Centre Gym & Lounge</li>
                                             <li>Bookings</li>
                                             <li>Calendar</li>
