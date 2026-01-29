@@ -2,7 +2,7 @@ import Stripe from 'stripe';
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 // Target PRODUCTION URL
-const PROD_URL = 'https://east-app-hk.vercel.app/api/webhooks/stripe';
+const PROD_URL = 'https://app.eastsportsgroup.com/api/webhooks/stripe';
 
 if (!STRIPE_SECRET_KEY) {
     console.error('Please provide STRIPE_SECRET_KEY env var.');

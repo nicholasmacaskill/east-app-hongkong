@@ -1,14 +1,10 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, ChevronLeft, CheckCircle, Smartphone, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { Lock, CheckCircle, ArrowRight } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
-
-// --- Types ---
-type ResetStep = 'request' | 'otp' | 'new_password' | 'success';
 
 // --- Reusable UI ---
 const AuthHeader = ({ title }: { title: string }) => (
@@ -45,59 +41,24 @@ const InputField: React.FC<{
     </div>
 );
 
-export default function ForgotPasswordPage() {
+export default function UpdatePasswordPage() {
     const router = useRouter();
-    const [step, setStep] = useState<ResetStep>('request');
-    const [email, setEmail] = useState('');
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
     const { addToast } = useToast();
 
-    // --- Step 1: Request Reset ---
-    const handleRequestSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
+    // Check if we are actually in a recovery session
+    useEffect(() => {
+        const checkSession = async () => {
+            const { data } = await supabase.auth.getSession();
+            // If there's no session, they might have clicked an invalid link
+            // But usually Supabase handles the redirection after verification
+        };
+        checkSession();
+    }, []);
 
-        const res = await fetch('/api/auth/request-reset', {
-            method: 'POST',
-            body: JSON.stringify({ email }),
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        const data = await res.json();
-        setLoading(false);
-
-        if (!res.ok) {
-            addToast(data.error || 'Failed to send code', 'error');
-        } else {
-            setStep('otp');
-            addToast('Verification code sent to your email', 'success');
-        }
-    };
-
-    const handleVerifyOtp = async (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-        setLoading(true);
-        // Current implementation stores OTP differently based on step, let's normalize
-        const token = otp.join('').trim() || otp[0];
-
-        const { error } = await supabase.auth.verifyOtp({
-            email,
-            token,
-            type: 'recovery',
-        });
-
-        setLoading(false);
-        if (error) {
-            addToast('Invalid Code: ' + error.message, 'error');
-        } else {
-            setStep('new_password');
-        }
-    };
-
-    // --- Step 3: New Password Logic ---
     const isPasswordValid = useMemo(() =>
         password.length >= 6 && password === confirmPassword,
         [password, confirmPassword]
@@ -113,8 +74,8 @@ export default function ForgotPasswordPage() {
         if (error) {
             addToast('Error updating password: ' + error.message, 'error');
         } else {
-            setStep('success');
-            addToast('Password updated! You can now log in.', 'success');
+            setSuccess(true);
+            addToast('Password updated successfully!', 'success');
         }
     };
 
@@ -136,93 +97,12 @@ export default function ForgotPasswordPage() {
                 <div className="absolute top-0 right-0 w-32 h-32 bg-east-light/5 blur-[50px] -mr-16 -mt-16" />
                 <div className="absolute bottom-0 left-0 w-32 h-32 bg-east-light/5 blur-[50px] -ml-16 -mb-16" />
 
-                {/* Back Button (Only show if not success) */}
-                {step !== 'success' && (
-                    <div className="mb-6">
-                        <Link href="/login" className="inline-flex items-center text-white/30 hover:text-east-light transition-colors text-[10px] font-black uppercase tracking-[0.2em] group">
-                            <ChevronLeft size={14} className="mr-1 group-hover:-translate-x-1 transition-transform" /> Back to Login
-                        </Link>
-                    </div>
-                )}
-
-                {/* --- VIEW: REQUEST EMAIL --- */}
-                {step === 'request' && (
-                    <>
-                        <AuthHeader title="Reset Password" />
-                        <p className="text-[10px] text-white/30 uppercase font-bold tracking-[0.15em] mb-8 text-center leading-relaxed">
-                            Enter your email and we'll send you a verification code.
-                        </p>
-                        <form onSubmit={handleRequestSubmit} className="space-y-4">
-                            <InputField
-                                label="Email Address"
-                                type="email"
-                                value={email}
-                                icon={Mail}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Enter your email"
-                            />
-                            <div className="pt-4">
-                                <button
-                                    type="submit"
-                                    disabled={loading || !email}
-                                    className="group relative overflow-hidden w-full bg-east-light disabled:opacity-50 text-black font-black italic text-lg py-5 rounded-2xl transition-all duration-500 hover:bg-white active:scale-95 shadow-[0_10px_20px_-5px_rgba(40,209,96,0.3)]"
-                                >
-                                    <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-                                    <span className="relative z-10 uppercase tracking-tighter">
-                                        {loading ? 'SENDING...' : 'SEND RESET CODE'}
-                                    </span>
-                                </button>
-                            </div>
-                        </form>
-                    </>
-                )}
-
-                {/* --- VIEW: ENTER OTP --- */}
-                {step === 'otp' && (
-                    <div className="text-center">
-                        <AuthHeader title="Check Your Email" />
-                        <div className="w-20 h-20 bg-east-light/10 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(40,209,96,0.1)]">
-                            <Smartphone size={32} className="text-east-light" />
-                        </div>
-                        <p className="text-[10px] text-white/30 uppercase font-bold tracking-[0.15em] mb-2 leading-relaxed">We sent a verification code to:</p>
-                        <p className="text-xs font-black text-white mb-8 tracking-wide">{email}</p>
-
-                        <form onSubmit={handleVerifyOtp} className="space-y-4">
-                            <InputField
-                                label="Verification Code"
-                                type="text"
-                                value={otp.join('')}
-                                icon={Lock}
-                                onChange={(e) => setOtp([e.target.value])}
-                                placeholder="6-digit code"
-                            />
-                            <div className="pt-4">
-                                <button
-                                    type="submit"
-                                    disabled={otp[0]?.length < 6 || loading}
-                                    className="group relative overflow-hidden w-full bg-east-light disabled:opacity-50 text-black font-black italic text-lg py-5 rounded-2xl transition-all duration-500 hover:bg-white active:scale-95 shadow-[0_10px_20px_-5px_rgba(40,209,96,0.3)]"
-                                >
-                                    <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-                                    <span className="relative z-10 uppercase tracking-tighter">
-                                        {loading ? 'VERIFYING...' : 'VERIFY CODE'}
-                                    </span>
-                                </button>
-                            </div>
-                        </form>
-
-                        <button
-                            onClick={() => setStep('request')}
-                            className="w-full text-center text-white/20 text-[10px] font-black uppercase tracking-[0.2em] mt-8 hover:text-east-light transition-colors"
-                        >
-                            Resend Code
-                        </button>
-                    </div>
-                )}
-
-                {/* --- VIEW: NEW PASSWORD --- */}
-                {step === 'new_password' && (
+                {!success ? (
                     <>
                         <AuthHeader title="Set New Password" />
+                        <p className="text-[10px] text-white/30 uppercase font-bold tracking-[0.15em] mb-8 text-center leading-relaxed">
+                            Please enter your new password below to regain access to your account.
+                        </p>
                         <form onSubmit={handlePasswordUpdate} className="space-y-4">
                             <InputField
                                 label="New Password"
@@ -255,10 +135,7 @@ export default function ForgotPasswordPage() {
                             </div>
                         </form>
                     </>
-                )}
-
-                {/* --- VIEW: SUCCESS --- */}
-                {step === 'success' && (
+                ) : (
                     <div className="text-center py-6">
                         <div className="w-24 h-24 bg-east-light/10 rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(40,209,96,0.2)]">
                             <CheckCircle size={48} className="text-east-light animate-pulse" />
