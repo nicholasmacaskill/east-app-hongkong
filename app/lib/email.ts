@@ -112,7 +112,7 @@ export async function sendEmail({ to, subject, html, source }: EmailParams) {
 
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const fromAddress = process.env.EMAIL_FROM || 'East Sports Group <onboarding@updates.eastsportsgroup.com>';
+    const fromAddress = process.env.EMAIL_FROM || 'EAST Sports Group <onboarding@updates.eastsportsgroup.com>';
 
     const { data, error } = await resend.emails.send({
       from: fromAddress,

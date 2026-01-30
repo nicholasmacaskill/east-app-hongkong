@@ -17,7 +17,7 @@ async function testResend() {
 
     try {
         const { data, error } = await resend.emails.send({
-            from: 'EAST Training <onboarding@updates.eastsportsgroup.com>',
+            from: 'EAST Sports Group <onboarding@updates.eastsportsgroup.com>',
             to: 'delivered@resend.dev',
             subject: 'System Audit - Resend Verification',
             html: '<p>Resend key integration is working correctly.</p>'

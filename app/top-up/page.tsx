@@ -107,9 +107,7 @@ export default function TopUpPage() {
                     >
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <h3 className={`font-montserrat font-bold text-sm tracking-wider uppercase mb-1 ${opt.highlight ? 'text-black/60' : 'text-gray-400'}`}>
-                                    {opt.label}
-                                </h3>
+
                                 <div className="flex items-baseline gap-1">
                                     <span className={`font-montserrat font-black text-4xl italic tracking-tighter ${opt.highlight ? 'text-black' : 'text-white'}`}>
                                         {opt.credits.toLocaleString()}

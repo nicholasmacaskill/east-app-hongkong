@@ -43,14 +43,21 @@ export default function LandingScreen({ onSelectAuth }: LandingScreenProps) {
                     </div>
 
                     <div className="flex flex-col gap-10">
-                        {/* COACH SECTION */}
+                        {/* ATHLETE SECTION */}
                         <div className="animate-fadeIn" style={{ animationDelay: '0ms' }}>
-                            <p className="text-[14px] font-black tracking-[0.3em] text-white uppercase mb-4 text-center">coach</p>
-                            <LoginButton
-                                label="LOGIN"
-                                onClick={() => onSelectAuth('coach', 'login')}
-                                variant="primary"
-                            />
+                            <p className="text-[14px] font-black tracking-[0.3em] text-white uppercase mb-4 text-center">athlete</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <LoginButton
+                                    label="LOGIN"
+                                    onClick={() => onSelectAuth('player', 'login')}
+                                    variant="primary"
+                                />
+                                <LoginButton
+                                    label="REGISTER"
+                                    onClick={() => onSelectAuth('player', 'register')}
+                                    variant="secondary"
+                                />
+                            </div>
                         </div>
 
                         {/* PARENT SECTION */}
@@ -70,21 +77,14 @@ export default function LandingScreen({ onSelectAuth }: LandingScreenProps) {
                             </div>
                         </div>
 
-                        {/* ATHLETE SECTION */}
+                        {/* COACH SECTION */}
                         <div className="animate-fadeIn" style={{ animationDelay: '400ms' }}>
-                            <p className="text-[14px] font-black tracking-[0.3em] text-white uppercase mb-4 text-center">athlete</p>
-                            <div className="grid grid-cols-2 gap-3">
-                                <LoginButton
-                                    label="LOGIN"
-                                    onClick={() => onSelectAuth('player', 'login')}
-                                    variant="primary"
-                                />
-                                <LoginButton
-                                    label="REGISTER"
-                                    onClick={() => onSelectAuth('player', 'register')}
-                                    variant="secondary"
-                                />
-                            </div>
+                            <p className="text-[14px] font-black tracking-[0.3em] text-white uppercase mb-4 text-center">coach</p>
+                            <LoginButton
+                                label="LOGIN"
+                                onClick={() => onSelectAuth('coach', 'login')}
+                                variant="secondary"
+                            />
                         </div>
 
                         {/* ADMIN SECTION */}
