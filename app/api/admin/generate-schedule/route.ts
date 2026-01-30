@@ -57,12 +57,19 @@ export async function POST(request: Request) {
 
         // 2. Wipe & Replace Strategy
         // Delete existing slots for this service in this range before generating
+        // We set the wipe range from the start of startDate to the end of endDate (23:59:59)
+        const wipeStart = new Date(startDate);
+        wipeStart.setHours(0, 0, 0, 0);
+
+        const wipeEnd = new Date(endDate);
+        wipeEnd.setHours(23, 59, 59, 999);
+
         const { error: deleteError } = await supabaseAdmin
             .from('sessions')
             .delete()
             .eq('session_type_id', serviceId)
-            .gte('start_time', new Date(startDate).toISOString())
-            .lte('start_time', new Date(endDate).toISOString());
+            .gte('start_time', wipeStart.toISOString())
+            .lte('start_time', wipeEnd.toISOString());
 
         if (deleteError) {
             console.error("Wipe error:", deleteError);
