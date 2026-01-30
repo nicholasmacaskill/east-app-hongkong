@@ -166,8 +166,8 @@ function MembershipContent() {
                     priceId,
                     userId: currentUserId,
                     userEmail: email,
-                    successUrl: `${window.location.origin}/membership?success=true`,
-                    cancelUrl: `${window.location.origin}/membership?canceled=true`
+                    successUrl: `${window.location.origin}/?success=true`,
+                    cancelUrl: `${window.location.origin}/?canceled=true`
                 })
             });
 

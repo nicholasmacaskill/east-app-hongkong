@@ -76,7 +76,7 @@ export function wrapEmailHtml(content: string, title?: string) {
             </div>
             
             <div style="max-width: 600px; margin: 30px auto 0; text-align: center;">
-                <p style="font-size: 12px; color: #444444;">
+                <p style="font-size: 12px; color: #888888;">
                     If you didn't expect this email, please ignore it.
                 </p>
             </div>

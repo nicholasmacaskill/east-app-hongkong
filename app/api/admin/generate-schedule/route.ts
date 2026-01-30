@@ -55,11 +55,25 @@ export async function POST(request: Request) {
             }
         }
 
-        if (sessionsToInsert.length === 0) {
-            return NextResponse.json({ success: true, count: 0, message: "No slots matched your criteria." });
+        // 2. Wipe & Replace Strategy
+        // Delete existing slots for this service in this range before generating
+        const { error: deleteError } = await supabaseAdmin
+            .from('sessions')
+            .delete()
+            .eq('session_type_id', serviceId)
+            .gte('start_time', new Date(startDate).toISOString())
+            .lte('start_time', new Date(endDate).toISOString());
+
+        if (deleteError) {
+            console.error("Wipe error:", deleteError);
+            return NextResponse.json({ error: 'Failed to clear existing schedule: ' + deleteError.message }, { status: 500 });
         }
 
-        // 2. Batch Insert
+        if (sessionsToInsert.length === 0) {
+            return NextResponse.json({ success: true, count: 0, message: "No slots matched your criteria. Existing slots cleared." });
+        }
+
+        // 3. Batch Insert
         // Use upsert or ignore conflicts? 
         // Usually simple insert. If you run it twice it might duplicate.
         // For now, simple insert. Admin should be careful or we add check.

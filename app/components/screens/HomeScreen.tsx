@@ -219,8 +219,7 @@ export default function HomeScreen({
   const handleServiceClick = async (service: ServiceType) => {
     if (service.category === 'FACILITY') {
       const matching = sessions.filter(s =>
-        s.category === 'FACILITY' &&
-        (s.session_type_id === service.id || s.title.toLowerCase().trim() === service.title.toLowerCase().trim())
+        s.category === 'FACILITY' && s.session_type_id === service.id
       );
 
       if (matching.length === 0) {

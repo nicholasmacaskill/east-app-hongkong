@@ -274,7 +274,7 @@ export async function POST(request: Request) {
                         await sendEmail({
                             to: customerEmail,
                             subject: 'Credits Top Up Confirmed',
-                            html: `<h1>Top Up Successful!</h1><p>You have purchased <strong>${creditAmount} credits</strong>.</p>`
+                            html: `<div style="color: #ffffff;"><h1>Top Up Successful!</h1><p>You have purchased <strong>${creditAmount} credits</strong>.</p></div>`
                         });
                     } catch (e) { console.error("Email failed, but DB updated."); }
                 }

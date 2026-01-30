@@ -34,14 +34,14 @@ export async function POST(request: Request) {
             to: email,
             subject: 'Reset Your EAST Password',
             html: `
-                <div style="font-family: sans-serif; color: #333;">
+                <div style="font-family: sans-serif; color: #ffffff;">
                     <h1>Password Reset Request</h1>
                     <p>You requested a password reset for your EAST account.</p>
                     <p>Click the button below to reset your password:</p>
                     <a href="${resetLink}" style="display: inline-block; background-color: #28D160; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; margin: 16px 0;">Reset Password</a>
                     <p>Or copy and paste this link:</p>
-                    <p><a href="${resetLink}">${resetLink}</a></p>
-                    <p>If you did not request this, please ignore this email.</p>
+                    <p><a href="${resetLink}" style="color: #28D160;">${resetLink}</a></p>
+                    <p style="color: #aaaaaa; font-size: 14px;">If you did not request this, please ignore this email.</p>
                 </div>
             `
         });

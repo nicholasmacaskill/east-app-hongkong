@@ -195,15 +195,17 @@ export async function POST(request: Request) {
             to: userProfile.contact_email,
             subject: 'Booking Confirmation - EAST',
             html: `
-              <h1>Booking Confirmed</h1>
-              <p>You have successfully booked ${successCount} slot(s).</p>
-              <p><strong>Session:</strong> ${mainSession.title}</p>
-              <p><strong>Time:</strong> ${new Date(mainSession.start_time).toLocaleString()}</p>
-              <p>Type: ${origin === 'facilities' ? 'Facility Booking' : 'Coach Booking'}</p>
-              <br/>
-              <p>Thanks for your booking, please be informed that, if you would like to take a friend, 
-              you must register them through our support chat: <a href="https://wa.link/b2y0sa">https://wa.link/b2y0sa</a> 
-              (upon approval, credits will be deducted from your account).</p>
+              <div style="color: #ffffff;">
+                <h1>Booking Confirmed</h1>
+                <p>You have successfully booked ${successCount} slot(s).</p>
+                <p><strong>Session:</strong> ${mainSession.title}</p>
+                <p><strong>Time:</strong> ${new Date(mainSession.start_time).toLocaleString()}</p>
+                <p>Type: ${origin === 'facilities' ? 'Facility Booking' : 'Coach Booking'}</p>
+                <br/>
+                <p>Thanks for your booking, please be informed that, if you would like to take a friend, 
+                you must register them through our support chat: <a href="https://wa.link/b2y0sa" style="color: #28d160;">https://wa.link/b2y0sa</a> 
+                (upon approval, credits will be deducted from your account).</p>
+              </div>
             `
           });
         }

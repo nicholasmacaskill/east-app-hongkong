@@ -98,7 +98,7 @@ export async function POST(request: Request) {
                     </a>
                 </div>
                 
-                <p style="font-size: 14px; color: #666666; line-height: 1.6; margin-bottom: 20px;">
+                <p style="font-size: 14px; color: #aaaaaa; line-height: 1.6; margin-bottom: 20px;">
                     If the button above does not work, you can copy and paste the following URL into your browser:
                 </p>
                 
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
                     ${verificationLink}
                 </p>
                 
-                <p style="font-size: 14px; color: #666666; line-height: 1.6;">
+                <p style="font-size: 14px; color: #aaaaaa; line-height: 1.6;">
                     This helps us ensure that your account is secure and allows you to fully access all features of the app.
                 </p>
             `,

@@ -67,7 +67,7 @@ export default function TopUpPage() {
                     priceId,
                     userId: user.id,
                     userEmail: email,
-                    successUrl: `${window.location.origin}/?success=topup`,
+                    successUrl: `${window.location.origin}/?success=true`,
                     cancelUrl: `${window.location.origin}/top-up`
                 })
             });
