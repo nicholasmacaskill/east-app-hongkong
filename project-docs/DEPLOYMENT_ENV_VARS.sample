@@ -39,7 +39,7 @@ EMAIL_FROM=noreply@yourdomain.com
 # SMTP_PASSWORD=your-api-key
 
 # 6. APP CONFIG
-NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
+NEXT_PUBLIC_BASE_URL=https://your-domain.vercel.app
 
 # ==================================
 # DEPLOYMENT CHECKLIST
