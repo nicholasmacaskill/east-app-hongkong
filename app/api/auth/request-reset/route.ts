@@ -39,13 +39,13 @@ export async function POST(request: Request) {
             to: email,
             subject: 'Your Password Reset Code',
             html: `
-                <div style="font-family: sans-serif; text-align: center; color: #333;">
+                <div style="font-family: sans-serif; text-align: center; color: #ffffff;">
                     <h1>Reset Your Password</h1>
                     <p>Use the code below to verify your identity:</p>
-                    <div style="background: #f4f4f4; padding: 20px; font-size: 24px; font-weight: bold; letter-spacing: 5px; margin: 20px 0;">
+                    <div style="background: #1a1a1a; color: #ffffff; padding: 20px; font-size: 24px; font-weight: bold; letter-spacing: 5px; margin: 20px 0; border: 1px solid #333; border-radius: 8px;">
                         ${otp}
                     </div>
-                    <p>If you didn't request this, you can ignore this email.</p>
+                    <p style="color: #aaaaaa; font-size: 14px;">If you didn't request this, you can ignore this email.</p>
                 </div>
             `
         });

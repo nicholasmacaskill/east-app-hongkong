@@ -40,7 +40,8 @@ export async function POST(request: Request) {
 
         if (authError || !authUser.user) {
             console.error('Registration error:', authError);
-            return NextResponse.json({ error: authError?.message || 'Failed to create user' }, { status: 500 });
+            const status = authError?.message?.includes('User already registered') ? 400 : 500;
+            return NextResponse.json({ error: authError?.message || 'Failed to create user' }, { status });
         }
 
         // 2. Explicitly update profile to ensure name and contact sync
