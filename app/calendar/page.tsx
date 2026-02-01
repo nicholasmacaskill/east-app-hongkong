@@ -9,6 +9,7 @@ import { Session } from '@/app/types/index';
 import { useRouter } from 'next/navigation';
 import Footer from '../components/Footer';
 import { useToast } from '../components/ui/Toast';
+import { formatHK } from '@/app/lib/dateUtils';
 
 export default function CalendarPage() {
   const { addToast } = useToast();
@@ -79,7 +80,7 @@ export default function CalendarPage() {
   };
 
   const handleEventClick = (event: CalendarEvent) => {
-    addToast(`${event.title}\n${event.startTime.toLocaleString()}`, 'info');
+    addToast(`${event.title}\n${formatHK(event.startTime)} - ${formatHK(event.endTime)}`, 'info');
   };
 
   return (

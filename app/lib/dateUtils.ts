@@ -1,5 +1,8 @@
 
 import { format, parseISO, isValid } from 'date-fns';
+import { formatInTimeZone, toDate } from 'date-fns-tz';
+
+const HK_TZ = 'Asia/Hong_Kong';
 
 /**
  * Safely parses a date string, handling iOS/Safari specific format issues.
@@ -105,6 +108,49 @@ export function safetoLocaleDateString(
         console.warn(`safetoLocaleDateString: Error formatting date`, error);
         return fallback;
     }
+}
+
+/**
+ * Specifically formats a date string into HK time for display.
+ */
+export function formatHK(date: string | Date, formatStr: string = 'p'): string {
+    const d = typeof date === 'string' ? safeDate(date) : date;
+    if (!d || !isValid(d)) return '';
+    return formatInTimeZone(d, HK_TZ, formatStr);
+}
+
+/**
+ * Converts a date (potentially naive from a picker) into a UTC ISO string, 
+ * treating naive inputs as being in Hong Kong time.
+ */
+export function toHKISO(dateStr: string): string {
+    // If it's already an ISO with Z or offset, we parse it as is then ensure it's ISO.
+    if (dateStr.includes('Z') || /[+-]\d{2}:\d{2}$/.test(dateStr)) {
+        const d = safeDate(dateStr);
+        return d ? d.toISOString() : dateStr;
+    }
+
+    // Otherwise, treat as naive HK time (e.g. from datetime-local)
+    try {
+        // toDate handles the timezone conversion if we provide the zone
+        // Actually toDate parses it, but we want to assert it IS HKT.
+        const d = toDate(dateStr, { timeZone: HK_TZ });
+        return d.toISOString();
+    } catch (e) {
+        console.error("toHKISO failed for", dateStr, e);
+        return new Date(dateStr).toISOString();
+    }
+}
+
+/**
+ * Converts a UTC ISO string to the format needed for <input type="datetime-local"> 
+ * in Asia/Hong_Kong timezone.
+ */
+export function toHKPickerValue(date: string | Date | null | undefined): string {
+    if (!date) return '';
+    const d = typeof date === 'string' ? safeDate(date) : date;
+    if (!d || !isValid(d)) return '';
+    return formatInTimeZone(d, HK_TZ, "yyyy-MM-dd'T'HH:mm");
 }
 
 export function formatAuditHK(date: Date | string): string {

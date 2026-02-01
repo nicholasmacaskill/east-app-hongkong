@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { sendEmail } from '@/app/lib/email';
 import { createClient } from '@supabase/supabase-js';
+import { formatHK } from '@/app/lib/dateUtils';
 
 // Helper to verify user against Supabase Auth
 async function verifyUser(request: Request, claimedUserId: string): Promise<boolean> {
@@ -199,7 +200,7 @@ export async function POST(request: Request) {
                 <h1>Booking Confirmed</h1>
                 <p>You have successfully booked ${successCount} slot(s).</p>
                 <p><strong>Session:</strong> ${mainSession.title}</p>
-                <p><strong>Time:</strong> ${new Date(mainSession.start_time).toLocaleString()}</p>
+                <p><strong>Time:</strong> ${formatHK(mainSession.start_time, 'PPpp')}</p>
                 <p>Type: ${origin === 'facilities' ? 'Facility Booking' : 'Coach Booking'}</p>
                 <br/>
                 <p>Thanks for your booking, please be informed that, if you would like to take a friend, 

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { format, addDays, isSameDay, startOfDay, endOfDay } from 'date-fns';
 import { CalendarEvent, EventTypeConfig } from '../../types/calendar';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatHK } from '@/app/lib/dateUtils';
 
 const eventTypeConfig: Record<CalendarEvent['type'], EventTypeConfig> = {
   'youth-class': {
@@ -52,7 +53,7 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
   const getEventsForDay = (day: Date) => {
     const dayStart = startOfDay(day);
     const dayEnd = endOfDay(day);
-    return events.filter(event => 
+    return events.filter(event =>
       event.startTime >= dayStart && event.startTime <= dayEnd
     );
   };
@@ -105,7 +106,7 @@ const Calendar: React.FC<CalendarProps> = ({ events, onEventClick }) => {
                       <div className="flex justify-between items-center">
                         <span>{event.title}</span>
                         <span className="text-sm opacity-75">
-                          {format(event.startTime, 'h:mm a')} - {format(event.endTime, 'h:mm a')}
+                          {formatHK(event.startTime)} - {formatHK(event.endTime)}
                         </span>
                       </div>
                       {event.host && (

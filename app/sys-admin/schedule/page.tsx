@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Calendar, User, LayoutGrid, RefreshCw, Plus,
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { format, addDays, subDays, startOfWeek, isSameDay } from 'date-fns';
-import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
+import { safeDate, safetoLocaleDateString, toHKISO, formatHK, toHKPickerValue } from '@/app/lib/dateUtils';
 import { useToast } from '@/app/components/ui/Toast';
 
 // Types
@@ -161,9 +161,10 @@ export default function MasterSchedule() {
     };
 
     const handleCellClick = (timeSlot: string) => {
-        const start = `${selectedDate}T${timeSlot}:00`;
-        const nextHour = (parseInt(timeSlot) + 1).toString().padStart(2, '0');
-        const end = `${selectedDate}T${nextHour}:00`;
+        const start = toHKISO(`${selectedDate}T${timeSlot}:00`);
+        const nextHourNum = parseInt(timeSlot.split(':')[0]) + 1;
+        const nextHour = nextHourNum.toString().padStart(2, '0');
+        const end = toHKISO(`${selectedDate}T${nextHour}:00`);
 
         setModalAction('CREATE');
         setEditingSession({
@@ -203,8 +204,8 @@ export default function MasterSchedule() {
             let sessionsToCreate = [cleanSessionData];
 
             if (recurring && modalAction === 'CREATE') {
-                const start = new Date(cleanSessionData.start_time);
-                const end = new Date(cleanSessionData.end_time);
+                const start = new Date(toHKISO(cleanSessionData.start_time));
+                const end = new Date(toHKISO(cleanSessionData.end_time));
                 sessionsToCreate = [];
                 for (let w = 0; w < repeatWeeks; w++) {
                     for (const day of repeatDays) {
@@ -219,6 +220,13 @@ export default function MasterSchedule() {
                         });
                     }
                 }
+            } else {
+                // Not recurring, just ensure ISO
+                sessionsToCreate = [{
+                    ...cleanSessionData,
+                    start_time: toHKISO(cleanSessionData.start_time),
+                    end_time: toHKISO(cleanSessionData.end_time)
+                }];
             }
 
             const res = await fetch('/api/admin/sessions', {
@@ -425,7 +433,7 @@ export default function MasterSchedule() {
                             <div className="space-y-3">
                                 {dayItems.map((item: any, idx: number) => {
                                     const isSlot = item.type === 'slot';
-                                    const startTime = safeDate(item.start_time)?.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase() || '--:--';
+                                    const startTime = formatHK(item.start_time, 'h:mm a').toLowerCase() || '--:--';
                                     const duration = Math.round(((safeDate(item.end_time)?.getTime() || 0) - (safeDate(item.start_time)?.getTime() || 0)) / 60000);
                                     return (
                                         <div key={item.id || idx} onClick={() => {
@@ -555,7 +563,7 @@ export default function MasterSchedule() {
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block flex items-center gap-1"><Clock size={10} /> Start Time</label>
                                     <input
                                         type="datetime-local"
-                                        value={editingSession.start_time.slice(0, 16)}
+                                        value={toHKPickerValue(editingSession.start_time)}
                                         onChange={e => setEditingSession({ ...editingSession, start_time: e.target.value })}
                                         className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-[11px] text-white outline-none dark-calendar-picker"
                                         style={{ colorScheme: 'dark' }}
@@ -565,7 +573,7 @@ export default function MasterSchedule() {
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block flex items-center gap-1"><Clock size={10} /> End Time</label>
                                     <input
                                         type="datetime-local"
-                                        value={editingSession.end_time.slice(0, 16)}
+                                        value={toHKPickerValue(editingSession.end_time)}
                                         onChange={e => setEditingSession({ ...editingSession, end_time: e.target.value })}
                                         className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-[11px] text-white outline-none dark-calendar-picker"
                                         style={{ colorScheme: 'dark' }}
