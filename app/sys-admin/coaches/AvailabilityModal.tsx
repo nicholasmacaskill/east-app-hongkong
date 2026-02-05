@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Save, Clock, Trash2, Plus, Info, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
-import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
+import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 
 interface AvailabilityModalProps {
     coach: any;
@@ -424,7 +424,7 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                                     {/* Time */}
                                                     <div className={`flex flex-col items-center justify-center min-w-[60px] border-r border-white/5 pr-4 ${selectionMode ? 'pl-8' : ''}`}>
                                                         <span className="text-sm font-black italic leading-none text-white">
-                                                            {safeDate(item.start_time)?.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase().replace(' ', '')}
+                                                            {formatHK(item.start_time, 'h:mma').toLowerCase()}
                                                         </span>
                                                         <span className="text-[9px] font-bold text-gray-600 uppercase mt-0.5">{duration} min</span>
                                                     </div>

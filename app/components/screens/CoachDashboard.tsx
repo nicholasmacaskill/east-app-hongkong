@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send } from 'lucide-react';
-import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
-import { safeFetch } from '@/app/lib/apiUtils'; // NEW
+import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
+import { safeFetch } from '@/app/lib/apiUtils';
 
 interface Attendee {
     id: string;
@@ -307,7 +307,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
 
                                             {/* Time Column */}
                                             <div className="flex flex-col items-center justify-center min-w-[60px] border-r border-white/5 pr-4">
-                                                <span className="text-lg font-black italic leading-none">{safeDate(session.start_time)?.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(' ', '').toLowerCase()}</span>
+                                                <span className="text-lg font-black italic leading-none">{formatHK(session.start_time, 'h:mma').toLowerCase()}</span>
                                                 <span className="text-[9px] font-bold text-gray-600 uppercase mt-1">
                                                     {Math.round(((safeDate(session.end_time)?.getTime() || 0) - (safeDate(session.start_time)?.getTime() || 0)) / 60000)} MIN
                                                 </span>
@@ -442,7 +442,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                                 {safetoLocaleDateString(safeDate(note.created_at), [], { month: 'short', day: 'numeric', year: 'numeric' })}
                                             </span>
                                             <span className="text-[8px] font-bold text-gray-600 uppercase">
-                                                {safeDate(note.created_at)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {formatHK(note.created_at, 'h:mm a')}
                                             </span>
                                         </div>
                                         <p className="text-xs text-white/90 leading-relaxed font-medium">{note.content}</p>

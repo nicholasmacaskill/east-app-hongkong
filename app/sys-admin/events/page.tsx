@@ -5,7 +5,7 @@ import { supabase } from '@/app/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Plus, Trash2, Edit2, Upload, X, Save, Calendar, Clock, DollarSign } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
-import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
+import { safeDate, safetoLocaleDateString, formatHK, toHKPickerValue } from '@/app/lib/dateUtils';
 
 interface EventItem {
     id: number;
@@ -154,13 +154,8 @@ export default function AdminEventsPage() {
         setUploading(false);
     };
 
-    // Helper to format datetime-local value
-    const toLocalISO = (isoString?: string) => {
-        if (!isoString) return '';
-        const d = new Date(isoString);
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-        return d.toISOString().slice(0, 16);
-    };
+    // Helper to format datetime-local value using HK timezone
+    const toHKPicker = (isoString?: string) => toHKPickerValue(isoString);
 
     return (
         <div className="p-4 md:p-8 text-white bg-black min-h-screen font-montserrat pb-24">
@@ -206,7 +201,7 @@ export default function AdminEventsPage() {
                                     </span>
                                     <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full">
                                         <Clock size={12} className="text-east-light" />
-                                        {safeDate(item.start_time)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        {formatHK(item.start_time, 'h:mm a')}
                                     </span>
                                     <span className="flex items-center gap-1.5 bg-east-light/10 text-east-light px-2.5 py-1 rounded-full border border-east-light/20">
                                         <DollarSign size={12} />
@@ -319,7 +314,7 @@ export default function AdminEventsPage() {
                                         <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Starts At</label>
                                         <input
                                             type="datetime-local"
-                                            value={toLocalISO(currentItem.start_time)}
+                                            value={toHKPicker(currentItem.start_time)}
                                             onChange={e => setCurrentItem({ ...currentItem, start_time: new Date(e.target.value).toISOString() })}
                                             className="w-full bg-black border border-white/10 rounded-xl p-4 text-white text-xs uppercase focus:outline-none focus:border-east-light transition-all"
                                         />
@@ -328,7 +323,7 @@ export default function AdminEventsPage() {
                                         <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Ends At</label>
                                         <input
                                             type="datetime-local"
-                                            value={toLocalISO(currentItem.end_time)}
+                                            value={toHKPicker(currentItem.end_time)}
                                             onChange={e => setCurrentItem({ ...currentItem, end_time: new Date(e.target.value).toISOString() })}
                                             className="w-full bg-black border border-white/10 rounded-xl p-4 text-white text-xs uppercase focus:outline-none focus:border-east-light transition-all"
                                         />

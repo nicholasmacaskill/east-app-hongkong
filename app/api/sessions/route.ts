@@ -5,20 +5,40 @@ import { sendEmail } from '@/app/lib/email'; // Assume you have this utility
 // **********************************************
 // 1. GET - Fetches the list of all future sessions (READ)
 // **********************************************
+// **********************************************
+// 1. GET - Fetches the list of all future sessions (READ)
+// **********************************************
 export async function GET() {
   // Fetch sessions that are in the future, ordered by time
   const supabaseAdmin = getSupabaseAdmin();
+
+  // Enforce 7-Day Booking Window
+  const sevenDaysLater = new Date();
+  sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+
   const { data, error } = await supabaseAdmin
     .from('sessions')
-    .select('*')
+    .select('*, registrations(count)') // Fetch count of registrations
     .gt('start_time', new Date().toISOString())
+    .lte('start_time', sevenDaysLater.toISOString()) // 7-Day Limit
     .order('start_time', { ascending: true });
 
   if (error) {
+    console.error("API SESSIONS ERROR:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  // Filter out sessions that are full
+  // Note: registrations returns as [{ count: n }] array due to PostgREST format with count
+  const availableSessions = data.filter((session: any) => {
+    // If max_capacity is not set, assume unlimited
+    if (!session.max_capacity) return true;
+
+    const count = session.registrations?.[0]?.count || 0;
+    return count < session.max_capacity;
+  });
+
+  return NextResponse.json(availableSessions);
 }
 
 // **********************************************

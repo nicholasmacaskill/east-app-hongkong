@@ -38,10 +38,16 @@ setup('authenticate as admin', async ({ page }) => {
 
     // Explicitly update profile role to sys-admin to ensure DB sync
     // (In case trigger doesn't pick up metadata correctly or just to be safe)
+    // Explicitly upset profile to ensure it exists and has sys-admin role
     const { error: updateError } = await supabase
         .from('profiles')
-        .update({ role: 'sys-admin' })
-        .eq('id', user.user.id);
+        .upsert({
+            id: user.user.id,
+            contact_email: email,
+            first_name: 'Test',
+            last_name: 'Admin',
+            role: 'sys-admin'
+        });
 
     if (updateError) console.error('Failed to set admin role:', updateError);
 

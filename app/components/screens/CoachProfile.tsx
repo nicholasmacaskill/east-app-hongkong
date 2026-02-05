@@ -8,6 +8,7 @@ import Lightbox from '@/app/components/ui/Lightbox';
 import ClassModal from '@/app/components/modals/ClassModal';
 import { Session } from '@/app/types';
 import { compressImage } from '@/app/lib/image-utils';
+import { formatHK } from '@/app/lib/dateUtils';
 
 // Mock Data for redesign (Keep stats for now/remove later)
 const PROFILE_STATS = {
@@ -251,7 +252,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                     {/* 1. TOP VISUALS */}
                     <div className="relative h-[250px] w-full shrink-0">
                         {!isPublic && (
-                            <button onClick={onOpenSettings} className="absolute top-4 right-6 z-30 text-gray-400 hover:text-white transition-colors">
+                            <button data-testid="settings-button" onClick={onOpenSettings} className="absolute top-4 right-6 z-30 text-gray-400 hover:text-white transition-colors">
                                 <Edit2 size={24} />
                             </button>
                         )}
@@ -439,7 +440,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                             <div key={i} className="bg-white/5 border border-white/5 p-3 rounded-xl flex flex-col items-center transition-colors hover:border-east-light/40">
                                                 <span className="text-[9px] font-black text-east-light uppercase">{start.toLocaleDateString([], { weekday: 'short' })}</span>
                                                 <span className="text-lg font-black italic text-white leading-none my-1">{start.getDate()}</span>
-                                                <span className="text-[8px] font-bold text-gray-500 uppercase">{start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                                                <span className="text-[8px] font-bold text-gray-500 uppercase">{formatHK(slot.start_time, 'h:mm a')}</span>
                                             </div>
                                         );
                                     }) : (
@@ -476,7 +477,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                             <div className="flex-1">
                                                 <h4 className="font-black italic text-lg text-white leading-none uppercase">{session.title}</h4>
                                                 <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">
-                                                    {new Date(session.start_time).toLocaleDateString([], { weekday: 'short' })} • {new Date(session.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                                                    {new Date(session.start_time).toLocaleDateString([], { weekday: 'short' })} • {formatHK(session.start_time, 'h:mm a')}
                                                 </p>
                                                 <div className="flex gap-3 mt-3">
                                                     <div className="flex items-center gap-1">

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Share2, Send, CreditCard, AlertCircle, Check, ChevronLeft } from 'lucide-react';
 import { Session } from '@/app/types/index';
 import { supabase } from '@/app/lib/supabase';
-import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
+import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 import { safeFetch } from '@/app/lib/apiUtils';
 import { useToast } from '@/app/components/ui/Toast';
 
@@ -58,6 +58,8 @@ export default function ClassModal({
     const [currentRegistrations, setCurrentRegistrations] = useState<number>(0);
     const { addToast } = useToast();
     const [isLoadingCapacity, setIsLoadingCapacity] = useState(false);
+    const [showPenaltyWarning, setShowPenaltyWarning] = useState(false);
+    const [penaltyData, setPenaltyData] = useState<{ percentage: number; amount: number; message: string }>({ percentage: 0, amount: 0, message: '' });
 
     // NEW: Manual Coach Hierarchy Flow
     const [viewMode, setViewMode] = useState<'COACH_SELECT' | 'SESSION_SELECT' | 'SERVICE_SELECT'>('SESSION_SELECT');
@@ -161,8 +163,9 @@ export default function ClassModal({
     const isCoachView = uniqueInstructors.size === 1 && uniqueTitles.size > 1;
 
     // Dynamic Header Logic
+    const isFacility = displaySession.category === 'FACILITY';
     let modalHeaderTitle = filterTitle || (selectedSession?.title) || displaySession.title;
-    if (origin === 'coaches' && coachName && !filterTitle) {
+    if (origin === 'coaches' && coachName && !filterTitle && !isFacility) {
         modalHeaderTitle = coachName;
     }
     if (showTopUp) {
@@ -355,8 +358,37 @@ export default function ClassModal({
         }
     };
 
-    // Cancel logic
-    const handleCancelSession = async () => {
+    const handleCancelClick = () => {
+        if (!selectedSessionId || !selectedSession) return;
+
+        // Calculate Refund
+        const startTime = new Date(selectedSession.start_time).getTime();
+        const now = Date.now();
+        const hoursUntilStart = (startTime - now) / (1000 * 60 * 60);
+
+        let percentage = 100;
+        let message = "You will receive a full refund.";
+
+        if (hoursUntilStart < 24) {
+            percentage = 0;
+            message = "This cancellation is within 24 hours of your session. You will NOT receive a refund.";
+        } else if (hoursUntilStart < 48) {
+            percentage = 50;
+            message = "This cancellation is between 24-48 hours before your session. You will receive a 50% refund.";
+        }
+
+        // Calculate amount (sum of paid credits for selected attendees)
+        const totalPaid = bookedSessions
+            .filter(b => b.id === selectedSessionId && selectedAttendeeIds.includes(b.attendee?.id || ''))
+            .reduce((sum, b) => sum + (b.credit_cost || 0), 0);
+
+        const refundAmount = Math.floor(totalPaid * (percentage / 100));
+
+        setPenaltyData({ percentage, amount: refundAmount, message });
+        setShowPenaltyWarning(true);
+    };
+
+    const handleConfirmCancel = async () => {
         if (!selectedSessionId || isNews || !currentUserId || selectedAttendeeIds.length === 0) return;
         setIsProcessing(true);
 
@@ -383,6 +415,7 @@ export default function ClassModal({
         }
 
         setIsProcessing(false);
+        setShowPenaltyWarning(false);
         addToast(`Cancelled ${successCount} booking(s).`, "success");
         if (onScheduleChange) onScheduleChange();
         onClose();
@@ -431,7 +464,7 @@ export default function ClassModal({
                 {/* Header */}
                 <div className="bg-gradient-to-r from-east-light to-east-dark p-4 flex justify-between items-center shrink-0">
                     <h2 className="font-montserrat font-black italic text-xl text-white uppercase truncate pr-2">
-                        {showTopUp ? 'TOP UP NEEDED' : (origin === 'coaches' ? 'BOOK COACH' : modalHeaderTitle)}
+                        {showTopUp ? 'TOP UP NEEDED' : (showPenaltyWarning ? 'Cancellation Policy' : (origin === 'coaches' && !isFacility ? 'BOOK COACH' : modalHeaderTitle))}
                     </h2>
                     <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors">
                         <X className="text-white" size={24} />
@@ -452,6 +485,28 @@ export default function ClassModal({
                             <CreditCard size={18} /> TOP UP
                         </button>
                         <button onClick={() => setShowTopUp(false)} className="text-gray-400 text-xs font-bold hover:text-black uppercase tracking-wide">No thanks</button>
+                    </div>
+                ) : showPenaltyWarning ? (
+                    /* --- PENALTY WARNING VIEW --- */
+                    <div className="p-8 flex flex-col items-center text-center space-y-6">
+                        <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-2">
+                            <AlertCircle className="text-yellow-600" size={32} />
+                        </div>
+                        <div>
+                            <h3 className="font-montserrat font-black italic text-2xl uppercase mb-2 text-yellow-600">
+                                {penaltyData.percentage === 0 ? 'NO REFUND' : (penaltyData.percentage === 100 ? 'FULL REFUND' : `${penaltyData.percentage}% REFUND`)}
+                            </h3>
+                            <p className="font-opensans text-sm font-bold text-gray-800 mb-2">{penaltyData.message}</p>
+                            <p className="font-opensans text-xs text-gray-500 font-bold">You will receive {penaltyData.amount} credits.</p>
+                        </div>
+                        <div className="flex gap-4 w-full">
+                            <button onClick={() => setShowPenaltyWarning(false)} className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-black italic py-4 rounded-full uppercase tracking-widest transition-all">
+                                Nevermind
+                            </button>
+                            <button onClick={handleConfirmCancel} disabled={isProcessing} className="flex-1 bg-red-500 hover:bg-red-600 text-white font-black italic py-4 rounded-full uppercase tracking-widest transition-all shadow-lg">
+                                {isProcessing ? '...' : 'Yes, Cancel Session'}
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     /* --- NORMAL BOOKING VIEW --- */
@@ -686,9 +741,7 @@ export default function ClassModal({
                                                                     <div className="grid grid-cols-3 gap-2">
                                                                         {daySessions.map(sess => {
                                                                             const isSelected = selectedSessionId === sess.id;
-                                                                            const d = safeDate(sess.start_time);
-                                                                            if (!d) return null;
-                                                                            const timeStr = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(' ', '').toLowerCase();
+                                                                            const timeStr = formatHK(sess.start_time, 'h:mma').toLowerCase();
                                                                             return (
                                                                                 <button
                                                                                     key={sess.id}
@@ -731,7 +784,7 @@ export default function ClassModal({
                                                                     )}
                                                                     {isPrivate && isCoachView && <span className="font-black italic uppercase text-xs text-east-dark mb-0.5">{sess.title}</span>}
                                                                     <span className="font-bold uppercase text-xs tracking-wide">
-                                                                        {safetoLocaleDateString(dateObj, 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })} <span className="mx-1 opacity-50">@</span> {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(/^0/, '')}
+                                                                        {safetoLocaleDateString(dateObj, 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })} <span className="mx-1 opacity-50">@</span> {formatHK(dateObj, 'h:mm a')}
                                                                     </span>
                                                                 </div>
                                                                 <span className={`text-xs font-bold ${isSelected ? 'text-black' : (isBooked ? 'text-green-600' : 'text-east-dark')}`}>
@@ -755,7 +808,7 @@ export default function ClassModal({
                                             <button onClick={handleShare} className="text-gray-400 hover:text-black transition-colors"><Share2 size={20} /></button>
                                         </div>
                                         {allSelectedAreBooked ? (
-                                            <button onClick={() => { if (window.confirm("Cancel selected?")) handleCancelSession(); }} disabled={isProcessing} className="text-red-500 text-xs font-black italic px-6 py-3 rounded-full uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all disabled:opacity-50">
+                                            <button onClick={handleCancelClick} disabled={isProcessing} className="text-red-500 text-xs font-black italic px-6 py-3 rounded-full uppercase tracking-wider hover:bg-red-600 hover:text-white transition-all disabled:opacity-50">
                                                 {isProcessing ? 'CANCELLING...' : 'CANCEL SELECTION'}
                                             </button>
                                         ) : (

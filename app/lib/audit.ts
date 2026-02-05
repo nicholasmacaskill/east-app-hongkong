@@ -9,7 +9,18 @@ export type AuditAction =
     | 'ANNOUNCEMENT_CREATED'
     | 'ANNOUNCEMENT_UPDATED'
     | 'ANNOUNCEMENT_DELETED'
-    | 'LOGIN_FAILED';
+    | 'LOGIN_FAILED'
+    | 'CREATE_SESSION'
+    | 'UPDATE_SESSION'
+    | 'DELETE_SESSION'
+    | 'UPDATE_CREDITS'
+    | 'CREATE_PLAYER'
+    | 'UPDATE_PLAYER'
+    | 'DELETE_PLAYER'
+    | 'CREATE_COACH'
+    | 'UPDATE_COACH'
+    | 'DELETE_COACH'
+    | 'GENERATE_SCHEDULE';
 
 export interface AuditLogEntry {
     action: AuditAction;
@@ -37,7 +48,40 @@ export async function logAudit(entry: AuditLogEntry) {
         ...entry
     }));
 
-    // 2. (Future) Database Persistence
-    // const supabaseAdmin = getSupabaseAdmin();
-    // await supabaseAdmin.from('audit_logs').insert({ ... });
+    // 2. Database Persistence
+    const supabaseAdmin = getSupabaseAdmin();
+    await supabaseAdmin.from('admin_audit_logs').insert({
+        admin_id: entry.actorId,
+        action: entry.action,
+        target_type: 'system', // or infer from details
+        target_id: entry.targetId,
+        details: entry.details
+    });
+}
+
+/**
+ * Specifically for Admin actions in the Dashboard
+ */
+export async function logAdminAction(
+    adminId: string,
+    action: AuditAction,
+    targetType: string,
+    targetId: string | number,
+    details: any = {}
+) {
+    const supabase = getSupabaseAdmin();
+    try {
+        const { error } = await supabase
+            .from('admin_audit_logs')
+            .insert({
+                admin_id: adminId,
+                action,
+                target_type: targetType,
+                target_id: String(targetId),
+                details
+            });
+        if (error) console.error('Failed to log admin action:', error);
+    } catch (e) {
+        console.error('Audit logging error:', e);
+    }
 }

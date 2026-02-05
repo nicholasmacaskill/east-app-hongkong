@@ -16,7 +16,8 @@ import {
   isBefore,
   isAfter
 } from 'date-fns';
-import { safeFetch } from '@/app/lib/apiUtils'; // NEW
+import { safeFetch } from '@/app/lib/apiUtils';
+import { formatHK, safeDate } from '@/app/lib/dateUtils';
 
 export default function ScheduleScreen({
   onPreviewClick,
@@ -53,7 +54,9 @@ export default function ScheduleScreen({
     switch (category) {
       case 'YOUTH': return { color: '#D1F2D9', border: 'border-green-500', icon: '🏃' };
       case 'ADULT': return { color: '#F8F9FF', border: 'border-blue-500', icon: '💪' };
-      case 'COACH': return { color: '#D8B4FE', border: 'border-purple-400', icon: '🎯' };
+      case 'COACH':
+      case 'PRIVATE': return { color: '#D8B4FE', border: 'border-purple-400', icon: '🎯' };
+      case 'CLASS': return { color: '#BFDBFE', border: 'border-blue-400', icon: '🏀' };
       case 'EVENT': return { color: '#FCA5A5', border: 'border-red-400', icon: '🎉' };
       case 'FACILITY': return { color: '#D1D5DB', border: 'border-gray-500', icon: '🏠' };
       default: return { color: '#FFFFFF', border: 'border-gray-300', icon: '🗓️' };
@@ -290,7 +293,7 @@ export default function ScheduleScreen({
                             <h3 className="font-montserrat font-black italic text-sm uppercase text-white tracking-tight">{event.title}</h3>
                           </div>
                           <p className="text-[10px] font-bold text-gray-500 tracking-tighter">
-                            {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {formatHK(event.start_time, 'h:mm a')} - {formatHK(event.end_time, 'h:mm a')}
                           </p>
                         </div>
                         <div className="text-right">

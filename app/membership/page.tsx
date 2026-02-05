@@ -9,6 +9,7 @@ import {
 import type { Tab } from '../types';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
+import { formatHK } from '@/app/lib/dateUtils';
 
 // --- PRICE IDS ---
 // Individual (Pro)
@@ -118,7 +119,7 @@ function MembershipContent() {
 
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('role, subscription_status, subscription_tier, subscription_expires_at')
+                    .select('role, subscription_status, membership_tier, membership_expires')
                     .eq('id', user.id)
                     .single();
 
@@ -126,12 +127,12 @@ function MembershipContent() {
                 if (finalRole) setUserRole(finalRole);
 
                 // Check if user has an active subscription
-                if (profile?.subscription_status === 'active' && profile?.subscription_expires_at) {
-                    const expiryDate = new Date(profile.subscription_expires_at);
+                if (profile?.subscription_status === 'active' && profile?.membership_expires) {
+                    const expiryDate = new Date(profile.membership_expires);
                     if (expiryDate > new Date()) {
                         setHasActiveSubscription(true);
                         setSubscriptionInfo({
-                            tier: profile.subscription_tier,
+                            tier: profile.membership_tier,
                             expires: expiryDate
                         });
                     }
@@ -140,6 +141,15 @@ function MembershipContent() {
         };
         getUser();
     }, []);
+
+    const getTierLabel = (tier: string) => {
+        const map: Record<string, string> = {
+            'individual': 'PRO MEMBERSHIP',
+            'family_2': 'FAMILY PLAN (2)',
+            'family_3plus': 'FAMILY PLAN (3+)'
+        };
+        return map[tier] || tier || 'PRO MEMBERSHIP';
+    };
 
     const activePlan = planType === 'individual'
         ? plans.individual
@@ -340,16 +350,41 @@ function MembershipContent() {
                 {/* FOOTER BUTTON */}
                 <div className="px-7 pb-8 pt-4 bg-gradient-to-t from-white via-white to-white/90 shrink-0">
                     {hasActiveSubscription ? (
-                        <div className="w-full bg-green-50 border-2 border-green-500 text-green-700 font-montserrat font-black italic text-[13px] py-4.5 rounded-2xl uppercase tracking-widest flex flex-col items-center justify-center gap-2 h-[60px]">
-                            <div className="flex items-center gap-2">
-                                <CheckCircle size={18} />
-                                <span>ACTIVE MEMBER</span>
+                        <div className="w-full bg-white border border-gray-200 rounded-2xl p-6 shadow-sm mb-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-black italic text-xl uppercase">Current Plan</h3>
+                                <div className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full">
+                                    <CheckCircle size={12} />
+                                    <span className="text-[10px] font-bold uppercase">Active</span>
+                                </div>
                             </div>
-                            {subscriptionInfo && (
-                                <p className="text-[9px] font-bold text-green-600 uppercase tracking-wider">
-                                    Renews {new Date(subscriptionInfo.expires).toLocaleDateString()}
-                                </p>
-                            )}
+
+                            <div className="space-y-3 mb-6">
+                                {subscriptionInfo && (
+                                    <>
+                                        <div className="flex justify-between items-center pb-2 border-b border-gray-50">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Plan Type</span>
+                                            <span className="text-xs font-black italic uppercase">{getTierLabel(subscriptionInfo.tier)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center pb-2 border-b border-gray-50">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Expiry Date</span>
+                                            <span className="text-xs font-bold text-black">{formatHK(subscriptionInfo.expires, 'MMM dd, yyyy')}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Next Billing</span>
+                                            <span className="text-xs font-bold text-black">{formatHK(subscriptionInfo.expires, 'MMM dd, yyyy')}</span>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <a
+                                data-testid="cancel-subscription-button"
+                                href="mailto:support@east.com?subject=Cancellation Request - Membership"
+                                className="block w-full text-center py-3 border border-gray-200 rounded-xl text-[10px] font-bold text-gray-400 uppercase hover:bg-gray-50 hover:text-red-500 hover:border-red-100 transition-all"
+                            >
+                                Contact us to cancel your subscription
+                            </a>
                         </div>
                     ) : (
                         <button

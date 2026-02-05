@@ -106,6 +106,7 @@ export default function AdminLayout({
                             <AdminNavLink href="/sys-admin/schedule" icon={Calendar} label="Schedule" />
                             <AdminNavLink href="/sys-admin/qr" icon={QrCode} label="Check-In" />
                             <AdminNavLink href="/sys-admin/news" icon={Newspaper} label="News" />
+                            <AdminNavLink href="/sys-admin/audit" icon={Shield} label="Audit Logs" />
                         </div>
 
                         {/* Mobile Menu Toggle */}
@@ -180,6 +181,13 @@ function MobileMenu() {
                             className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors"
                         >
                             <Newspaper size={16} /> News
+                        </Link>
+                        <Link
+                            href="/sys-admin/audit"
+                            onClick={() => setIsOpen(false)}
+                            className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors"
+                        >
+                            <Shield size={16} /> Audit Logs
                         </Link>
                     </div>
                 </div>

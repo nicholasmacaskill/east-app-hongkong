@@ -166,7 +166,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                 >
                   <Activity size={20} className="text-east-light" />
                 </button>
-                <button onClick={onOpenSettings} className="bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-colors border border-white/10">
+                <button data-testid="settings-button" onClick={onOpenSettings} className="bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-colors border border-white/10">
                   <Edit2 size={20} className="text-gray-400" />
                 </button>
               </div>

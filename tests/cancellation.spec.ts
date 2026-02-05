@@ -147,14 +147,23 @@ test.describe('Cancellation Flow', () => {
             await dialog.accept();
         });
 
-        // 8. Click Cancel
+        // 8. Click Cancel Selection
         await cancelButton.click();
 
-        // 9. Wait for Processing to Complete
-        // Button text changes to "CANCELLING..." then modal closes
-        const processingText = page.locator('text="CANCELLING..."');
-        await expect(processingText).toBeVisible({ timeout: 5000 });
-        await expect(processingText).not.toBeVisible({ timeout: 10000 });
+        // 9. Handle Penalty Warning Modal
+        // Expect "Cancellation Policy" header
+        const warningHeader = page.locator('text="Cancellation Policy"');
+        await expect(warningHeader).toBeVisible();
+
+        // Click "Yes, Cancel Session"
+        const confirmButton = page.locator('button:has-text("Yes, Cancel Session")');
+        await expect(confirmButton).toBeVisible();
+        await confirmButton.click();
+
+        // 10. Wait for Processing
+        // The confirm button text changes to "..." 
+        // Then the modal should close
+        await expect(warningHeader).not.toBeVisible({ timeout: 10000 });
 
         // Ensure Modal is actually gone (to verify success vs error state)
         // If error occurred, modal might stay open with CANCELLING... gone.

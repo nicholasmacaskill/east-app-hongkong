@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { createClient } from '@supabase/supabase-js';
+import { logAdminAction } from '@/app/lib/audit';
 
 export async function POST(request: Request) {
     try {
@@ -70,6 +71,9 @@ export async function POST(request: Request) {
             // but for tests we want to know.
             throw logError;
         }
+
+        // 5. AUDIT LOGGING
+        await logAdminAction(user.id, 'UPDATE_CREDITS', 'profile', userId, { amount, description, oldCredits: targetProfile.credits, newCredits });
 
         return NextResponse.json({ success: true, newCredits });
 

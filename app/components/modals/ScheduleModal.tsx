@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Edit2, Plus, Trash2, Camera, Calendar, Clock, Image as ImageIcon, Mic } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
-import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils'; // NEW
+import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 import { compressImage } from '@/app/lib/image-utils';
 
 const SettingsContainer = ({ children }: { children: React.ReactNode }) => {
@@ -239,7 +239,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
                     {slots.slice(0, 3).map(slot => (
                         <div key={slot.id} className="bg-[#1e1e1e] p-3 rounded-lg flex justify-between items-center border border-white/5">
                             <span className="text-white font-bold text-sm">
-                                {safetoLocaleDateString(safeDate(slot.start_time), 'en-US')} <span className="text-gray-500">|</span> {safeDate(slot.start_time)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {safetoLocaleDateString(safeDate(slot.start_time), 'en-US')} <span className="text-gray-500">|</span> {formatHK(slot.start_time, 'h:mm a')}
                             </span>
                         </div>
                     ))}
@@ -351,7 +351,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
                             <div className="flex flex-col">
                                 <span className="text-[#28D160] font-black italic text-md uppercase">{safetoLocaleDateString(safeDate(slot.start_time), 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                                 <span className="text-white font-bold text-xs mt-1">
-                                    {safeDate(slot.start_time)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {safeDate(slot.end_time)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {formatHK(slot.start_time, 'h:mm a')} - {formatHK(slot.end_time, 'h:mm a')}
                                 </span>
                             </div>
                             <button onClick={() => handleDeleteSlot(slot.id)} className="p-2 text-gray-600 hover:text-red-500 transition-colors">

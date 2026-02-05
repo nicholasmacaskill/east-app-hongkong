@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { createClient } from '@supabase/supabase-js';
 import { announcementSchema, validateInput } from '@/app/lib/validation';
 import { sanitize } from '@/app/lib/sanitize';
+import { logAdminAction } from '@/app/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -115,6 +116,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
+        // AUDIT LOGGING
+        await logAdminAction(user.id, 'ANNOUNCEMENT_CREATED', 'announcement', announcement.id, { title: safeTitle });
+
         return NextResponse.json(announcement);
     } catch (e: any) {
         console.error('Announcements POST Error:', e);
@@ -190,6 +194,9 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
+        // AUDIT LOGGING
+        await logAdminAction(user.id, 'ANNOUNCEMENT_UPDATED', 'announcement', id, { title: safeTitle });
+
         return NextResponse.json(announcement);
     } catch (e: any) {
         console.error('Announcements PUT Error:', e);
@@ -243,6 +250,9 @@ export async function DELETE(request: Request) {
             console.error('Error deleting announcement:', error);
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
+
+        // AUDIT LOGGING
+        await logAdminAction(user.id, 'ANNOUNCEMENT_DELETED', 'announcement', id);
 
         return NextResponse.json({ success: true });
     } catch (e: any) {

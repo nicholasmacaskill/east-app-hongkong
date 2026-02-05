@@ -28,7 +28,7 @@ export async function GET(request: Request) {
       session_id,
       user_id,
       sessions (
-        id, title, start_time, end_time, instructor, category, description
+        id, title, start_time, end_time, instructor, category, description, credit_cost, image_url
       ),
       profiles!registrations_user_id_fkey (
         id, first_name, last_name, role

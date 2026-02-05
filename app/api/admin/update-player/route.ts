@@ -1,6 +1,10 @@
 // app/api/admin/update-player/route.ts
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { logAdminAction } from '@/app/lib/audit';
+import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 
 interface UpdateRequest {
     userId: string;
@@ -96,6 +100,31 @@ export async function POST(request: Request) {
                     await supabaseAdmin.from('player_relationships').delete().eq('child_id', userId);
                 }
             }
+        }
+
+        // 4. AUDIT LOGGING
+
+        // Extract Admin ID
+        const cookieStore = await cookies();
+        const supabaseAuth = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                cookies: {
+                    getAll() { return cookieStore.getAll() },
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+                    }
+                }
+            }
+        );
+        const { data: { user } } = await supabaseAuth.auth.getUser();
+
+        if (user) {
+            await logAdminAction(user.id, 'UPDATE_PLAYER', 'profile', userId, {
+                authUpdates: Object.keys(authUpdates),
+                profileUpdates: Object.keys(profileUpdates)
+            });
         }
 
         return NextResponse.json({

@@ -253,7 +253,7 @@ export default function MasterSchedule() {
     };
 
     const handleDeleteSession = async () => {
-        if (!confirm("Are you sure you want to delete this session?")) return;
+        if (!confirm("Are you sure you want to CANCEL this session? It will remain visible in the schedule but marked as cancelled.")) return;
         try {
             const res = await fetch('/api/admin/sessions', {
                 method: 'POST',
@@ -451,14 +451,15 @@ export default function MasterSchedule() {
                                                     session_type_id: undefined,
                                                     lockInstructor: true,
                                                     description: '',
-                                                    image_url: ''
+                                                    image_url: '',
+                                                    status: 'active'
                                                 });
                                                 setShowModal(true);
                                             } else {
                                                 handleSessionClick(item);
                                             }
                                         }}
-                                            className={`group flex gap-4 p-4 rounded-2xl transition-all cursor-pointer border ${isSlot ? 'bg-black/20 border-white/5 border-dashed hover:border-[#28D160]/30' : 'bg-[#1e1e1e] border-white/10 hover:border-[#28D160] hover:shadow-xl hover:shadow-[#28D160]/5'}`}
+                                            className={`group flex gap-4 p-4 rounded-2xl transition-all cursor-pointer border ${isSlot ? 'bg-black/20 border-white/5 border-dashed hover:border-[#28D160]/30' : 'bg-[#1e1e1e] border-white/10 hover:border-[#28D160] hover:shadow-xl hover:shadow-[#28D160]/5'} ${item.status === 'cancelled' ? 'opacity-40 grayscale-[0.5]' : ''}`}
                                         >
                                             <div className="flex flex-col items-center justify-center min-w-[70px] border-r border-white/5 pr-4">
                                                 <span className={`text-lg font-black italic leading-none ${isSlot ? 'text-gray-600' : 'text-white'}`}>{startTime}</span>
@@ -467,8 +468,9 @@ export default function MasterSchedule() {
                                             <div className="flex-1">
                                                 <div className="flex justify-between items-start mb-1">
                                                     <div className="flex items-center gap-2">
-                                                        <h3 className={`font-black uppercase tracking-tight text-sm ${isSlot ? 'text-gray-600 italic' : 'text-white'}`}>{item.title}</h3>
+                                                        <h3 className={`font-black uppercase tracking-tight text-sm ${isSlot ? 'text-gray-600 italic' : (item.status === 'cancelled' ? 'text-gray-500 line-through decoration-red-500/50' : 'text-white')}`}>{item.title}</h3>
                                                         {!isSlot && <span className={`${item.category === 'FACILITY' ? 'bg-[#28D160]/10 text-[#28D160]' : 'bg-blue-500/10 text-blue-400'} text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter`}>{item.category}</span>}
+                                                        {item.status === 'cancelled' && <span className="bg-red-500/20 text-red-500 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter animate-pulse">CANCELLED</span>}
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-between">

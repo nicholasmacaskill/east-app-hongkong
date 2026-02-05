@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { logAdminAction } from '@/app/lib/audit';
 
 export async function POST(request: Request) {
     try {
@@ -71,6 +72,9 @@ export async function POST(request: Request) {
                 parent_id: parentId
             });
         }
+
+        // AUDIT LOGGING
+        await logAdminAction(userId, 'CREATE_PLAYER', 'profile', userId, { email, role, team, position, parentId });
 
         return NextResponse.json({ success: true, userId: userId });
 

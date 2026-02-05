@@ -59,8 +59,8 @@ const SettingsSectionTitle = ({ title }: { title: string }) => (
     <h3 className="font-montserrat font-bold text-sm text-gray-500 uppercase tracking-wider mb-3 mt-8 px-2">{title}</h3>
 );
 
-const SettingsMenuItem = ({ icon: Icon, label, onClick, isDestructive = false }: { icon: any, label: string, onClick: () => void, isDestructive?: boolean }) => (
-    <button onClick={onClick} className="flex items-center justify-between w-full py-4 px-2 border-b border-gray-800 group hover:bg-white/5 transition-colors rounded-lg">
+const SettingsMenuItem = ({ icon: Icon, label, onClick, isDestructive = false, testId }: { icon: any, label: string, onClick: () => void, isDestructive?: boolean, testId?: string }) => (
+    <button data-testid={testId} onClick={onClick} className="flex items-center justify-between w-full py-4 px-2 border-b border-gray-800 group hover:bg-white/5 transition-colors rounded-lg">
         <div className="flex items-center gap-4">
             <Icon size={20} className={isDestructive ? "text-red-500" : "text-gray-300 group-hover:text-east-light"} />
             <span className={`font-montserrat font-bold text-sm ${isDestructive ? "text-red-500" : "text-white"}`}>{label}</span>
@@ -287,7 +287,7 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
             <div className="flex-1 overflow-y-auto no-scrollbar pb-12">
                 <SettingsSectionTitle title="My Profile" />
                 <SettingsMenuItem icon={UserCog} label="Personal Details" onClick={() => setView('edit')} />
-                <SettingsMenuItem icon={CreditCard} label="Membership" onClick={() => router.push('/membership')} />
+                <SettingsMenuItem icon={CreditCard} label="Membership" onClick={() => router.push('/membership')} testId="menu-item-membership" />
                 <SettingsMenuItem
                     icon={CreditCard}
                     label="Top Up Credits"

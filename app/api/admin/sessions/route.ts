@@ -1,11 +1,33 @@
 // app/api/admin/sessions/route.ts
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { logAdminAction } from '@/app/lib/audit';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
     try {
         const body = await request.json();
         const { action, id, sessionData } = body;
+
+        const cookieStore = await cookies();
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                cookies: {
+                    getAll() { return cookieStore.getAll() },
+                    setAll(cookiesToSet) {
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            cookieStore.set(name, value, options)
+                        )
+                    },
+                },
+            }
+        );
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
         const supabaseAdmin = getSupabaseAdmin();
 
@@ -35,6 +57,12 @@ export async function POST(request: Request) {
                 .select();
 
             if (error) throw error;
+
+            // Audit Logging
+            for (const rec of data) {
+                await logAdminAction(user.id, 'CREATE_SESSION', 'session', rec.id, rec);
+            }
+
             return NextResponse.json({ success: true, count: data.length, data });
         }
 
@@ -58,17 +86,35 @@ export async function POST(request: Request) {
                 .select();
 
             if (error) throw error;
+
+            // Audit Logging
+            await logAdminAction(user.id, 'UPDATE_SESSION', 'session', id, sessionData);
+
             return NextResponse.json({ success: true, data });
         }
 
         if (action === 'DELETE') {
             if (!id) return NextResponse.json({ error: 'ID is required for delete' }, { status: 400 });
+
+            // Soft delete: set status to cancelled
             const { error } = await supabaseAdmin
                 .from('sessions')
-                .delete()
+                .update({ status: 'cancelled' })
                 .eq('id', id);
 
             if (error) throw error;
+
+            // Also mark all registrations for this session as cancelled
+            const { error: regError } = await supabaseAdmin
+                .from('registrations')
+                .update({ status: 'cancelled' })
+                .eq('session_id', id);
+
+            if (regError) console.warn('Failed to cancel registrations for session:', id, regError);
+
+            // Audit Logging
+            await logAdminAction(user.id, 'DELETE_SESSION', 'session', id);
+
             return NextResponse.json({ success: true });
         }
 

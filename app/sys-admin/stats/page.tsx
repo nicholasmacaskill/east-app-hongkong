@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { Search, Save, CheckCircle } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
+import { formatHK } from '@/app/lib/dateUtils';
 
 export default function ManualStatsPage() {
     const [players, setPlayers] = useState<any[]>([]);
@@ -80,7 +81,7 @@ export default function ManualStatsPage() {
         if (error) {
             addToast('Error saving stats: ' + error.message, 'error');
         } else {
-            setLastSaved(new Date().toLocaleTimeString());
+            setLastSaved(formatHK(new Date(), 'h:mm:ss a'));
         }
     };
 

@@ -5,32 +5,27 @@ import { Session } from '@/app/types/index';
 // IMPORTANT: This flag must be read from NEXT_PUBLIC_... for client-side components to work.
 const isMockMode = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
 
-// --- Real Data Fetcher (Calls Supabase Directly) ---
+// --- Real Data Fetcher (Calls API for secure filtering) ---
 async function fetchSessionsReal(): Promise<Session[]> {
-    const now = new Date().toISOString();
+    try {
+        // We use the Next.js API route because it handles:
+        // 1. Admin-level privileges to count registrations (for hiding full slots)
+        // 2. Consistent 7-day window enforcement
+        // 3. Centralized logic
+        const res = await fetch('/api/sessions', { cache: 'no-store' }); // Ensure fresh data
+        if (!res.ok) throw new Error('Failed to fetch sessions');
 
-    // ✅ THE FIX: Fetch everything where end_time is in the future.
-    // AND limit to 45 days to stay well under the 10,000 row limit and keep the app fast.
-    const fortyFiveDaysLater = new Date();
-    fortyFiveDaysLater.setDate(fortyFiveDaysLater.getDate() + 45);
+        const data = await res.json();
 
-    const { data, error } = await supabase
-        .from('sessions')
-        .select('*')
-        .gte('end_time', now)
-        .lte('start_time', fortyFiveDaysLater.toISOString())
-        .order('start_time', { ascending: true });
-
-    if (error) {
-        console.error('Error fetching real sessions:', error);
+        // Cast the category string from DB to our specific union type
+        return (data || []).map((item: any) => ({
+            ...item,
+            category: item.category as Session['category']
+        }));
+    } catch (error) {
+        console.error('Error fetching real sessions via API:', error);
         return [];
     }
-
-    // Cast the category string from DB to our specific union type
-    return (data || []).map(item => ({
-        ...item,
-        category: item.category as Session['category']
-    }));
 }
 
 // --- Mock Data Fetcher ---

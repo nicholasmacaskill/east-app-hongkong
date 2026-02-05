@@ -128,7 +128,7 @@ export default function ParentProfile({
             />
             <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black to-transparent" />
             <div className="absolute top-4 right-4 flex gap-3">
-               <button onClick={onOpenSettings} className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white hover:bg-white/10 active:scale-95 transition-all shadow-lg">
+               <button data-testid="settings-button" onClick={onOpenSettings} className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white hover:bg-white/10 active:scale-95 transition-all shadow-lg">
                   <Edit2 size={16} />
                </button>
             </div>

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { sendEmail, BASE_URL } from '@/app/lib/email';
+import { logAdminAction } from '@/app/lib/audit';
 
 export async function POST(request: Request) {
     try {
@@ -61,6 +62,9 @@ export async function POST(request: Request) {
 
         // 3. Initialize Coach Services (Optional - explicitly empty for now)
         // This prevents "no rows" errors later if logic expects at least an empty set
+
+        // AUDIT LOGGING
+        await logAdminAction(userId, 'CREATE_COACH', 'profile', userId, { email, firstName, lastName });
 
         return NextResponse.json({ success: true, userId: userId });
 
