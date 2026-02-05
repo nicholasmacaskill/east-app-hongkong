@@ -51,11 +51,6 @@
     *   *Bot*: Linear movement, instant typing.
 *   **Action**: Shadow-ban bots (let them think they succeeded) to prevent them from adapting.
 
-### 3. Database Sharding
-*   **Protocol**: If `registrations` table exceeds 10M rows, implement **Tenant-Based Sharding**.
-*   **Logic**: Data for "Hong Kong" users lives on Shard A. Data for "UK Expansion" lives on Shard B.
-*   **Benefit**: theoretically infinite write-throughput.
-
 ---
 
 ## 🚨 DEFCON 1: Emergency Protocols

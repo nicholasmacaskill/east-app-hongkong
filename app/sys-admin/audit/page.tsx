@@ -66,7 +66,7 @@ export default function AuditLogsPage() {
             <div className="flex justify-between items-end">
                 <div>
                     <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white">
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-[#28D160]">
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-[#28D160] pr-1">
                             Audit
                         </span>{' '}
                         Logs
