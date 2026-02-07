@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Save, Clock, Trash2, Plus, Info, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
-import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
+import { safeDate, safetoLocaleDateString, formatHK, APP_TIMEZONE } from '@/app/lib/dateUtils';
+import { fromZonedTime } from 'date-fns-tz';
 
 interface AvailabilityModalProps {
     coach: any;
@@ -81,9 +82,6 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                     id: s.id.toString()
                 }));
                 setSlots(loadedSlots);
-
-                // Auto-expand current week's dates? Or just first few?
-                // optionally we can expand today
             } else {
                 addToast('Failed to load availability: ' + data.error, 'error');
             }
@@ -109,24 +107,25 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
         );
     };
 
-    // --- Bulk Add Logic (Legacy but adapted) ---
+    // --- Bulk Add Logic ---
     const generateBulkSlots = () => {
-        const [startYear, startMonth, startDay] = bulkConfig.startDate.split('-').map(Number);
-        const [endYear, endMonth, endDay] = bulkConfig.endDate.split('-').map(Number);
-        const start = new Date(startYear, startMonth - 1, startDay, 12, 0, 0);
-        const end = new Date(endYear, endMonth - 1, endDay, 12, 0, 0);
+        const start = new Date(bulkConfig.startDate);
+        const end = new Date(bulkConfig.endDate);
 
         const newBulkSlots: TimeSlot[] = [];
 
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            if (bulkConfig.selectedDays.includes(d.getDay())) {
-                for (let h = bulkConfig.startHour; h < bulkConfig.endHour; h++) {
-                    const slotStart = new Date(d);
-                    slotStart.setHours(h, 0, 0, 0);
-                    const slotEnd = new Date(d);
-                    slotEnd.setHours(h + 1, 0, 0, 0);
+            // Get correct HK day of week
+            const currentHKDay = (parseInt(formatHK(d, 'i')) % 7);
+            const hkDateStr = formatHK(d, 'yyyy-MM-dd');
 
-                    // Generate a temporary ID for local management (negative number or prefix)
+            if (bulkConfig.selectedDays.includes(currentHKDay)) {
+                for (let h = bulkConfig.startHour; h < bulkConfig.endHour; h++) {
+                    const naiveStr = `${hkDateStr} ${String(h).padStart(2, '0')}:00:00`;
+                    const slotStart = fromZonedTime(naiveStr, APP_TIMEZONE);
+                    const slotEnd = new Date(slotStart.getTime() + 60 * 60000); // 1hr
+
+                    // Generate a temporary ID for local management
                     const tempId = `temp_${Date.now()}_${Math.random()}`;
 
                     newBulkSlots.push({
@@ -153,16 +152,13 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
     const handleDeleteSelected = () => {
         if (!confirm(`Delete ${selectedSlotIds.length} items?`)) return;
 
-        // 1. Separate into Existing (DB) vs Newly Added (Local)
         const dbIdsToDelete: string[] = [];
         let newAddedSlots = [...addedSlots];
 
         selectedSlotIds.forEach(id => {
             if (id.startsWith('temp_')) {
-                // Local removal
                 newAddedSlots = newAddedSlots.filter(s => s.id !== id);
             } else {
-                // DB removal
                 dbIdsToDelete.push(id);
             }
         });
@@ -177,10 +173,8 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
     const handleSave = async () => {
         setSaving(true);
         try {
-            // Filter out added slots that were subsequently deleted before saving
-            // (Though our delete logic separates them, double check)
             const finalAddedSlots = addedSlots.map(s => {
-                const { id, ...rest } = s; // Remove temp ID
+                const { id, ...rest } = s;
                 return rest;
             });
 
@@ -209,8 +203,6 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
     };
 
     // --- Grouping & Rendering ---
-
-    // Merge existing + added, exclude deleted
     const allActiveSlots = [...slots, ...addedSlots].filter(s => !deletedSlotIds.includes(s.id!));
 
     const groupedSlots = allActiveSlots.reduce((acc, slot) => {
@@ -220,10 +212,8 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
         return acc;
     }, {} as Record<string, TimeSlot[]>);
 
-    // Sort Keys by Date Object
     const sortedDateKeys = Object.keys(groupedSlots).sort((a, b) => {
-        // rough parse "Mon, Jan 29"
-        return new Date(a).getTime() - new Date(b).getTime(); // Note: might need better parsing if year missing, but usually works for near future
+        return new Date(a).getTime() - new Date(b).getTime();
     });
 
     return (
@@ -278,12 +268,10 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                     </div>
                 </div>
 
-                {/* Bulk Tool Panel (Slide Down) */}
+                {/* Bulk Tool Panel */}
                 {showBulkTool && (
                     <div className="bg-[#1a1a1a] p-5 border-b border-white/10 animate-fadeIn shrink-0">
-                        {/* ... (Keep existing bulk tool config inputs, simplified layout) ... */}
                         <div className="flex flex-wrap gap-4 items-end">
-                            {/* Simple Date/Time Inputs for compactness */}
                             <div>
                                 <label className="text-[9px] font-bold text-gray-500 uppercase block mb-1">From</label>
                                 <input type="date" value={bulkConfig.startDate} onChange={e => setBulkConfig({ ...bulkConfig, startDate: e.target.value })} className="bg-black/50 border border-white/10 rounded px-2 py-1 text-xs text-white" />
@@ -320,7 +308,6 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                     {serviceTypes.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
                                 </select>
                             </div>
-
                             <button onClick={generateBulkSlots} className="bg-[#28D160] text-black font-black uppercase text-xs px-4 py-1.5 rounded hover:bg-white transition-colors">
                                 Generate
                             </button>
@@ -328,7 +315,7 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                     </div>
                 )}
 
-                {/* Main Content: Accordion List */}
+                {/* Main Content */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
                     {sortedDateKeys.length === 0 && !loading && (
                         <div className="text-center py-20 opacity-30">
@@ -341,15 +328,11 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                         const daySlots = groupedSlots[date];
                         const isExpanded = expandedDates.includes(date);
 
-                        // Sort: Booked First, then Time
                         const sortedItems = [...daySlots].sort((a, b) => {
-                            // Booked Priority
                             const aBooked = (a.booking_count || 0) > 0;
                             const bBooked = (b.booking_count || 0) > 0;
                             if (aBooked && !bBooked) return -1;
                             if (!aBooked && bBooked) return 1;
-
-                            // Time
                             return new Date(a.start_time).getTime() - new Date(b.start_time).getTime();
                         });
 
@@ -374,11 +357,9 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                             className="w-5 h-5 accent-[#28D160] cursor-pointer"
                                             onChange={(e) => {
                                                 if (e.target.checked) {
-                                                    // Select all in this date
                                                     const ids = daySlots.map(s => s.id!);
                                                     setSelectedSlotIds(prev => [...new Set([...prev, ...ids])]);
                                                 } else {
-                                                    // Deselect all
                                                     const ids = daySlots.map(s => s.id!);
                                                     setSelectedSlotIds(prev => prev.filter(x => !ids.includes(x)));
                                                 }
@@ -394,10 +375,9 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                             const isSelected = selectedSlotIds.includes(item.id!);
                                             const isBooked = (item.booking_count || 0) > 0;
 
-                                            // Identify Type
                                             let borderClass = 'border-l-4 border-gray-500';
-                                            if (item.session_type_id) borderClass = 'border-l-4 border-blue-500'; // Session
-                                            if (isBooked) borderClass = 'border-l-4 border-yellow-400'; // Booked
+                                            if (item.session_type_id) borderClass = 'border-l-4 border-blue-500';
+                                            if (isBooked) borderClass = 'border-l-4 border-yellow-400';
 
                                             return (
                                                 <div
@@ -409,19 +389,12 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                                         ${isSelected ? 'bg-white/5 ring-1 ring-[#28D160]' : ''}
                                                     `}
                                                 >
-                                                    {/* Selection Overlay */}
                                                     {selectionMode && (
                                                         <div className="absolute inset-y-0 left-0 w-12 flex items-center justify-center bg-black/20 backdrop-blur-sm z-20">
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={isSelected}
-                                                                readOnly
-                                                                className="w-4 h-4 accent-[#28D160]"
-                                                            />
+                                                            <input type="checkbox" checked={isSelected} readOnly className="w-4 h-4 accent-[#28D160]" />
                                                         </div>
                                                     )}
 
-                                                    {/* Time */}
                                                     <div className={`flex flex-col items-center justify-center min-w-[60px] border-r border-white/5 pr-4 ${selectionMode ? 'pl-8' : ''}`}>
                                                         <span className="text-sm font-black italic leading-none text-white">
                                                             {formatHK(item.start_time, 'h:mma').toLowerCase()}
@@ -429,7 +402,6 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                                         <span className="text-[9px] font-bold text-gray-600 uppercase mt-0.5">{duration} min</span>
                                                     </div>
 
-                                                    {/* Info */}
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-2 mb-1">
                                                             {isBooked ? (
@@ -451,7 +423,6 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                                         </p>
                                                     </div>
 
-                                                    {/* Action (Delete) - Only if not selection mode */}
                                                     {!selectionMode && (
                                                         <button
                                                             onClick={(e) => {

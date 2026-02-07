@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { format, addDays, subDays, isSameDay, parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight, Calendar, AlertCircle, Clock, User, Plus, Loader2 } from 'lucide-react';
-import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
+import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 import { useToast } from '@/app/components/ui/Toast';
 
 // --- Types ---
@@ -185,8 +185,8 @@ export function UniversalSchedule({
                                         {/* Time Column */}
                                         <div className="flex flex-col items-center justify-center min-w-[70px] pr-4 border-r border-white/5">
                                             <span className="text-lg font-black italic leading-none">
-                                                {format(new Date(item.start_time), 'h:mm')}
-                                                <span className="text-[10px] font-normal text-white/50 ml-0.5">{format(new Date(item.start_time), 'a')}</span>
+                                                {formatHK(item.start_time, 'h:mm')}
+                                                <span className="text-[10px] font-normal text-white/50 ml-0.5">{formatHK(item.start_time, 'a').toLowerCase()}</span>
                                             </span>
                                             <span className="text-[9px] font-bold text-gray-600 mt-1 uppercase">
                                                 {duration} MIN

@@ -2,7 +2,8 @@
 import { format, parseISO, isValid } from 'date-fns';
 import { formatInTimeZone, toDate } from 'date-fns-tz';
 
-const HK_TZ = 'Asia/Hong_Kong';
+export const APP_TIMEZONE = 'Asia/Hong_Kong';
+const HK_TZ = APP_TIMEZONE;
 
 /**
  * Safely parses a date string, handling iOS/Safari specific format issues.

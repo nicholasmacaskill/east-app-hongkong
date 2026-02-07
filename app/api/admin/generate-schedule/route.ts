@@ -1,6 +1,8 @@
 
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { fromZonedTime } from 'date-fns-tz';
+import { APP_TIMEZONE, formatHK } from '@/app/lib/dateUtils';
 
 export async function POST(request: Request) {
     try {
@@ -24,45 +26,54 @@ export async function POST(request: Request) {
         }
 
         const sessionsToInsert: any[] = [];
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+
+        // Interpret input dates as HK time start/end of day
+        const start = fromZonedTime(`${startDate} 00:00:00`, APP_TIMEZONE);
+        const end = fromZonedTime(`${endDate} 23:59:59`, APP_TIMEZONE);
 
         // Iterate days
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            // Check day of week (0=Sun, 1=Mon...)
-            if (daysOfWeek && !daysOfWeek.includes(d.getDay())) continue;
+        const currentDate = new Date(start);
+        while (currentDate <= end) {
+            // Get current HK date info
+            const hkDateStr = formatHK(currentDate, 'yyyy-MM-dd');
+            const currentHKDay = (parseInt(formatHK(currentDate, 'i')) % 7); // Mon=1...Sat=6, Sun=0
+
+            // Check day of week
+            if (daysOfWeek && !daysOfWeek.includes(currentHKDay)) {
+                currentDate.setDate(currentDate.getDate() + 1);
+                continue;
+            }
 
             // Iterate hours
             for (let h = startHour; h < endHour; h++) {
-                const slotStart = new Date(d);
-                slotStart.setHours(h, 0, 0, 0);
+                // Construct naive HK string
+                const naiveStr = `${hkDateStr} ${String(h).padStart(2, '0')}:00:00`;
 
+                // Convert to UTC Date
+                const slotStart = fromZonedTime(naiveStr, APP_TIMEZONE);
                 const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60000);
 
                 // Construct Session
                 sessionsToInsert.push({
                     title: service.title,
-                    category: 'FACILITY', // Only for facilities? Or allow generic classes?
+                    category: 'FACILITY',
                     description: service.description,
                     image_url: service.image_url,
                     start_time: slotStart.toISOString(),
                     end_time: slotEnd.toISOString(),
-                    max_capacity: 1, // Default for facility, maybe 1?
-                    credit_cost: 100, // Default or fetch from somewhere?
+                    max_capacity: 1,
+                    credit_cost: 100,
                     instructor: 'Facility',
                     session_type_id: service.id
                 });
             }
+            currentDate.setDate(currentDate.getDate() + 1);
         }
 
         // 2. Wipe & Replace Strategy
         // Delete existing slots for this service in this range before generating
-        // We set the wipe range from the start of startDate to the end of endDate (23:59:59)
-        const wipeStart = new Date(startDate);
-        wipeStart.setHours(0, 0, 0, 0);
-
-        const wipeEnd = new Date(endDate);
-        wipeEnd.setHours(23, 59, 59, 999);
+        const wipeStart = fromZonedTime(`${startDate} 00:00:00`, APP_TIMEZONE);
+        const wipeEnd = fromZonedTime(`${endDate} 23:59:59`, APP_TIMEZONE);
 
         const { error: deleteError } = await supabaseAdmin
             .from('sessions')
