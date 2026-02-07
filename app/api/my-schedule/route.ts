@@ -27,8 +27,9 @@ export async function GET(request: Request) {
     .select(`
       session_id,
       user_id,
+      status,
       sessions (
-        id, title, start_time, end_time, instructor, category, description, credit_cost, image_url
+        id, title, start_time, end_time, instructor, category, description, credit_cost, image_url, status
       ),
       profiles!registrations_user_id_fkey (
         id, first_name, last_name, role
@@ -44,6 +45,9 @@ export async function GET(request: Request) {
   // Flatten and Add "Who is this for?" metadata
   const schedule = (data || []).map((reg: any) => {
     if (!reg.sessions) return null;
+    // CRITICAL: Double-check both registration status AND session status
+    if (reg.status === 'cancelled' || reg.sessions.status === 'cancelled') return null;
+
     const profiles = reg.profiles;
     const attendee = Array.isArray(profiles) ? profiles[0] : profiles;
     return {
