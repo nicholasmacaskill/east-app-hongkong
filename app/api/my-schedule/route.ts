@@ -34,7 +34,8 @@ export async function GET(request: Request) {
         id, first_name, last_name, role
       )
     `)
-    .in('user_id', familyIds); // Fetch for whole family
+    .in('user_id', familyIds) // Fetch for whole family
+    .neq('status', 'cancelled');
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

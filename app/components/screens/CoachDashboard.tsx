@@ -11,6 +11,7 @@ interface Attendee {
     id: string;
     name: string;
     role: string;
+    status?: string;
 }
 
 interface MasterSession {
@@ -23,6 +24,7 @@ interface MasterSession {
     end_time: string;
     attendees: Attendee[];
     coach_id?: string; // For filtering availability
+    status?: string;
 }
 
 export default function CoachDashboard({ currentUserId, userName, userLastName }: { currentUserId: string, userName: string, userLastName?: string }) {
@@ -179,15 +181,18 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
 
     // Helpers for styling
     const getStatusColor = (s: MasterSession) => {
+        if (s.status === 'cancelled') return 'border-l-4 border-red-500 opacity-50 grayscale'; // Cancelled
         if (s.type === 'slot') return 'border-l-4 border-gray-500 opacity-70'; // Open Slot (Passive)
-        if (s.attendees.length > 0) return 'border-l-4 border-yellow-400'; // Booked
+        if (s.attendees.filter(a => a.status !== 'cancelled').length > 0) return 'border-l-4 border-yellow-400'; // Booked
         if (s.category === 'FACILITY') return 'border-l-4 border-blue-500'; // Facility
         return 'border-l-4 border-emerald-500'; // Open Class
     };
 
     const getStatusBadge = (s: MasterSession) => {
+        if (s.status === 'cancelled') return <span className="bg-red-500/20 text-red-500 text-[9px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">CANCELLED</span>;
         if (s.type === 'slot') return <span className="bg-gray-800 text-gray-400 text-[9px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">OPEN SLOT</span>;
-        if (s.attendees.length > 0) return <span className="bg-yellow-400/20 text-yellow-400 text-[9px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">{s.attendees.length} Attendees</span>;
+        const activeAttendees = s.attendees.filter(a => a.status !== 'cancelled');
+        if (activeAttendees.length > 0) return <span className="bg-yellow-400/20 text-yellow-400 text-[9px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">{activeAttendees.length} Attendees</span>;
         return <span className="bg-emerald-500/20 text-emerald-500 text-[9px] font-black px-2 py-0.5 rounded uppercase whitespace-nowrap">OPEN CLASS</span>;
     };
 
@@ -353,12 +358,16 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                                                         className="flex items-center gap-2"
                                                                     >
                                                                         <div
-                                                                            onClick={() => toggleAttendance(session.id, a.id)}
-                                                                            className={`flex items-center gap-1.5 px-2 py-1 rounded select-none transition-all cursor-pointer ${isPresent ? 'bg-east-light text-black border border-east-light shadow-[0_0_10px_rgba(40,209,96,0.3)]' : 'bg-white/10 text-white/50 border border-white/5 hover:bg-white/20'}`}
+                                                                            onClick={() => a.status !== 'cancelled' && toggleAttendance(session.id, a.id)}
+                                                                            className={`flex items-center gap-1.5 px-2 py-1 rounded select-none transition-all ${a.status === 'cancelled' ? 'bg-red-500/10 text-red-500/50 border border-red-500/10 cursor-not-allowed opacity-50' : isPresent ? 'bg-east-light text-black border border-east-light shadow-[0_0_10px_rgba(40,209,96,0.3)] cursor-pointer' : 'bg-white/10 text-white/50 border border-white/5 hover:bg-white/20 cursor-pointer'}`}
                                                                         >
-                                                                            <div className={`w-1.5 h-1.5 rounded-full ${isPresent ? 'bg-black animate-pulse' : 'bg-gray-600'}`} />
-                                                                            <span className="text-[10px] font-black uppercase text-inherit">{a.name}</span>
-                                                                            {isPresent && <span className="text-[8px] font-black ml-1 uppercase opacity-70">Present</span>}
+                                                                            <div className={`w-1.5 h-1.5 rounded-full ${a.status === 'cancelled' ? 'bg-red-500' : isPresent ? 'bg-black animate-pulse' : 'bg-gray-600'}`} />
+                                                                            <span className="text-[10px] font-black uppercase text-inherit line-through decoration-red-500/50">{a.name}</span>
+                                                                            {a.status === 'cancelled' ? (
+                                                                                <span className="text-[8px] font-black ml-1 uppercase">Cancelled</span>
+                                                                            ) : isPresent && (
+                                                                                <span className="text-[8px] font-black ml-1 uppercase opacity-70">Present</span>
+                                                                            )}
                                                                         </div>
                                                                         <button
                                                                             onClick={(e) => { e.stopPropagation(); openNoteModal(a); }}

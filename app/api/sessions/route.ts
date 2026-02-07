@@ -18,7 +18,11 @@ export async function GET() {
 
   const { data, error } = await supabaseAdmin
     .from('sessions')
-    .select('*, registrations(count)') // Fetch count of registrations
+    .select(`
+      *,
+      registrations(count)
+    `)
+    .neq('status', 'cancelled') // Exclude cancelled sessions
     .gt('start_time', new Date().toISOString())
     .lte('start_time', sevenDaysLater.toISOString()) // 7-Day Limit
     .order('start_time', { ascending: true });

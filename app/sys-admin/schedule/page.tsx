@@ -155,8 +155,7 @@ export default function MasterSchedule() {
         const { data } = await supabase
             .from('registrations')
             .select('*, profiles(first_name, last_name, email)')
-            .eq('session_id', sessionId)
-            .neq('status', 'cancelled');
+            .eq('session_id', sessionId);
         setRegistrations(data || []);
     };
 

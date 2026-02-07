@@ -53,6 +53,7 @@ export async function GET(request: Request) {
                 *,
                 registrations (
                     user_id,
+                    status,
                     profiles:user_id ( first_name, last_name, role )
                 )
             `)
@@ -98,12 +99,15 @@ export async function GET(request: Request) {
             coach_image_url: s.coach_image_url,
             credit_cost: s.credit_cost,
             max_capacity: s.max_capacity,
+            status: s.status,
             // Map registrations to a clean 'attendees' array
-            attendees: (s.registrations || []).map((r: any) => ({
-                id: r.user_id,
-                name: r.profiles ? `${r.profiles.first_name} ${r.profiles.last_name || ''}`.trim() : 'Unknown User',
-                role: r.profiles?.role || 'player'
-            }))
+            attendees: (s.registrations || [])
+                .map((r: any) => ({
+                    id: r.user_id,
+                    name: r.profiles ? `${r.profiles.first_name} ${r.profiles.last_name || ''}`.trim() : 'Unknown User',
+                    role: r.profiles?.role || 'player',
+                    status: r.status
+                }))
         }));
 
         const formattedAvailability: any[] = (availability || []).map((a: any) => ({

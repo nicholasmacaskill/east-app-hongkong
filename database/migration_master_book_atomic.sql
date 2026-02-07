@@ -1,17 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-async function runMigration() {
-  console.log('🚀 Migration: Deploy master_book_atomic RPC');
-
-  const sql = `
 CREATE OR REPLACE FUNCTION public.master_book_atomic(
   p_user_id UUID,
   p_session_id BIGINT,
@@ -180,16 +166,3 @@ BEGIN
   RETURN jsonb_build_object('success', true, 'message', 'Booking successful', 'results', v_results);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-    `;
-
-  const { error } = await supabase.rpc('run_sql', { sql });
-
-  if (error) {
-    console.error('❌ RPC Creation Failed:', error);
-    console.log('⚠️ Please run the SQL manually if needed.');
-  } else {
-    console.log('✅ Success: master_book_atomic RPC created/updated.');
-  }
-}
-
-runMigration();
