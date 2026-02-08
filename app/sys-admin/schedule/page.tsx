@@ -49,8 +49,8 @@ export default function MasterSchedule() {
     const [services, setServices] = useState<Service[]>([]);
     const [coachServices, setCoachServices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-    const [viewStartDate, setViewStartDate] = useState(startOfWeek(new Date(), { weekStartsOn: 1 })); // Monday
+    const [selectedDate, setSelectedDate] = useState(formatHK(new Date(), 'yyyy-MM-dd'));
+    const [viewStartDate, setViewStartDate] = useState(startOfWeek(safeDate(formatHK(new Date(), 'yyyy-MM-dd')) || new Date(), { weekStartsOn: 1 })); // Monday
     const [activeCategory, setActiveCategory] = useState<string>(searchParams?.get('category')?.toUpperCase() || 'ALL');
     const [filterCoachId, setFilterCoachId] = useState<string>('ALL');
 
@@ -116,9 +116,9 @@ export default function MasterSchedule() {
         let query = supabase.from('sessions').select('*');
         if (activeCategory === 'EVENT') {
             const now = new Date();
-            query = query.gte('start_time', now.toISOString()).eq('category', 'EVENT');
+            query = query.gte('start_time', now.toISOString()).eq('category', 'EVENT').neq('status', 'cancelled');
         } else {
-            query = query.gte('start_time', startOfView.toISOString()).lte('start_time', endOfView.toISOString());
+            query = query.gte('start_time', startOfView.toISOString()).lte('start_time', endOfView.toISOString()).neq('status', 'cancelled');
         }
 
         const { data: sessData } = await query.order('start_time').limit(2000);
@@ -369,42 +369,63 @@ export default function MasterSchedule() {
                 ) : (() => {
                     const normalizeName = (name: string) => name?.replace(/\s+/g, ' ').trim().toLowerCase() || '';
 
-                    const mergedItems: any[] = [
+                    // 1. Initial Merge & Basic Categorization
+                    const rawItems: any[] = [
                         ...sessions.map(s => ({ ...s, type: 'session' })),
-                        ...availability.map(a => ({
-                            id: a.id,
-                            title: 'Open Slot',
-                            category: 'PRIVATE',
-                            instructor: `${a.profiles?.first_name} ${a.profiles?.last_name || ''}`.trim(),
-                            start_time: a.start_time,
-                            end_time: a.end_time,
-                            type: 'slot',
-                            coach_id: a.coach_id
-                        }))
-                    ].filter((item: any) => {
-                        // Date Filter: Ensure we only show items for the selected day in the local timezone
+                        ...availability.map(a => {
+                            const isFacility = !a.coach_id || a.facility_category;
+                            return {
+                                id: a.id,
+                                title: isFacility ? (a.facility_category || 'Facility Hours') : 'Open Slot',
+                                category: isFacility ? 'FACILITY' : (a.category || 'PRIVATE'),
+                                instructor: a.profiles ? `${a.profiles.first_name} ${a.profiles.last_name || ''}`.trim() : 'Facility',
+                                start_time: a.start_time,
+                                end_time: a.end_time,
+                                type: 'slot',
+                                coach_id: a.coach_id,
+                                facility_category: a.facility_category
+                            };
+                        })
+                    ];
+
+                    // 2. Filter by Date, Category, and Coach
+                    const filteredItems = rawItems.filter((item: any) => {
                         const sDate = safeDate(item.start_time);
                         if (!sDate || !isSameDay(sDate, new Date(selectedDate))) return false;
-
-                        // Category Filter
                         if (activeCategory !== 'ALL' && item.category !== activeCategory) return false;
-
-                        // Coach Filter
                         if (filterCoachId !== 'ALL') {
-                            // For slots: check coach_id directly
                             if (item.type === 'slot') return item.coach_id === filterCoachId;
-
-                            // For sessions: match by name (hacky but consistent with current architecture)
                             const coach = coaches.find(c => c.id === filterCoachId);
                             if (coach) {
-                                const instructorName = normalizeName(item.instructor || '');
-                                const fullName = normalizeName(`${coach.first_name} ${coach.last_name}`);
-                                if (instructorName !== fullName && instructorName !== `coach ${fullName}`) return false;
+                                const instrName = normalizeName(item.instructor || '');
+                                const coachName = normalizeName(`${coach.first_name} ${coach.last_name}`);
+                                if (instrName !== coachName && instrName !== `coach ${coachName}`) return false;
                             }
                         }
                         return true;
-                    })
-                        .sort((a, b) => (safeDate(a.start_time)?.getTime() || 0) - (safeDate(b.start_time)?.getTime() || 0));
+                    });
+
+                    // 3. Calculate Bay Availability for Facility Slots
+                    const TOTAL_BAYS = 4;
+                    const mergedItems = filteredItems.map(item => {
+                        if (item.type === 'slot' && item.category === 'FACILITY') {
+                            const slotStart = new Date(item.start_time).getTime();
+                            const slotEnd = new Date(item.end_time).getTime();
+
+                            // Find overlapping sessions
+                            const overlappingSessions = filteredItems.filter(s => {
+                                if (s.type !== 'session' || s.status === 'cancelled') return false;
+                                const sStart = new Date(s.start_time).getTime();
+                                const sEnd = new Date(s.end_time).getTime();
+                                // Overlap if: slotStart < sEnd AND sStart < slotEnd
+                                return slotStart < sEnd && sStart < slotEnd;
+                            });
+
+                            const baysUsed = overlappingSessions.reduce((sum, s) => sum + (s.total_facility_bays || 0), 0);
+                            return { ...item, availableBays: Math.max(0, TOTAL_BAYS - baysUsed), totalBays: TOTAL_BAYS };
+                        }
+                        return item;
+                    }).sort((a, b) => (safeDate(a.start_time)?.getTime() || 0) - (safeDate(b.start_time)?.getTime() || 0));
 
                     const grouped = mergedItems.reduce((acc: any, item: any) => {
                         const dateKey = safetoLocaleDateString(item.start_time, undefined, { weekday: 'short', month: 'short', day: 'numeric' });
@@ -470,6 +491,11 @@ export default function MasterSchedule() {
                                                         <h3 className={`font-black uppercase tracking-tight text-sm ${isSlot ? 'text-gray-600 italic' : (item.status === 'cancelled' ? 'text-gray-500 line-through decoration-red-500/50' : 'text-white')}`}>{item.title}</h3>
                                                         {!isSlot && <span className={`${item.category === 'FACILITY' ? 'bg-[#28D160]/10 text-[#28D160]' : 'bg-blue-500/10 text-blue-400'} text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter`}>{item.category}</span>}
                                                         {item.status === 'cancelled' && <span className="bg-red-500/20 text-red-500 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter animate-pulse">CANCELLED</span>}
+                                                        {isSlot && item.category === 'FACILITY' && (
+                                                            <span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter ${item.availableBays > 0 ? 'bg-orange-500/20 text-orange-400' : 'bg-red-500/20 text-red-500'}`}>
+                                                                {item.availableBays} / {item.totalBays} BAYS FREE
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-between">
@@ -477,7 +503,16 @@ export default function MasterSchedule() {
                                                         <User size={12} className={isSlot ? 'text-gray-700' : 'text-[#28D160]'} />
                                                         <span className={`text-[10px] font-bold uppercase tracking-widest ${isSlot ? 'text-gray-600' : 'text-gray-300'}`}>{item.instructor || 'Unassigned'}</span>
                                                     </div>
-                                                    {!isSlot && <span className="text-[10px] font-black italic text-[#28D160]">{item.credit_cost} <span className="text-[8px] not-italic text-gray-600">CREDITS</span></span>}
+                                                    {!isSlot && (
+                                                        <div className="flex items-center gap-4">
+                                                            {item.total_facility_bays > 0 && (
+                                                                <span className="text-[10px] font-black italic text-orange-400">
+                                                                    {item.total_facility_bays} <span className="text-[8px] not-italic text-gray-600 uppercase">Bays</span>
+                                                                </span>
+                                                            )!!}
+                                                            <span className="text-[10px] font-black italic text-[#28D160]">{item.credit_cost} <span className="text-[8px] not-italic text-gray-600 uppercase">Credits</span></span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
@@ -546,15 +581,21 @@ export default function MasterSchedule() {
                                     </select>
                                     {editingSession.lockInstructor && <p className="text-[7px] text-[#28D160] mt-1 uppercase font-black italic flex items-center gap-1"><Info size={8} /> Coach is locked</p>}
                                 </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Max Users</label>
-                                    <input type="number" value={editingSession.max_capacity} onChange={e => setEditingSession({ ...editingSession, max_capacity: parseInt(e.target.value) || 1 })} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] font-bold" />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Max Users</label>
+                                        <input type="number" value={editingSession.max_capacity} onChange={e => setEditingSession({ ...editingSession, max_capacity: parseInt(e.target.value) || 1 })} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] font-bold" />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-black text-orange-400 uppercase tracking-widest ml-1 mb-1 block">Total Bays</label>
+                                        <input type="number" value={editingSession.total_facility_bays} onChange={e => setEditingSession({ ...editingSession, total_facility_bays: parseInt(e.target.value) || 0 })} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] font-bold" />
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 gap-4">
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">$ Credit Cost</label>
+                                    <label className="text-[10px] font-black text-[#28D160] uppercase tracking-widest ml-1 mb-1 block">$ Credit Cost</label>
                                     <input type="number" value={editingSession.credit_cost} onChange={e => setEditingSession({ ...editingSession, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] font-bold" />
                                 </div>
                             </div>

@@ -219,6 +219,11 @@ export function UniversalSchedule({
                                                             }`}>
                                                             {item.category}
                                                         </span>
+                                                        {item.type === 'slot' && item.category === 'FACILITY' && (item as any).availableBays !== undefined && (
+                                                            <span className={`text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider ${(item as any).availableBays > 0 ? 'bg-orange-500/10 text-orange-400' : 'bg-red-500/10 text-red-400'}`}>
+                                                                {(item as any).availableBays} / {(item as any).totalBays || 4} BAYS FREE
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
