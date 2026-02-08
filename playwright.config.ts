@@ -92,7 +92,8 @@ export default defineConfig({
         'tests/home-screen-integrity.spec.ts',
         'tests/mobile-layout-audit.spec.ts',
         'tests/debug-overflow.spec.ts',
-        'tests/verification-schedule-wipe.spec.ts'
+        'tests/verification-schedule-wipe.spec.ts',
+        'tests/leaderboard-cms.spec.ts'
       ],
     },
 

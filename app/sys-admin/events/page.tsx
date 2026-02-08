@@ -5,7 +5,7 @@ import { supabase } from '@/app/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Plus, Trash2, Edit2, Upload, X, Save, Calendar, Clock, DollarSign } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
-import { safeDate, safetoLocaleDateString, formatHK, toHKPickerValue } from '@/app/lib/dateUtils';
+import { safeDate, safetoLocaleDateString, formatHK, toHKPickerValue, toHKISO } from '@/app/lib/dateUtils';
 
 interface EventItem {
     id: number;
@@ -95,8 +95,8 @@ export default function AdminEventsPage() {
             title: currentItem.title,
             description: currentItem.description,
             image_url: currentItem.image_url,
-            start_time: safeDate(currentItem.start_time)?.toISOString(),
-            end_time: safeDate(currentItem.end_time)?.toISOString(),
+            start_time: toHKISO(currentItem.start_time!),
+            end_time: toHKISO(currentItem.end_time!),
             credit_cost: Number(currentItem.credit_cost) || 0,
             instructor: currentItem.instructor || 'East HK',
             category: 'EVENT'
@@ -315,7 +315,7 @@ export default function AdminEventsPage() {
                                         <input
                                             type="datetime-local"
                                             value={toHKPicker(currentItem.start_time)}
-                                            onChange={e => setCurrentItem({ ...currentItem, start_time: new Date(e.target.value).toISOString() })}
+                                            onChange={e => setCurrentItem({ ...currentItem, start_time: toHKISO(e.target.value) })}
                                             className="w-full bg-black border border-white/10 rounded-xl p-4 text-white text-xs uppercase focus:outline-none focus:border-east-light transition-all"
                                         />
                                     </div>
@@ -324,7 +324,7 @@ export default function AdminEventsPage() {
                                         <input
                                             type="datetime-local"
                                             value={toHKPicker(currentItem.end_time)}
-                                            onChange={e => setCurrentItem({ ...currentItem, end_time: new Date(e.target.value).toISOString() })}
+                                            onChange={e => setCurrentItem({ ...currentItem, end_time: toHKISO(e.target.value) })}
                                             className="w-full bg-black border border-white/10 rounded-xl p-4 text-white text-xs uppercase focus:outline-none focus:border-east-light transition-all"
                                         />
                                     </div>

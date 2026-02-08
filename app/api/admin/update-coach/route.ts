@@ -84,9 +84,12 @@ export async function POST(request: Request) {
         const { data: { user } } = await supabaseAuth.auth.getUser();
 
         if (user) {
+            // Sanitize auth updates
+            const { password: _, ...safeAuthUpdates } = authUpdates;
+
             await logAdminAction(user.id, 'UPDATE_COACH', 'profile', userId, {
-                authUpdates: Object.keys(authUpdates),
-                profileUpdates: Object.keys(profileUpdates)
+                authUpdates: safeAuthUpdates,
+                profileUpdates: profileUpdates
             });
         }
 

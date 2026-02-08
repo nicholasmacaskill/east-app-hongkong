@@ -5,6 +5,32 @@ import { createBrowserClient } from '@supabase/ssr';
 import { format } from 'date-fns';
 import { Search, Filter, RefreshCw } from 'lucide-react';
 
+const renderDetailsSummary = (log: any) => {
+    if (log.action === 'UPDATE_PLAYER' || log.action === 'UPDATE_COACH') {
+        const profileUpdates = log.details?.profileUpdates || {};
+        const authUpdates = log.details?.authUpdates || {};
+        const allChanges = { ...authUpdates, ...profileUpdates };
+
+        const changeCount = Object.keys(allChanges).length;
+        if (changeCount === 0) return 'View Details (No field changes)';
+
+        // Pick the most "interesting" key to show as a preview
+        const priorityKeys = ['credits', 'role', 'team', 'email', 'firstName', 'lastName'];
+        const previewKey = priorityKeys.find(k => allChanges[k] !== undefined) || Object.keys(allChanges)[0];
+        const previewValue = allChanges[previewKey];
+
+        const summary = `${previewKey}: ${previewValue}${changeCount > 1 ? ` (+${changeCount - 1} more)` : ''}`;
+        return summary;
+    }
+
+    if (log.action === 'CREDIT_ADJUSTMENT' || log.action === 'UPDATE_CREDITS') {
+        const { amount, newCredits } = log.details || {};
+        return `${amount > 0 ? '+' : ''}${amount} credits (New: ${newCredits})`;
+    }
+
+    return 'View Details';
+};
+
 export default function AuditLogsPage() {
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -170,7 +196,8 @@ export default function AuditLogsPage() {
                                         <td className="p-4 text-xs text-gray-400">
                                             <details className="cursor-pointer group/details">
                                                 <summary className="list-none hover:text-[#28D160] transition-colors flex items-center gap-1 font-mono text-[10px] uppercase tracking-wide">
-                                                    <span className="group-open/details:rotate-90 transition-transform">▸</span> View Details
+                                                    <span className="group-open/details:rotate-90 transition-transform">▸</span>
+                                                    {renderDetailsSummary(log)}
                                                 </summary>
                                                 <pre className="mt-2 text-[10px] font-mono bg-black/50 p-2 rounded border border-white/10 overflow-x-auto whitespace-pre-wrap">
                                                     {JSON.stringify(log.details, null, 2)}

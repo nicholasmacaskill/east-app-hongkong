@@ -126,14 +126,15 @@ function MembershipContent() {
                 const finalRole = profile?.role || user.user_metadata?.role;
                 if (finalRole) setUserRole(finalRole);
 
-                // Check if user has an active subscription
-                if (profile?.subscription_status === 'active' && profile?.membership_expires) {
+                // Check if user has a membership (active or in grace period)
+                if (profile?.membership_expires) {
                     const expiryDate = new Date(profile.membership_expires);
                     if (expiryDate > new Date()) {
                         setHasActiveSubscription(true);
                         setSubscriptionInfo({
                             tier: profile.membership_tier,
-                            expires: expiryDate
+                            expires: expiryDate,
+                            status: profile.subscription_status
                         });
                     }
                 }
@@ -145,8 +146,9 @@ function MembershipContent() {
     const getTierLabel = (tier: string) => {
         const map: Record<string, string> = {
             'individual': 'PRO MEMBERSHIP',
-            'family_2': 'FAMILY PLAN (2)',
-            'family_3plus': 'FAMILY PLAN (3+)'
+            'family_1': 'PRO FAMILY (1)',
+            'family_2': 'PRO FAMILY (2)',
+            'family_3plus': 'PRO FAMILY (3+)'
         };
         return map[tier] || tier || 'PRO MEMBERSHIP';
     };
@@ -236,7 +238,7 @@ function MembershipContent() {
                 {/* CONTROLS SECTION */}
                 <div className="px-7 space-y-3 mt-1 shrink-0">
                     {/* Individual vs Family Toggle */}
-                    {(userRole === 'parent' || userRole === 'admin') && (
+                    {(userRole === 'parent' || userRole === 'sys-admin') && (
                         <div className="bg-gray-50 p-1 rounded-xl flex border border-gray-100 h-10">
                             {['individual', 'family'].map((type) => (
                                 <button
@@ -372,7 +374,13 @@ function MembershipContent() {
                                         </div>
                                         <div className="flex justify-between items-center">
                                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Next Billing</span>
-                                            <span className="text-xs font-bold text-black">{formatHK(subscriptionInfo.expires, 'MMM dd, yyyy')}</span>
+                                            <span className={`text-xs font-bold ${subscriptionInfo.status === 'canceled' ? 'text-red-500/50' : 'text-black'}`}>
+                                                {subscriptionInfo.status === 'active'
+                                                    ? formatHK(subscriptionInfo.expires, 'MMM dd, yyyy')
+                                                    : subscriptionInfo.status?.toUpperCase() === 'CANCELED'
+                                                        ? 'CANCELED'
+                                                        : (['past_due', 'unpaid', 'overdue'].includes(subscriptionInfo.status) ? 'OVERDUE' : subscriptionInfo.status?.toUpperCase() || 'N/A')}
+                                            </span>
                                         </div>
                                     </>
                                 )}
@@ -380,10 +388,12 @@ function MembershipContent() {
 
                             <a
                                 data-testid="cancel-subscription-button"
-                                href="mailto:support@east.com?subject=Cancellation Request - Membership"
-                                className="block w-full text-center py-3 border border-gray-200 rounded-xl text-[10px] font-bold text-gray-400 uppercase hover:bg-gray-50 hover:text-red-500 hover:border-red-100 transition-all"
+                                href="https://wa.link/b2y0sa"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block w-full text-center py-3 border border-gray-200 rounded-xl text-[10px] font-bold text-gray-400 uppercase hover:bg-gray-50 hover:text-[#25D366] hover:border-[#25D366]/20 transition-all"
                             >
-                                Contact us to cancel your subscription
+                                Contact us on WhatsApp to cancel
                             </a>
                         </div>
                     ) : (
@@ -400,7 +410,11 @@ function MembershipContent() {
                             )}
                         </button>
                     )}
-                    <p className="text-[8px] text-center text-gray-400 mt-4 font-bold uppercase tracking-widest">SECURE CHECKOUT VIA STRIPE</p>
+                    <p className="text-[8px] text-center text-gray-400 mt-4 font-bold uppercase tracking-widest leading-relaxed">
+                        30 day advance cancellation policy applies.<br />
+                        Please see terms and conditions.
+                    </p>
+                    <p className="text-[8px] text-center text-gray-400 mt-2 font-bold uppercase tracking-widest">SECURE CHECKOUT VIA STRIPE</p>
                 </div>
             </div>
 
