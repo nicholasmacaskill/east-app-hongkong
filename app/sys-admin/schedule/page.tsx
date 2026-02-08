@@ -425,7 +425,14 @@ export default function MasterSchedule() {
                             return { ...item, availableBays: Math.max(0, TOTAL_BAYS - baysUsed), totalBays: TOTAL_BAYS };
                         }
                         return item;
-                    }).sort((a, b) => (safeDate(a.start_time)?.getTime() || 0) - (safeDate(b.start_time)?.getTime() || 0));
+                    }).sort((a, b) => {
+                        // 1. Priority: Sessions (booked) before slots (available)
+                        if (a.type === 'session' && b.type === 'slot') return -1;
+                        if (a.type === 'slot' && b.type === 'session') return 1;
+
+                        // 2. Secondary: Time
+                        return (safeDate(a.start_time)?.getTime() || 0) - (safeDate(b.start_time)?.getTime() || 0);
+                    });
 
                     const grouped = mergedItems.reduce((acc: any, item: any) => {
                         const dateKey = safetoLocaleDateString(item.start_time, undefined, { weekday: 'short', month: 'short', day: 'numeric' });
