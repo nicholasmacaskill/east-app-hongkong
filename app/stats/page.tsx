@@ -51,7 +51,11 @@ export default function LeaderboardPage() {
         try {
             const { data, error } = await supabase
                 .from('players_stats')
-                .select('stats, profiles(first_name, last_name, team, avatar_url)')
+                .select(`
+                    stats,
+                    player_id,
+                    profiles!players_stats_player_id_fkey(first_name, last_name, team, avatar_url)
+                `)
                 .eq('category', sport)
                 .not('stats->' + activeFilter, 'is', null);
 
@@ -155,8 +159,8 @@ export default function LeaderboardPage() {
                                 key={field.key}
                                 onClick={() => setActiveFilter(field.key)}
                                 className={`px-6 py-2.5 rounded-full border uppercase font-black italic text-[10px] tracking-widest transition-all duration-300 whitespace-nowrap ${activeFilter === field.key
-                                        ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]'
-                                        : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'
+                                    ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]'
+                                    : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'
                                     }`}
                             >
                                 {field.label}
@@ -190,8 +194,8 @@ export default function LeaderboardPage() {
                                     <div
                                         key={i}
                                         className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${i === 0
-                                                ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
-                                                : 'bg-[#050505] border-white/5 hover:border-white/20'
+                                            ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
+                                            : 'bg-[#050505] border-white/5 hover:border-white/20'
                                             }`}
                                     >
                                         {/* Rank */}
