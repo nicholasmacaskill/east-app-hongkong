@@ -135,10 +135,18 @@ export async function POST(request: Request) {
 
                     if (refundAmount > 0) {
                         // Refund credits to payer
-                        await supabaseAdmin
+                        const { data: profile } = await supabaseAdmin
                             .from('profiles')
-                            .update({ credits: supabaseAdmin.raw(`credits + ${refundAmount}`) })
-                            .eq('id', payerId);
+                            .select('credits')
+                            .eq('id', payerId)
+                            .single();
+
+                        if (profile) {
+                            await supabaseAdmin
+                                .from('profiles')
+                                .update({ credits: (profile.credits || 0) + refundAmount })
+                                .eq('id', payerId);
+                        }
 
                         // Log transaction
                         await supabaseAdmin
