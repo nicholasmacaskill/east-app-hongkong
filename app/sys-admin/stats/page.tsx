@@ -91,8 +91,7 @@ export default function StatsManagementPage() {
             player_id: selectedPlayer.id,
             category: selectedSport,
             stats: stats,
-            verified: true,
-            updated_at: new Date().toISOString()
+            verified: true
         };
 
         const { error } = await supabase
@@ -131,8 +130,8 @@ export default function StatsManagementPage() {
                         key={sport.id}
                         onClick={() => setSelectedSport(sport.id as any)}
                         className={`px-6 py-3 rounded-xl font-bold uppercase text-sm transition-all ${selectedSport === sport.id
-                                ? 'bg-east-light text-black'
-                                : 'bg-white/10 text-white hover:bg-white/20'
+                            ? 'bg-east-light text-black'
+                            : 'bg-white/10 text-white hover:bg-white/20'
                             }`}
                     >
                         {sport.icon} {sport.label}
@@ -158,8 +157,8 @@ export default function StatsManagementPage() {
                                 key={p.id}
                                 onClick={() => setSelectedPlayer(p)}
                                 className={`w-full text-left p-4 rounded-xl border transition-all ${selectedPlayer?.id === p.id
-                                        ? 'bg-east-light text-black border-east-light font-black'
-                                        : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                    ? 'bg-east-light text-black border-east-light font-black'
+                                    : 'bg-white/5 border-white/10 hover:bg-white/10'
                                     }`}
                             >
                                 <div className="flex items-center gap-3">
