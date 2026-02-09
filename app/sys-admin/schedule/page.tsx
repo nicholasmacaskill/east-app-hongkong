@@ -23,6 +23,14 @@ interface Session {
     max_capacity: number;
     credit_cost: number;
     session_type_id?: string;
+    registrations?: {
+        user_id: string;
+        status: string;
+        profiles: {
+            first_name: string;
+            last_name: string;
+        }
+    }[];
 }
 
 interface Service {
@@ -113,7 +121,7 @@ export default function MasterSchedule() {
         endOfView.setDate(endOfView.getDate() + 7);
         endOfView.setHours(23, 59, 59, 999);
 
-        let query = supabase.from('sessions').select('*');
+        let query = supabase.from('sessions').select('*, registrations(user_id, status, profiles:user_id(first_name, last_name))');
         if (activeCategory === 'EVENT') {
             const now = new Date();
             query = query.gte('start_time', now.toISOString()).eq('category', 'EVENT').neq('status', 'cancelled');
@@ -506,9 +514,18 @@ export default function MasterSchedule() {
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <User size={12} className={isSlot ? 'text-gray-700' : 'text-[#28D160]'} />
-                                                        <span className={`text-[10px] font-bold uppercase tracking-widest ${isSlot ? 'text-gray-600' : 'text-gray-300'}`}>{item.instructor || 'Unassigned'}</span>
+                                                    <div className="flex flex-col gap-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <User size={12} className={isSlot ? 'text-gray-700' : 'text-[#28D160]'} />
+                                                            <span className={`text-[10px] font-bold uppercase tracking-widest ${isSlot ? 'text-gray-600' : 'text-gray-300'}`}>{item.instructor || 'Unassigned'}</span>
+                                                        </div>
+                                                        {!isSlot && item.registrations && item.registrations.length > 0 && (
+                                                            <div className="flex items-center gap-1 ml-5">
+                                                                <span className="text-[9px] text-[#28D160] font-bold uppercase tracking-wider">
+                                                                    Booked by: {item.registrations.map((r: any) => `${r.profiles?.first_name || ''} ${r.profiles?.last_name || ''}`).join(', ')}
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     {!isSlot && (
                                                         <div className="flex items-center gap-4">
