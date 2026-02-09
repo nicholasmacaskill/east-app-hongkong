@@ -217,7 +217,7 @@ export default function ScheduleScreen({
                 <ChevronLeft size={20} className="text-gray-500" />
               </button>
 
-              <div className="flex gap-2">
+              <div className="flex gap-1 justify-between px-1">
                 {Array.from({ length: 7 }, (_, i) => {
                   const d = addDays(viewStartDate, i);
                   const isSelected = isSameDay(d, selectedDate);
@@ -230,14 +230,14 @@ export default function ScheduleScreen({
                   const isAvailable = availability.includes(dateStr);
 
                   if (isBefore(d, minDate) || isAfter(d, maxDate)) {
-                    return <div key={i} className="w-10" />;
+                    return <div key={i} className="w-9" />;
                   }
 
                   return (
                     <div
                       key={i}
                       onClick={() => setSelectedDate(d)}
-                      className={`flex flex-col items-center justify-center w-10 py-2 rounded-xl cursor-pointer transition-all duration-300 border relative ${isSelected ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(209,242,217,0.3)]' : 'bg-transparent text-gray-500 border-transparent hover:bg-white/5'}`}
+                      className={`flex flex-col items-center justify-center w-9 py-2 rounded-xl cursor-pointer transition-all duration-300 border relative ${isSelected ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(209,242,217,0.3)]' : 'bg-transparent text-gray-500 border-transparent hover:bg-white/5'}`}
                     >
                       {/* Indicator for Volunteer Day */}
                       {isAvailable && (
