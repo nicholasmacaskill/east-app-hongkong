@@ -9,7 +9,6 @@ import { formatHK } from '@/app/lib/dateUtils';
 const STAT_FIELDS = {
     golf: [
         { key: 'handicap', label: 'Handicap', type: 'number', unit: '' },
-        { key: 'round_score', label: 'Round Score', type: 'number', unit: '' },
         { key: 'course_name', label: 'Course Name', type: 'text', unit: '' },
         { key: 'longest_drive', label: 'Longest Drive', type: 'number', unit: 'yds' },
         { key: 'closest_to_pin', label: 'Closest to Pin', type: 'number', unit: 'ft' },
