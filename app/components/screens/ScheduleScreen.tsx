@@ -93,8 +93,8 @@ export default function ScheduleScreen({
 
   const handleNextWeek = () => {
     const newDate = addDays(viewStartDate, 7);
-    // Allow navigation as long as the 6th visible day is not past the maxDate
-    if (!isAfter(addDays(newDate, 5), maxDate)) {
+    // Allow navigation as long as the 7th visible day is not past the maxDate
+    if (!isAfter(addDays(newDate, 6), maxDate)) {
       setViewStartDate(newDate);
     }
   };
@@ -218,7 +218,7 @@ export default function ScheduleScreen({
               </button>
 
               <div className="flex gap-2">
-                {Array.from({ length: 6 }, (_, i) => {
+                {Array.from({ length: 7 }, (_, i) => {
                   const d = addDays(viewStartDate, i);
                   const isSelected = isSameDay(d, selectedDate);
 
@@ -251,7 +251,7 @@ export default function ScheduleScreen({
                 })}
               </div>
 
-              <button onClick={handleNextWeek} className="p-1 hover:bg-white/5 rounded-full transition-colors disabled:opacity-10" disabled={isAfter(addDays(viewStartDate, 5), maxDate)}>
+              <button onClick={handleNextWeek} className="p-1 hover:bg-white/5 rounded-full transition-colors disabled:opacity-10" disabled={isAfter(addDays(viewStartDate, 6), maxDate)}>
                 <ChevronRight size={20} className="text-gray-500" />
               </button>
             </div>

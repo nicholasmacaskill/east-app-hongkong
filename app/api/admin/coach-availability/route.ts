@@ -150,7 +150,7 @@ export async function POST(request: Request) {
                         image_url: serviceType?.image_url,
                         coach_image_url: coachProfile?.avatar_url,
                         description: `Booked via Coach Availability`,
-                        credit_cost: slot.credit_cost || 10,
+                        credit_cost: slot.credit_cost || serviceType?.credit_cost,
                         session_type_id: slot.session_type_id,
                         max_capacity: slot.capacity || 1 // FIXED: use correct column name 'max_capacity'
                     });

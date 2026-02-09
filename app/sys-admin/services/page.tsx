@@ -13,6 +13,7 @@ interface SessionType {
     category: 'CLASS' | 'PRIVATE' | 'FACILITY';
     image_url: string | null;
     description: string | null;
+    credit_cost?: number;
 }
 
 export default function ManageServicesPage() {
@@ -90,7 +91,8 @@ export default function ManageServicesPage() {
                 title: currentService.title,
                 category: currentService.category,
                 image_url: currentService.image_url || null,
-                description: currentService.description || null
+                description: currentService.description || null,
+                credit_cost: currentService.credit_cost || 0
             };
 
             let serviceId = currentService.id;
@@ -275,12 +277,16 @@ export default function ManageServicesPage() {
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto">
                         <button onClick={() => setIsEditing(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X size={24} /></button>
-                        <h2 className="text-xl font-bold mb-6">{currentService.id ? 'Edit Service' : 'New Service'}</h2>
+                        <h2 className="text-xl font-bold mb-6">{currentService.id ? 'Edit Service' : 'Create New Service'}</h2>
 
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Service Title</label>
                                 <input type="text" value={currentService.title || ''} onChange={e => setCurrentService({ ...currentService, title: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160]" placeholder="e.g. Golf, Hyrox" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Credit Cost</label>
+                                <input type="number" value={currentService.credit_cost || 0} onChange={e => setCurrentService({ ...currentService, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160]" placeholder="100" />
                             </div>
                             {/* ... (Rest of existing edit modal fields) ... */}
                             <div>

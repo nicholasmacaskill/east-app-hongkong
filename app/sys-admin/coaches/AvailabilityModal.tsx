@@ -303,15 +303,36 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                             </div>
                             <div className="flex-1 min-w-[150px]">
                                 <label className="text-[9px] font-bold text-gray-500 uppercase block mb-1">Service (Optional)</label>
-                                <select value={bulkConfig.selectedServiceId} onChange={e => setBulkConfig({ ...bulkConfig, selectedServiceId: e.target.value })} className="w-full bg-black/50 border border-white/10 rounded px-2 py-1 text-xs text-white">
+                                <select
+                                    value={bulkConfig.selectedServiceId}
+                                    onChange={e => {
+                                        const svcId = e.target.value;
+                                        const svc = serviceTypes.find(s => s.id === svcId);
+                                        setBulkConfig({
+                                            ...bulkConfig,
+                                            selectedServiceId: svcId,
+                                            creditCost: Number(svc?.credit_cost ?? bulkConfig.creditCost),
+                                            capacity: Number(svc?.category === 'CLASS' ? 10 : 1)
+                                        });
+                                    }}
+                                    className="w-full bg-black/50 border border-white/10 rounded px-2 py-1 text-xs text-white"
+                                >
                                     <option value="">Generic Slot</option>
                                     {serviceTypes.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
                                 </select>
                             </div>
-                            <button onClick={generateBulkSlots} className="bg-[#28D160] text-black font-black uppercase text-xs px-4 py-1.5 rounded hover:bg-white transition-colors">
-                                Generate
-                            </button>
+                            <div className="w-16">
+                                <label className="text-[9px] font-bold text-gray-500 uppercase block mb-1">Credits</label>
+                                <input type="number" value={bulkConfig.creditCost} onChange={e => setBulkConfig({ ...bulkConfig, creditCost: parseInt(e.target.value) || 0 })} className="bg-black/50 border border-white/10 rounded px-2 py-1 text-xs text-white w-full" />
+                            </div>
+                            <div className="w-12">
+                                <label className="text-[9px] font-bold text-gray-500 uppercase block mb-1">Cap</label>
+                                <input type="number" value={bulkConfig.capacity} onChange={e => setBulkConfig({ ...bulkConfig, capacity: parseInt(e.target.value) || 1 })} className="bg-black/50 border border-white/10 rounded px-2 py-1 text-xs text-white w-full" />
+                            </div>
                         </div>
+                        <button onClick={generateBulkSlots} className="bg-[#28D160] text-black font-black uppercase text-xs px-4 py-1.5 rounded hover:bg-white transition-colors">
+                            Generate
+                        </button>
                     </div>
                 )}
 
@@ -470,6 +491,6 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                 </div>
 
             </div>
-        </div>
+        </div >
     );
 }

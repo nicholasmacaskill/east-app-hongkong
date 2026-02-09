@@ -34,12 +34,22 @@ export default function LeaderboardPage() {
     const [sport, setSport] = useState<'hockey' | 'golf' | 'hyrox'>('golf');
     const [activeFilter, setActiveFilter] = useState<string>('handicap');
     const [entries, setEntries] = useState<any[]>([]);
+    const [currentUserStats, setCurrentUserStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
     useEffect(() => {
         // Set default filter when sport changes
         setActiveFilter(STAT_FIELDS[sport][0].key);
     }, [sport]);
+
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            setCurrentUserId(user?.id || null);
+        };
+        getUser();
+    }, []);
 
     useEffect(() => {
         fetchLeaderboard();
@@ -48,12 +58,20 @@ export default function LeaderboardPage() {
     const fetchLeaderboard = async () => {
         setLoading(true);
         try {
+            // Ensure we have current user ID
+            let userId = currentUserId;
+            if (!userId) {
+                const { data: { user } } = await supabase.auth.getUser();
+                userId = user?.id || null;
+                setCurrentUserId(userId);
+            }
+
             const { data, error } = await supabase
                 .from('players_stats')
                 .select(`
                     stats,
                     player_id,
-                    profiles!players_stats_player_id_fkey(first_name, last_name, team, avatar_url)
+                    profiles!players_stats_player_id_fkey(id, first_name, last_name, team, avatar_url)
                 `)
                 .eq('category', sport)
                 .not('stats->' + activeFilter, 'is', null);
@@ -61,13 +79,17 @@ export default function LeaderboardPage() {
             if (error) throw error;
 
             // Map and sort data
-            const mappedEntries = (data || []).map((entry: any) => ({
-                name: `${entry.profiles?.first_name || ''} ${entry.profiles?.last_name || ''}`.trim() || 'Player',
-                team: entry.profiles?.team || 'INDEPENDENT',
-                avatar_url: entry.profiles?.avatar_url,
-                score: entry.stats[activeFilter],
-                stats: entry.stats
-            }));
+            const mappedEntries = (data || []).map((entry: any) => {
+                const profile = Array.isArray(entry.profiles) ? entry.profiles[0] : entry.profiles;
+                return {
+                    id: profile?.id || entry.player_id,
+                    name: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'Player',
+                    team: profile?.team || 'INDEPENDENT',
+                    avatar_url: profile?.avatar_url,
+                    score: entry.stats[activeFilter],
+                    stats: entry.stats
+                };
+            });
 
             // Sort based on sport and stat type
             const sorted = mappedEntries.sort((a, b) => {
@@ -90,10 +112,27 @@ export default function LeaderboardPage() {
                 return (parseFloat(bVal) || 0) - (parseFloat(aVal) || 0);
             });
 
-            setEntries(sorted);
-        } catch (err) {
-            console.error('Failed to fetch leaderboard:', err);
+            // Find current user's stats and rank from FULL list
+            if (userId) {
+                const userIndex = sorted.findIndex(e => e.id === userId);
+                if (userIndex !== -1) {
+                    setCurrentUserStats({
+                        ...sorted[userIndex],
+                        rank: userIndex + 1
+                    });
+                } else {
+                    setCurrentUserStats(null);
+                }
+            } else {
+                setCurrentUserStats(null);
+            }
+
+            // Set visible entries (top 10)
+            setEntries(sorted.slice(0, 10));
+        } catch (error) {
+            console.error('Failed to fetch leaderboard:', error);
             setEntries([]);
+            setCurrentUserStats(null);
         } finally {
             setLoading(false);
         }
@@ -192,13 +231,15 @@ export default function LeaderboardPage() {
                                 {entries.map((entry, i) => (
                                     <div
                                         key={i}
-                                        className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${i === 0
-                                            ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
-                                            : 'bg-[#050505] border-white/5 hover:border-white/20'
+                                        className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${entry.id === currentUserId
+                                            ? 'bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]'
+                                            : i === 0
+                                                ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
+                                                : 'bg-[#050505] border-white/5 hover:border-white/20'
                                             }`}
                                     >
                                         {/* Rank */}
-                                        <div className={`w-8 font-black italic text-2xl ${i === 0 ? 'text-[#28D160]' : 'text-white/20'} group-hover:text-[#28D160] transition-colors`}>
+                                        <div className={`w-8 font-black italic text-2xl ${entry.id === currentUserId || i === 0 ? 'text-[#28D160]' : 'text-white/20'} group-hover:text-[#28D160] transition-colors`}>
                                             {i + 1}
                                         </div>
 
@@ -215,7 +256,12 @@ export default function LeaderboardPage() {
 
                                         {/* Player Info */}
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="font-black italic uppercase text-sm text-white tracking-tight truncate">{entry.name}</h3>
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-black italic uppercase text-sm text-white tracking-tight truncate">{entry.name}</h3>
+                                                {entry.id === currentUserId && (
+                                                    <span className="bg-east-light text-black text-[8px] font-black px-1.5 py-0.5 rounded italic uppercase tracking-tighter">YOU</span>
+                                                )}
+                                            </div>
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{entry.team}</p>
                                         </div>
 
@@ -227,6 +273,51 @@ export default function LeaderboardPage() {
                                         </div>
                                     </div>
                                 ))}
+
+                                {/* Personal Stats Section (if not in top 10) */}
+                                {currentUserStats && currentUserStats.rank > 10 && (
+                                    <>
+                                        <div className="flex items-center gap-4 py-4">
+                                            <div className="flex-1 h-px bg-white/10" />
+                                            <div className="text-[10px] font-black uppercase text-gray-500 italic tracking-[0.2em]">Your Performance</div>
+                                            <div className="flex-1 h-px bg-white/10" />
+                                        </div>
+
+                                        <div className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]`}>
+                                            {/* Rank */}
+                                            <div className={`w-8 font-black italic text-2xl text-[#28D160] group-hover:text-[#28D160] transition-colors`}>
+                                                {currentUserStats.rank}
+                                            </div>
+
+                                            {/* Avatar */}
+                                            <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/5 group-hover:border-white/40 transition-all shrink-0">
+                                                {currentUserStats.avatar_url ? (
+                                                    <img src={currentUserStats.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gray-950 flex items-center justify-center text-gray-700">
+                                                        <User size={18} />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Player Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-black italic uppercase text-sm text-white tracking-tight truncate">{currentUserStats.name}</h3>
+                                                    <span className="bg-east-light text-black text-[8px] font-black px-1.5 py-0.5 rounded italic uppercase tracking-tighter">YOU</span>
+                                                </div>
+                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{currentUserStats.team}</p>
+                                            </div>
+
+                                            {/* Score */}
+                                            <div className="text-right pr-2 shrink-0">
+                                                <div className="font-black italic text-2xl text-white group-hover:scale-110 transition-transform">
+                                                    {currentUserStats.score}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </>
                     )}

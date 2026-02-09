@@ -22,14 +22,14 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { title, category, image_url, description, coachIds } = body;
+        const { title, category, image_url, description, coachIds, credit_cost } = body;
 
         const supabase = getSupabaseAdmin();
 
         // 1. Create service
         const { data: service, error: serviceError } = await supabase
             .from('session_types')
-            .insert([{ title, category, image_url, description }])
+            .insert([{ title, category, image_url, description, credit_cost }])
             .select()
             .single();
 
@@ -56,14 +56,14 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
     try {
         const body = await request.json();
-        const { id, title, category, image_url, description, coachIds } = body;
+        const { id, title, category, image_url, description, coachIds, credit_cost } = body;
 
         const supabase = getSupabaseAdmin();
 
         // 1. Update service
         const { error: serviceError } = await supabase
             .from('session_types')
-            .update({ title, category, image_url, description })
+            .update({ title, category, image_url, description, credit_cost })
             .eq('id', id);
 
         if (serviceError) throw serviceError;

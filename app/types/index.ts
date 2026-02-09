@@ -12,6 +12,15 @@ export type Tab = 'home' | 'profile' | 'qr' | 'schedule' | 'community';
 
 export type ServiceCategory = 'CLASS' | 'PRIVATE' | 'FACILITY' | 'EVENT' | 'NEWS' | 'ADULT' | 'YOUTH' | 'general';
 
+export interface SessionType {
+    id: string;
+    title: string;
+    category: 'CLASS' | 'PRIVATE' | 'FACILITY';
+    image_url: string | null;
+    description: string | null;
+    credit_cost?: number;
+}
+
 export interface NewsItem {
     id: string;
     title: string;
