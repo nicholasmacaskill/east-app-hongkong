@@ -67,8 +67,10 @@ test.describe('Leaderboard - Public Access', () => {
 
         // Verify Golf stat filters are displayed
         await expect(page.getByText('Handicap')).toBeVisible();
-        await expect(page.getByText('Round Score')).toBeVisible();
         await expect(page.getByText('Longest Drive')).toBeVisible();
+        await expect(page.getByText('Closest to Pin')).toBeVisible();
+        await expect(page.getByText('League Wins')).toBeVisible();
+        await expect(page.getByText('Tournament Wins')).toBeVisible();
     });
 
     test('Leaderboard: Should display header with Rank, Player, Score', async ({ page }) => {
