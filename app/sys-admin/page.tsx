@@ -166,8 +166,8 @@ export default function AdminDashboard() {
                     </div>
                 </Link>
 
-                {/* Leaderboard CMS Card */}
-                <Link href="/sys-admin/leaderboard" className="group">
+                {/* Stats Management Card */}
+                <Link href="/sys-admin/stats" className="group">
                     <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Trophy size={120} />
@@ -179,14 +179,14 @@ export default function AdminDashboard() {
                             </div>
 
                             <div>
-                                <h2 className="text-xl font-black italic uppercase mb-2">Leaderboard CMS</h2>
+                                <h2 className="text-xl font-black italic uppercase mb-2">Stats Management</h2>
                                 <p className="text-gray-400 text-sm leading-relaxed">
-                                    Edit Leaderboard text and numbers for Hockey, Golf, Hyrox & Standings.
+                                    Manage player stats for Golf, HYROX, and Hockey. Enter stats that appear on the public leaderboard.
                                 </p>
                             </div>
 
                             <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
-                                Manage Leaderboards <ArrowRight size={14} />
+                                Manage Stats <ArrowRight size={14} />
                             </div>
                         </div>
                     </div>
