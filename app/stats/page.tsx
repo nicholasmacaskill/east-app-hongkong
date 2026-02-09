@@ -8,7 +8,6 @@ import { supabase } from '@/app/lib/supabase';
 const STAT_FIELDS = {
     golf: [
         { key: 'handicap', label: 'Handicap' },
-        { key: 'round_score', label: 'Round Score' },
         { key: 'longest_drive', label: 'Longest Drive' },
         { key: 'closest_to_pin', label: 'Closest to Pin' },
         { key: 'league_wins', label: 'League Wins' },
