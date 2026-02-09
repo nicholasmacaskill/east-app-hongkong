@@ -83,14 +83,34 @@ export default function StatsManagementPage() {
         fetchStats();
     }, [selectedPlayer, selectedSport]);
 
+    // Validate time format (mm:ss)
+    const isValidTime = (time: string): boolean => {
+        if (!time || time === '') return true; // Allow empty
+        const timeRegex = /^([0-5]?[0-9]):([0-5][0-9])$/;
+        return timeRegex.test(time);
+    };
+
     const handleSave = async () => {
         if (!selectedPlayer) return;
+
+        // Validate all time fields
+        const timeFields = STAT_FIELDS[selectedSport].filter(f => f.type === 'time');
+        for (const field of timeFields) {
+            const value = stats[field.key];
+            if (value && !isValidTime(value)) {
+                addToast(`Invalid time format for ${field.label}. Use mm:ss (e.g., 05:30)`, 'error');
+                return;
+            }
+        }
+
         setIsSaving(true);
 
         const payload = {
             player_id: selectedPlayer.id,
             category: selectedSport,
-            stats: stats
+            stats: stats,
+            verified: true,
+            updated_at: new Date().toISOString()
         };
 
         const { error } = await supabase
