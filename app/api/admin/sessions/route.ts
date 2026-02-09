@@ -96,6 +96,13 @@ export async function POST(request: Request) {
         if (action === 'DELETE') {
             if (!id) return NextResponse.json({ error: 'ID is required for delete' }, { status: 400 });
 
+            // Fetch session details for refund calculation
+            const { data: session } = await supabaseAdmin
+                .from('sessions')
+                .select('start_time, title')
+                .eq('id', id)
+                .single();
+
             // Soft delete: set status to cancelled
             const { error } = await supabaseAdmin
                 .from('sessions')
@@ -104,7 +111,49 @@ export async function POST(request: Request) {
 
             if (error) throw error;
 
-            // Also mark all registrations for this session as cancelled
+            // Fetch all registrations for this session to process refunds
+            const { data: registrations } = await supabaseAdmin
+                .from('registrations')
+                .select('id, user_id, payer_id, credits_paid')
+                .eq('session_id', id)
+                .neq('status', 'cancelled'); // Only active registrations
+
+            // Process refunds for each registration
+            if (registrations && registrations.length > 0 && session) {
+                const startTime = new Date(session.start_time).getTime();
+                const now = Date.now();
+                const hoursUntilStart = (startTime - now) / (1000 * 60 * 60);
+
+                // Calculate refund multiplier based on cancellation policy
+                let refundMultiplier = 1;
+                if (hoursUntilStart < 24) refundMultiplier = 0;
+                else if (hoursUntilStart < 48) refundMultiplier = 0.5;
+
+                for (const reg of registrations) {
+                    const payerId = reg.payer_id || reg.user_id;
+                    const refundAmount = Math.floor((reg.credits_paid || 0) * refundMultiplier);
+
+                    if (refundAmount > 0) {
+                        // Refund credits to payer
+                        await supabaseAdmin
+                            .from('profiles')
+                            .update({ credits: supabaseAdmin.raw(`credits + ${refundAmount}`) })
+                            .eq('id', payerId);
+
+                        // Log transaction
+                        await supabaseAdmin
+                            .from('transactions')
+                            .insert({
+                                user_id: payerId,
+                                amount: refundAmount,
+                                type: 'refund',
+                                description: `Admin cancelled: ${session.title} (${refundMultiplier * 100}% refund)`
+                            });
+                    }
+                }
+            }
+
+            // Mark all registrations for this session as cancelled
             const { error: regError } = await supabaseAdmin
                 .from('registrations')
                 .update({ status: 'cancelled' })
