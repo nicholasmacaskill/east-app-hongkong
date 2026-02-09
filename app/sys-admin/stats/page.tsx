@@ -90,8 +90,7 @@ export default function StatsManagementPage() {
         const payload = {
             player_id: selectedPlayer.id,
             category: selectedSport,
-            stats: stats,
-            verified: true
+            stats: stats
         };
 
         const { error } = await supabase
