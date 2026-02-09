@@ -361,14 +361,14 @@ export async function POST(request: Request) {
                 await supabaseAdmin
                     .from('profiles')
                     .update({
-                        subscription_status: 'canceled',
+                        subscription_status: 'cancelled',
                         // Optional: You could ensure expires matches subscription.current_period_end * 1000
                     })
                     .eq('id', parentProfile.id);
 
                 // NEW: If family plan, cancel children's subscriptions too
                 if (parentProfile.tier && parentProfile.tier.startsWith('family')) {
-                    console.log(`🚸 Family cancellation: Marking children as canceled for parent ${parentProfile.id}`);
+                    console.log(`🚸 Family cancellation: Marking children as cancelled for parent ${parentProfile.id}`);
 
                     const { data: children } = await supabaseAdmin
                         .from('profiles')
@@ -379,10 +379,10 @@ export async function POST(request: Request) {
                         for (const child of children) {
                             await supabaseAdmin
                                 .from('profiles')
-                                .update({ subscription_status: 'canceled' })
+                                .update({ subscription_status: 'cancelled' })
                                 .eq('id', child.id);
 
-                            console.log(`✅ Canceled child subscription: ${child.first_name || child.id}`);
+                            console.log(`✅ Cancelled child subscription: ${child.first_name || child.id}`);
                         }
                     }
                 }
