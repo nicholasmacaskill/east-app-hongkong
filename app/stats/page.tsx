@@ -1,83 +1,106 @@
-// app/stats/page.tsx
 'use client';
 import { useState, useEffect } from 'react';
-import { Trophy, Flame, Star, Shield, Users, ChevronLeft, Flag, Target, PlusCircle, ChevronDown, Activity, User } from 'lucide-react';
+import { Trophy, Flame, Star, Shield, Users, ChevronLeft, Flag, Target, Activity, User } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
 
+// Field configurations matching CMS
+const STAT_FIELDS = {
+    golf: [
+        { key: 'handicap', label: 'Handicap' },
+        { key: 'round_score', label: 'Round Score' },
+        { key: 'longest_drive', label: 'Longest Drive' },
+        { key: 'closest_to_pin', label: 'Closest to Pin' },
+        { key: 'league_wins', label: 'League Wins' },
+        { key: 'tournament_wins', label: 'Tournament Wins' }
+    ],
+    hyrox: [
+        { key: 'run_1km', label: '1KM Run' },
+        { key: 'ski_erg_1000m', label: 'Ski Erg' },
+        { key: 'sled_push_50m', label: 'Sled Push' },
+        { key: 'sled_pull_50m', label: 'Sled Pull' },
+        { key: 'burpee_broad_jumps_80m', label: 'Burpees' },
+        { key: 'row_1000m', label: 'Row' },
+        { key: 'farmers_carry_200m', label: 'Farmers' },
+        { key: 'sandbag_lunges_100m', label: 'Lunges' },
+        { key: 'wall_balls_100', label: 'Wall Balls' }
+    ],
+    hockey: [
+        { key: 'react_targets', label: 'React Targets' },
+        { key: 'classic_targets', label: 'Classic Targets' }
+    ]
+};
+
 export default function LeaderboardPage() {
-    const [sport, setSport] = useState<'hockey' | 'golf' | 'hyrox' | 'team_standings'>('hockey');
-    const [activeTab, setActiveTab] = useState<string>('players');
-    const [filter, setFilter] = useState<string>('points');
-
-    // Filter Dropdowns
-    const [year, setYear] = useState('2025-2026 Winter');
-    const [division, setDivision] = useState('All');
-
-    // Data State
+    const [sport, setSport] = useState<'hockey' | 'golf' | 'hyrox'>('golf');
+    const [activeFilter, setActiveFilter] = useState<string>('handicap');
     const [entries, setEntries] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchDynamicEntries();
-    }, [sport, year, division]);
+        // Set default filter when sport changes
+        setActiveFilter(STAT_FIELDS[sport][0].key);
+    }, [sport]);
 
-    const fetchDynamicEntries = async () => {
+    useEffect(() => {
+        fetchLeaderboard();
+    }, [sport, activeFilter]);
+
+    const fetchLeaderboard = async () => {
         setLoading(true);
         try {
-            const url = `/api/admin/leaderboard?sport=${sport}&year=${year}&division=${division}`;
-            const res = await fetch(url);
-            const data = await res.json();
+            const { data, error } = await supabase
+                .from('players_stats')
+                .select('stats, profiles(first_name, last_name, team, avatar_url)')
+                .eq('category', sport)
+                .not('stats->' + activeFilter, 'is', null);
 
-            // Defensively ensure data is an array
-            const entriesData = Array.isArray(data) ? data : [];
+            if (error) throw error;
 
-            // Auto-select tab if possible
-            if (entriesData.length > 0) {
-                const categories = Array.from(new Set(entriesData.map((e: any) => e.category)));
-                if (!categories.includes(activeTab)) {
-                    setActiveTab(categories[0] as string);
+            // Map and sort data
+            const mappedEntries = (data || []).map((entry: any) => ({
+                name: `${entry.profiles?.first_name || ''} ${entry.profiles?.last_name || ''}`.trim() || 'Player',
+                team: entry.profiles?.team || 'INDEPENDENT',
+                avatar_url: entry.profiles?.avatar_url,
+                score: entry.stats[activeFilter],
+                stats: entry.stats
+            }));
+
+            // Sort based on sport and stat type
+            const sorted = mappedEntries.sort((a, b) => {
+                const aVal = a.score;
+                const bVal = b.score;
+
+                // For time-based stats (mm:ss), lower is better
+                if (typeof aVal === 'string' && aVal.includes(':')) {
+                    const aSeconds = timeToSeconds(aVal);
+                    const bSeconds = timeToSeconds(bVal);
+                    return aSeconds - bSeconds;
                 }
-            }
 
-            setEntries(entriesData);
+                // For golf scores, lower is better
+                if (sport === 'golf' && (activeFilter === 'handicap' || activeFilter === 'round_score')) {
+                    return (parseFloat(aVal) || 999) - (parseFloat(bVal) || 999);
+                }
+
+                // For everything else, higher is better
+                return (parseFloat(bVal) || 0) - (parseFloat(aVal) || 0);
+            });
+
+            setEntries(sorted);
         } catch (err) {
-            console.error('Failed to fetch leaderboard data:', err);
-            setEntries([]); // Reset to empty array on error
+            console.error('Failed to fetch leaderboard:', err);
+            setEntries([]);
         } finally {
             setLoading(false);
         }
     };
 
-    // Filtered data based on active tab - add defensive check
-    const filteredEntries = (Array.isArray(entries) ? entries : []).filter(e => e.category === activeTab);
-
-    // Filter tabs based on sport
-    const hockeyTabs = [
-        { id: 'players', label: 'Player Leaders' },
-        { id: 'goalies', label: 'Goalie Leaders' },
-        { id: 'teams', label: 'Team Standings' }
-    ];
-
-    const golfFilters = [
-        { id: 'rounds', label: 'Rounds' },
-        { id: 'average_score', label: 'Avg Score' },
-        { id: 'longest_drive', label: 'Longest Drive' },
-        { id: 'closest_to_pin', label: 'Closest to Pin' },
-        { id: 'tournament_wins', label: 'Tournament Wins' },
-        { id: 'league_wins', label: 'League Wins' }
-    ];
-
-    const hyroxFilters = [
-        { id: 'ski_erg', label: 'Ski Erg' },
-        { id: 'sled_push', label: 'Sled Push' },
-        { id: 'sled_pull', label: 'Sled Pull' },
-        { id: 'burpee_jumps', label: 'Burpees' },
-        { id: 'row', label: 'Row' },
-        { id: 'farmers_carry', label: 'Farmers' },
-        { id: 'sandbag_lunges', label: 'Lunges' },
-        { id: 'wall_balls', label: 'Wall Balls' }
-    ];
+    const timeToSeconds = (time: string): number => {
+        if (!time || !time.includes(':')) return 999999;
+        const [mins, secs] = time.split(':').map(Number);
+        return (mins * 60) + secs;
+    };
 
     return (
         <div className="min-h-screen bg-black text-white p-0 pb-24 font-montserrat animate-fadeIn relative overflow-hidden select-none">
@@ -114,154 +137,98 @@ export default function LeaderboardPage() {
                         ].map(item => (
                             <button
                                 key={item.id}
-                                onClick={() => {
-                                    setSport(item.id as any);
-                                    if (item.id === 'hockey') setActiveTab('players');
-                                    else if (item.id === 'golf') setActiveTab('rounds');
-                                    else if (item.id === 'hyrox') setActiveTab('ski_erg');
-                                }}
-                                className={`flex items-center gap-2 px-6 py-2.5 rounded-full uppercase text-[10px] font-black italic tracking-widest transition-all duration-300 border ${sport === item.id ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.3)] scale-105' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30'}`}
+                                onClick={() => setSport(item.id as any)}
+                                className={`px-8 py-3 rounded-full border uppercase font-black italic text-[11px] tracking-[0.2em] transition-all duration-300 ${sport === item.id ? 'bg-east-light text-black border-east-light shadow-[0_0_20px_rgba(40,209,96,0.4)]' : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'}`}
                             >
-                                {item.icon} {item.label}
+                                <div className="flex items-center gap-2">
+                                    {item.icon}
+                                    {item.label}
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* STAT CATEGORY FILTERS */}
+                    <div className="flex justify-center gap-2 mt-8 mb-10 overflow-x-auto no-scrollbar pb-2 px-2 flex-wrap">
+                        {STAT_FIELDS[sport].map(field => (
+                            <button
+                                key={field.key}
+                                onClick={() => setActiveFilter(field.key)}
+                                className={`px-6 py-2.5 rounded-full border uppercase font-black italic text-[10px] tracking-widest transition-all duration-300 whitespace-nowrap ${activeFilter === field.key
+                                        ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]'
+                                        : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'
+                                    }`}
+                            >
+                                {field.label}
                             </button>
                         ))}
                     </div>
                 </div>
 
-                {/* YEAR & DIVISION DROPDOWNS */}
-                <div className="flex justify-center gap-4 mb-10 max-w-sm mx-auto">
-                    <div className="flex-1 relative">
-                        <select
-                            value={year}
-                            onChange={(e) => setYear(e.target.value)}
-                            className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 px-4 text-[10px] font-black italic uppercase tracking-widest appearance-none text-white focus:outline-none focus:border-east-light transition-colors"
-                        >
-                            <option>2025-2026 Winter</option>
-                            <option>2026 Summer (Coming Soon)</option>
-                            <option>2025 Summer</option>
-                            <option>All Time</option>
-                        </select>
-                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-east-light pointer-events-none" />
-                    </div>
-                    <div className="flex-1 relative">
-                        <select
-                            value={division}
-                            onChange={(e) => setDivision(e.target.value)}
-                            className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 px-4 text-[10px] font-black italic uppercase tracking-widest appearance-none text-white focus:outline-none focus:border-east-light transition-colors"
-                        >
-                            {['All', 'U9', 'U11', 'U13', 'U15', 'Pro Dev', '3v3'].map(d => <option key={d}>{d}</option>)}
-                        </select>
-                        <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-east-light pointer-events-none" />
-                    </div>
-                </div>
-
-                {/* HOCKEY SPECIFIC TABS */}
-                {sport === 'hockey' && (
-                    <div className="flex justify-center gap-8 mb-8">
-                        {hockeyTabs.map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`font-black italic text-[11px] uppercase transition-all tracking-widest relative pb-2 ${activeTab === tab.id ? 'text-east-light' : 'text-gray-600 hover:text-gray-400'}`}
-                            >
-                                {tab.label}
-                                {activeTab === tab.id && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-east-light" />}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {/* GOLF FILTER BUTTONS */}
-                {sport === 'golf' && (
-                    <div className="flex justify-center gap-3 mb-10 overflow-x-auto no-scrollbar pb-2 px-2">
-                        {golfFilters.map(f => (
-                            <button
-                                key={f.id}
-                                onClick={() => setActiveTab(f.id)}
-                                className={`px-6 py-2.5 rounded-full border uppercase font-black italic text-[10px] tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === f.id ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'}`}
-                            >
-                                {f.label}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {/* HYROX FILTER BUTTONS */}
-                {sport === 'hyrox' && (
-                    <div className="flex justify-center gap-3 mb-10 overflow-x-auto no-scrollbar pb-2 px-2">
-                        {hyroxFilters.map(f => (
-                            <button
-                                key={f.id}
-                                onClick={() => setActiveTab(f.id)}
-                                className={`px-6 py-2.5 rounded-full border uppercase font-black italic text-[10px] tracking-widest transition-all duration-300 whitespace-nowrap ${activeTab === f.id ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'}`}
-                            >
-                                {f.label}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {/* HOCKEY POINT FILTERS */}
-                {sport === 'hockey' && activeTab === 'players' && (
-                    <div className="flex justify-center gap-3 mb-8 overflow-x-auto no-scrollbar px-2">
-                        {['points', 'goals', 'assists'].map(f => (
-                            <button
-                                key={f}
-                                onClick={() => setFilter(f)}
-                                className={`px-8 py-2.5 rounded-full border uppercase font-black italic text-[11px] tracking-[0.2em] transition-all duration-300 ${filter === f ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'}`}
-                            >
-                                {f}
-                            </button>
-                        ))}
-                    </div>
-                )}
-
-                {/* DATA DISPLAY */}
+                {/* LEADERBOARD TABLE */}
                 <div className="animate-slideUp max-w-md mx-auto min-h-[400px]">
                     {loading ? (
-                        <div className="text-center py-20 animate-pulse font-black italic uppercase text-gray-600 tracking-widest text-[10px]">Syncing Professional Stats...</div>
-                    ) : filteredEntries.length === 0 ? (
+                        <div className="text-center py-20 animate-pulse font-black italic uppercase text-gray-600 tracking-widest text-[10px]">Loading Stats...</div>
+                    ) : entries.length === 0 ? (
                         <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5 border-dashed">
                             <Target size={40} className="mx-auto mb-4 opacity-10" />
-                            <p className="font-black italic uppercase text-gray-600 tracking-widest text-[10px]">No Data Recorded for this Selection</p>
+                            <p className="font-black italic uppercase text-gray-600 tracking-widest text-[10px]">No Data Recorded</p>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-3">
-                            {filteredEntries.map((entry, i) => (
-                                <div key={entry.id} className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${i === 0 ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]' : 'bg-[#050505] border-white/5 hover:border-white/20'}`}>
-                                    <div className={`w-8 font-black italic text-2xl ${i === 0 ? 'text-[#28D160]' : 'text-white/20'} group-hover:text-[#28D160] transition-colors`}>{entry.rank || i + 1}</div>
-                                    <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/5 group-hover:border-white/40 transition-all shrink-0">
-                                        {entry.avatar_url ? (
-                                            <img src={entry.avatar_url} className="w-full h-full object-cover" alt="" />
-                                        ) : (
-                                            <div className="w-full h-full bg-gray-950 flex items-center justify-center text-gray-700">
-                                                <User size={18} />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-black italic uppercase text-sm text-white tracking-tight truncate">{entry.name}</h3>
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{entry.team || 'INDEPENDENT'}</p>
-                                    </div>
-                                    <div className="text-right pr-2 shrink-0">
-                                        <div className="font-black italic text-2xl text-white group-hover:scale-110 transition-transform">
-                                            {sport === 'hockey' && activeTab === 'players' ? (
-                                                filter === 'points' ? (parseInt(entry.stats?.goals) || 0) + (parseInt(entry.stats?.assists) || 0) :
-                                                    filter === 'goals' ? (entry.stats?.goals || 0) :
-                                                        (entry.stats?.assists || 0)
+                        <>
+                            {/* Header */}
+                            <div className="flex items-center gap-4 px-4 pb-3 mb-3 border-b border-white/10">
+                                <div className="w-8 text-[10px] font-black uppercase text-gray-500">Rank</div>
+                                <div className="w-12"></div>
+                                <div className="flex-1 text-[10px] font-black uppercase text-gray-500">Player</div>
+                                <div className="text-[10px] font-black uppercase text-gray-500">Score</div>
+                            </div>
+
+                            {/* Entries */}
+                            <div className="flex flex-col gap-3">
+                                {entries.map((entry, i) => (
+                                    <div
+                                        key={i}
+                                        className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${i === 0
+                                                ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
+                                                : 'bg-[#050505] border-white/5 hover:border-white/20'
+                                            }`}
+                                    >
+                                        {/* Rank */}
+                                        <div className={`w-8 font-black italic text-2xl ${i === 0 ? 'text-[#28D160]' : 'text-white/20'} group-hover:text-[#28D160] transition-colors`}>
+                                            {i + 1}
+                                        </div>
+
+                                        {/* Avatar */}
+                                        <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/5 group-hover:border-white/40 transition-all shrink-0">
+                                            {entry.avatar_url ? (
+                                                <img src={entry.avatar_url} className="w-full h-full object-cover" alt="" />
                                             ) : (
-                                                entry.stats?.[activeTab] || entry.stats?.[filter] || entry.stats?.points || entry.stats?.value || 0
+                                                <div className="w-full h-full bg-gray-950 flex items-center justify-center text-gray-700">
+                                                    <User size={18} />
+                                                </div>
                                             )}
                                         </div>
-                                        <div className="text-[8px] font-black text-gray-600 uppercase tracking-widest mt-0.5">{activeTab}</div>
+
+                                        {/* Player Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-black italic uppercase text-sm text-white tracking-tight truncate">{entry.name}</h3>
+                                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{entry.team}</p>
+                                        </div>
+
+                                        {/* Score */}
+                                        <div className="text-right pr-2 shrink-0">
+                                            <div className="font-black italic text-2xl text-white group-hover:scale-110 transition-transform">
+                                                {entry.score}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        </>
                     )}
                 </div>
             </div>
         </div>
     );
 }
-

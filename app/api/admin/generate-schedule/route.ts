@@ -6,7 +6,16 @@ import { APP_TIMEZONE, formatHK } from '@/app/lib/dateUtils';
 
 export async function POST(request: Request) {
     try {
-        const { serviceId, startDate, endDate, startHour, endHour, daysOfWeek, durationMinutes = 60 } = await request.json();
+        const {
+            serviceId,
+            startDate,
+            endDate,
+            startHour,
+            endHour,
+            daysOfWeek,
+            durationMinutes = 60,
+            coachId
+        } = await request.json();
 
         if (!serviceId || !startDate || !endDate) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -23,6 +32,24 @@ export async function POST(request: Request) {
 
         if (svcError || !service) {
             return NextResponse.json({ error: 'Service not found' }, { status: 404 });
+        }
+
+        // 2. Fetch Coach Details if coachId is provided
+        let coachName = 'Facility';
+        let coachImageUrl = null;
+        if (coachId) {
+            const { data: coachProfile } = await supabaseAdmin
+                .from('profiles')
+                .select('first_name, last_name, avatar_url')
+                .eq('id', coachId)
+                .single();
+            if (coachProfile) {
+                coachName = `${coachProfile.first_name} ${coachProfile.last_name}`;
+                coachImageUrl = coachProfile.avatar_url;
+            }
+        } else if (service.category !== 'FACILITY') {
+            // Default instructor for non-facility services if no coach selected
+            coachName = 'Staff';
         }
 
         const sessionsToInsert: any[] = [];
@@ -56,15 +83,17 @@ export async function POST(request: Request) {
                 // Construct Session
                 sessionsToInsert.push({
                     title: service.title,
-                    category: 'FACILITY',
+                    category: service.category,
                     description: service.description,
                     image_url: service.image_url,
+                    coach_image_url: coachImageUrl,
                     start_time: slotStart.toISOString(),
                     end_time: slotEnd.toISOString(),
-                    max_capacity: 1,
-                    credit_cost: 100,
-                    instructor: 'Facility',
-                    session_type_id: service.id
+                    max_capacity: service.category === 'CLASS' ? 10 : 1,
+                    credit_cost: service.credit_cost || 100,
+                    instructor: coachName,
+                    session_type_id: service.id,
+                    status: 'active'
                 });
             }
             currentDate.setDate(currentDate.getDate() + 1);

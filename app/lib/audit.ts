@@ -67,9 +67,16 @@ export async function logAdminAction(
     action: AuditAction,
     targetType: string,
     targetId: string | number,
-    details: any = {}
+    details: any = {},
+    adminName?: string,
+    targetName?: string
 ) {
     const supabase = getSupabaseAdmin();
+    const enrichedDetails = {
+        ...details,
+        adminName,
+        targetName
+    };
     try {
         const { error } = await supabase
             .from('admin_audit_logs')
@@ -78,7 +85,7 @@ export async function logAdminAction(
                 action,
                 target_type: targetType,
                 target_id: String(targetId),
-                details
+                details: enrichedDetails
             });
         if (error) console.error('Failed to log admin action:', error);
     } catch (e) {

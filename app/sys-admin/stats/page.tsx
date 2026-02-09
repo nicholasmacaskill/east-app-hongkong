@@ -5,26 +5,50 @@ import { Search, Save, CheckCircle } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
 import { formatHK } from '@/app/lib/dateUtils';
 
-export default function ManualStatsPage() {
+// Field configurations for each sport
+const STAT_FIELDS = {
+    golf: [
+        { key: 'handicap', label: 'Handicap', type: 'number', unit: '' },
+        { key: 'round_score', label: 'Round Score', type: 'number', unit: '' },
+        { key: 'course_name', label: 'Course Name', type: 'text', unit: '' },
+        { key: 'longest_drive', label: 'Longest Drive', type: 'number', unit: 'yds' },
+        { key: 'closest_to_pin', label: 'Closest to Pin', type: 'number', unit: 'ft' },
+        { key: 'league_wins', label: 'League Wins', type: 'number', unit: '' },
+        { key: 'tournament_wins', label: 'Tournament Wins', type: 'number', unit: '' }
+    ],
+    hyrox: [
+        { key: 'run_1km', label: '1KM Run Time', type: 'time', unit: 'mm:ss' },
+        { key: 'ski_erg_1000m', label: 'Ski Erg: 1,000m', type: 'time', unit: 'mm:ss' },
+        { key: 'sled_push_50m', label: 'Sled Push: 50m', type: 'time', unit: 'mm:ss' },
+        { key: 'sled_pull_50m', label: 'Sled Pull: 50m', type: 'time', unit: 'mm:ss' },
+        { key: 'burpee_broad_jumps_80m', label: 'Burpee Broad Jumps: 80m', type: 'time', unit: 'mm:ss' },
+        { key: 'row_1000m', label: 'Row: 1,000m', type: 'time', unit: 'mm:ss' },
+        { key: 'farmers_carry_200m', label: 'Farmer\'s Carry: 200m', type: 'time', unit: 'mm:ss' },
+        { key: 'sandbag_lunges_100m', label: 'Sandbag Lunges: 100m', type: 'time', unit: 'mm:ss' },
+        { key: 'wall_balls_100', label: 'Wall Balls: 100 reps', type: 'time', unit: 'mm:ss' }
+    ],
+    hockey: [
+        { key: 'react_targets', label: 'React Targets', type: 'time', unit: 'mm:ss' },
+        { key: 'classic_targets', label: 'Classic Targets', type: 'number', unit: '' }
+    ]
+};
+
+export default function StatsManagementPage() {
+    const [selectedSport, setSelectedSport] = useState<'golf' | 'hyrox' | 'hockey'>('golf');
     const [players, setPlayers] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
-    const [stats, setStats] = useState({
-        goals_season: 0,
-        assists_season: 0,
-        games_played_season: 0,
-        pim: 0
-    });
+    const [stats, setStats] = useState<Record<string, any>>({});
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState<string | null>(null);
     const { addToast } = useToast();
 
-    // Fetch Players
+    // Fetch Players based on search
     useEffect(() => {
         const fetchPlayers = async () => {
             const { data } = await supabase
                 .from('profiles')
-                .select('id, first_name, last_name, team')
+                .select('id, first_name, last_name, team, avatar_url')
                 .eq('role', 'player')
                 .ilike('first_name', `%${searchTerm}%`)
                 .order('first_name');
@@ -38,27 +62,26 @@ export default function ManualStatsPage() {
     useEffect(() => {
         if (!selectedPlayer) return;
         const fetchStats = async () => {
-            // Try to find existing stats
             const { data } = await supabase
                 .from('players_stats')
-                .select('*')
+                .select('stats')
                 .eq('player_id', selectedPlayer.id)
+                .eq('category', selectedSport)
                 .single();
 
-            if (data) {
-                setStats({
-                    goals_season: data.goals_season || 0,
-                    assists_season: data.assists_season || 0,
-                    games_played_season: data.games_played_season || 0,
-                    pim: data.pim || 0
-                });
+            if (data?.stats) {
+                setStats(data.stats);
             } else {
-                // Reset if no stats found (new player)
-                setStats({ goals_season: 0, assists_season: 0, games_played_season: 0, pim: 0 });
+                // Initialize empty stats for this sport
+                const emptyStats: Record<string, any> = {};
+                STAT_FIELDS[selectedSport].forEach(field => {
+                    emptyStats[field.key] = field.type === 'number' ? 0 : '';
+                });
+                setStats(emptyStats);
             }
         };
         fetchStats();
-    }, [selectedPlayer]);
+    }, [selectedPlayer, selectedSport]);
 
     const handleSave = async () => {
         if (!selectedPlayer) return;
@@ -66,68 +89,98 @@ export default function ManualStatsPage() {
 
         const payload = {
             player_id: selectedPlayer.id,
-            ...stats,
-            points: (parseInt(stats.goals_season as any) || 0) + (parseInt(stats.assists_season as any) || 0),
-            is_verified: true,
-            verified_at: new Date().toISOString()
+            category: selectedSport,
+            stats: stats,
+            verified: true,
+            updated_at: new Date().toISOString()
         };
 
-        // Upsert stats
         const { error } = await supabase
             .from('players_stats')
-            .upsert(payload, { onConflict: 'player_id' });
+            .upsert(payload, { onConflict: 'player_id,category' });
 
         setIsSaving(false);
         if (error) {
             addToast('Error saving stats: ' + error.message, 'error');
         } else {
             setLastSaved(formatHK(new Date(), 'h:mm:ss a'));
+            addToast('Stats saved successfully!', 'success');
+        }
+    };
+
+    const updateStat = (key: string, value: any, type: string) => {
+        if (type === 'number') {
+            setStats({ ...stats, [key]: parseInt(value) || 0 });
+        } else {
+            setStats({ ...stats, [key]: value });
         }
     };
 
     return (
         <div className="min-h-screen bg-black text-white p-6 font-montserrat pb-24 w-full overflow-x-hidden">
-            <h1 className="text-3xl font-black italic uppercase mb-8 text-east-light">Coach Stats Entry</h1>
+            <h1 className="text-3xl font-black italic uppercase mb-8 text-east-light">Stats Management</h1>
+
+            {/* Sport Selector */}
+            <div className="flex gap-3 mb-8">
+                {[
+                    { id: 'golf', label: 'Golf', icon: '⛳' },
+                    { id: 'hyrox', label: 'HYROX', icon: '🏃' },
+                    { id: 'hockey', label: 'Hockey', icon: '🏒' }
+                ].map(sport => (
+                    <button
+                        key={sport.id}
+                        onClick={() => setSelectedSport(sport.id as any)}
+                        className={`px-6 py-3 rounded-xl font-bold uppercase text-sm transition-all ${selectedSport === sport.id
+                                ? 'bg-east-light text-black'
+                                : 'bg-white/10 text-white hover:bg-white/20'
+                            }`}
+                    >
+                        {sport.icon} {sport.label}
+                    </button>
+                ))}
+            </div>
 
             <div className="grid md:grid-cols-2 gap-8">
-                {/* 1. Player Search */}
+                {/* Player Search */}
                 <div className="bg-[#1e1e1e] p-6 rounded-2xl border border-white/10">
                     <h2 className="text-xl font-bold uppercase mb-4 flex items-center gap-2">
-                        <Search size={20} className="text-east-light" /> Select Player
+                        <Search size={20} className="text-east-light" /> Search for Member
                     </h2>
                     <input
                         className="w-full bg-black/50 border border-white/20 p-4 rounded-xl text-white outline-none focus:border-east-light transition-all mb-4"
-                        placeholder="Search by First Name..."
+                        placeholder="Search by name..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                     />
-                    <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                    <div className="max-h-[500px] overflow-y-auto space-y-2 pr-2">
                         {players.map(p => (
                             <button
                                 key={p.id}
                                 onClick={() => setSelectedPlayer(p)}
                                 className={`w-full text-left p-4 rounded-xl border transition-all ${selectedPlayer?.id === p.id
-                                    ? 'bg-east-light text-black border-east-light font-black'
-                                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                                        ? 'bg-east-light text-black border-east-light font-black'
+                                        : 'bg-white/5 border-white/10 hover:bg-white/10'
                                     }`}
                             >
-                                <div className="uppercase truncate">{p.first_name} {p.last_name}</div>
-                                <div className={`text-[8px] px-2 py-0.5 rounded-full inline-block border mt-1 font-black uppercase tracking-widest ${p.team === 'EAST HK' ? 'bg-east-light/10 text-east-light border-east-light/20' :
-                                    p.team === 'NORTH HK' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                        'bg-white/5 text-gray-500 border-white/5'
-                                    }`}>
-                                    {p.team || 'NO TEAM'}
+                                <div className="flex items-center gap-3">
+                                    {p.avatar_url && (
+                                        <img src={p.avatar_url} className="w-10 h-10 rounded-full object-cover" alt="" />
+                                    )}
+                                    <div>
+                                        <div className="uppercase truncate">{p.first_name} {p.last_name}</div>
+                                        <div className="text-xs opacity-70">{p.team || 'NO TEAM'}</div>
+                                    </div>
                                 </div>
                             </button>
                         ))}
                     </div>
                 </div>
 
-                {/* 2. Stats Entry Form */}
+                {/* Stats Entry Form */}
                 <div className="bg-[#1e1e1e] p-6 rounded-2xl border border-white/10 relative">
                     {!selectedPlayer ? (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-2xl z-10">
-                            <p className="text-gray-500 font-bold uppercase tracking-widest">Select a player to edit details</p>
+                            <p className="text-gray-500 font-bold uppercase tracking-widest">Select a player to edit stats</p>
                         </div>
                     ) : (
                         <>
@@ -135,6 +188,7 @@ export default function ManualStatsPage() {
                                 <div>
                                     <h2 className="text-2xl font-black italic uppercase">{selectedPlayer.first_name} {selectedPlayer.last_name}</h2>
                                     <p className="text-east-light text-sm font-bold uppercase tracking-widest">{selectedPlayer.team}</p>
+                                    <p className="text-gray-400 text-xs uppercase mt-1">{selectedSport} Stats</p>
                                 </div>
                                 {lastSaved && (
                                     <div className="flex items-center gap-1 text-green-500 text-xs font-bold uppercase animate-fadeIn">
@@ -143,48 +197,39 @@ export default function ManualStatsPage() {
                                 )}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 mb-8">
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Games Played</label>
-                                    <input
-                                        type="number"
-                                        value={stats.games_played_season}
-                                        onChange={e => setStats({ ...stats, games_played_season: parseInt(e.target.value) || 0 })}
-                                        className="w-full bg-black border border-white/20 p-3 rounded-lg text-2xl font-black text-center focus:border-east-light outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Penalty Mins</label>
-                                    <input
-                                        type="number"
-                                        value={stats.pim}
-                                        onChange={e => setStats({ ...stats, pim: parseInt(e.target.value) || 0 })}
-                                        className="w-full bg-black border border-white/20 p-3 rounded-lg text-2xl font-black text-center focus:border-east-light outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-east-light uppercase tracking-widest mb-1 block">Goals</label>
-                                    <input
-                                        type="number"
-                                        value={stats.goals_season}
-                                        onChange={e => setStats({ ...stats, goals_season: parseInt(e.target.value) || 0 })}
-                                        className="w-full bg-black border border-east-light/50 p-3 rounded-lg text-4xl font-black italic text-center focus:border-east-light outline-none text-east-light"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-east-light uppercase tracking-widest mb-1 block">Assists</label>
-                                    <input
-                                        type="number"
-                                        value={stats.assists_season}
-                                        onChange={e => setStats({ ...stats, assists_season: parseInt(e.target.value) || 0 })}
-                                        className="w-full bg-black border border-east-light/50 p-3 rounded-lg text-4xl font-black italic text-center focus:border-east-light outline-none text-east-light"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="bg-white/5 p-4 rounded-xl mb-6 flex justify-between items-center border border-white/5">
-                                <span className="text-sm font-bold uppercase text-gray-400">Total Points</span>
-                                <span className="text-4xl font-black italic text-white">{(stats.goals_season || 0) + (stats.assists_season || 0)}</span>
+                            {/* Dynamic Fields */}
+                            <div className="grid grid-cols-2 gap-4 mb-8 max-h-[500px] overflow-y-auto pr-2">
+                                {STAT_FIELDS[selectedSport].map(field => (
+                                    <div key={field.key} className={field.key === 'course_name' ? 'col-span-2' : ''}>
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">
+                                            {field.label} {field.unit && `(${field.unit})`}
+                                        </label>
+                                        {field.type === 'time' ? (
+                                            <input
+                                                type="text"
+                                                placeholder="mm:ss"
+                                                pattern="[0-9]{2}:[0-9]{2}"
+                                                value={stats[field.key] || ''}
+                                                onChange={e => updateStat(field.key, e.target.value, 'text')}
+                                                className="w-full bg-black border border-white/20 p-3 rounded-lg text-xl font-black text-center focus:border-east-light outline-none"
+                                            />
+                                        ) : field.type === 'number' ? (
+                                            <input
+                                                type="number"
+                                                value={stats[field.key] || 0}
+                                                onChange={e => updateStat(field.key, e.target.value, 'number')}
+                                                className="w-full bg-black border border-white/20 p-3 rounded-lg text-xl font-black text-center focus:border-east-light outline-none"
+                                            />
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                value={stats[field.key] || ''}
+                                                onChange={e => updateStat(field.key, e.target.value, 'text')}
+                                                className="w-full bg-black border border-white/20 p-3 rounded-lg text-lg focus:border-east-light outline-none"
+                                            />
+                                        )}
+                                    </div>
+                                ))}
                             </div>
 
                             <button
@@ -192,7 +237,7 @@ export default function ManualStatsPage() {
                                 disabled={isSaving}
                                 className="w-full bg-east-light text-black font-black italic uppercase py-4 rounded-xl text-lg hover:bg-white transition-all shadow-lg flex justify-center items-center gap-2 disabled:opacity-50"
                             >
-                                <Save size={20} /> {isSaving ? 'Saving...' : 'Update Stats'}
+                                <Save size={20} /> {isSaving ? 'Saving...' : 'Save Stats'}
                             </button>
                         </>
                     )}

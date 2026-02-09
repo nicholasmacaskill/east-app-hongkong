@@ -121,13 +121,37 @@ export async function POST(request: Request) {
         const { data: { user } } = await supabaseAuth.auth.getUser();
 
         if (user) {
+            // Fetch admin name
+            const { data: adminProfile } = await supabaseAdmin
+                .from('profiles')
+                .select('first_name, last_name')
+                .eq('id', user.id)
+                .single();
+            const adminName = adminProfile ? `${adminProfile.first_name} ${adminProfile.last_name}` : user.email;
+
+            // Fetch target name
+            const { data: targetProfile } = await supabaseAdmin
+                .from('profiles')
+                .select('first_name, last_name')
+                .eq('id', userId)
+                .single();
+            const targetName = targetProfile ? `${targetProfile.first_name} ${targetProfile.last_name}` : 'Unknown';
+
             // Sanitize auth updates (remove password)
             const { password: _, ...safeAuthUpdates } = authUpdates;
 
-            await logAdminAction(user.id, 'UPDATE_PLAYER', 'profile', userId, {
-                authUpdates: safeAuthUpdates,
-                profileUpdates: profileUpdates
-            });
+            await logAdminAction(
+                user.id,
+                'UPDATE_PLAYER',
+                'profile',
+                userId,
+                {
+                    authUpdates: safeAuthUpdates,
+                    profileUpdates: profileUpdates
+                },
+                adminName,
+                targetName
+            );
         }
 
         return NextResponse.json({

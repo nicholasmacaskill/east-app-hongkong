@@ -37,7 +37,7 @@ export async function POST(request: Request) {
         // 2. FETCH TARGET USER CURRENT CREDITS
         const { data: targetProfile, error: targetError } = await supabaseAdmin
             .from('profiles')
-            .select('credits')
+            .select('credits, first_name, last_name')
             .eq('id', userId)
             .single();
 
@@ -73,7 +73,24 @@ export async function POST(request: Request) {
         }
 
         // 5. AUDIT LOGGING
-        await logAdminAction(user.id, 'UPDATE_CREDITS', 'profile', userId, { amount, description, oldCredits: targetProfile.credits, newCredits });
+        const { data: adminProfile } = await supabaseAdmin
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('id', user.id)
+            .single();
+
+        const adminName = adminProfile ? `${adminProfile.first_name} ${adminProfile.last_name}` : user.email;
+        const targetName = `${targetProfile.first_name} ${targetProfile.last_name}`;
+
+        await logAdminAction(
+            user.id,
+            'UPDATE_CREDITS',
+            'profile',
+            userId,
+            { amount, description, oldCredits: targetProfile.credits, newCredits },
+            adminName,
+            targetName
+        );
 
         return NextResponse.json({ success: true, newCredits });
 

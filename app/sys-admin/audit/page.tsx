@@ -6,26 +6,36 @@ import { format } from 'date-fns';
 import { Search, Filter, RefreshCw } from 'lucide-react';
 
 const renderDetailsSummary = (log: any) => {
+    const { adminName, targetName } = log.details || {};
+
     if (log.action === 'UPDATE_PLAYER' || log.action === 'UPDATE_COACH') {
-        const profileUpdates = log.details?.profileUpdates || {};
-        const authUpdates = log.details?.authUpdates || {};
-        const allChanges = { ...authUpdates, ...profileUpdates };
+        return `Admin ${adminName || 'Unknown'} updated ${targetName || 'user'}`;
+    }
 
-        const changeCount = Object.keys(allChanges).length;
-        if (changeCount === 0) return 'View Details (No field changes)';
+    if (log.action === 'CREATE_PLAYER' || log.action === 'CREATE_COACH') {
+        return `Admin ${adminName || 'Unknown'} created ${targetName || 'user'}`;
+    }
 
-        // Pick the most "interesting" key to show as a preview
-        const priorityKeys = ['credits', 'role', 'team', 'email', 'firstName', 'lastName'];
-        const previewKey = priorityKeys.find(k => allChanges[k] !== undefined) || Object.keys(allChanges)[0];
-        const previewValue = allChanges[previewKey];
-
-        const summary = `${previewKey}: ${previewValue}${changeCount > 1 ? ` (+${changeCount - 1} more)` : ''}`;
-        return summary;
+    if (log.action === 'DELETE_PLAYER' || log.action === 'DELETE_COACH') {
+        return `Admin ${adminName || 'Unknown'} deleted ${targetName || 'user'}`;
     }
 
     if (log.action === 'CREDIT_ADJUSTMENT' || log.action === 'UPDATE_CREDITS') {
         const { amount, newCredits } = log.details || {};
-        return `${amount > 0 ? '+' : ''}${amount} credits (New: ${newCredits})`;
+        const verb = amount > 0 ? 'added' : 'removed';
+        return `Admin ${adminName || 'Unknown'} ${verb} ${Math.abs(amount)} credits to ${targetName || 'user'} (New: ${newCredits})`;
+    }
+
+    if (log.action === 'ANNOUNCEMENT_CREATED' && log.target_type === 'service') {
+        return `Admin ${adminName || 'Unknown'} created service: ${targetName || 'Unknown'}`;
+    }
+
+    if (log.action === 'ANNOUNCEMENT_UPDATED' && log.target_type === 'service') {
+        return `Admin ${adminName || 'Unknown'} updated service: ${targetName || 'Unknown'}`;
+    }
+
+    if (log.action === 'ANNOUNCEMENT_DELETED' && log.target_type === 'service') {
+        return `Admin ${adminName || 'Unknown'} deleted service: ${targetName || 'Unknown'}`;
     }
 
     return 'View Details';

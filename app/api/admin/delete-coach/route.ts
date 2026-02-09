@@ -14,7 +14,15 @@ export async function POST(request: Request) {
 
         const supabaseAdmin = getSupabaseAdmin();
 
-        // 1. Delete from profiles table
+        // 1. Fetch info before deletion for audit
+        const { data: targetProfile } = await supabaseAdmin
+            .from('profiles')
+            .select('first_name, last_name')
+            .eq('id', userId)
+            .single();
+        const targetName = targetProfile ? `${targetProfile.first_name} ${targetProfile.last_name}` : 'Unknown';
+
+        // 2. Delete from profiles table
         const { error: profileError } = await supabaseAdmin
             .from('profiles')
             .delete()
@@ -28,7 +36,7 @@ export async function POST(request: Request) {
             }, { status: 500 });
         }
 
-        // 2. Delete from Supabase Auth
+        // 3. Delete from Supabase Auth
         const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
         if (authError) {
@@ -36,7 +44,7 @@ export async function POST(request: Request) {
             console.warn(`Auth user ${userId} could not be deleted: ${authError.message}`);
         }
 
-        // AUDIT LOGGING
+        // 4. AUDIT LOGGING
         const cookieStore = await cookies();
         const supabaseAuth = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,7 +52,17 @@ export async function POST(request: Request) {
             { cookies: { getAll() { return cookieStore.getAll() }, setAll(c) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } }
         );
         const { data: { user } } = await supabaseAuth.auth.getUser();
-        if (user) await logAdminAction(user.id, 'DELETE_COACH', 'profile', userId);
+
+        if (user) {
+            const { data: adminProfile } = await supabaseAdmin
+                .from('profiles')
+                .select('first_name, last_name')
+                .eq('id', user.id)
+                .single();
+            const adminName = adminProfile ? `${adminProfile.first_name} ${adminProfile.last_name}` : user.email;
+
+            await logAdminAction(user.id, 'DELETE_COACH', 'profile', userId, {}, adminName, targetName);
+        }
 
         return NextResponse.json({
             success: true,

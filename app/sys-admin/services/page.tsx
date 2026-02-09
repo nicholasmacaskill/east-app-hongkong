@@ -39,7 +39,8 @@ export default function ManageServicesPage() {
         startHour: 8,
         endHour: 20,
         daysOfWeek: [0, 1, 2, 3, 4, 5, 6], // All days
-        durationMinutes: 60
+        durationMinutes: 60,
+        coachId: ''
     });
     const [generating, setGenerating] = useState(false);
 
@@ -49,28 +50,30 @@ export default function ManageServicesPage() {
 
     const fetchServices = async () => {
         setLoading(true);
-        // 1. Fetch Services
-        const { data: svcData, error: svcError } = await supabase
-            .from('session_types')
-            .select('*')
-            .order('title');
+        try {
+            // 1. Fetch Services
+            const res = await fetch('/api/admin/services');
+            const svcData = await res.json();
 
-        if (svcError) {
-            console.error('Error fetching services:', svcError);
-            addToast("Failed to load services", "error");
-        } else {
-            setServices((svcData as any) || []);
+            if (!res.ok) {
+                console.error('Error fetching services:', svcData.error);
+                addToast("Failed to load services", "error");
+            } else {
+                setServices(svcData || []);
+            }
+
+            // 2. Fetch Coaches
+            const { data: coachData } = await supabase
+                .from('profiles')
+                .select('id, first_name, last_name, avatar_url')
+                .eq('role', 'coach')
+                .order('first_name');
+
+            if (coachData) setAllCoaches(coachData);
+        } catch (e: any) {
+            console.error('Error in fetchServices:', e);
+            addToast("Failed to load data", "error");
         }
-
-        // 2. Fetch Coaches
-        const { data: coachData } = await supabase
-            .from('profiles')
-            .select('id, first_name, last_name, avatar_url')
-            .eq('role', 'coach')
-            .order('first_name');
-
-        if (coachData) setAllCoaches(coachData);
-
         setLoading(false);
     };
 
@@ -90,43 +93,24 @@ export default function ManageServicesPage() {
                 description: currentService.description || null
             };
 
-            let error;
             let serviceId = currentService.id;
 
-            if (serviceId) {
-                // Update
-                const { error: updateError } = await supabase
-                    .from('session_types')
-                    .update(payload)
-                    .eq('id', serviceId);
-                error = updateError;
+            const res = await fetch('/api/admin/services', {
+                method: serviceId ? 'PATCH' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...payload,
+                    id: serviceId,
+                    coachIds: selectedCoachIds
+                })
+            });
+
+            const result = await res.json();
+
+            if (!res.ok) {
+                console.error('Error saving service:', result.error);
+                addToast(`Failed to save: ${result.error}`, "error");
             } else {
-                // Insert
-                const { data: newData, error: insertError } = await supabase
-                    .from('session_types')
-                    .insert([payload])
-                    .select();
-
-                if (newData && newData[0]) serviceId = newData[0].id;
-                error = insertError;
-            }
-
-            if (error) {
-                console.error('Error saving service:', error);
-                addToast(`Failed to save: ${error.message || JSON.stringify(error)}`, "error");
-            } else {
-                // SYNC COACH SERVICES
-                if (serviceId) {
-                    await supabase.from('coach_services').delete().eq('session_type_id', serviceId);
-                    if (selectedCoachIds.length > 0) {
-                        const coachPayloads = selectedCoachIds.map(cid => ({
-                            coach_id: cid,
-                            session_type_id: serviceId
-                        }));
-                        await supabase.from('coach_services').insert(coachPayloads);
-                    }
-                }
-
                 addToast("Service saved successfully", "success");
                 setIsEditing(false);
                 setCurrentService({});
@@ -143,13 +127,13 @@ export default function ManageServicesPage() {
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this service?')) return;
 
-        const { error } = await supabase
-            .from('session_types')
-            .delete()
-            .eq('id', id);
+        const res = await fetch(`/api/admin/services?id=${id}`, {
+            method: 'DELETE'
+        });
 
-        if (error) {
-            console.error('Error deleting service:', error);
+        if (!res.ok) {
+            const result = await res.json();
+            console.error('Error deleting service:', result.error);
             addToast("Failed to delete service", "error");
         } else {
             addToast("Service deleted", "success");
@@ -180,7 +164,8 @@ export default function ManageServicesPage() {
         setGeneratorConfig({
             ...generatorConfig,
             serviceId: service.id,
-            serviceTitle: service.title
+            serviceTitle: service.title,
+            coachId: '' // Reset coach
         });
         setShowGenerator(true);
     };
@@ -264,14 +249,12 @@ export default function ManageServicesPage() {
                             </div>
 
                             <div className="flex w-full justify-between items-center border-t border-white/5 pt-3 mt-1">
-                                {service.category === 'FACILITY' ? (
-                                    <button
-                                        onClick={() => openGenerator(service)}
-                                        className="text-[10px] font-bold uppercase tracking-wider text-[#28D160] hover:text-white flex items-center gap-1 transition-colors"
-                                    >
-                                        <Sparkles size={12} /> Generate Schedule
-                                    </button>
-                                ) : <div />}
+                                <button
+                                    onClick={() => openGenerator(service)}
+                                    className="text-[10px] font-bold uppercase tracking-wider text-[#28D160] hover:text-white flex items-center gap-1 transition-colors"
+                                >
+                                    <Sparkles size={12} /> Generate Schedule
+                                </button>
 
                                 <div className="flex items-center gap-2">
                                     <button onClick={() => openEdit(service)} className="p-2 hover:bg-white/10 rounded-lg text-blue-400">
@@ -402,6 +385,25 @@ export default function ManageServicesPage() {
                                         </button>
                                     ))}
                                 </div>
+                            </div>
+
+                            {/* Coach Selection (Optional) */}
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5 flex justify-between items-center">
+                                    <span>Assigned Coach <span className="text-gray-600 font-normal lowercase">(optional)</span></span>
+                                </label>
+                                <select
+                                    value={generatorConfig.coachId}
+                                    onChange={e => setGeneratorConfig({ ...generatorConfig, coachId: e.target.value })}
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160]"
+                                >
+                                    <option value="">No Specific Coach (Facility/Staff)</option>
+                                    {allCoaches.map(coach => (
+                                        <option key={coach.id} value={coach.id}>
+                                            {coach.first_name} {coach.last_name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <button onClick={handleGenerate} disabled={generating} className="w-full bg-[#28D160] text-black font-black uppercase py-4 rounded-xl hover:bg-white transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2">

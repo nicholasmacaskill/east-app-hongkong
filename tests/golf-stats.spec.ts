@@ -51,20 +51,36 @@ test.describe('Golf Stats System', () => {
     });
 
     test('Stat Upload: Updates player stats and reflect on leaderboard', async ({ page }) => {
-        // 1. Log in
+        page.on('console', msg => console.log('BROWSER:', msg.text()));
+        page.on('pageerror', err => console.log('BROWSER ERROR:', err.message));
+
+        // 1. Clear state to ensure clean login
+        await page.goto('/');
+        await page.evaluate(() => localStorage.clear());
+
+        // 2. Log in
         await page.goto('/login');
-        await page.fill('input[type="email"]', testUserEmail);
-        await page.fill('input[type="password"]', 'TestPassword123!');
-        await page.click('button[type="submit"]');
+        await page.waitForLoadState('networkidle');
 
-        // 2. Go to Stats Page
-        await page.goto('/stats');
+        console.log('Filling login form for:', testUserEmail);
+        await page.fill('#email', testUserEmail);
+        await page.fill('#password', 'TestPassword123!');
+        await page.click('button:has-text("LOGIN")');
 
-        // 3. Switch to Golf
-        await page.click('button:has-text("Golf")');
+        console.log('Waiting for redirect to home...');
+        // 3. Wait for Home Screen (redirect after login)
+        await page.waitForURL(url => url.origin === 'http://localhost:3000' && url.pathname === '/', { timeout: 15000 });
 
-        // 4. Open Upload Modal
-        await page.click('button:has-text("Upload Stats")');
+        console.log('Verifying home screen content...');
+        await expect(page.locator('h2:has-text("Breaking News")')).toBeVisible({ timeout: 10000 });
+
+        // 3. Go to Profile Tab
+        await page.click('button:has-text("Profile")');
+        await expect(page.locator('h2:has-text("GOLF")').first()).toBeVisible();
+
+        // 4. Open Update Stats Modal (Activity icon button)
+        await page.click('button[title="Update Stats"]');
+        await expect(page.locator('h2:has-text("Upload Golf Stats")')).toBeVisible();
 
         // 5. Fill and Save
         await page.fill('input[name="handicap"]', '10.5');
@@ -74,6 +90,9 @@ test.describe('Golf Stats System', () => {
         await page.fill('input[name="driver_distance"]', '280');
 
         await page.click('button:has-text("Save Stats")');
+
+        // Wait for modal to close
+        await expect(page.locator('h2:has-text("Upload Golf Stats")')).not.toBeVisible();
 
         // 6. Verify success in DB
         const { data: stats } = await supabase
@@ -87,7 +106,16 @@ test.describe('Golf Stats System', () => {
         expect(stats.driver_distance).toBe(280);
 
         // 7. Verify leaderboard presence
+        await page.goto('/stats');
+
+        // Switch to Golf
+        await page.click('button:has-text("Golf")');
+
+        // Verify player appears (Golf Pro is the name from beforeAll)
         await expect(page.locator('h3:has-text("Golf Pro")')).toBeVisible();
-        await expect(page.locator('div:has-text("280")').first()).toBeVisible();
+
+        // Verify a stat appears (e.g. 25 rounds or 280 distance depending on default filter)
+        // Default filter for golf in UI is 'rounds' (from fetchDynamicEntries auto-tab logic or default)
+        await expect(page.locator('div:has-text("25")').first()).toBeVisible();
     });
 });

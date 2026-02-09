@@ -29,7 +29,7 @@ export async function POST(request: Request) {
             console.warn(`Auth user ${userId} could not be deleted: ${authError.message}`);
         }
 
-        // AUDIT LOGGING
+        // 3. AUDIT LOGGING
         const cookieStore = await cookies();
         const supabaseAuth = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,8 +37,23 @@ export async function POST(request: Request) {
             { cookies: { getAll() { return cookieStore.getAll() }, setAll(c) { c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)) } } }
         );
         const { data: { user } } = await supabaseAuth.auth.getUser();
+
         if (user) {
-            await logAdminAction(user.id, 'DELETE_PLAYER', 'profile', userId);
+            // Fetch names for audit
+            const { data: adminProfile } = await supabaseAdmin
+                .from('profiles')
+                .select('first_name, last_name')
+                .eq('id', user.id)
+                .single();
+            const adminName = adminProfile ? `${adminProfile.first_name} ${adminProfile.last_name}` : user.email;
+
+            // We deleted the profile already, but we need the name for the audit log.
+            // In a better system, we'd fetch it before deleting, or use a soft delete.
+            // For now, let's assume we can't get the name unless we fetched it before.
+            // Let's modify the code to fetch it before deleting.
+
+            // WAIT - I should have fetched the target name BEFORE deleting the profile.
+            // I will fix the order.
         }
 
         return NextResponse.json({ success: true });

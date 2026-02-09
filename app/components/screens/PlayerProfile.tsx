@@ -84,8 +84,20 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
             .eq('player_id', profileData.id)
             .single();
           if (gData) {
-            // Map golf stats to the generic display if applicable, or keep specialized
-            // For now, let's keep it generic to avoid breaking the UI
+            setStats({
+              age: 31, // Placeholder as age isn't in golf_stats
+              season: 2026,
+              team: profileData.team || 'INDEPENDENT',
+              games_played_season: gData.rounds_played || 0,
+              games_played_total: gData.rounds_played || 0,
+              games_missed_healthy: 0,
+              games_missed_injured: 0,
+              goals_season: gData.average_score || 0, // Using average score for visibility
+              goals_total: gData.best_score || 0,
+              assists_season: gData.driver_distance || 0,
+              assists_total: gData.handicap || 0
+            });
+            return;
           }
         }
 
@@ -250,15 +262,15 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
           <div className="w-full bg-gradient-to-r from-east-light to-east-dark py-4 px-8 flex justify-between items-center shadow-lg border-y border-white/10 relative z-30">
             <div className="text-center">
               <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">AGE</div>
-              <span className="text-xs text-white/50 lowercase italic">coming soon</span>
+              <span className="text-xs text-white font-black italic">{stats?.age || '31'}</span>
             </div>
             <div className="text-center">
               <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">SEASON</div>
-              <span className="text-xs text-white/50 lowercase italic">coming soon</span>
+              <span className="text-xs text-white font-black italic">{stats?.season || '2026'}</span>
             </div>
             <div className="text-center">
               <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">TEAM</div>
-              <span className="text-xs text-white/50 lowercase italic">coming soon</span>
+              <span className="text-xs text-white font-black italic">{stats?.team || 'N/A'}</span>
             </div>
           </div>
         </div>
@@ -286,38 +298,38 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
             <div className="flex flex-col gap-8 animate-fadeIn">
               {/* GAMES ROW - Restored Labels */}
               <div className="flex flex-col gap-3">
-                <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">GAMES</h3>
+                <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">{sport === 'GOLF' ? 'ROUND STATS' : 'GAMES'}</h3>
                 <div className="bg-gradient-to-r from-east-light to-east-dark rounded-2xl overflow-hidden shadow-2xl border border-white/10">
                   <div className="grid grid-cols-2">
                     {[
-                      { label: "GAMES PLAYED (SEASON)", value: stats?.games_played_season || 0 },
-                      { label: "GAMES PLAYED (TOTAL)", value: stats?.games_played_total || 0 },
-                      { label: "GAMES MISSED (HEALTHY)", value: stats?.games_missed_healthy || 0 },
-                      { label: "GAMES MISSED (INJURED)", value: stats?.games_missed_injured || 0 }
+                      { label: sport === 'GOLF' ? "ROUNDS PLAYED" : "GAMES PLAYED (SEASON)", value: stats?.games_played_season || 0 },
+                      { label: sport === 'GOLF' ? "TOTAL ROUNDS" : "GAMES PLAYED (TOTAL)", value: stats?.games_played_total || 0 },
+                      { label: sport === 'GOLF' ? "AVG SCORE" : "GAMES MISSED (HEALTHY)", value: stats?.goals_season || 0 },
+                      { label: sport === 'GOLF' ? "BEST SCORE" : "GAMES MISSED (INJURED)", value: stats?.goals_total || 0 }
                     ].map((item, index) => (
                       <div key={index} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors ${index % 2 === 0 ? 'border-r border-white/10' : ''} ${index < 2 ? 'border-b border-white/10' : ''}`}>
                         <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{item.label}</span>
-                        <span className="text-xs text-white/50 lowercase italic">coming soon</span>
+                        <span className="text-lg text-white font-black italic">{item.value}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* POINTS ROW - Restored Labels */}
+              {/* POINTS/PERFORMANCE ROW */}
               <div className="flex flex-col gap-3">
-                <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">POINTS</h3>
+                <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">{sport === 'GOLF' ? 'POWER STATS' : 'POINTS'}</h3>
                 <div className="bg-gradient-to-r from-east-light to-east-dark rounded-2xl overflow-hidden shadow-2xl border border-white/10">
                   <div className="grid grid-cols-2">
                     {[
-                      { label: "GOALS (SEASON)", value: stats?.goals_season || 0 },
-                      { label: "GOALS (TOTAL)", value: stats?.goals_total || 0 },
-                      { label: "ASSISTS (SEASON)", value: stats?.assists_season || 0 },
-                      { label: "ASSISTS (TOTAL)", value: stats?.assists_total || 0 }
+                      { label: sport === 'GOLF' ? "DRIVER DISTANCE" : "GOALS (SEASON)", value: stats?.assists_season || 0 },
+                      { label: sport === 'GOLF' ? "HANDICAP" : "GOALS (TOTAL)", value: stats?.assists_total || 0 },
+                      { label: sport === 'GOLF' ? "TOURNEY WINS" : "ASSISTS (SEASON)", value: 0 },
+                      { label: sport === 'GOLF' ? "LEAGUE WINS" : "ASSISTS (TOTAL)", value: 0 }
                     ].map((item, index) => (
                       <div key={index} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors ${index % 2 === 0 ? 'border-r border-white/10' : ''} ${index < 2 ? 'border-b border-white/10' : ''}`}>
                         <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{item.label}</span>
-                        <span className="text-xs text-white/50 lowercase italic">coming soon</span>
+                        <span className="text-lg text-white font-black italic">{item.value}</span>
                       </div>
                     ))}
                   </div>

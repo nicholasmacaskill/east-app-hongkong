@@ -64,7 +64,32 @@ export async function POST(request: Request) {
         // This prevents "no rows" errors later if logic expects at least an empty set
 
         // AUDIT LOGGING
-        await logAdminAction(userId, 'CREATE_COACH', 'profile', userId, { email, firstName, lastName });
+        const { data: { user: adminUser } } = await supabaseAdmin.auth.getUser(request.headers.get('Authorization')?.replace('Bearer ', '') || '');
+
+        let adminId = userId; // Fallback
+        let adminName = 'System';
+
+        if (adminUser) {
+            adminId = adminUser.id;
+            const { data: adminProfile } = await supabaseAdmin
+                .from('profiles')
+                .select('first_name, last_name')
+                .eq('id', adminId)
+                .single();
+            if (adminProfile) adminName = `${adminProfile.first_name} ${adminProfile.last_name}`;
+        }
+
+        const targetName = `${firstName} ${lastName}`;
+
+        await logAdminAction(
+            adminId,
+            'CREATE_COACH',
+            'profile',
+            userId,
+            { email, firstName, lastName },
+            adminName,
+            targetName
+        );
 
         return NextResponse.json({ success: true, userId: userId });
 
