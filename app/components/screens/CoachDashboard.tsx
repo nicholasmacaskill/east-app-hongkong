@@ -104,7 +104,9 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
 
                     let isMatch = false;
 
-                    if (coachFirst === 'coach' && !coachLast && instructorName !== 'coach') {
+                    if (s.category === 'FACILITY' || normalize(s.instructor || '') === 'facility') {
+                        isMatch = true;
+                    } else if (coachFirst === 'coach' && !coachLast && instructorName !== 'coach') {
                         isMatch = false;
                     } else if (instructorName === fullName) isMatch = true;
                     else if (instructorName === `coach ${fullName}`) isMatch = true;

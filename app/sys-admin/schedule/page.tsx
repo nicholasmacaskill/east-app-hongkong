@@ -121,27 +121,31 @@ export default function MasterSchedule() {
         endOfView.setDate(endOfView.getDate() + 7);
         endOfView.setHours(23, 59, 59, 999);
 
-        let query = supabase.from('sessions').select('*, registrations(user_id, status, profiles:user_id(first_name, last_name))');
-        if (activeCategory === 'EVENT') {
-            const now = new Date();
-            query = query.gte('start_time', now.toISOString()).eq('category', 'EVENT').neq('status', 'cancelled');
-        } else {
-            query = query.gte('start_time', startOfView.toISOString()).lte('start_time', endOfView.toISOString()).neq('status', 'cancelled');
+        // Fetch from new secure API to bypass RLS issues
+        try {
+            let start = startOfView.toISOString();
+            let end = endOfView.toISOString();
+
+            if (activeCategory === 'EVENT') {
+                const now = new Date();
+                start = now.toISOString();
+            }
+
+            const res = await fetch(`/api/admin/schedule?start=${start}&end=${end}`);
+            const data = await res.json();
+
+            if (data.error) {
+                console.error('Schedule fetch error:', data.error);
+                addToast("Failed to load schedule", "error");
+            } else {
+                setSessions(data.sessions || []);
+                setAvailability(data.availability || []);
+            }
+        } catch (e) {
+            console.error('Fetch schedule error:', e);
+        } finally {
+            setLoading(false);
         }
-
-        const { data: sessData } = await query.order('start_time').limit(2000);
-        setSessions(sessData || []);
-
-        const { data: availData } = await supabase
-            .from('availability')
-            .select('*, profiles:coach_id ( first_name, last_name, avatar_url )')
-            .gte('start_time', startOfView.toISOString())
-            .lte('start_time', endOfView.toISOString())
-            .eq('status', 'available')
-            .limit(1000);
-
-        setAvailability(availData || []);
-        setLoading(false);
     };
 
     const fetchCoaches = async () => {
