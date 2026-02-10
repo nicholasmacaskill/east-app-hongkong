@@ -21,18 +21,27 @@ export async function GET(request: Request) {
         const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
 
         if (authError || !user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            console.error('Admin API Auth Error:', authError);
+            return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
         }
 
         const supabaseAdmin = getSupabaseAdmin();
-        const { data: profile } = await supabaseAdmin
+        const { data: profile, error: profileError } = await supabaseAdmin
             .from('profiles')
             .select('role')
             .eq('id', user.id)
             .single();
 
-        if (!profile || profile.role !== 'admin') {
-            return NextResponse.json({ error: 'Forbidden: Admins only.' }, { status: 403 });
+        if (profileError) {
+            console.error('Admin API Profile Error:', profileError);
+            return NextResponse.json({ error: 'Failed to fetch user profile' }, { status: 500 });
+        }
+
+        console.log(`Admin API Request: User=${user.id}, Role=${profile?.role}`);
+
+        if (!profile || (profile.role !== 'admin' && profile.role !== 'sys-admin')) {
+            console.warn(`Admin API Forbidden: User ${user.id} has role ${profile?.role}`);
+            return NextResponse.json({ error: `Forbidden: Admins only. (Your role: ${profile?.role || 'none'})` }, { status: 403 });
         }
 
         const { searchParams } = new URL(request.url);

@@ -4,6 +4,8 @@ import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { formatHK } from '@/app/lib/dateUtils';
 import { fromZonedTime } from 'date-fns-tz';
 
+export const dynamic = 'force-dynamic';
+
 
 
 export async function GET(request: Request) {
@@ -33,7 +35,7 @@ export async function GET(request: Request) {
             .eq('id', user.id)
             .single();
 
-        if (!profile || (profile.role !== 'coach' && profile.role !== 'admin')) {
+        if (!profile || (profile.role !== 'coach' && profile.role !== 'admin' && profile.role !== 'sys-admin')) {
             return NextResponse.json({ error: 'Forbidden: Coaches only.' }, { status: 403 });
         }
 
@@ -60,7 +62,7 @@ export async function GET(request: Request) {
             .gte('start_time', startTimeFilter)
             .lte('start_time', endTimeFilter)
             .order('start_time', { ascending: true })
-            .limit(5000); // Safety limit
+            .limit(10000); // 10k safety limit
 
         if (sessionError) {
             console.error('Master Schedule Error (Sessions):', sessionError);
