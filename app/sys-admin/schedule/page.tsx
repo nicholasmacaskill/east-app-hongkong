@@ -131,7 +131,14 @@ export default function MasterSchedule() {
                 start = now.toISOString();
             }
 
-            const res = await fetch(`/api/admin/schedule?start=${start}&end=${end}`);
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
+            const res = await fetch(`/api/admin/schedule?start=${start}&end=${end}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             const data = await res.json();
 
             if (data.error) {
