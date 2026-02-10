@@ -203,12 +203,19 @@ export default function MasterSchedule() {
         setRegistrations([]);
     };
 
-    const handleSessionClick = (session: Session) => {
+    const handleSessionClick = (session: any) => {
         setModalAction('EDIT');
         setEditingSession({ ...session, lockInstructor: !!session.instructor });
         setShowModal(true);
-        if (session.id) fetchRegistrations(session.id);
-        else setRegistrations([]);
+
+        // Use pre-fetched registrations from Admin API if available
+        if (session.registrations && session.registrations.length > 0) {
+            setRegistrations(session.registrations);
+        } else if (session.id) {
+            fetchRegistrations(session.id);
+        } else {
+            setRegistrations([]);
+        }
     };
 
     const handleSaveSession = async () => {
