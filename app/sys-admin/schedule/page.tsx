@@ -173,7 +173,7 @@ export default function MasterSchedule() {
     const fetchRegistrations = async (sessionId: number) => {
         const { data } = await supabase
             .from('registrations')
-            .select('*, profiles(first_name, last_name, email)')
+            .select('*, profiles(first_name, last_name)')
             .eq('session_id', sessionId);
         setRegistrations(data || []);
     };
