@@ -445,9 +445,16 @@ export default function MasterSchedule() {
                         }
                         return item;
                     }).sort((a, b) => {
-                        // 1. Priority: Sessions (booked) before slots (available)
-                        if (a.type === 'session' && b.type === 'slot') return -1;
-                        if (a.type === 'slot' && b.type === 'session') return 1;
+                        // 1. Primary Priority: Sessions WITH registrations at the very top
+                        const hasRegsA = a.type === 'session' && a.registrations && a.registrations.length > 0;
+                        const hasRegsB = b.type === 'session' && b.registrations && b.registrations.length > 0;
+
+                        const priorityA = hasRegsA ? 1 : (a.type === 'session' ? 2 : 3);
+                        const priorityB = hasRegsB ? 1 : (b.type === 'session' ? 2 : 3);
+
+                        if (priorityA !== priorityB) {
+                            return priorityA - priorityB;
+                        }
 
                         // 2. Secondary: Time
                         return (safeDate(a.start_time)?.getTime() || 0) - (safeDate(b.start_time)?.getTime() || 0);

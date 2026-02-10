@@ -129,7 +129,7 @@ export async function GET(request: Request) {
                     role: r.profiles?.role || 'player',
                     status: r.status
                 })),
-            priority: 1 // Booked sessions
+            priority: (s.registrations || []).filter((r: any) => r.status !== 'cancelled').length > 0 ? 1 : 2
         }));
 
         // Format coach availability (Priority 2: Coach slots)
@@ -146,7 +146,7 @@ export async function GET(request: Request) {
             coach_id: a.coach_id,
             status: a.status,
             attendees: [],
-            priority: 2 // Coach availability
+            priority: 3 // Coach availability
         }));
 
         // Format facility bookings (Priority 3: Facility sessions)
@@ -171,7 +171,7 @@ export async function GET(request: Request) {
                     status: r.status
                 })),
             total_facility_bays: s.total_facility_bays,
-            priority: 3 // Facility bookings
+            priority: (s.registrations || []).filter((r: any) => r.status !== 'cancelled').length > 0 ? 1 : 4
         }));
 
         // Format facility availability (Priority 3: Facility slots)
@@ -187,8 +187,8 @@ export async function GET(request: Request) {
             coach_image_url: null,
             status: a.status,
             attendees: [],
-            facility_category: a.facility_category,
-            priority: 3 // Facility availability
+            priority: 4, // Facility availability
+            facility_category: a.facility_category
         }));
 
         // Combine all data sources and sort by priority, then time
