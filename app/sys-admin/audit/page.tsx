@@ -38,6 +38,11 @@ const renderDetailsSummary = (log: any) => {
         return `Admin ${adminName || 'Unknown'} deleted service: ${targetName || 'Unknown'}`;
     }
 
+    if (log.action === 'CANCEL_BOOKING') {
+        const { sessionTitle } = log.details || {};
+        return `Admin ${adminName || 'Unknown'} cancelled booking for ${targetName || 'user'} in session: ${sessionTitle || 'Unknown'}`;
+    }
+
     return 'View Details';
 };
 

@@ -158,6 +158,19 @@ export async function POST(request: Request) {
                                 description: `Admin cancelled: ${session.title} (${refundMultiplier * 100}% refund)`
                             });
                     }
+
+                    // Log the individual booking cancellation
+                    await logAdminAction(
+                        user.id,
+                        'CANCEL_BOOKING',
+                        'registration',
+                        reg.id,
+                        {
+                            sessionId: id,
+                            sessionTitle: session.title,
+                            userId: reg.user_id
+                        }
+                    );
                 }
             }
 

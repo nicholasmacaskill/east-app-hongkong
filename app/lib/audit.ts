@@ -20,7 +20,8 @@ export type AuditAction =
     | 'CREATE_COACH'
     | 'UPDATE_COACH'
     | 'DELETE_COACH'
-    | 'GENERATE_SCHEDULE';
+    | 'GENERATE_SCHEDULE'
+    | 'CANCEL_BOOKING';
 
 export interface AuditLogEntry {
     action: AuditAction;
