@@ -167,8 +167,8 @@ export default function LeaderboardPage() {
                 </Link>
 
                 <div className="text-center mb-10">
-                    <h1 className="text-[5.5rem] leading-none font-black italic text-stroke-thin text-transparent uppercase opacity-5 absolute top-4 left-1/2 -translate-x-1/2 select-none whitespace-nowrap tracking-tighter w-full">SEASON STATS</h1>
-                    <h1 className="text-5xl font-black italic uppercase relative z-10 text-white tracking-tight drop-shadow-2xl">Season Stats</h1>
+                    <h1 className="text-[5.5rem] leading-none font-black italic text-stroke-thin text-transparent uppercase opacity-5 absolute top-4 left-1/2 -translate-x-1/2 select-none whitespace-nowrap tracking-tighter w-full">LEADERBOARD</h1>
+                    <h1 className="text-5xl font-black italic uppercase relative z-10 text-white tracking-tight drop-shadow-2xl">Leaderboard</h1>
 
                     {/* SPORT SELECTOR */}
                     <div className="flex justify-center gap-3 mt-8">

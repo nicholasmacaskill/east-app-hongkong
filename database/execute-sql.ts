@@ -10,15 +10,15 @@ const envPreviewPath = path.resolve(process.cwd(), '.env.preview');
 const envProductionPath = path.resolve(process.cwd(), '.env.production');
 const envLocalPath = path.resolve(process.cwd(), '.env.local');
 
-if (fs.existsSync(envProductionPath)) {
+if (fs.existsSync(envLocalPath)) {
+    console.log("Loading .env.local");
+    dotenv.config({ path: envLocalPath });
+} else if (fs.existsSync(envProductionPath)) {
     console.log("Loading .env.production");
     dotenv.config({ path: envProductionPath });
 } else if (fs.existsSync(envPreviewPath)) {
     console.log("Loading .env.preview");
     dotenv.config({ path: envPreviewPath });
-} else if (fs.existsSync(envLocalPath)) {
-    console.log("Loading .env.local");
-    dotenv.config({ path: envLocalPath });
 }
 
 async function executeSqlFile(filePath) {
