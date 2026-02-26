@@ -455,9 +455,15 @@ export default function MasterSchedule() {
 
                             // For open slots (availability), they might just have title "Facility Hours" and facility_category matching the filter
                             if (item.type === 'slot') {
-                                if (item.facility_category === filterFacilityId) isMatch = true;
-                                // Fuzzy match fallback for edge cases
-                                if (!isMatch && item.facility_category && filterFacilityId.includes(item.facility_category)) isMatch = true;
+                                // If it's a global slot assigned to the whole building (no specific category assigned) let it pass through
+                                if (!item.facility_category || item.facility_category === 'ALL') {
+                                    isMatch = true;
+                                } else if (item.facility_category === filterFacilityId) {
+                                    isMatch = true;
+                                } else if (filterFacilityId.includes(item.facility_category)) {
+                                    // Fuzzy match fallback for edge cases
+                                    isMatch = true;
+                                }
                             }
 
                             if (!isMatch) return false;
