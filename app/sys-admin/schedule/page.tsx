@@ -61,6 +61,7 @@ export default function MasterSchedule() {
     const [viewStartDate, setViewStartDate] = useState(startOfWeek(safeDate(formatHK(new Date(), 'yyyy-MM-dd')) || new Date(), { weekStartsOn: 1 })); // Monday
     const [activeCategory, setActiveCategory] = useState<string>(searchParams?.get('category')?.toUpperCase() || 'ALL');
     const [filterCoachId, setFilterCoachId] = useState<string>('ALL');
+    const [filterFacilityId, setFilterFacilityId] = useState<string>('ALL');
 
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(viewStartDate, i));
 
@@ -372,17 +373,31 @@ export default function MasterSchedule() {
                     ))}
                 </div>
 
-                {/* Coach Filter */}
-                <select
-                    value={filterCoachId}
-                    onChange={(e) => setFilterCoachId(e.target.value)}
-                    className="bg-[#1e1e1e] border border-white/10 text-white text-[10px] font-bold uppercase p-2 rounded-xl outline-none focus:border-[#28D160] w-full md:w-48"
-                >
-                    <option value="ALL">All Coaches</option>
-                    {coaches.map(c => (
-                        <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
-                    ))}
-                </select>
+                <div className="flex gap-2 w-full md:w-auto">
+                    {/* Facility Filter */}
+                    <select
+                        value={filterFacilityId}
+                        onChange={(e) => setFilterFacilityId(e.target.value)}
+                        className="bg-[#1e1e1e] border border-white/10 text-white text-[10px] font-bold uppercase p-2 rounded-xl outline-none focus:border-[#28D160] flex-1 md:w-48"
+                    >
+                        <option value="ALL">All Facilities</option>
+                        {Array.from(new Set(services.filter(s => s.category === 'FACILITY').map(s => s.title))).map(title => (
+                            <option key={title} value={title}>{title}</option>
+                        ))}
+                    </select>
+
+                    {/* Coach Filter */}
+                    <select
+                        value={filterCoachId}
+                        onChange={(e) => setFilterCoachId(e.target.value)}
+                        className="bg-[#1e1e1e] border border-white/10 text-white text-[10px] font-bold uppercase p-2 rounded-xl outline-none focus:border-[#28D160] flex-1 md:w-48"
+                    >
+                        <option value="ALL">All Coaches</option>
+                        {coaches.map(c => (
+                            <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             {/* Timeline View */}
@@ -397,7 +412,7 @@ export default function MasterSchedule() {
 
                     // 1. Initial Merge & Basic Categorization
                     const rawItems: any[] = [
-                        ...sessions.map(s => ({ ...s, type: 'session' })),
+                        ...sessions.map(s => ({ ...s, type: 'session', session_type_title: services.find(svc => svc.id === s.session_type_id)?.title || s.title })),
                         ...availability.map(a => {
                             const isFacility = !a.coach_id || a.facility_category;
                             return {
@@ -409,12 +424,13 @@ export default function MasterSchedule() {
                                 end_time: a.end_time,
                                 type: 'slot',
                                 coach_id: a.coach_id,
-                                facility_category: a.facility_category
+                                facility_category: a.facility_category,
+                                session_type_title: a.facility_category || 'Facility Hours'
                             };
                         })
                     ];
 
-                    // 2. Filter by Date, Category, and Coach
+                    // 2. Filter by Date, Category, Coach, and Facility
                     const filteredItems = rawItems.filter((item: any) => {
                         const sDate = safeDate(item.start_time);
                         if (!sDate || !isSameDay(sDate, new Date(selectedDate))) return false;
@@ -427,6 +443,11 @@ export default function MasterSchedule() {
                                 const coachName = normalizeName(`${coach.first_name} ${coach.last_name}`);
                                 if (instrName !== coachName && instrName !== `coach ${coachName}`) return false;
                             }
+                        }
+                        if (filterFacilityId !== 'ALL') {
+                            // If a facility filter is selected, strip out non-facility bookings unless they match this specific facility title
+                            if (item.category !== 'FACILITY') return false;
+                            if (item.session_type_title !== filterFacilityId && item.title !== filterFacilityId && item.facility_category !== filterFacilityId) return false;
                         }
                         return true;
                     });
