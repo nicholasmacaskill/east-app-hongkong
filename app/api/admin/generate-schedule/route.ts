@@ -71,14 +71,20 @@ export async function POST(request: Request) {
                 continue;
             }
 
-            // Iterate hours
-            for (let h = startHour; h < endHour; h++) {
-                // Construct naive HK string
-                const naiveStr = `${hkDateStr} ${String(h).padStart(2, '0')}:00:00`;
+            // Iterate intervals based on durationMinutes
+            const dayStartStr = `${hkDateStr} ${String(startHour).padStart(2, '0')}:00:00`;
+            const dayEndStr = `${hkDateStr} ${String(endHour).padStart(2, '0')}:00:00`;
 
-                // Convert to UTC Date
-                const slotStart = fromZonedTime(naiveStr, APP_TIMEZONE);
+            let slotStart = fromZonedTime(dayStartStr, APP_TIMEZONE);
+            const dayEnd = fromZonedTime(dayEndStr, APP_TIMEZONE);
+
+            while (slotStart.getTime() < dayEnd.getTime()) {
                 const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60000);
+
+                // Prevent creating sessions that overflow past the intended end hour
+                if (slotEnd.getTime() > dayEnd.getTime()) {
+                    break;
+                }
 
                 // Construct Session
                 sessionsToInsert.push({
@@ -95,6 +101,8 @@ export async function POST(request: Request) {
                     session_type_id: service.id,
                     status: 'active'
                 });
+
+                slotStart = slotEnd;
             }
             currentDate.setDate(currentDate.getDate() + 1);
         }
