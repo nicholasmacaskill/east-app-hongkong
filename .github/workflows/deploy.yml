@@ -1,0 +1,27 @@
+name: Deploy to Singapore VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: dyn1.dynevents.com
+          username: nicholas
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 60022
+          script: |
+            cd /var/www/eastapp.booking.dynevents.com
+            git pull origin main
+            npm install
+            npm run build
+            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 restart EastApp
