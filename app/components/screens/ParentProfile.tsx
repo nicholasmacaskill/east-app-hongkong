@@ -226,35 +226,35 @@ export default function ParentProfile({
    return (
       <div className="animate-fadeIn bg-black min-h-screen pb-24 relative overflow-hidden">
          {/* HEADER IMAGE */}
-         <div className="h-48 relative">
+         <div className="h-56 relative shadow-2xl">
             <img
                src={profileData.banner_url || "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=2670&auto=format&fit=crop"}
                className="w-full h-full object-cover opacity-60"
                alt="Cover"
             />
-            <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black to-transparent" />
-            <div className="absolute top-4 right-4 flex gap-3">
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
+            <div className="absolute top-6 right-6 flex gap-3">
                {!isReadOnly && (
                   <button
                      onClick={() => coverInputRef.current?.click()}
-                     className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white hover:bg-[#28D160] hover:text-black active:scale-95 transition-all shadow-lg group/btn"
+                     className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20 text-white hover:bg-east-light hover:text-black active:scale-95 transition-all shadow-2xl group/btn"
                      title="Update Cover Photo"
                   >
-                     <Edit2 size={16} className="group-hover/btn:scale-110 transition-transform" />
+                     <Camera size={20} className="group-hover/btn:scale-110 transition-transform" />
                   </button>
                )}
-               <button data-testid="settings-button" onClick={onOpenSettings} className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-gray-400 hover:text-white active:scale-95 transition-all shadow-lg">
-                  <Edit2 size={16} />
+               <button data-testid="settings-button" onClick={onOpenSettings} className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20 text-gray-400 hover:text-white active:scale-95 transition-all shadow-2xl">
+                  <Edit2 size={20} />
                </button>
             </div>
             <input type="file" ref={coverInputRef} onChange={handleCoverUpload} className="hidden" accept="image/*" />
          </div>
 
          {/* PROFILE INFO */}
-         <div className="px-6 -mt-16 relative z-10 flex flex-col items-center">
+         <div className="px-6 -mt-20 relative z-10 flex flex-col items-center">
             <div
                data-testid="parent-avatar-container"
-               className={`w-28 h-28 rounded-full border-4 border-black shadow-2xl overflow-hidden bg-zinc-900 relative group ${isReadOnly ? '' : 'cursor-pointer'}`}
+               className={`w-32 h-32 rounded-full border-[6px] border-black shadow-2xl overflow-hidden bg-zinc-900 relative group ${isReadOnly ? '' : 'cursor-pointer'}`}
                onClick={() => !isReadOnly && avatarInputRef.current?.click()}
             >
                {profileData.avatar_url ? (
@@ -266,7 +266,7 @@ export default function ParentProfile({
                )}
                {!isReadOnly && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                     <Edit2 size={24} className="text-white" />
+                     <Camera size={32} className="text-white" />
                   </div>
                )}
             </div>
@@ -344,7 +344,7 @@ export default function ParentProfile({
                            >
                               <div className="p-4 flex items-center gap-4 bg-gradient-to-br from-white/10 to-transparent backdrop-blur-md">
                                  <div
-                                    className={`w-16 h-16 rounded-2xl overflow-hidden border-2 transition-colors relative group/childimg ${isSelected ? 'border-east-light' : 'border-white/10'} ${isReadOnly ? '' : 'cursor-pointer'}`}
+                                    className={`w-20 h-20 rounded-full overflow-hidden border-4 transition-colors relative group/childimg ${isSelected ? 'border-east-light' : 'border-white/10'} ${isReadOnly ? '' : 'cursor-pointer'}`}
                                     onClick={(e) => {
                                        if (!isReadOnly) {
                                           e.stopPropagation();
@@ -356,7 +356,7 @@ export default function ParentProfile({
                                     <img src={athlete.avatar_url || "https://images.unsplash.com/photo-1544005313-94ddf0286df2??auto=format&fit=crop&q=80&w=200"} className="w-full h-full object-cover" alt={athlete.first_name} />
                                     {!isReadOnly && (
                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/childimg:opacity-100 transition-opacity">
-                                          <Edit2 size={16} className="text-white" />
+                                          <Camera size={20} className="text-white" />
                                        </div>
                                     )}
                                  </div>

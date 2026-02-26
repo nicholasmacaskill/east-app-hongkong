@@ -96,7 +96,10 @@ BEGIN
 
   -- Total cost logic
   v_total_cost := 0;
-  IF p_origin = 'facilities' THEN
+  
+  -- ALWAYS charge main session cost if we are booking into p_session_id.
+  -- This happens if origin is facilities OR if we are joining an existing session from coach profile (coach_id is null/matching)
+  IF p_origin = 'facilities' OR (p_origin = 'coaches' AND p_coach_id IS NULL) THEN
     v_total_cost := v_total_cost + (v_main_session_cost * array_length(p_attendee_ids, 1));
   END IF;
   
@@ -115,7 +118,7 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'message', 'Capacity met', 'code', 'CAPACITY_MET');
   END IF;
 
-  -- 8. CHECK COACH AVAILABILITY
+  -- 8. CHECK COACH AVAILABILITY (Only if creating a NEW private session)
   IF p_coach_id IS NOT NULL THEN
     SELECT EXISTS (
       SELECT 1 FROM public.availability 
@@ -149,16 +152,15 @@ BEGIN
 
   -- 9. EXECUTE BOOKINGS
   FOREACH v_attendee_id IN ARRAY p_attendee_ids LOOP
-    -- Book Facility
-    -- FIX: Map v_attendee_id to user_id, p_user_id to payer_id
-    IF p_origin = 'facilities' THEN
+    -- Book Facility / Existing Session
+    IF p_origin = 'facilities' OR (p_origin = 'coaches' AND p_coach_id IS NULL) THEN
       INSERT INTO public.registrations (session_id, user_id, payer_id, credits_paid)
       VALUES (p_session_id, v_attendee_id, p_user_id, v_main_session_cost);
       
       v_results := v_results || jsonb_build_object('attendeeId', v_attendee_id, 'type', 'facility', 'success', true);
     END IF;
 
-    -- Book Coach
+    -- Book Coach (New Private Session)
     IF v_coach_session_id IS NOT NULL THEN
       INSERT INTO public.registrations (session_id, user_id, payer_id, credits_paid)
       VALUES (v_coach_session_id, v_attendee_id, p_user_id, v_coach_cost);
@@ -173,9 +175,8 @@ BEGIN
   WHERE id = p_user_id;
 
   -- 11. LOG TRANSACTION
-  -- Note: ensure 'transactions' table exists or this will fail. 
-  INSERT INTO public.transactions (user_id, amount, type, session_id, description)
-  VALUES (p_user_id, -v_total_cost, 'booking', p_session_id, 'Booking for ' || v_main_session_title || ' (' || array_length(p_attendee_ids, 1) || ' attendees)');
+  INSERT INTO public.transactions (user_id, amount, type, description)
+  VALUES (p_user_id, -v_total_cost, 'booking', 'Booking for ' || v_main_session_title || ' (' || array_length(p_attendee_ids, 1) || ' attendees)');
 
   RETURN jsonb_build_object('success', true, 'message', 'Booking successful', 'results', v_results);
 END;
