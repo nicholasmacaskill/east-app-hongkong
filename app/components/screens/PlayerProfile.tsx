@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Edit2, Activity, Award, Camera, Coins } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '../ui/Toast';
-import UploadGolfStatsModal from '../modals/UploadGolfStatsModal';
 import { compressImage } from '@/app/lib/image-utils';
 
 // Simple Card Wrapper
@@ -12,13 +11,33 @@ const Card = ({ children, className = "" }: { children: React.ReactNode, classNa
   </div>
 );
 
-interface PlayerStats {
-  age: number; season: number; team: string;
-  games_played_season: number; games_played_total: number;
-  games_missed_healthy: number; games_missed_injured: number;
-  goals_season: number; goals_total: number;
-  assists_season: number; assists_total: number;
-}
+const STAT_FIELDS: Record<string, any[]> = {
+  GOLF: [
+    { key: 'handicap', label: 'Handicap', type: 'number', unit: '' },
+    { key: 'longest_drive', label: 'Longest Drive', type: 'number', unit: 'yds' },
+    { key: 'closest_to_pin', label: 'Closest to Pin', type: 'number', unit: 'ft' },
+    { key: 'league_wins', label: 'League Wins', type: 'number', unit: '' },
+    { key: 'tournament_wins', label: 'Tournament Wins', type: 'number', unit: '' },
+    { key: 'average_score', label: 'Average Score', type: 'number', unit: '' }
+  ],
+  HYROX: [
+    { key: 'run_1km', label: '1KM Run Time', type: 'time', unit: 'mm:ss' },
+    { key: 'ski_erg_1000m', label: 'Ski Erg: 1,000m', type: 'time', unit: 'mm:ss' },
+    { key: 'sled_push_50m', label: 'Sled Push: 50m', type: 'time', unit: 'mm:ss' },
+    { key: 'sled_pull_50m', label: 'Sled Pull: 50m', type: 'time', unit: 'mm:ss' },
+    { key: 'burpee_broad_jumps_80m', label: 'Burpee Broad Jumps: 80m', type: 'time', unit: 'mm:ss' },
+    { key: 'row_1000m', label: 'Row: 1,000m', type: 'time', unit: 'mm:ss' },
+    { key: 'farmers_carry_200m', label: 'Farmer\'s Carry: 200m', type: 'time', unit: 'mm:ss' },
+    { key: 'sandbag_lunges_100m', label: 'Sandbag Lunges: 100m', type: 'time', unit: 'mm:ss' },
+    { key: 'wall_balls_100', label: 'Wall Balls: 100 reps', type: 'time', unit: 'mm:ss' }
+  ],
+  HOCKEY: [
+    { key: 'react_targets', label: 'React Targets', type: 'time', unit: 'mm:ss' },
+    { key: 'classic_targets', label: 'Classic Targets', type: 'number', unit: '' }
+  ]
+};
+
+type PlayerStats = Record<string, any>;
 
 export interface PlayerProfileProps {
   onOpenSettings: () => void;
@@ -36,8 +55,6 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
   // Removed gallery state and refs
   const avatarInputRef = React.useRef<HTMLInputElement>(null);
-
-  const [showStatsModal, setShowStatsModal] = useState(false);
 
   // Determine sport from bio or props
   const sport = profileData?.bio?.toUpperCase().includes('GOLF') ? 'GOLF' :
@@ -60,19 +77,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
         if (psData) {
           // If using JSONB stats column
           const finalStats = psData.stats || psData; // Support both flat and JSONB
-          setStats({
-            age: finalStats.age || 31,
-            season: finalStats.season || 3,
-            team: finalStats.team || (profileData.team || 'RHINOS'),
-            games_played_season: finalStats.games_played_season || 0,
-            games_played_total: finalStats.games_played_total || 0,
-            games_missed_healthy: finalStats.games_missed_healthy || 0,
-            games_missed_injured: finalStats.games_missed_injured || 0,
-            goals_season: finalStats.goals_season || 0,
-            goals_total: finalStats.goals_total || 0,
-            assists_season: finalStats.assists_season || 0,
-            assists_total: finalStats.assists_total || 0
-          });
+          setStats(finalStats);
           return;
         }
 
@@ -88,14 +93,12 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
               age: 31, // Placeholder as age isn't in golf_stats
               season: 2026,
               team: profileData.team || 'INDEPENDENT',
-              games_played_season: gData.rounds_played || 0,
-              games_played_total: gData.rounds_played || 0,
-              games_missed_healthy: 0,
-              games_missed_injured: 0,
-              goals_season: gData.average_score || 0, // Using average score for visibility
-              goals_total: gData.best_score || 0,
-              assists_season: gData.driver_distance || 0,
-              assists_total: gData.handicap || 0
+              average_score: gData.average_score || 0,
+              longest_drive: gData.driver_distance || 0,
+              handicap: gData.handicap || 0,
+              closest_to_pin: gData.closest_to_pin || 0,
+              league_wins: gData.league_wins || 0,
+              tournament_wins: gData.tournament_wins || 0
             });
             return;
           }
@@ -103,11 +106,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
         // Default mock if nothing found
         if (!initialStats) {
-          setStats({
-            age: 31, season: 3, team: profileData.team || 'RHINOS',
-            games_played_season: 12, games_played_total: 45, games_missed_healthy: 0, games_missed_injured: 2,
-            goals_season: 5, goals_total: 22, assists_season: 8, assists_total: 30
-          });
+          setStats({});
         }
       } catch (err) {
         console.error('Error fetching player stats:', err);
@@ -171,22 +170,13 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
           <div className="relative h-[250px] w-full shrink-0">
             {!isReadOnly && (
               <div className="absolute top-4 right-6 z-30 flex gap-2">
-                <button
-                  onClick={() => setShowStatsModal(true)}
-                  className="bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-colors border border-white/10"
-                  title="Update Stats"
-                >
-                  <Activity size={20} className="text-east-light" />
-                </button>
                 <button data-testid="settings-button" onClick={onOpenSettings} className="bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-colors border border-white/10">
                   <Edit2 size={20} className="text-gray-400" />
                 </button>
               </div>
             )}
 
-            <div className="absolute right-8 top-20 z-0 opacity-20">
-              <h1 className="font-black italic text-[8rem] text-white leading-none tracking-tighter select-none uppercase">#12</h1>
-            </div>
+
 
             <div className="absolute left-6 top-16 z-10">
               <div
@@ -262,149 +252,50 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
           <div className="w-full bg-gradient-to-r from-east-light to-east-dark py-4 px-8 flex justify-between items-center shadow-lg border-y border-white/10 relative z-30">
             <div className="text-center">
               <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">AGE</div>
-              <span className="text-xs text-white font-black italic">{stats?.age || '31'}</span>
+              <span className="text-[10px] text-white/80 font-black italic lowercase">coming soon</span>
             </div>
             <div className="text-center">
               <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">SEASON</div>
-              <span className="text-xs text-white font-black italic">{stats?.season || '2026'}</span>
+              <span className="text-[10px] text-white/80 font-black italic lowercase">coming soon</span>
             </div>
             <div className="text-center">
               <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">TEAM</div>
-              <span className="text-xs text-white font-black italic">{stats?.team || 'N/A'}</span>
+              <span className="text-[10px] text-white/80 font-black italic lowercase">coming soon</span>
             </div>
           </div>
         </div>
 
-        {/* NAVIGATION TABS */}
-        <div className="flex justify-center gap-6 py-6 relative z-20 overflow-x-auto no-scrollbar px-4">
-          {['STREAKS', 'FULL STATS'].map(tab => {
-            const tabKey = tab.toLowerCase().replace(' ', '_') as any;
-            return (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tabKey)}
-                className={`font-black italic text-xs uppercase transition-all drop-shadow-lg whitespace-nowrap ${activeTab === tabKey ? 'text-white border-b-2 border-east-light pb-1' : 'text-gray-500 hover:text-gray-300'}`}
-              >
-                {tab}
-              </button>
-            );
-          })}
-        </div>
-
         {/* CONTENT AREA */}
-        <div className="px-4 pb-24 w-full">
-          {/* STREAKS TAB */}
-          {activeTab === 'streaks' && (
-            <div className="flex flex-col gap-8 animate-fadeIn">
-              {/* GAMES ROW - Restored Labels */}
+        <div className="px-4 pb-24 w-full mt-8">
+          <div className="flex flex-col gap-8 animate-fadeIn">
+            {STAT_FIELDS[sport] && stats && Object.keys(stats).filter(k => stats[k] !== '' && stats[k] !== null).length > 0 ? (
               <div className="flex flex-col gap-3">
-                <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">{sport === 'GOLF' ? 'ROUND STATS' : 'GAMES'}</h3>
+                <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">{sport} PERFORMANCE</h3>
                 <div className="bg-gradient-to-r from-east-light to-east-dark rounded-2xl overflow-hidden shadow-2xl border border-white/10">
                   <div className="grid grid-cols-2">
-                    {[
-                      { label: sport === 'GOLF' ? "ROUNDS PLAYED" : "GAMES PLAYED (SEASON)", value: stats?.games_played_season || 0 },
-                      { label: sport === 'GOLF' ? "TOTAL ROUNDS" : "GAMES PLAYED (TOTAL)", value: stats?.games_played_total || 0 },
-                      { label: sport === 'GOLF' ? "AVG SCORE" : "GAMES MISSED (HEALTHY)", value: stats?.goals_season || 0 },
-                      { label: sport === 'GOLF' ? "BEST SCORE" : "GAMES MISSED (INJURED)", value: stats?.goals_total || 0 }
-                    ].map((item, index) => (
-                      <div key={index} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors ${index % 2 === 0 ? 'border-r border-white/10' : ''} ${index < 2 ? 'border-b border-white/10' : ''}`}>
-                        <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{item.label}</span>
-                        <span className="text-lg text-white font-black italic">{item.value}</span>
-                      </div>
-                    ))}
+                    {STAT_FIELDS[sport].map((field, index) => {
+                      const val = stats?.[field.key];
+                      if (val === undefined || val === null || val === '') return null;
+
+                      return (
+                        <div key={field.key} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors border-white/10 ${index % 2 === 0 ? 'border-r' : ''} border-b`}>
+                          <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{field.label}</span>
+                          <span className="font-black text-lg text-white italic">{val} <span className="text-[10px] text-white/50 not-italic">{field.unit}</span></span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
-
-              {/* POINTS/PERFORMANCE ROW */}
-              <div className="flex flex-col gap-3">
-                <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">{sport === 'GOLF' ? 'POWER STATS' : 'POINTS'}</h3>
-                <div className="bg-gradient-to-r from-east-light to-east-dark rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-                  <div className="grid grid-cols-2">
-                    {[
-                      { label: sport === 'GOLF' ? "DRIVER DISTANCE" : "GOALS (SEASON)", value: stats?.assists_season || 0 },
-                      { label: sport === 'GOLF' ? "HANDICAP" : "GOALS (TOTAL)", value: stats?.assists_total || 0 },
-                      { label: sport === 'GOLF' ? "TOURNEY WINS" : "ASSISTS (SEASON)", value: 0 },
-                      { label: sport === 'GOLF' ? "LEAGUE WINS" : "ASSISTS (TOTAL)", value: 0 }
-                    ].map((item, index) => (
-                      <div key={index} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors ${index % 2 === 0 ? 'border-r border-white/10' : ''} ${index < 2 ? 'border-b border-white/10' : ''}`}>
-                        <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{item.label}</span>
-                        <span className="text-lg text-white font-black italic">{item.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            ) : (
+              <div className="text-center p-8 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-sm shadow-2xl">
+                <Award size={32} className="mx-auto text-white/20 mb-3" />
+                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">No stats verified yet</p>
               </div>
-
-              {/* MILESTONES ROW - Restored Labels */}
-              <div className="flex flex-col gap-3">
-                <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">MILESTONES</h3>
-                <div className="bg-gradient-to-r from-east-light to-east-dark rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-                  <div className="grid grid-cols-2">
-                    {[
-                      { label: "TOP SCORER (TEAM)" },
-                      { label: "TOP SCORER (LEAGUE)" },
-                      { label: "LEAST PIM (TEAM)" },
-                      { label: "MOST SHOTS (TEAM)" }
-                    ].map((item, index) => (
-                      <div key={index} className={`flex flex-col items-center justify-center p-6 gap-4 hover:bg-white/5 transition-colors ${index % 2 === 0 ? 'border-r border-white/10' : ''} ${index < 2 ? 'border-b border-white/10' : ''}`}>
-                        <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{item.label}</span>
-                        <span className="text-xs text-white/50 lowercase italic">coming soon</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-
-            </div>
-          )}
-
-          {/* FULL STATS - Restored SCORING and SPECIALS */}
-          {activeTab === 'full_stats' && (
-            <div className="flex flex-col gap-8 animate-fadeIn">
-              {/* SCORING Section */}
-              <div className="flex flex-col gap-3">
-                <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">SCORING</h3>
-                <div className="bg-gradient-to-r from-east-light to-east-dark rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-                  <div className="grid grid-cols-2">
-                    {[{ l: 'GP', v: 3 }, { l: 'GOALS', v: 3 }, { l: 'ASSISTS', v: 4 }, { l: 'POINTS', v: 6 }].map((stat, i) => (
-                      <div key={i} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors ${i % 2 === 0 ? 'border-r border-white/10' : ''} ${i < 2 ? 'border-b border-white/10' : ''}`}>
-                        <span className="font-black text-[8px] tracking-wider text-white/80 uppercase">{stat.l}</span>
-                        <span className="text-xs text-white/50 lowercase italic">coming soon</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* SPECIALS Section */}
-              <div className="flex flex-col gap-3">
-                <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">SPECIALS</h3>
-                <div className="bg-gradient-to-r from-east-light to-east-dark rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-                  <div className="grid grid-cols-2">
-                    {[{ l: 'GWG', v: 1 }, { l: 'PPG', v: 1 }, { l: 'SHG', v: 34 }, { l: 'PIM', v: 10 }].map((stat, i) => (
-                      <div key={i} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors ${i % 2 === 0 ? 'border-r border-white/10' : ''} ${i < 2 ? 'border-b border-white/10' : ''}`}>
-                        <span className="font-black text-[8px] tracking-wider text-white/80 uppercase">{stat.l}</span>
-                        <span className="text-xs text-white/50 lowercase italic">coming soon</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
-
-      {showStatsModal && (
-        <UploadGolfStatsModal
-          onClose={() => setShowStatsModal(false)}
-          currentUserId={profileData.id}
-          onSuccess={() => onRefresh ? onRefresh() : window.location.reload()}
-          existingStats={stats}
-        />
-      )}
     </div>
   )
 }

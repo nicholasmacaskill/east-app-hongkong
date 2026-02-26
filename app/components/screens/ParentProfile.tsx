@@ -1,8 +1,9 @@
 'use client';
-import React, { useState } from 'react';
-import { Edit2, CheckCircle2, ChevronRight, Users, Calendar, Heart, Award, Lock, Plus, X, Coins } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Edit2, CheckCircle2, ChevronRight, Users, Calendar, Heart, Award, Lock, Plus, X, Coins, Camera } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '../ui/Toast';
+import { compressImage } from '@/app/lib/image-utils';
 
 interface ParentProfileProps {
    onOpenSettings: () => void;
@@ -12,6 +13,7 @@ interface ParentProfileProps {
    activeChildId?: string;
    setActiveChildId?: (id: string) => void;
    onAddChild: (child: any) => Promise<void>;
+   onRefresh?: () => void;
 }
 
 export default function ParentProfile({
@@ -21,7 +23,8 @@ export default function ParentProfile({
    myChildren = [],
    activeChildId,
    setActiveChildId,
-   onAddChild
+   onAddChild,
+   onRefresh
 }: ParentProfileProps) {
    const { addToast } = useToast();
 
@@ -32,6 +35,109 @@ export default function ParentProfile({
    const [availability, setAvailability] = useState<string[]>([]);
 
    const [savingAvailability, setSavingAvailability] = useState(false);
+   const [uploading, setUploading] = useState(false);
+
+   const avatarInputRef = useRef<HTMLInputElement>(null);
+   const coverInputRef = useRef<HTMLInputElement>(null);
+   const childAvatarInputRef = useRef<HTMLInputElement>(null);
+   const [editingChildId, setEditingChildId] = useState<string | null>(null);
+
+   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files || e.target.files.length === 0) return;
+      const originalFile = e.target.files[0];
+      setUploading(true);
+
+      try {
+         const file = await compressImage(originalFile);
+         const fileExt = file.name.split('.').pop();
+         const fileName = `avatar-${profileData.id}-${Date.now()}.${fileExt}`;
+         const filePath = `${fileName}`;
+
+         const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
+         if (uploadError) throw uploadError;
+
+         const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
+         const { error: dbError } = await supabase
+            .from('profiles')
+            .update({ avatar_url: data.publicUrl })
+            .eq('id', profileData.id);
+
+         if (dbError) throw dbError;
+
+         addToast('Profile photo updated!', 'success');
+         if (onRefresh) onRefresh();
+         else window.location.reload();
+      } catch (error: any) {
+         addToast(error.message || 'Upload failed', 'error');
+      } finally {
+         setUploading(false);
+      }
+   };
+
+   const handleChildAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files || e.target.files.length === 0 || !editingChildId) return;
+      const originalFile = e.target.files[0];
+      setUploading(true);
+
+      try {
+         const file = await compressImage(originalFile);
+         const fileExt = file.name.split('.').pop();
+         const fileName = `avatar-${editingChildId}-${Date.now()}.${fileExt}`;
+         const filePath = `${fileName}`;
+
+         const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
+         if (uploadError) throw uploadError;
+
+         const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
+         const { error: dbError } = await supabase
+            .from('profiles')
+            .update({ avatar_url: data.publicUrl })
+            .eq('id', editingChildId);
+
+         if (dbError) throw dbError;
+
+         addToast('Athlete photo updated!', 'success');
+         if (onRefresh) onRefresh();
+         else window.location.reload();
+      } catch (error: any) {
+         addToast(error.message || 'Upload failed', 'error');
+      } finally {
+         setUploading(false);
+         setEditingChildId(null);
+      }
+   };
+
+   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files || e.target.files.length === 0) return;
+      const originalFile = e.target.files[0];
+      setUploading(true);
+
+      try {
+         const file = await compressImage(originalFile);
+         const fileExt = file.name.split('.').pop();
+         const fileName = `banner-${profileData.id}-${Date.now()}.${fileExt}`;
+         const filePath = `${fileName}`;
+
+         const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
+         if (uploadError) throw uploadError;
+
+         const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
+         const { error: dbError } = await supabase
+            .from('profiles')
+            .update({ banner_url: data.publicUrl })
+            .eq('id', profileData.id);
+
+         if (dbError) throw dbError;
+
+         addToast('Cover photo updated!', 'success');
+         if (onRefresh) onRefresh();
+         else window.location.reload();
+      } catch (error: any) {
+         addToast(error.message || 'Upload failed', 'error');
+      } finally {
+         setUploading(false);
+      }
+   };
 
    // Transfer Logic
    const [showTransferModal, setShowTransferModal] = useState(false);
@@ -122,21 +228,35 @@ export default function ParentProfile({
          {/* HEADER IMAGE */}
          <div className="h-48 relative">
             <img
-               src="https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=2670&auto=format&fit=crop"
+               src={profileData.banner_url || "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=2670&auto=format&fit=crop"}
                className="w-full h-full object-cover opacity-60"
                alt="Cover"
             />
             <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black to-transparent" />
             <div className="absolute top-4 right-4 flex gap-3">
-               <button data-testid="settings-button" onClick={onOpenSettings} className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white hover:bg-white/10 active:scale-95 transition-all shadow-lg">
+               {!isReadOnly && (
+                  <button
+                     onClick={() => coverInputRef.current?.click()}
+                     className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white hover:bg-[#28D160] hover:text-black active:scale-95 transition-all shadow-lg group/btn"
+                     title="Update Cover Photo"
+                  >
+                     <Edit2 size={16} className="group-hover/btn:scale-110 transition-transform" />
+                  </button>
+               )}
+               <button data-testid="settings-button" onClick={onOpenSettings} className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-gray-400 hover:text-white active:scale-95 transition-all shadow-lg">
                   <Edit2 size={16} />
                </button>
             </div>
+            <input type="file" ref={coverInputRef} onChange={handleCoverUpload} className="hidden" accept="image/*" />
          </div>
 
          {/* PROFILE INFO */}
          <div className="px-6 -mt-16 relative z-10 flex flex-col items-center">
-            <div className="w-28 h-28 rounded-full border-4 border-black shadow-2xl overflow-hidden bg-zinc-900 relative group">
+            <div
+               data-testid="parent-avatar-container"
+               className={`w-28 h-28 rounded-full border-4 border-black shadow-2xl overflow-hidden bg-zinc-900 relative group ${isReadOnly ? '' : 'cursor-pointer'}`}
+               onClick={() => !isReadOnly && avatarInputRef.current?.click()}
+            >
                {profileData.avatar_url ? (
                   <img src={profileData.avatar_url} className="w-full h-full object-cover" alt="Profile" />
                ) : (
@@ -144,10 +264,13 @@ export default function ParentProfile({
                      <span className="text-3xl font-black italic text-gray-700">{profileData.first_name?.[0]}</span>
                   </div>
                )}
-               <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                  <Edit2 size={24} className="text-white" />
-               </div>
+               {!isReadOnly && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                     <Edit2 size={24} className="text-white" />
+                  </div>
+               )}
             </div>
+            <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="hidden" accept="image/*" />
 
             <div className="mt-4 text-center">
                <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none mb-1">
@@ -161,16 +284,14 @@ export default function ParentProfile({
                </div>
             </div>
 
-            <div className="grid grid-cols-3 w-full gap-2 mt-6">
+            <div className="flex justify-center w-full gap-2 mt-6">
                {[
-                  { l: 'VOLUNTEER\nHRS', v: '48', icon: Heart },
                   {
                      l: 'CREDITS\nBALANCE',
                      v: profileData.credits || '0',
                      icon: isLocked ? Lock : Users,
                      isLocked: isLocked
-                  },
-                  { l: 'EVENTS\nJOINED', v: '15', icon: Calendar },
+                  }
                ].map((stat, i) => (
                   <div
                      key={i}
@@ -192,7 +313,7 @@ export default function ParentProfile({
          {/* NAVIGATION */}
          <div className="flex justify-center gap-6 py-6 relative z-20 overflow-x-auto no-scrollbar px-4">
             {
-               ['ATHLETES', 'AVAILABILITY'].map(tab => (
+               ['ATHLETES'].map(tab => (
                   <button
                      key={tab}
                      onClick={() => setActiveTab(tab.toLowerCase())}
@@ -222,8 +343,22 @@ export default function ParentProfile({
                               className={`relative overflow-hidden rounded-2xl border transition-all duration-300 group cursor-pointer ${isSelected ? 'border-east-light shadow-2xl scale-[1.02]' : 'border-white/5 hover:border-white/20'}`}
                            >
                               <div className="p-4 flex items-center gap-4 bg-gradient-to-br from-white/10 to-transparent backdrop-blur-md">
-                                 <div className={`w-16 h-16 rounded-2xl overflow-hidden border-2 transition-colors ${isSelected ? 'border-east-light' : 'border-white/10'}`}>
+                                 <div
+                                    className={`w-16 h-16 rounded-2xl overflow-hidden border-2 transition-colors relative group/childimg ${isSelected ? 'border-east-light' : 'border-white/10'} ${isReadOnly ? '' : 'cursor-pointer'}`}
+                                    onClick={(e) => {
+                                       if (!isReadOnly) {
+                                          e.stopPropagation();
+                                          setEditingChildId(athlete.id);
+                                          childAvatarInputRef.current?.click();
+                                       }
+                                    }}
+                                 >
                                     <img src={athlete.avatar_url || "https://images.unsplash.com/photo-1544005313-94ddf0286df2??auto=format&fit=crop&q=80&w=200"} className="w-full h-full object-cover" alt={athlete.first_name} />
+                                    {!isReadOnly && (
+                                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/childimg:opacity-100 transition-opacity">
+                                          <Edit2 size={16} className="text-white" />
+                                       </div>
+                                    )}
                                  </div>
                                  <div className="flex-1">
                                     <div className="flex justify-between items-start">
@@ -366,39 +501,7 @@ export default function ParentProfile({
                </div>
             )}
 
-            {/* AVAILABILITY TAB */}
-            {
-               activeTab === 'availability' && (
-                  <div className="flex flex-col gap-4 animate-fadeIn">
-                     <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-6 backdrop-blur-md">
-                        <div className="flex justify-between items-end mb-6">
-                           <div>
-                              <h3 className="font-montserrat font-black italic text-sm text-white uppercase tracking-widest">Live Availability</h3>
-                              <p className="text-[9px] font-bold text-gray-500 uppercase mt-1">
-                                 {savingAvailability ? <span className="text-east-light animate-pulse">SAVING CHANGES...</span> : 'Tap dates to toggle available days'}
-                              </p>
-                           </div>
-                           <Calendar size={18} className={savingAvailability ? 'text-east-light animate-spin' : 'text-east-light'} />
-                        </div>
-                        <div className="grid grid-cols-7 gap-3">
-                           {next14Days.slice(0, 14).map((day, i) => {
-                              const isAvailable = availability.includes(day.fullDate);
-                              return (
-                                 <div key={i} onClick={() => toggleAvailability(day.fullDate)} className="flex flex-col items-center gap-2 cursor-pointer group">
-                                    <span className="text-[8px] font-bold text-gray-600 uppercase group-hover:text-white transition-colors">{day.day}</span>
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black transition-all ${day.fullDate === new Date().toISOString().split('T')[0] ? 'border border-east-light text-east-light' : 'bg-white/5 text-white group-hover:bg-white/10'}`}>
-                                       {day.date}
-                                    </div>
-                                    <div className={`w-1.5 h-1.5 rounded-full transition-all ${isAvailable ? 'bg-east-light scale-110 shadow-[0_0_10px_#28D160]' : 'bg-white/10'}`} />
-                                 </div>
-                              )
-                           })}
-                        </div>
-                     </div>
-                     <p className="text-[10px] text-gray-500 text-center italic font-bold">Your availability helps us coordinate volunteering & events.</p>
-                  </div>
-               )
-            }
+            <input type="file" ref={childAvatarInputRef} onChange={handleChildAvatarUpload} className="hidden" accept="image/*" />
          </div>
       </div>
    );

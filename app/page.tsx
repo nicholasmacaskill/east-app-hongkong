@@ -36,7 +36,7 @@ import { fetchProfileResilient } from '@/app/lib/authProfile';
 
 // 2. Updated Initial State
 const initialProfileData: UserProfileData = {
-  name: '', surname: '', first_name: '', last_name: '', username: '', bio: '', email: '', mobile: '', avatar_url: '', credits: 0, gallery_images: [], schedule_photo_url: '', intro_video_url: '', role: undefined, preferences: {}, subscription_status: 'inactive', account_status: 'active', membership_start: undefined, membership_expires: undefined, membership_history: [], parent_id: undefined
+  name: '', surname: '', first_name: '', last_name: '', username: '', bio: '', email: '', mobile: '', avatar_url: '', banner_url: '', credits: 0, gallery_images: [], schedule_photo_url: '', intro_video_url: '', role: undefined, preferences: {}, subscription_status: 'inactive', account_status: 'active', membership_start: undefined, membership_expires: undefined, membership_history: [], parent_id: undefined
 };
 
 function AppContent() {
@@ -140,6 +140,7 @@ function AppContent() {
               email: profileData.contact_email || user.email || '',
               mobile: profileData.mobile || '',
               avatar_url: profileData.avatar_url || '',
+              banner_url: profileData.banner_url || '',
               credits: profileData.credits || 0,
               gallery_images: profileData.gallery_images || [],
               schedule_photo_url: profileData.schedule_photo_url || '',
@@ -359,6 +360,7 @@ function AppContent() {
         mobile: updatedData.mobile,
         contact_email: updatedData.email,
         avatar_url: updatedData.avatar_url,
+        banner_url: updatedData.banner_url,
         gallery_images: updatedData.gallery_images,
         intro_video_url: updatedData.intro_video_url
       })
@@ -539,6 +541,8 @@ function AppContent() {
                   ? <ParentProfile
                     onOpenSettings={() => setShowSettingsModal(true)}
                     profileData={userProfile}
+                    onRefresh={() => setRefreshKey(k => k + 1)}
+                    isReadOnly={true}
                     myChildren={myChildren}
                     onAddChild={async (child) => {
                       try {

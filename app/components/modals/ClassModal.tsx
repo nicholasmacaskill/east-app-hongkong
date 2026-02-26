@@ -677,8 +677,8 @@ export default function ClassModal({
                                                 {displaySession.category === 'FACILITY' ? 'SELECT DATE & TIME:' : (isPrivate ? 'SELECT OPTION:' : 'SELECT SESSION:')}
                                             </p>
 
-                                            {/* FACILITY: DATE PICKER UI */}
-                                            {displaySession.category === 'FACILITY' ? (
+                                            {/* FACILITY & PRIVATE: DATE PICKER UI */}
+                                            {displaySession.category === 'FACILITY' || displaySession.category === 'PRIVATE' ? (
                                                 <div className="flex flex-col gap-4">
                                                     {/* Date Tabs */}
                                                     <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">

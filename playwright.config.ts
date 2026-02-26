@@ -93,7 +93,8 @@ export default defineConfig({
         'tests/mobile-layout-audit.spec.ts',
         'tests/debug-overflow.spec.ts',
         'tests/verification-schedule-wipe.spec.ts',
-        'tests/leaderboard-cms.spec.ts'
+        'tests/leaderboard-cms.spec.ts',
+        'tests/parent-photo-locking.spec.ts'
       ],
     },
 

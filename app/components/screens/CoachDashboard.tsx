@@ -104,11 +104,8 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
 
                     let isMatch = false;
 
-                    if (s.category === 'FACILITY' || normalize(s.instructor || '') === 'facility') {
-                        isMatch = true;
-                    } else if (coachFirst === 'coach' && !coachLast && instructorName !== 'coach') {
-                        isMatch = false;
-                    } else if (instructorName === fullName) isMatch = true;
+                    // Only match if the instructor is this specific coach
+                    if (instructorName === fullName) isMatch = true;
                     else if (instructorName === `coach ${fullName}`) isMatch = true;
                     else if (!coachLast && instructorName === normalize(coachFirst)) isMatch = true;
                     else if (!coachLast && instructorName === `coach ${normalize(coachFirst)}`) isMatch = true;
@@ -364,7 +361,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                                                             className={`flex items-center gap-1.5 px-2 py-1 rounded select-none transition-all ${a.status === 'cancelled' ? 'bg-red-500/10 text-red-500/50 border border-red-500/10 cursor-not-allowed opacity-50' : isPresent ? 'bg-east-light text-black border border-east-light shadow-[0_0_10px_rgba(40,209,96,0.3)] cursor-pointer' : 'bg-white/10 text-white/50 border border-white/5 hover:bg-white/20 cursor-pointer'}`}
                                                                         >
                                                                             <div className={`w-1.5 h-1.5 rounded-full ${a.status === 'cancelled' ? 'bg-red-500' : isPresent ? 'bg-black animate-pulse' : 'bg-gray-600'}`} />
-                                                                            <span className="text-[10px] font-black uppercase text-inherit line-through decoration-red-500/50">{a.name}</span>
+                                                                            <span className={`text-[10px] font-black uppercase text-inherit ${a.status === 'cancelled' ? 'line-through decoration-red-500/50' : ''}`}>{a.name}</span>
                                                                             {a.status === 'cancelled' ? (
                                                                                 <span className="text-[8px] font-black ml-1 uppercase">Cancelled</span>
                                                                             ) : isPresent && (

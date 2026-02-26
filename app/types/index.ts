@@ -39,6 +39,7 @@ export interface UserProfileData {
     email: string;
     mobile: string;
     avatar_url?: string;
+    banner_url?: string;
     credits: number;
     gallery_images: string[];
     schedule_photo_url?: string;
