@@ -447,7 +447,20 @@ export default function MasterSchedule() {
                         if (filterFacilityId !== 'ALL') {
                             // If a facility filter is selected, strip out non-facility bookings unless they match this specific facility title
                             if (item.category !== 'FACILITY') return false;
-                            if (item.session_type_title !== filterFacilityId && item.title !== filterFacilityId && item.facility_category !== filterFacilityId) return false;
+
+                            // Check strict matches
+                            let isMatch = item.session_type_title === filterFacilityId ||
+                                item.title === filterFacilityId ||
+                                item.facility_category === filterFacilityId;
+
+                            // For open slots (availability), they might just have title "Facility Hours" and facility_category matching the filter
+                            if (item.type === 'slot') {
+                                if (item.facility_category === filterFacilityId) isMatch = true;
+                                // Fuzzy match fallback for edge cases
+                                if (!isMatch && item.facility_category && filterFacilityId.includes(item.facility_category)) isMatch = true;
+                            }
+
+                            if (!isMatch) return false;
                         }
                         return true;
                     });
