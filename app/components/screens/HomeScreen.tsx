@@ -99,7 +99,7 @@ export default function HomeScreen({
 
     const fetchAnnouncements = async () => {
       try {
-        const response = await fetch('/api/announcements');
+        const response = await fetch('/api/announcements', { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
           setAnnouncements(data);
