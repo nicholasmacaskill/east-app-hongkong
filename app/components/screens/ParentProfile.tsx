@@ -226,7 +226,10 @@ export default function ParentProfile({
    return (
       <div className="animate-fadeIn bg-black min-h-screen pb-24 relative overflow-hidden">
          {/* HEADER IMAGE */}
-         <div className="h-56 relative shadow-2xl">
+         <div
+            className={`h-56 relative shadow-2xl ${!isReadOnly ? 'cursor-pointer' : ''}`}
+            onClick={() => !isReadOnly && coverInputRef.current?.click()}
+         >
             <img
                src={profileData.banner_url || "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=2670&auto=format&fit=crop"}
                className="w-full h-full object-cover opacity-60"

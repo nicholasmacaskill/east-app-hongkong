@@ -542,7 +542,7 @@ function AppContent() {
                     onOpenSettings={() => setShowSettingsModal(true)}
                     profileData={userProfile}
                     onRefresh={() => setRefreshKey(k => k + 1)}
-                    isReadOnly={true}
+                    isReadOnly={false}
                     myChildren={myChildren}
                     onAddChild={async (child) => {
                       try {
