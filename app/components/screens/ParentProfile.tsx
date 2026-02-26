@@ -284,14 +284,16 @@ export default function ParentProfile({
                </div>
             </div>
 
-            <div className="flex justify-center w-full gap-2 mt-6">
+            <div className="grid grid-cols-3 w-full gap-2 mt-6">
                {[
+                  { l: 'VOLUNTEER\nHRS', v: '48', icon: Heart },
                   {
                      l: 'CREDITS\nBALANCE',
                      v: profileData.credits || '0',
                      icon: isLocked ? Lock : Users,
                      isLocked: isLocked
-                  }
+                  },
+                  { l: 'EVENTS\nJOINED', v: '15', icon: Calendar },
                ].map((stat, i) => (
                   <div
                      key={i}
@@ -313,7 +315,7 @@ export default function ParentProfile({
          {/* NAVIGATION */}
          <div className="flex justify-center gap-6 py-6 relative z-20 overflow-x-auto no-scrollbar px-4">
             {
-               ['ATHLETES'].map(tab => (
+               ['ATHLETES', 'AVAILABILITY'].map(tab => (
                   <button
                      key={tab}
                      onClick={() => setActiveTab(tab.toLowerCase())}
@@ -500,6 +502,40 @@ export default function ParentProfile({
                   </div>
                </div>
             )}
+
+            {/* AVAILABILITY TAB */}
+            {
+               activeTab === 'availability' && (
+                  <div className="flex flex-col gap-4 animate-fadeIn">
+                     <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-6 backdrop-blur-md">
+                        <div className="flex justify-between items-end mb-6">
+                           <div>
+                              <h3 className="font-montserrat font-black italic text-sm text-white uppercase tracking-widest">Live Availability</h3>
+                              <p className="text-[9px] font-bold text-gray-500 uppercase mt-1">
+                                 {savingAvailability ? <span className="text-east-light animate-pulse">SAVING CHANGES...</span> : 'Tap dates to toggle available days'}
+                              </p>
+                           </div>
+                           <Calendar size={18} className={savingAvailability ? 'text-east-light animate-spin' : 'text-east-light'} />
+                        </div>
+                        <div className="grid grid-cols-7 gap-3">
+                           {next14Days.slice(0, 14).map((day, i) => {
+                              const isAvailable = availability.includes(day.fullDate);
+                              return (
+                                 <div key={i} onClick={() => toggleAvailability(day.fullDate)} className="flex flex-col items-center gap-2 cursor-pointer group">
+                                    <span className="text-[8px] font-bold text-gray-600 uppercase group-hover:text-white transition-colors">{day.day}</span>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black transition-all ${day.fullDate === new Date().toISOString().split('T')[0] ? 'border border-east-light text-east-light' : 'bg-white/5 text-white group-hover:bg-white/10'}`}>
+                                       {day.date}
+                                    </div>
+                                    <div className={`w-1.5 h-1.5 rounded-full transition-all ${isAvailable ? 'bg-east-light scale-110 shadow-[0_0_10px_#28D160]' : 'bg-white/10'}`} />
+                                 </div>
+                              )
+                           })}
+                        </div>
+                     </div>
+                     <p className="text-[10px] text-gray-500 text-center italic font-bold">Your availability helps us coordinate volunteering & events.</p>
+                  </div>
+               )
+            }
 
             <input type="file" ref={childAvatarInputRef} onChange={handleChildAvatarUpload} className="hidden" accept="image/*" />
          </div>
