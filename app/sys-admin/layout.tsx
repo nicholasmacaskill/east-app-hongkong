@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { Shield, Newspaper, QrCode, Calendar, Home, CreditCard } from 'lucide-react';
+import { Shield, Newspaper, QrCode, Calendar, Home, CreditCard, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
@@ -108,6 +108,7 @@ export default function AdminLayout({
                             <AdminNavLink href="/sys-admin/news" icon={Newspaper} label="News" />
                             <AdminNavLink href="/sys-admin/bookings" icon={CreditCard} label="Booking Logs" />
                             <AdminNavLink href="/sys-admin/audit" icon={Shield} label="Audit Logs" />
+                            <AdminNavLink href="/sys-admin/metrics" icon={BarChart3} label="Metrics" />
                         </div>
 
                         {/* Mobile Menu Toggle */}
@@ -196,6 +197,13 @@ function MobileMenu() {
                             className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors"
                         >
                             <Shield size={16} /> Audit Logs
+                        </Link>
+                        <Link
+                            href="/sys-admin/metrics"
+                            onClick={() => setIsOpen(false)}
+                            className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors"
+                        >
+                            <BarChart3 size={16} /> Metrics
                         </Link>
                     </div>
                 </div>

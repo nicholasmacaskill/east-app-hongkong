@@ -192,6 +192,32 @@ export default function AdminDashboard() {
                     </div>
                 </Link>
 
+                {/* Key Metrics Dashboard Card */}
+                <Link href="/sys-admin/metrics" className="group">
+                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
+                        <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bar-chart-3"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
+                        </div>
+
+                        <div className="relative z-10 flex flex-col h-full gap-4">
+                            <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bar-chart-3"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
+                            </div>
+
+                            <div>
+                                <h2 className="text-xl font-black italic uppercase mb-2">Key Metrics</h2>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                    Track subscribers, retention, bookings revenue, facility usage, and cancellations.
+                                </p>
+                            </div>
+
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
+                                View Dashboard <ArrowRight size={14} />
+                            </div>
+                        </div>
+                    </div>
+                </Link>
+
                 {/* Audit Logs Card */}
                 <Link href="/sys-admin/audit" className="group">
                     <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
