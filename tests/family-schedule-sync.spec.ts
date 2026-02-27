@@ -89,6 +89,12 @@ test.describe('Family Schedule Sync & Selective Cancellation', () => {
             account_status: 'ACTIVE'
         });
 
+        // 3.5 Explicitly link children to parent via player_relationships (New Standard)
+        await supabase.from('player_relationships').upsert([
+            { parent_id: parentId, child_id: childAId, role: 'parent' },
+            { parent_id: parentId, child_id: childBId, role: 'parent' }
+        ]);
+
         // 4. Create Session X (for Child A)
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -179,9 +185,9 @@ test.describe('Family Schedule Sync & Selective Cancellation', () => {
         await page.waitForSelector('text=/My Schedule/i', { timeout: 15000 });
 
         // Select Tomorrow (Index 1 in the 6-day strip) to see Class X
-        // The strip is a flex container with gap-2. 
-        // We find the date items which have 'flex-col' and 'rounded-xl'
-        const dateItems = page.locator('.flex.gap-2 > div.flex.flex-col').filter({ hasText: /[0-9]+/ });
+        // The strip is a flex container with gap-1.
+        // We find the date items which have 'rounded-xl' and 'cursor-pointer'
+        const dateItems = page.locator('div.rounded-xl.cursor-pointer').filter({ hasText: /[0-9]+/ });
         await dateItems.nth(1).click();
         await page.waitForTimeout(1000);
 
@@ -226,6 +232,11 @@ test.describe('Family Schedule Sync & Selective Cancellation', () => {
         await page.waitForTimeout(1000);
         await page.waitForSelector('text=/My Schedule/i', { timeout: 15000 });
 
+        // Select Tomorrow (Index 1) to see Class X
+        const dateItems = page.locator('div.rounded-xl.cursor-pointer').filter({ hasText: /[0-9]+/ });
+        await dateItems.nth(1).click();
+        await page.waitForTimeout(2000); // Give it extra time to fetch after click
+
         // Get initial credit balance
         const { data: initialProfile } = await supabase
             .from('profiles')
@@ -234,10 +245,16 @@ test.describe('Family Schedule Sync & Selective Cancellation', () => {
             .single();
         const creditsBeforeCancel = initialProfile?.credits || 0;
 
-        // Click on Class X to open modal
-        const classXCard = page.locator('text=Class X').first();
-        await classXCard.click({ force: true });
+        // Click on Class X to open modal (using data-testid to avoid text ambiguity and animation issues)
+        const classXCard = page.locator('[data-testid="session-card-Class-X"]');
+        await classXCard.click();
         await page.waitForTimeout(2000); // Wait for modal to open
+
+        // Select Child A in the attendee list to reveal the cancellation option
+        // We filter by 'BOOKED' to ensure we only select the button inside the modal that confirms attendance
+        const childModalButton = page.locator('button').filter({ hasText: 'CHILDA' }).filter({ hasText: 'BOOKED' }).first();
+        await childModalButton.click();
+        await page.waitForTimeout(1000);
 
         // Look for CANCEL SELECTION button (appears when session is already booked)
         const cancelButton = page.locator('button:has-text("CANCEL SELECTION")');
@@ -281,7 +298,7 @@ test.describe('Family Schedule Sync & Selective Cancellation', () => {
         await page.waitForTimeout(1000);
 
         // Select Tomorrow (Index 1)
-        const dateItemsRetry = page.locator('.flex.gap-2 > div.flex.flex-col').filter({ hasText: /[0-9]+/ });
+        const dateItemsRetry = page.locator('div.rounded-xl.cursor-pointer').filter({ hasText: /[0-9]+/ });
         await dateItemsRetry.nth(1).click();
         await page.waitForTimeout(1000);
 

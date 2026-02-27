@@ -62,9 +62,10 @@ export default function Error({
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center font-montserrat">
             <AlertTriangle size={64} className="text-red-500 mb-6" />
             <h2 className="text-2xl font-black italic uppercase tracking-widest mb-2">Technical Foul</h2>
-            <p className="text-gray-400 max-w-md mb-8 text-sm">
-                Something went wrong on our end. We've logged the error.
-            </p>
+            <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg mb-8 max-w-lg">
+                <p className="text-red-400 text-sm font-bold uppercase mb-1">Error Detected</p>
+                <p className="text-gray-300 text-xs font-mono break-all">{error.message}</p>
+            </div>
 
             {showManualCopy ? (
                 <div className="w-full max-w-md bg-gray-900 p-4 rounded-lg mb-4 text-left">

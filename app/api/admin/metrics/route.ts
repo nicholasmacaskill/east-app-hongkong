@@ -42,6 +42,7 @@ export async function GET(request: Request) {
             .select('id, tier, subscription_status, created_at, account_status');
 
         if (profilesError) throw profilesError;
+        console.log(`Fetched ${profiles.length} profiles`);
 
         // Fetch Registrations with Sessions
         const { data: registrations, error: registrationsError } = await supabaseAdmin
@@ -60,6 +61,7 @@ export async function GET(request: Request) {
             `);
 
         if (registrationsError) throw registrationsError;
+        console.log(`Fetched ${registrations.length} registrations`);
 
         // Fetch Cancellations
         const { data: cancellations, error: cancellationsError } = await supabaseAdmin
@@ -78,6 +80,7 @@ export async function GET(request: Request) {
             `);
 
         if (cancellationsError) throw cancellationsError;
+        console.log(`Fetched ${cancellations.length} cancellations`);
 
         // Fetch all sessions (so we can get total sessions by coach/category)
         const { data: sessionsData, error: sessionsError } = await supabaseAdmin
@@ -91,7 +94,7 @@ export async function GET(request: Request) {
         // 1. Subscribers Metrics
         const totalSubscribers = profiles.filter(p => ['active', 'trialing'].includes(p.subscription_status || '')).length;
         const totalChurned = profiles.filter(p => ['cancelled', 'canceled', 'past_due', 'unpaid'].includes(p.subscription_status || '')).length;
-        const retentionRate = profiles.length > 0 ? (totalSubscribers / (totalSubscribers + totalChurned)) * 100 : 0;
+        const retentionRate = (totalSubscribers + totalChurned) > 0 ? (totalSubscribers / (totalSubscribers + totalChurned)) * 100 : 100;
 
         let yearlySubs = 0;
         let monthlySubs = 0;
@@ -114,59 +117,97 @@ export async function GET(request: Request) {
         };
 
         // 2. Bookings Metrics
-        const bookingsList = registrations
-            .filter(r => r.sessions)
-            .map(r => ({
+        const registrationsList = (registrations || []).filter(r => r && r.sessions);
+        const bookingsList = registrationsList.map(r => {
+            const s = r.sessions as any;
+            return {
                 id: r.id,
-                registeredAt: new Date(r.registered_at),
-                sessionDate: new Date((r.sessions as any).start_time),
-                category: (r.sessions as any).category || 'General',
-                instructor: (r.sessions as any).instructor || 'Unknown',
-                creditCost: (r.sessions as any).credit_cost || 0,
-            }));
+                registeredAt: r.registered_at ? new Date(r.registered_at) : new Date(),
+                sessionDate: s.start_time ? new Date(s.start_time) : new Date(),
+                title: s.title || 'Untitled',
+                category: s.category || 'General',
+                instructor: s.instructor || 'Unknown',
+                creditCost: Number(s.credit_cost) || 0,
+            };
+        });
 
         const totalBookings = bookingsList.length;
-        const totalCreditsSpent = bookingsList.reduce((sum, b) => sum + b.creditCost, 0);
+        const totalCreditsSpent = bookingsList.reduce((sum, b) => sum + (Number(b.creditCost) || 0), 0);
 
-        // Group by category (facility)
-        const bookingsByCategory = bookingsList.reduce((acc, b) => {
-            acc[b.category] = (acc[b.category] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
+        // Safe Aggregation Helpers
+        const safeGroup = (list: any[], keyFn: (item: any) => string) => {
+            return list.reduce((acc, item) => {
+                const key = keyFn(item) || 'Unknown';
+                acc[key] = (acc[key] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>);
+        };
 
-        // Group by coach
-        const bookingsByCoach = bookingsList.reduce((acc, b) => {
-            acc[b.instructor] = (acc[b.instructor] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
+        const safeSum = (list: any[], keyFn: (item: any) => string, valFn: (item: any) => number) => {
+            return list.reduce((acc, item) => {
+                const key = keyFn(item) || 'Unknown';
+                acc[key] = (acc[key] || 0) + (Number(valFn(item)) || 0);
+                return acc;
+            }, {} as Record<string, number>);
+        };
 
-        // Time distribution (peak times by hour)
+        const bookingsByCategory = safeGroup(bookingsList, b => b.category);
+        const bookingsByFacility = safeGroup(bookingsList.filter(b => b.category === 'FACILITY'), b => b.title);
+        const bookingsByCoach = safeGroup(bookingsList, b => b.instructor);
         const peakTimesByHour = bookingsList.reduce((acc, b) => {
             const hour = b.sessionDate.getHours();
             acc[hour] = (acc[hour] || 0) + 1;
             return acc;
         }, {} as Record<number, number>);
 
-        // 3. Activity Timeline (Monthly bookings for charting)
-        const bookingsTimeline = bookingsList.reduce((acc, b) => {
-            const monthYear = `${b.registeredAt.getFullYear()}-${String(b.registeredAt.getMonth() + 1).padStart(2, '0')}`;
+        const daysLabel = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const peakDays = safeGroup(bookingsList, b => daysLabel[b.sessionDate.getDay()]);
+
+        const getWeekNumber = (date: Date) => {
+            try {
+                const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                const dayNum = d.getUTCDay() || 7;
+                d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+                const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+                return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+            } catch (e) { return 0; }
+        };
+
+        const timelineMonthly = bookingsList.reduce((acc, b) => {
+            const d = b.registeredAt;
+            const monthYear = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
             if (!acc[monthYear]) acc[monthYear] = { bookings: 0, revenue: 0 };
             acc[monthYear].bookings += 1;
             acc[monthYear].revenue += b.creditCost;
             return acc;
         }, {} as Record<string, { bookings: number, revenue: number }>);
 
-        // Map timeline for charting
-        const timelineData = Object.keys(bookingsTimeline).sort().map(key => ({
-            period: key,
-            bookings: bookingsTimeline[key].bookings,
-            spentCredits: bookingsTimeline[key].revenue
+        const timelineWeekly = bookingsList.reduce((acc, b) => {
+            const week = getWeekNumber(b.registeredAt);
+            const year = b.registeredAt.getFullYear();
+            const weekKey = `${year}-W${String(week).padStart(2, '0')}`;
+            if (!acc[weekKey]) acc[weekKey] = { bookings: 0, revenue: 0 };
+            acc[weekKey].bookings += 1;
+            acc[weekKey].revenue += b.creditCost;
+            return acc;
+        }, {} as Record<string, { bookings: number, revenue: number }>);
+
+        const timelineData = Object.keys(timelineMonthly).sort().map(key => ({
+            period: key, bookings: timelineMonthly[key].bookings, spentCredits: timelineMonthly[key].revenue
         }));
 
-        // 4. Cancellations
-        const totalCancellations = cancellations.length;
+        const weeklyTimelineData = Object.keys(timelineWeekly).sort().reverse().slice(0, 12).reverse().map(key => ({
+            period: key, bookings: timelineWeekly[key].bookings, spentCredits: timelineWeekly[key].revenue
+        }));
 
-        const cancellationsTimeline = cancellations.reduce((acc, c) => {
+        const revenueByFacility = safeSum(bookingsList.filter(b => b.category === 'FACILITY'), b => b.title, b => b.creditCost);
+        const revenueByCoach = safeSum(bookingsList, b => b.instructor, b => b.creditCost);
+
+        // 4. Cancellations
+        const cancellationsList = (cancellations || []).filter(c => c);
+        const totalCancellations = cancellationsList.length;
+        const cancellationsTimeline = cancellationsList.reduce((acc, c) => {
+            if (!c.created_at) return acc;
             const d = new Date(c.created_at);
             const monthYear = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
             acc[monthYear] = (acc[monthYear] || 0) + 1;
@@ -174,8 +215,7 @@ export async function GET(request: Request) {
         }, {} as Record<string, number>);
 
         const cancelTimelineData = Object.keys(cancellationsTimeline).sort().map(key => ({
-            period: key,
-            cancellations: cancellationsTimeline[key]
+            period: key, cancellations: cancellationsTimeline[key]
         }));
 
         return NextResponse.json({
@@ -184,9 +224,14 @@ export async function GET(request: Request) {
                 total: totalBookings,
                 totalCreditsSpent: totalCreditsSpent,
                 byCategory: bookingsByCategory,
+                byFacility: bookingsByFacility,
                 byCoach: bookingsByCoach,
                 peakTimes: peakTimesByHour,
+                peakDays: peakDays,
                 timeline: timelineData,
+                timelineWeekly: weeklyTimelineData,
+                revenueByFacility: revenueByFacility,
+                revenueByCoach: revenueByCoach,
             },
             cancellations: {
                 total: totalCancellations,
@@ -196,6 +241,10 @@ export async function GET(request: Request) {
 
     } catch (error: any) {
         console.error('Metrics API Error:', error);
-        return NextResponse.json({ error: 'Failed to fetch metrics', details: error.message }, { status: 500 });
+        return NextResponse.json({
+            error: 'Failed to fetch metrics',
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }, { status: 500 });
     }
 }

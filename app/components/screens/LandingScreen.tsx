@@ -44,7 +44,7 @@ export default function LandingScreen({ onSelectAuth }: LandingScreenProps) {
 
                     <div className="flex flex-col gap-10">
                         {/* ATHLETE SECTION */}
-                        <div className="animate-fadeIn" style={{ animationDelay: '0ms' }}>
+                        <div className="animate-fadeIn" style={{ animationDelay: '0ms' }} data-testid="athlete-portal-section">
                             <p className="text-[14px] font-black tracking-[0.3em] text-white uppercase mb-4 text-center">athlete</p>
                             <div className="grid grid-cols-2 gap-3">
                                 <LoginButton
@@ -61,7 +61,7 @@ export default function LandingScreen({ onSelectAuth }: LandingScreenProps) {
                         </div>
 
                         {/* PARENT SECTION */}
-                        <div className="animate-fadeIn" style={{ animationDelay: '200ms' }}>
+                        <div className="animate-fadeIn" style={{ animationDelay: '200ms' }} data-testid="parent-portal-section">
                             <p className="text-[14px] font-black tracking-[0.3em] text-white uppercase mb-4 text-center">parent</p>
                             <div className="grid grid-cols-2 gap-3">
                                 <LoginButton
@@ -78,7 +78,7 @@ export default function LandingScreen({ onSelectAuth }: LandingScreenProps) {
                         </div>
 
                         {/* COACH SECTION */}
-                        <div className="animate-fadeIn" style={{ animationDelay: '400ms' }}>
+                        <div className="animate-fadeIn" style={{ animationDelay: '400ms' }} data-testid="coach-portal-section">
                             <p className="text-[14px] font-black tracking-[0.3em] text-white uppercase mb-4 text-center">coach</p>
                             <LoginButton
                                 label="LOGIN"

@@ -43,7 +43,10 @@ async function executeSqlFile(filePath) {
         const sql = fs.readFileSync(fullPath, 'utf8');
 
         console.log(`🚀 Executing SQL...`);
-        await client.query(sql);
+        const result = await client.query(sql);
+        if (result.rows && result.rows.length > 0) {
+            console.log(`✅ Results:`, JSON.stringify(result.rows, null, 2));
+        }
         console.log(`✅ SQL executed successfully!`);
     } catch (error) {
         console.error("❌ Database Error:", error);

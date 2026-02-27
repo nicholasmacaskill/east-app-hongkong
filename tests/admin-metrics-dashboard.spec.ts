@@ -12,8 +12,8 @@ test.describe('Admin Key Metrics Dashboard', () => {
         const metricsCard = page.locator('h2', { hasText: 'Key Metrics' });
         await expect(metricsCard).toBeVisible();
 
-        // 3. Click the link to open the dashboard
-        await page.locator('a[href="/sys-admin/metrics"]').click();
+        // 3. Click the link to open the dashboard (multiple links exist, use first)
+        await page.locator('a[href="/sys-admin/metrics"]').first().click();
 
         // 4. Wait for navigation and API load
         await expect(page).toHaveURL(/.*\/sys-admin\/metrics/);
@@ -31,7 +31,7 @@ test.describe('Admin Key Metrics Dashboard', () => {
         // 7. Verify the lower charts/tables components
         await expect(page.locator('h3:has-text("Bookings by Facility")')).toBeVisible();
         await expect(page.locator('h3:has-text("Bookings by Coach")')).toBeVisible();
-        await expect(page.locator('h3:has-text("Activity Timeline (Monthly)")')).toBeVisible();
+        await expect(page.locator('h3:has-text("Activity Timeline")')).toBeVisible();
         await expect(page.locator('h3:has-text("Peak Booking Times (24h)")')).toBeVisible();
     });
 });

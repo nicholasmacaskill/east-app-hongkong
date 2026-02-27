@@ -94,7 +94,7 @@ export default defineConfig({
         'tests/debug-overflow.spec.ts',
         'tests/verification-schedule-wipe.spec.ts',
         'tests/leaderboard-cms.spec.ts',
-        'tests/parent-photo-locking.spec.ts'
+        'tests/parent-photo-editability.spec.ts'
       ],
     },
 

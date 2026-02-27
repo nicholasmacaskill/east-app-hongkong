@@ -23,8 +23,14 @@ FOR SELECT USING (auth.uid() IS NOT NULL);
 -- For TRUE production "buttoning up", we'll rely on the app logic to only fetch needed fields,
 -- but the RLS "true" was the biggest hole.
 
--- Users can update their own profile (COLUMN RESTRICTED)
-CREATE POLICY "Users allow update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+-- Users can update their own profile OR profiles where they are the designated parent
+CREATE POLICY "Users allow update own or child profile" ON profiles 
+FOR UPDATE 
+USING (
+    auth.uid() = id 
+    OR 
+    id IN (SELECT child_id FROM player_relationships WHERE parent_id = auth.uid())
+);
 
 -- CRITICAL: Prevent updating sensitive columns (credits, role)
 -- This must be run to secure the table:

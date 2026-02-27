@@ -213,7 +213,7 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
 
                 {/* Profile Picture */}
                 <div className="flex flex-col items-center mb-10">
-                    <div className="w-28 h-28 rounded-full relative mb-4 cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
+                    <div className="w-28 h-28 rounded-full relative mb-4 cursor-pointer group" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
                         <div className="w-full h-full rounded-full border-2 border-white flex items-center justify-center overflow-hidden bg-[#1a1a1a]">
                             {previewUrl ? (
                                 <img src={previewUrl} className="w-full h-full object-cover" alt="Profile" />
@@ -225,7 +225,7 @@ const EditProfileScreen = ({ onBack, profileData, setProfileData, onSave }: {
                             <Camera size={14} className="text-black" />
                         </div>
                     </div>
-                    <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" />
+                    <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
                     <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Tap image to change</span>
                 </div>
 

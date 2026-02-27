@@ -32,9 +32,7 @@ export default function ParentProfile({
    const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
    const [showAddChild, setShowAddChild] = useState(false);
    const [newChild, setNewChild] = useState({ first: '', last: '', email: '', sport: '' });
-   const [availability, setAvailability] = useState<string[]>([]);
 
-   const [savingAvailability, setSavingAvailability] = useState(false);
    const [uploading, setUploading] = useState(false);
 
    const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -190,28 +188,7 @@ export default function ParentProfile({
       }
    };
 
-   // Mock logic for next 14 days
-   const next14Days = Array.from({ length: 14 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() + i);
-      const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-      return {
-         day: dayNames[d.getDay()],
-         date: d.getDate(),
-         fullDate: d.toISOString().split('T')[0]
-      };
-   });
 
-   const toggleAvailability = async (date: string) => {
-      setSavingAvailability(true);
-      // Simulate API call
-      setTimeout(() => {
-         setAvailability(prev =>
-            prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date]
-         );
-         setSavingAvailability(false);
-      }, 500);
-   };
 
    const handleAddChild = async () => {
       if (!newChild.first || !newChild.last) return;
@@ -228,7 +205,12 @@ export default function ParentProfile({
          {/* HEADER IMAGE */}
          <div
             className={`h-56 relative shadow-2xl ${!isReadOnly ? 'cursor-pointer' : ''}`}
-            onClick={() => !isReadOnly && coverInputRef.current?.click()}
+            onClick={(e) => {
+               if (!isReadOnly) {
+                  e.stopPropagation();
+                  coverInputRef.current?.click();
+               }
+            }}
          >
             <img
                src={profileData.banner_url || "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=2670&auto=format&fit=crop"}
@@ -239,18 +221,21 @@ export default function ParentProfile({
             <div className="absolute top-6 right-6 flex gap-3">
                {!isReadOnly && (
                   <button
-                     onClick={() => coverInputRef.current?.click()}
+                     onClick={(e) => {
+                        e.stopPropagation();
+                        coverInputRef.current?.click();
+                     }}
                      className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20 text-white hover:bg-east-light hover:text-black active:scale-95 transition-all shadow-2xl group/btn"
                      title="Update Cover Photo"
                   >
                      <Camera size={20} className="group-hover/btn:scale-110 transition-transform" />
                   </button>
                )}
-               <button data-testid="settings-button" onClick={onOpenSettings} className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20 text-gray-400 hover:text-white active:scale-95 transition-all shadow-2xl">
+               <button data-testid="settings-button" onClick={(e) => { e.stopPropagation(); onOpenSettings(); }} className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/20 text-gray-400 hover:text-white active:scale-95 transition-all shadow-2xl">
                   <Edit2 size={20} />
                </button>
             </div>
-            <input type="file" ref={coverInputRef} onChange={handleCoverUpload} className="hidden" accept="image/*" />
+            <input type="file" ref={coverInputRef} onChange={handleCoverUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
          </div>
 
          {/* PROFILE INFO */}
@@ -258,7 +243,12 @@ export default function ParentProfile({
             <div
                data-testid="parent-avatar-container"
                className={`w-32 h-32 rounded-full border-[6px] border-black shadow-2xl overflow-hidden bg-zinc-900 relative group ${isReadOnly ? '' : 'cursor-pointer'}`}
-               onClick={() => !isReadOnly && avatarInputRef.current?.click()}
+               onClick={(e) => {
+                  if (!isReadOnly) {
+                     e.stopPropagation();
+                     avatarInputRef.current?.click();
+                  }
+               }}
             >
                {profileData.avatar_url ? (
                   <img src={profileData.avatar_url} className="w-full h-full object-cover" alt="Profile" />
@@ -273,7 +263,7 @@ export default function ParentProfile({
                   </div>
                )}
             </div>
-            <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="hidden" accept="image/*" />
+            <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
 
             <div className="mt-4 text-center">
                <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none mb-1">
@@ -287,22 +277,20 @@ export default function ParentProfile({
                </div>
             </div>
 
-            <div className="grid grid-cols-3 w-full gap-2 mt-6">
+            <div className="flex justify-center w-full mt-6">
                {[
-                  { l: 'VOLUNTEER\nHRS', v: '48', icon: Heart },
                   {
                      l: 'CREDITS\nBALANCE',
                      v: profileData.credits || '0',
-                     icon: isLocked ? Lock : Users,
+                     icon: isLocked ? Lock : Coins,
                      isLocked: isLocked
                   },
-                  { l: 'EVENTS\nJOINED', v: '15', icon: Calendar },
                ].map((stat, i) => (
                   <div
                      key={i}
                      onClick={() => stat.isLocked && addToast("Current credits are unusable until a new subscription is purchased.", "warning")}
                      title={stat.isLocked ? "Current credits are unusable until a new subscription is purchased." : ""}
-                     className={`flex flex-col items-center p-3 bg-white/5 rounded-xl border group hover:border-east-light/50 transition-colors ${stat.isLocked ? 'border-red-900/50 bg-red-900/10 cursor-not-allowed' : 'border-white/10'}`}
+                     className={`flex flex-col items-center p-3 bg-white/5 rounded-xl border group hover:border-east-light/50 transition-colors w-1/2 max-w-[200px] ${stat.isLocked ? 'border-red-900/50 bg-red-900/10 cursor-not-allowed' : 'border-white/10'}`}
                   >
                      <div className="flex items-center gap-1 mb-1">
                         <stat.icon size={14} className={stat.isLocked ? 'text-red-500' : 'text-east-light'} />
@@ -318,7 +306,7 @@ export default function ParentProfile({
          {/* NAVIGATION */}
          <div className="flex justify-center gap-6 py-6 relative z-20 overflow-x-auto no-scrollbar px-4">
             {
-               ['ATHLETES', 'AVAILABILITY'].map(tab => (
+               ['ATHLETES'].map(tab => (
                   <button
                      key={tab}
                      onClick={() => setActiveTab(tab.toLowerCase())}
@@ -341,6 +329,7 @@ export default function ParentProfile({
                         return (
                            <div
                               key={athlete.id}
+                              data-testid={`child-section-${athlete.id}`}
                               onClick={() => {
                                  setSelectedChildId(athlete.id);
                                  if (setActiveChildId) setActiveChildId(athlete.id);
@@ -506,41 +495,9 @@ export default function ParentProfile({
                </div>
             )}
 
-            {/* AVAILABILITY TAB */}
-            {
-               activeTab === 'availability' && (
-                  <div className="flex flex-col gap-4 animate-fadeIn">
-                     <div className="bg-[#1e1e1e] border border-white/10 rounded-2xl p-6 backdrop-blur-md">
-                        <div className="flex justify-between items-end mb-6">
-                           <div>
-                              <h3 className="font-montserrat font-black italic text-sm text-white uppercase tracking-widest">Live Availability</h3>
-                              <p className="text-[9px] font-bold text-gray-500 uppercase mt-1">
-                                 {savingAvailability ? <span className="text-east-light animate-pulse">SAVING CHANGES...</span> : 'Tap dates to toggle available days'}
-                              </p>
-                           </div>
-                           <Calendar size={18} className={savingAvailability ? 'text-east-light animate-spin' : 'text-east-light'} />
-                        </div>
-                        <div className="grid grid-cols-7 gap-3">
-                           {next14Days.slice(0, 14).map((day, i) => {
-                              const isAvailable = availability.includes(day.fullDate);
-                              return (
-                                 <div key={i} onClick={() => toggleAvailability(day.fullDate)} className="flex flex-col items-center gap-2 cursor-pointer group">
-                                    <span className="text-[8px] font-bold text-gray-600 uppercase group-hover:text-white transition-colors">{day.day}</span>
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black transition-all ${day.fullDate === new Date().toISOString().split('T')[0] ? 'border border-east-light text-east-light' : 'bg-white/5 text-white group-hover:bg-white/10'}`}>
-                                       {day.date}
-                                    </div>
-                                    <div className={`w-1.5 h-1.5 rounded-full transition-all ${isAvailable ? 'bg-east-light scale-110 shadow-[0_0_10px_#28D160]' : 'bg-white/10'}`} />
-                                 </div>
-                              )
-                           })}
-                        </div>
-                     </div>
-                     <p className="text-[10px] text-gray-500 text-center italic font-bold">Your availability helps us coordinate volunteering & events.</p>
-                  </div>
-               )
-            }
 
-            <input type="file" ref={childAvatarInputRef} onChange={handleChildAvatarUpload} className="hidden" accept="image/*" />
+
+            <input type="file" ref={childAvatarInputRef} onChange={handleChildAvatarUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
          </div>
       </div>
    );

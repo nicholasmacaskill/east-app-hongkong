@@ -169,9 +169,18 @@ export default function ScheduleScreen({
             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
               <button
                 onClick={() => setActiveChildId && setActiveChildId(null)}
-                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase whitespace-nowrap border transition-all ${!activeChildId
+                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase whitespace-nowrap border transition-all ${activeChildId === null
                   ? 'bg-east-light text-black border-east-light'
-                  : 'bg-black text-gray-500 border-gray-800'
+                  : 'bg-black text-gray-500 border-gray-800 hover:border-gray-600'
+                  }`}
+              >
+                All Family
+              </button>
+              <button
+                onClick={() => setActiveChildId && setActiveChildId(currentUserId)} // Explicitly set to parent ID 
+                className={`px-4 py-2 rounded-full text-[10px] font-black uppercase whitespace-nowrap border transition-all ${activeChildId === currentUserId
+                  ? 'bg-white text-black border-white'
+                  : 'bg-black text-gray-500 border-gray-800 hover:border-gray-600'
                   }`}
               >
                 Myself
@@ -283,7 +292,7 @@ export default function ScheduleScreen({
             eventsForSelectedDay.map((event, idx) => {
               const theme = getTheme(event.category || 'general');
               return (
-                <div key={idx} className="flex gap-4 animate-fadeIn cursor-pointer group" onClick={() => onPreviewClick(event)}>
+                <div key={idx} data-testid={`session-card-${event.title.replace(/\s+/g, '-')}`} className="flex gap-4 animate-fadeIn cursor-pointer group" onClick={() => onPreviewClick(event)}>
                   <div className="flex-1 transition-all duration-300 group-hover:translate-x-1">
                     <div className="bg-[#0a0a0a] border border-gray-800 rounded-2xl overflow-hidden shadow-xl">
                       <div className="p-4 flex justify-between items-start">

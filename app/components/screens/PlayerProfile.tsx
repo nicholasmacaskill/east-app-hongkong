@@ -181,7 +181,12 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
             <div className="absolute left-6 top-16 z-10">
               <div
                 className={`w-44 h-44 rounded-full border-[6px] border-white/10 bg-white/5 overflow-hidden shadow-2xl backdrop-blur-sm relative ${isReadOnly ? '' : 'cursor-pointer group'}`}
-                onClick={() => !isReadOnly && avatarInputRef.current?.click()}
+                onClick={(e) => {
+                  if (!isReadOnly) {
+                    e.stopPropagation();
+                    avatarInputRef.current?.click();
+                  }
+                }}
               >
                 <img
                   src={profileData.avatar_url || "https://images.pexels.com/photos/6550836/pexels-photo-6550836.jpeg"}
@@ -194,7 +199,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                   </div>
                 )}
               </div>
-              <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="hidden" accept="image/*" />
+              <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
             </div>
           </div>
 

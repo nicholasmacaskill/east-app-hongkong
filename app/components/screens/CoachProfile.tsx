@@ -264,7 +264,12 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                         <div className="absolute left-6 top-16 z-10">
                             <div
                                 className={`w-44 h-44 rounded-full border-[6px] border-white/10 bg-white/5 overflow-hidden shadow-2xl backdrop-blur-sm relative ${isPublic ? '' : 'cursor-pointer group'}`}
-                                onClick={() => !isPublic && avatarInputRef.current?.click()}
+                                onClick={(e) => {
+                                    if (!isPublic) {
+                                        e.stopPropagation();
+                                        avatarInputRef.current?.click();
+                                    }
+                                }}
                             >
                                 <img
                                     src={profileData.avatar_url || "https://images.pexels.com/photos/6550836/pexels-photo-6550836.jpeg"}
@@ -277,8 +282,8 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                     </div>
                                 )}
                             </div>
-                            <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="hidden" accept="image/*" />
-                            <input type="file" ref={fileInputRef} onChange={handleGalleryUpload} className="hidden" accept="image/*" />
+                            <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
+                            <input type="file" ref={fileInputRef} onChange={handleGalleryUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
                         </div>
                     </div>
 
@@ -395,10 +400,10 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
 
                                 {!isPublic && (
                                     <div className="absolute top-4 right-4 z-20">
-                                        <button onClick={() => videoInputRef.current?.click()} className="p-2 bg-black/50 rounded-full hover:bg-east-light hover:text-black text-white transition-all backdrop-blur-sm border border-white/10">
+                                        <button onClick={(e) => { e.stopPropagation(); videoInputRef.current?.click(); }} className="p-2 bg-black/50 rounded-full hover:bg-east-light hover:text-black text-white transition-all backdrop-blur-sm border border-white/10">
                                             <Upload size={16} />
                                         </button>
-                                        <input type="file" ref={videoInputRef} onChange={handleVideoUpload} className="hidden" accept="video/*" />
+                                        <input type="file" ref={videoInputRef} onChange={handleVideoUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="video/*" />
                                     </div>
                                 )}
 
@@ -413,7 +418,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                 <div className="flex justify-between items-center">
                                     <h3 className="font-black italic text-sm text-white uppercase tracking-widest">Gallery</h3>
                                     {!isPublic && (
-                                        <button onClick={() => fileInputRef.current?.click()} className="text-[10px] font-black text-east-light uppercase hover:text-white transition-all flex items-center gap-1">
+                                        <button onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }} className="text-[10px] font-black text-east-light uppercase hover:text-white transition-all flex items-center gap-1">
                                             <Plus size={12} /> ADD PHOTO
                                         </button>
                                     )}

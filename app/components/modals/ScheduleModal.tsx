@@ -368,7 +368,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
         <div className="flex flex-col items-center mt-8 px-4">
             <div
                 className="w-full aspect-[3/4] bg-[#1e1e1e] rounded-2xl border-2 border-dashed border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:border-[#28D160] hover:bg-[#28D160]/10 transition-all relative overflow-hidden group"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
             >
                 {photoUrl ? (
                     <>
@@ -386,7 +386,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
                     </>
                 )}
             </div>
-            <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="hidden" accept="image/*" />
+            <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
 
             <div className="mt-8 text-center max-w-xs">
                 <p className="text-gray-500 text-xs leading-relaxed">

@@ -22,6 +22,18 @@ export async function GET(request: Request) {
     });
   }
 
+  // B. Check Player Relationships Table (New Standard)
+  const { data: relationshipChildren } = await supabaseAdmin
+    .from('player_relationships')
+    .select('child_id')
+    .eq('parent_id', userId);
+
+  if (relationshipChildren) {
+    relationshipChildren.forEach((row: { child_id: string }) => {
+      if (!familyIds.includes(row.child_id)) familyIds.push(row.child_id);
+    });
+  }
+
   const { data, error } = await supabaseAdmin
     .from('registrations')
     .select(`
@@ -58,6 +70,8 @@ export async function GET(request: Request) {
 
   // Sort by date (earliest first)
   schedule.sort((a: { start_time: string }, b: { start_time: string }) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+
+  console.log(`[MY-SCHEDULE API] User ${userId} requested family schedule. familyIds [${familyIds.join(', ')}]. Found ${schedule.length} active non-cancelled classes.`);
 
   return NextResponse.json(schedule);
 }
