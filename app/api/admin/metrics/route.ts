@@ -266,32 +266,8 @@ export async function GET(request: Request) {
         const lastMonthSubsCount = totalSubscribers - currentMonthNewSubs; // Simple approximation
         const momGrowth = lastMonthSubsCount > 0 ? (currentMonthNewSubs / lastMonthSubsCount) * 100 : 100;
 
-        // Velocity & Momentum Calculations for Glass Pivot
-        // Kinetic Velocity: Credit Throughput in last 48h vs previous 48h
-        const fortyEightHoursAgo = new Date(now.getTime() - (48 * 60 * 60 * 1000));
-        const ninetySixHoursAgo = new Date(now.getTime() - (96 * 60 * 60 * 1000));
-
-        const throughputCurrent = bookingsList.filter(b => b.registeredAt >= fortyEightHoursAgo).reduce((sum, b) => sum + b.creditCost, 0);
-        const throughputPrevious = bookingsList.filter(b => b.registeredAt >= ninetySixHoursAgo && b.registeredAt < fortyEightHoursAgo).reduce((sum, b) => sum + b.creditCost, 0);
-        const kineticVelocity = throughputPrevious > 0 ? ((throughputCurrent - throughputPrevious) / throughputPrevious) * 100 : 0;
-
-        // Resonance Momentum: New subscribers vs previous period
-        const resonanceMomentum = momGrowth > 0 ? 'cyan' : 'magenta';
-        const kineticMomentum = kineticVelocity > 0 ? 'cyan' : 'magenta';
-        const frictionMomentum = sleepers > (totalSubscribers * 0.1) ? 'magenta' : 'none';
-
-        // Telemetry Stream: Latest 5 events
-        const telemetry = [
-            ...bookingsList.slice(-3).map(b => `[booking_manifested] :: ${b.category.toLowerCase()} :: ${b.title.toLowerCase()} :: ${b.registeredAt.toLocaleTimeString()}`),
-            ...cancellationsList.slice(-2).map(c => `[session_voided] :: ${c.id.substring(0, 8)} :: ${new Date(c.created_at || '').toLocaleTimeString()}`)
-        ].sort().reverse();
-
         return NextResponse.json({
-            subscribers: {
-                ...subscriberMetrics,
-                momentum: resonanceMomentum,
-                velocity: momGrowth
-            },
+            subscribers: subscriberMetrics,
             bookings: {
                 total: totalBookings,
                 totalCreditsSpent: totalCreditsSpent,
@@ -304,8 +280,6 @@ export async function GET(request: Request) {
                 timelineWeekly: weeklyTimelineData,
                 revenueByFacility: revenueByFacility,
                 revenueByCoach: revenueByCoach,
-                momentum: kineticMomentum,
-                velocity: kineticVelocity
             },
             cancellations: {
                 total: totalCancellations,
@@ -317,10 +291,8 @@ export async function GET(request: Request) {
                 creditVelocity: creditVelocity,
                 utilizationRate: utilizationRate,
                 conversionRate: conversionRate,
-                momGrowth: momGrowth,
-                momentum: frictionMomentum
-            },
-            telemetry: telemetry
+                momGrowth: momGrowth
+            }
         });
 
     } catch (error: any) {
