@@ -12,10 +12,10 @@ dotenv.config({ path: path.resolve(__dirname, '.env.local') });
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  timeout: 120000, // 2 minutes global timeout
+  timeout: 120000,
+  globalTeardown: require.resolve('./tests/global-teardown.ts'),
   testDir: './tests',
-  /* Run tests in files in parallel */
-  fullyParallel: false, // Disable parallelism to save resources
+  fullyParallel: false,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */

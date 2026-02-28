@@ -15,7 +15,7 @@ setup('authenticate', async ({ page }) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const timestamp = Date.now();
-    const email = `test-parent-${timestamp}@east.com`;
+    const email = `test-parent-${timestamp}@pw.test`;
     const password = 'test-password-123';
 
     // Create User with auto-confirmation

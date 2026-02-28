@@ -44,19 +44,20 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: authError?.message || 'Failed to create user' }, { status });
         }
 
-        // 2. Explicitly update profile to ensure name and contact sync
-        // (Triggers can sometimes have mismatches; this is safer)
+        // 2. Explicitly update or create profile to ensure name and contact sync
+        // (Triggers can sometimes have mismatches; upsert is safer)
         await supabaseAdmin
             .from('profiles')
-            .update({
+            .upsert({
+                id: authUser.user.id,
                 first_name: firstName,
                 last_name: lastName,
                 name: firstName,
                 surname: lastName,
                 contact_email: email,
-                mobile: phone
-            })
-            .eq('id', authUser.user.id);
+                mobile: phone,
+                role: role
+            }, { onConflict: 'id' });
 
         // 3. Generate the signup/confirmation link
         // We Use 'signup' type for a new user

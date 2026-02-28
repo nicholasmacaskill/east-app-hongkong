@@ -10,7 +10,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 test.describe('Auth Registration E2E: Custom API + Resend + Profile Sync', () => {
-    const testEmail = `test-user-${Date.now()}@example.com`;
+    const testEmail = `test-user-${Date.now()}@pw.test`;
     const testPassword = 'TestPassword123!';
     const testFullName = 'John Doe Alpha';
     let userId: string;
@@ -48,15 +48,24 @@ test.describe('Auth Registration E2E: Custom API + Resend + Profile Sync', () =>
         expect(createdUser).toBeDefined();
         userId = createdUser!.id;
 
-        // 3. Verify Profile Sync (The core fix)
-        const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .single();
+        // 3. Verify Profile Sync (The core fix) - with retry for async trigger
+        let profile = null;
+        let attempts = 0;
+        while (!profile && attempts < 10) {
+            const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .single();
+            if (data) {
+                profile = data;
+            } else {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                attempts++;
+            }
+        }
 
-        if (profileError) throw profileError;
-
+        expect(profile).toBeDefined();
         console.log('[TEST] Verified Profile:', profile);
 
         expect(profile.first_name).toBe('John');
