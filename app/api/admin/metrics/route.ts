@@ -39,7 +39,7 @@ export async function GET(request: Request) {
         // Fetch Subscribers
         const { data: profiles, error: profilesError } = await supabaseAdmin
             .from('profiles')
-            .select('id, tier, subscription_status, created_at, account_status');
+            .select('id, tier, membership_tier, subscription_status, created_at, account_status');
 
         if (profilesError) throw profilesError;
         console.log(`Fetched ${profiles.length} profiles`);
@@ -49,6 +49,7 @@ export async function GET(request: Request) {
             .from('registrations')
             .select(`
                 id,
+                user_id,
                 registered_at,
                 sessions (
                     id,
@@ -92,19 +93,36 @@ export async function GET(request: Request) {
         // --- Aggregation logic ---
 
         // 1. Subscribers Metrics
-        const totalSubscribers = profiles.filter(p => ['active', 'trialing'].includes(p.subscription_status || '')).length;
-        const totalChurned = profiles.filter(p => ['cancelled', 'canceled', 'past_due', 'unpaid'].includes(p.subscription_status || '')).length;
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+        const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+
+        const activeProfiles = profiles.filter(p => ['active', 'trialing'].includes(p.subscription_status || ''));
+        const totalSubscribers = activeProfiles.length;
+        const totalChurned = profiles.filter(p => ['cancelled', 'canceled', 'past_due', 'unpaid', 'overdue'].includes(p.subscription_status || '')).length;
         const retentionRate = (totalSubscribers + totalChurned) > 0 ? (totalSubscribers / (totalSubscribers + totalChurned)) * 100 : 100;
 
-        let yearlySubs = 0;
         let monthlySubs = 0;
-        profiles.forEach(p => {
-            if (['active', 'trialing'].includes(p.subscription_status || '')) {
-                if ((p.tier || '').toLowerCase().includes('yearly') || (p.tier || '').toLowerCase().includes('annual')) {
-                    yearlySubs++;
-                } else {
-                    monthlySubs++; // default to monthly for anything else
-                }
+        let yearlySubs = 0;
+        let estimatedMRR = 0;
+
+        activeProfiles.forEach(p => {
+            const tier = (p.membership_tier || p.tier || '').toLowerCase();
+            const isYearly = tier.includes('yearly') || tier.includes('annual');
+
+            // Pricing Logic based on membership tiers
+            let monthlyPrice = 0;
+            if (tier.includes('family-3')) monthlyPrice = 5500;
+            else if (tier.includes('family-2')) monthlyPrice = 4000;
+            else if (tier.includes('family-1') || tier.includes('pro') || tier.includes('individual')) monthlyPrice = 2000;
+            else monthlyPrice = 2000; // Default pro
+
+            if (isYearly) {
+                yearlySubs++;
+                estimatedMRR += (monthlyPrice); // MRR is monthly equivalent
+            } else {
+                monthlySubs++;
+                estimatedMRR += monthlyPrice;
             }
         });
 
@@ -114,6 +132,8 @@ export async function GET(request: Request) {
             retentionRate: retentionRate,
             yearly: yearlySubs,
             monthly: monthlySubs,
+            estimatedMRR: estimatedMRR,
+            estimatedARR: estimatedMRR * 12
         };
 
         // 2. Bookings Metrics
@@ -122,6 +142,7 @@ export async function GET(request: Request) {
             const s = r.sessions as any;
             return {
                 id: r.id,
+                userId: r.user_id,
                 registeredAt: r.registered_at ? new Date(r.registered_at) : new Date(),
                 sessionDate: s.start_time ? new Date(s.start_time) : new Date(),
                 title: s.title || 'Untitled',
@@ -218,6 +239,33 @@ export async function GET(request: Request) {
             period: key, cancellations: cancellationsTimeline[key]
         }));
 
+        // 3. Health & SaaS Metrics
+        const recentRegistrations = bookingsList.filter(b => b.registeredAt >= thirtyDaysAgo);
+        const mau = new Set(recentRegistrations.map(r => r.userId || 'unknown')).size;
+
+        // Sleeper Subscribers: Active subscribers with no bookings in last 30 days
+        const recentUserIds = new Set(recentRegistrations.map(r => r.userId));
+        const sleepers = activeProfiles.filter(p => !recentUserIds.has(p.id)).length;
+
+        // Credit Velocity: Avg credits spent per week
+        const last7DaysCredits = bookingsList.filter(b => b.registeredAt >= sevenDaysAgo).reduce((sum, b) => sum + b.creditCost, 0);
+        const creditVelocity = last7DaysCredits; // Total velocity for the platform
+
+        // Utilization: Booked sessions vs Total sessions (assume avg capacity 10 if not specified)
+        const totalSessionSlots = sessionsData.length * 10;
+        const utilizationRate = totalSessionSlots > 0 ? (totalBookings / totalSessionSlots) * 100 : 0;
+
+        // Conversion Rate: Active Subscribers / Total Users
+        const conversionRate = profiles.length > 0 ? (totalSubscribers / profiles.length) * 100 : 0;
+
+        // Growth Metrics (MoM)
+        const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+        const currentMonthNewSubs = activeProfiles.filter(p => p.created_at && new Date(p.created_at) >= firstDayOfCurrentMonth).length;
+        const lastMonthSubsCount = totalSubscribers - currentMonthNewSubs; // Simple approximation
+        const momGrowth = lastMonthSubsCount > 0 ? (currentMonthNewSubs / lastMonthSubsCount) * 100 : 100;
+
         return NextResponse.json({
             subscribers: subscriberMetrics,
             bookings: {
@@ -236,6 +284,14 @@ export async function GET(request: Request) {
             cancellations: {
                 total: totalCancellations,
                 timeline: cancelTimelineData
+            },
+            health: {
+                mau: mau,
+                sleepers: sleepers,
+                creditVelocity: creditVelocity,
+                utilizationRate: utilizationRate,
+                conversionRate: conversionRate,
+                momGrowth: momGrowth
             }
         });
 

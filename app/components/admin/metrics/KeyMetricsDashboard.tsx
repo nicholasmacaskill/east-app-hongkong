@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
-import { Users, Coins, CalendarDays, Activity, RefreshCcw } from 'lucide-react';
+import {
+    Users, Activity, CalendarDays, Coins, RefreshCcw, AlertCircle,
+    BarChart3, TrendingUp, Zap, MousePointer, DollarSign
+} from 'lucide-react';
 
 export default function KeyMetricsDashboard() {
     const [metrics, setMetrics] = useState<any>(null);
@@ -69,13 +72,35 @@ export default function KeyMetricsDashboard() {
         return <div className="p-20 text-center text-gray-500 font-bold uppercase italic">No data received</div>;
     }
 
-    const { subscribers, bookings, cancellations } = metrics;
+    const { subscribers, bookings, cancellations, health } = metrics;
 
     return (
         <div className="flex flex-col gap-6">
 
-            {/* Top Level KPI Cards */}
+            {/* Row 1: Revenue & Growth KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
+                    <div className="absolute top-4 right-4 text-[#28D160]/20"><DollarSign size={80} /></div>
+                    <div className="relative z-10">
+                        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Estimated MRR</h3>
+                        <div className="text-4xl font-black italic text-white">${subscribers.estimatedMRR.toLocaleString()}</div>
+                        <div className="mt-4 text-xs font-bold text-gray-500 uppercase">
+                            ${subscribers.estimatedARR.toLocaleString()} ARR Equivalent
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
+                    <div className="absolute top-4 right-4 text-blue-500/20"><TrendingUp size={80} /></div>
+                    <div className="relative z-10">
+                        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Subscriber Growth</h3>
+                        <div className="text-4xl font-black italic text-blue-400">+{health.momGrowth.toFixed(1)}%</div>
+                        <div className="mt-4 text-xs font-bold text-gray-500 uppercase">
+                            Month over Month growth
+                        </div>
+                    </div>
+                </div>
+
                 <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
                     <div className="absolute top-4 right-4 text-[#28D160]/20"><Users size={80} /></div>
                     <div className="relative z-10">
@@ -91,14 +116,53 @@ export default function KeyMetricsDashboard() {
                 <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
                     <div className="absolute top-4 right-4 text-[#28D160]/20"><Activity size={80} /></div>
                     <div className="relative z-10">
-                        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Retention Rate</h3>
+                        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Retention & Churn</h3>
                         <div className="text-4xl font-black italic">{subscribers.retentionRate.toFixed(1)}%</div>
-                        <div className="mt-4 text-xs font-bold text-gray-500">
-                            {subscribers.churned} total churned
+                        <div className="flex justify-between mt-4 text-xs font-bold">
+                            <span className="text-gray-500">{subscribers.churned} Total Churned</span>
+                            <span className="text-red-500">{(100 - subscribers.retentionRate).toFixed(1)}% Churn Rate</span>
                         </div>
                     </div>
                 </div>
+            </div>
 
+            {/* Row 2: SaaS Health Tiles */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 flex items-center gap-4">
+                    <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400"><MousePointer size={24} /></div>
+                    <div>
+                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">MAU (30D)</p>
+                        <p className="text-xl font-black italic">{health.mau} <span className="text-[10px] text-gray-600 ml-1">PLAYERS</span></p>
+                    </div>
+                </div>
+
+                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 flex items-center gap-4">
+                    <div className="p-3 bg-red-500/10 rounded-xl text-red-400"><AlertCircle size={24} /></div>
+                    <div>
+                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Sleepers (At Risk)</p>
+                        <p className="text-xl font-black italic">{health.sleepers} <span className="text-[10px] text-gray-600 ml-1">USERS</span></p>
+                    </div>
+                </div>
+
+                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 flex items-center gap-4">
+                    <div className="p-3 bg-[#28D160]/10 rounded-xl text-[#28D160]"><Zap size={24} /></div>
+                    <div>
+                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Credit Velocity</p>
+                        <p className="text-xl font-black italic">{health.creditVelocity.toLocaleString()} <span className="text-[10px] text-gray-600 ml-1">CR/WK</span></p>
+                    </div>
+                </div>
+
+                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 flex items-center gap-4">
+                    <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500"><BarChart3 size={24} /></div>
+                    <div>
+                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Utilization</p>
+                        <p className="text-xl font-black italic">{health.utilizationRate.toFixed(1)}% <span className="text-[10px] text-gray-600 ml-1">CAPACITY</span></p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Row 3: Booking Summaries */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                 <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
                     <div className="absolute top-4 right-4 text-[#28D160]/20"><CalendarDays size={80} /></div>
                     <div className="relative z-10">

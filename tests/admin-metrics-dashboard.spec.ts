@@ -23,8 +23,17 @@ test.describe('Admin Key Metrics Dashboard', () => {
         await expect(mainTitle).toBeVisible();
 
         // 6. Check that top level KPI cards are visible (Wait for data to load)
-        await expect(page.locator('h3:has-text("Active Subscribers")')).toBeVisible({ timeout: 10000 });
-        await expect(page.locator('h3:has-text("Retention Rate")')).toBeVisible();
+        await expect(page.locator('h3:has-text("Estimated MRR")')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('h3:has-text("Subscriber Growth")')).toBeVisible();
+        await expect(page.locator('h3:has-text("Active Subscribers")')).toBeVisible();
+        await expect(page.locator('h3:has-text("Retention & Churn")')).toBeVisible();
+
+        // Check health metrics
+        await expect(page.locator('p:has-text("MAU (30D)")')).toBeVisible();
+        await expect(page.locator('p:has-text("Sleepers (At Risk)")')).toBeVisible();
+        await expect(page.locator('p:has-text("Credit Velocity")')).toBeVisible();
+
+        // 7. Verify the lower charts/tables components
         await expect(page.locator('h3:has-text("Total Bookings")')).toBeVisible();
         await expect(page.locator('h3:has-text("Credits Spent")')).toBeVisible();
 
