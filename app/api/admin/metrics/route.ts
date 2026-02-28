@@ -39,10 +39,13 @@ export async function GET(request: Request) {
         // Fetch Subscribers
         const { data: profiles, error: profilesError } = await supabaseAdmin
             .from('profiles')
-            .select('id, tier, membership_tier, subscription_status, created_at, account_status');
+            .select('id, tier, membership_tier, subscription_status, created_at, account_status, role');
 
         if (profilesError) throw profilesError;
-        console.log(`Fetched ${profiles.length} profiles`);
+
+        // Exclude Admins from all calculations
+        const customerProfiles = profiles.filter(p => !['admin', 'sys-admin'].includes(p.role || ''));
+        console.log(`Fetched ${profiles.length} profiles, ${customerProfiles.length} customer profiles`);
 
         // Fetch Registrations with Sessions
         const { data: registrations, error: registrationsError } = await supabaseAdmin
@@ -97,13 +100,13 @@ export async function GET(request: Request) {
         const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
         const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
 
-        const activeProfiles = profiles.filter(p => {
+        const activeProfiles = customerProfiles.filter(p => {
             const status = (p.subscription_status || '').toLowerCase();
             const accountStatus = (p.account_status || '').toLowerCase();
             return ['active', 'trialing'].includes(status) || accountStatus === 'active';
         });
         const totalSubscribers = activeProfiles.length;
-        const totalChurned = profiles.filter(p => {
+        const totalChurned = customerProfiles.filter(p => {
             const status = (p.subscription_status || '').toLowerCase();
             return ['cancelled', 'canceled', 'past_due', 'unpaid', 'overdue'].includes(status);
         }).length;
@@ -144,7 +147,8 @@ export async function GET(request: Request) {
         };
 
         // 2. Bookings Metrics
-        const registrationsList = (registrations || []).filter(r => r && r.sessions);
+        const customerIds = new Set(customerProfiles.map(p => p.id));
+        const registrationsList = (registrations || []).filter(r => r && r.sessions && customerIds.has(r.user_id));
         const bookingsList = registrationsList.map(r => {
             const s = r.sessions as any;
             return {
@@ -262,8 +266,8 @@ export async function GET(request: Request) {
         const totalSessionSlots = sessionsData.length * 10;
         const utilizationRate = totalSessionSlots > 0 ? (totalBookings / totalSessionSlots) * 100 : 0;
 
-        // Conversion Rate: Active Subscribers / Total Users
-        const conversionRate = profiles.length > 0 ? (totalSubscribers / profiles.length) * 100 : 0;
+        // Conversion Rate: Active Subscribers / Total Customers
+        const conversionRate = customerProfiles.length > 0 ? (totalSubscribers / customerProfiles.length) * 100 : 0;
 
         // Growth Metrics (MoM)
         const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
