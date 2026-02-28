@@ -313,7 +313,7 @@ export default function DirectoryPage() {
     });
 
     // Grouping Logic
-    const matchedParents = filteredProfiles.filter(p => p.role === 'parent' || p.role === 'sys-admin' || p.role === 'admin');
+    const matchedParents = filteredProfiles.filter(p => p.role === 'parent');
     const matchedPlayers = filteredProfiles.filter(p => p.role === 'player' || p.role === 'coach');
 
     // To ensure households are shown when searching for children:

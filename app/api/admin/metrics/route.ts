@@ -97,9 +97,16 @@ export async function GET(request: Request) {
         const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
         const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
 
-        const activeProfiles = profiles.filter(p => ['active', 'trialing'].includes(p.subscription_status || ''));
+        const activeProfiles = profiles.filter(p => {
+            const status = (p.subscription_status || '').toLowerCase();
+            const accountStatus = (p.account_status || '').toLowerCase();
+            return ['active', 'trialing'].includes(status) || accountStatus === 'active';
+        });
         const totalSubscribers = activeProfiles.length;
-        const totalChurned = profiles.filter(p => ['cancelled', 'canceled', 'past_due', 'unpaid', 'overdue'].includes(p.subscription_status || '')).length;
+        const totalChurned = profiles.filter(p => {
+            const status = (p.subscription_status || '').toLowerCase();
+            return ['cancelled', 'canceled', 'past_due', 'unpaid', 'overdue'].includes(status);
+        }).length;
         const retentionRate = (totalSubscribers + totalChurned) > 0 ? (totalSubscribers / (totalSubscribers + totalChurned)) * 100 : 100;
 
         let monthlySubs = 0;
