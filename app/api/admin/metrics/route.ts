@@ -39,12 +39,22 @@ export async function GET(request: Request) {
         // Fetch Subscribers
         const { data: profiles, error: profilesError } = await supabaseAdmin
             .from('profiles')
-            .select('id, tier, membership_tier, subscription_status, created_at, account_status, role');
+            .select('id, tier, membership_tier, subscription_status, created_at, account_status, role, contact_email');
 
         if (profilesError) throw profilesError;
 
-        // Exclude Admins & Coaches from all calculations
-        const customerProfiles = profiles.filter(p => !['admin', 'sys-admin', 'coach'].includes(p.role || ''));
+        // Exclude Admins, Coaches, Test Accounts, and Deleted Users from all calculations
+        const customerProfiles = profiles.filter(p => {
+            const role = p.role || '';
+            const email = (p.contact_email || '').toLowerCase();
+            const status = (p.account_status || '').toLowerCase();
+
+            const isInternalRole = ['admin', 'sys-admin', 'coach'].includes(role);
+            const isTestAccount = email.includes('test') || email.includes('demo') || email.includes('example');
+            const isDeleted = status === 'deleted';
+
+            return !isInternalRole && !isTestAccount && !isDeleted;
+        });
         console.log(`Fetched ${profiles.length} profiles, ${customerProfiles.length} customer profiles`);
 
         // Fetch Registrations with Sessions
@@ -266,8 +276,9 @@ export async function GET(request: Request) {
         const totalSessionSlots = sessionsData.length * 10;
         const utilizationRate = totalSessionSlots > 0 ? (totalBookings / totalSessionSlots) * 100 : 0;
 
-        // Conversion Rate: Active Subscribers / Total Customers
-        const conversionRate = customerProfiles.length > 0 ? (totalSubscribers / customerProfiles.length) * 100 : 0;
+        // Conversion Rate: Active Subscribers / Total Customers (Parents only)
+        const totalLeads = customerProfiles.filter(p => p.role === 'parent').length;
+        const conversionRate = totalLeads > 0 ? (totalSubscribers / totalLeads) * 100 : 0;
 
         // Growth Metrics (MoM)
         const firstDayOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
