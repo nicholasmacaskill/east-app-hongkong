@@ -16,14 +16,11 @@ async function globalTeardown() {
         const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
         if (listError) throw listError;
 
-        // 2. Define patterns for deletion
+        // 2. Define strict pattern for deletion
+        // We strictly only delete accounts ending in @pw.test. The .test TLD is reserved 
+        // by the IETF for testing purposes and cannot be registered by real users.
         const testPatterns = [
-            /@pw\.test$/,
-            /@example\.com$/,
-            /^admin-update-.*@east\.com$/,
-            /^player-to-edit-.*@east\.com$/,
-            /^immediate-login-.*@east\.com$/,
-            /^test-user-.*@example\.com$/
+            /@pw\.test$/
         ];
 
         const usersToDelete = users.filter(user => {
