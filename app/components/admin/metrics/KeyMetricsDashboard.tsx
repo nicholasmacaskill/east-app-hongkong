@@ -4,8 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import {
     Users, Activity, CalendarDays, Coins, RefreshCcw, AlertCircle,
-    BarChart3, TrendingUp, Zap, MousePointer, DollarSign
+    BarChart3, TrendingUp, Zap, MousePointer, DollarSign,
+    ZapOff, ShieldCheck, Info
 } from 'lucide-react';
+import RefractionMasterCard from './RefractionMasterCard';
+import RunningText from './RunningText';
 
 export default function KeyMetricsDashboard() {
     const [metrics, setMetrics] = useState<any>(null);
@@ -72,267 +75,191 @@ export default function KeyMetricsDashboard() {
         return <div className="p-20 text-center text-gray-500 font-bold uppercase italic">No data received</div>;
     }
 
-    const { subscribers, bookings, cancellations, health } = metrics;
+    const { subscribers, bookings, cancellations, health, telemetry } = metrics;
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-8 pb-32">
 
-            {/* Row 1: Revenue & Growth KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
-                    <div className="absolute top-4 right-4 text-[#28D160]/20"><DollarSign size={80} /></div>
-                    <div className="relative z-10">
-                        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Estimated MRR</h3>
-                        <div className="text-4xl font-black italic text-white">${subscribers.estimatedMRR.toLocaleString()}</div>
-                        <div className="mt-4 text-xs font-bold text-gray-500 uppercase">
-                            ${subscribers.estimatedARR.toLocaleString()} ARR Equivalent
+            {/* VIEWPORT 1: SYSTEM RESONANCE (Growth & Stability) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <RefractionMasterCard momentum={subscribers.momentum} className="md:col-span-1">
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">System Resonance</p>
+                            <h3 className="text-2xl font-black italic uppercase leading-none">Net Revenue</h3>
+                        </div>
+                        <div className={`p-2 rounded-lg bg-white/5 ${subscribers.momentum === 'cyan' ? 'text-cyan-400' : 'text-magenta-400'}`}>
+                            <DollarSign size={20} />
                         </div>
                     </div>
-                </div>
+                    <div className="text-5xl font-black italic tracking-tighter mb-2">
+                        ${subscribers.estimatedMRR.toLocaleString()}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className={`text-xs font-bold ${subscribers.momentum === 'cyan' ? 'text-cyan-400' : 'text-magenta-400'}`}>
+                            {subscribers.velocity > 0 ? '+' : ''}{subscribers.velocity.toFixed(1)}% Velocity
+                        </span>
+                        <span className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">/ MoM</span>
+                    </div>
+                </RefractionMasterCard>
 
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
-                    <div className="absolute top-4 right-4 text-blue-500/20"><TrendingUp size={80} /></div>
-                    <div className="relative z-10">
-                        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Subscriber Growth</h3>
-                        <div className="text-4xl font-black italic text-blue-400">+{health.momGrowth.toFixed(1)}%</div>
-                        <div className="mt-4 text-xs font-bold text-gray-500 uppercase">
-                            Month over Month growth
+                <RefractionMasterCard momentum={subscribers.momentum}>
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Active Mass</p>
+                            <h3 className="text-2xl font-black italic uppercase leading-none">Subscribers</h3>
+                        </div>
+                        <div className="p-2 rounded-lg bg-white/5 text-gray-400">
+                            <Users size={20} />
                         </div>
                     </div>
-                </div>
+                    <div className="text-5xl font-black italic tracking-tighter mb-2">{subscribers.total}</div>
+                    <div className="flex justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                        <span>{subscribers.monthly} Monthly</span>
+                        <span>{subscribers.yearly} Yearly</span>
+                    </div>
+                </RefractionMasterCard>
 
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
-                    <div className="absolute top-4 right-4 text-[#28D160]/20"><Users size={80} /></div>
-                    <div className="relative z-10">
-                        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Active Subscribers</h3>
-                        <div className="text-4xl font-black italic">{subscribers.total}</div>
-                        <div className="flex justify-between mt-4 text-xs font-bold text-gray-500">
-                            <span>{subscribers.monthly} Monthly</span>
-                            <span>{subscribers.yearly} Yearly</span>
+                <RefractionMasterCard momentum={subscribers.momentum === 'cyan' ? 'cyan' : 'none'}>
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Stability Index</p>
+                            <h3 className="text-2xl font-black italic uppercase leading-none">Retention</h3>
+                        </div>
+                        <div className="p-2 rounded-lg bg-white/5 text-gray-400">
+                            <ShieldCheck size={20} />
                         </div>
                     </div>
-                </div>
-
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
-                    <div className="absolute top-4 right-4 text-[#28D160]/20"><Activity size={80} /></div>
-                    <div className="relative z-10">
-                        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Retention & Churn</h3>
-                        <div className="text-4xl font-black italic">{subscribers.retentionRate.toFixed(1)}%</div>
-                        <div className="flex justify-between mt-4 text-xs font-bold">
-                            <span className="text-gray-500">{subscribers.churned} Total Churned</span>
-                            <span className="text-red-500">{(100 - subscribers.retentionRate).toFixed(1)}% Churn Rate</span>
-                        </div>
+                    <div className="text-5xl font-black italic tracking-tighter mb-2">{subscribers.retentionRate.toFixed(1)}%</div>
+                    <div className="text-[10px] font-bold text-red-500/70 uppercase tracking-widest">
+                        {(100 - subscribers.retentionRate).toFixed(1)}% Critical Leakage
                     </div>
-                </div>
+                </RefractionMasterCard>
             </div>
 
-            {/* Row 2: SaaS Health Tiles */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 flex items-center gap-4">
-                    <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400"><MousePointer size={24} /></div>
-                    <div>
-                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">MAU (30D)</p>
-                        <p className="text-xl font-black italic">{health.mau} <span className="text-[10px] text-gray-600 ml-1">PLAYERS</span></p>
-                    </div>
-                </div>
-
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 flex items-center gap-4">
-                    <div className="p-3 bg-red-500/10 rounded-xl text-red-400"><AlertCircle size={24} /></div>
-                    <div>
-                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Sleepers (At Risk)</p>
-                        <p className="text-xl font-black italic">{health.sleepers} <span className="text-[10px] text-gray-600 ml-1">USERS</span></p>
-                    </div>
-                </div>
-
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 flex items-center gap-4">
-                    <div className="p-3 bg-[#28D160]/10 rounded-xl text-[#28D160]"><Zap size={24} /></div>
-                    <div>
-                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Credit Velocity</p>
-                        <p className="text-xl font-black italic">{health.creditVelocity.toLocaleString()} <span className="text-[10px] text-gray-600 ml-1">CR/WK</span></p>
-                    </div>
-                </div>
-
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 flex items-center gap-4">
-                    <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500"><BarChart3 size={24} /></div>
-                    <div>
-                        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Utilization</p>
-                        <p className="text-xl font-black italic">{health.utilizationRate.toFixed(1)}% <span className="text-[10px] text-gray-600 ml-1">CAPACITY</span></p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Row 3: Booking Summaries */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
-                    <div className="absolute top-4 right-4 text-[#28D160]/20"><CalendarDays size={80} /></div>
-                    <div className="relative z-10">
-                        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Total Bookings</h3>
-                        <div className="text-4xl font-black italic">{bookings.total}</div>
-                        <div className="mt-4 text-xs font-bold text-gray-500">
-                            {cancellations.total} total cancellations
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
-                    <div className="absolute top-4 right-4 text-[#28D160]/20"><Coins size={80} /></div>
-                    <div className="relative z-10">
-                        <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Credits Spent</h3>
-                        <div className="text-4xl font-black italic text-[#28D160]">{bookings.totalCreditsSpent.toLocaleString()}</div>
-                        <div className="mt-4 text-xs font-bold text-[#28D160]/70">
-                            Lifetime booking revenue
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+            {/* VIEWPORT 2: KINETIC ENERGY (Execution & Throughput) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                {/* Facility Distribution */}
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6">
-                    <h3 className="text-lg font-black italic uppercase mb-6 flex items-center justify-between">
-                        Bookings by Facility
-                    </h3>
-                    <div className="flex flex-col gap-4 max-h-[300px] overflow-y-auto pr-2">
-                        {Object.entries(bookings.byFacility || {}).sort((a: any, b: any) => b[1] - a[1]).map(([facility, count]: any) => {
-                            const rev = (bookings.revenueByFacility || {})[facility] || 0;
-                            const max = Math.max(...Object.values(bookings.byFacility || {}) as number[], 1);
-                            const width = (count / max) * 100;
-                            return (
-                                <div key={facility} className="flex flex-col gap-1">
-                                    <div className="flex justify-between text-[10px] font-bold text-gray-400">
-                                        <span className="uppercase">{facility}</span>
-                                        <div className="flex gap-2">
-                                            <span>{count} Bookings</span>
-                                            <span className="text-[#28D160]">{rev.toLocaleString()} CR</span>
-                                        </div>
-                                    </div>
-                                    <div className="w-full bg-black h-1.5 rounded-full overflow-hidden">
-                                        <div className="bg-[#28D160] h-full rounded-full" style={{ width: `${width}%` }}></div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        {Object.keys(bookings.byFacility || {}).length === 0 && (
-                            <p className="text-gray-500 italic text-sm text-center py-4">No facility bookings found.</p>
-                        )}
+                <RefractionMasterCard momentum={bookings.momentum} className="lg:col-span-1 border-l-cyan-500/30">
+                    <div className="flex justify-between items-start mb-8">
+                        <div>
+                            <p className="text-cyan-500 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Kinetic Energy</p>
+                            <h3 className="text-4xl font-black italic uppercase leading-none tracking-tighter">Intent Throughput</h3>
+                        </div>
+                        <Zap className="text-cyan-400 animate-pulse" size={32} />
                     </div>
-                </div>
-
-                {/* Coach Performance */}
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6">
-                    <h3 className="text-lg font-black italic uppercase mb-6 flex items-center justify-between">
-                        Bookings by Coach
-                    </h3>
-                    <div className="flex flex-col gap-4 max-h-[300px] overflow-y-auto pr-2">
-                        {Object.entries(bookings.byCoach || {}).sort((a: any, b: any) => b[1] - a[1]).map(([coach, count]: any) => {
-                            const rev = (bookings.revenueByCoach || {})[coach] || 0;
-                            const max = Math.max(...Object.values(bookings.byCoach || {}) as number[], 1);
-                            const width = (count / max) * 100;
-                            return (
-                                <div key={coach} className="flex flex-col gap-1">
-                                    <div className="flex justify-between text-[10px] font-bold text-gray-400">
-                                        <span>{coach || 'Unassigned'}</span>
-                                        <div className="flex gap-2">
-                                            <span>{count} Bookings</span>
-                                            <span className="text-blue-400">{rev.toLocaleString()} CR</span>
-                                        </div>
-                                    </div>
-                                    <div className="w-full bg-black h-1.5 rounded-full overflow-hidden">
-                                        <div className="bg-blue-500 h-full rounded-full" style={{ width: `${width}%` }}></div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Activity Timeline (Bookings vs Cancellations) */}
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 lg:col-span-2">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-black italic uppercase">Activity Timeline</h3>
-                        <div className="flex bg-black border border-white/10 rounded-lg p-1">
-                            <button onClick={() => setTimelineRange('monthly')} className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-colors ${timelineRange === 'monthly' ? 'bg-[#28D160] text-black' : 'text-gray-500 hover:text-white'}`}>Monthly</button>
-                            <button onClick={() => setTimelineRange('weekly')} className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-colors ${timelineRange === 'weekly' ? 'bg-[#28D160] text-black' : 'text-gray-500 hover:text-white'}`}>Weekly</button>
+                    <div className="grid grid-cols-2 gap-8 mb-8">
+                        <div>
+                            <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Credit Flow</p>
+                            <div className="text-3xl font-black italic text-cyan-400">{bookings.totalCreditsSpent.toLocaleString()}</div>
+                        </div>
+                        <div>
+                            <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Velocity (48h)</p>
+                            <div className={`text-3xl font-black italic ${bookings.velocity > 0 ? 'text-cyan-400' : 'text-magenta-400'}`}>
+                                {bookings.velocity > 0 ? '+' : ''}{bookings.velocity.toFixed(1)}%
+                            </div>
                         </div>
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left table-auto">
-                            <thead>
-                                <tr className="border-b border-white/5 text-gray-500 text-xs uppercase tracking-widest font-bold">
-                                    <th className="py-3 px-2">{timelineRange === 'monthly' ? 'Month' : 'Week'}</th>
-                                    <th className="py-3 px-2">Total Bookings</th>
-                                    <th className="py-3 px-2">Credits Spent</th>
-                                    <th className="py-3 px-2">Cancellations</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {(timelineRange === 'monthly' ? bookings.timeline : bookings.timelineWeekly).map((t: any) => {
-                                    const cancelData = cancellations.timeline.find((c: any) => c.period === t.period);
-                                    const cancelCount = cancelData ? cancelData.cancellations : 0;
-                                    return (
-                                        <tr key={t.period} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                                            <td className="py-3 px-2 font-mono text-sm">{t.period}</td>
-                                            <td className="py-3 px-2 font-bold">{t.bookings}</td>
-                                            <td className="py-3 px-2 text-[#28D160]">{t.spentCredits}</td>
-                                            <td className="py-3 px-2 text-red-400">{timelineRange === 'monthly' ? cancelCount : '-'}</td>
-                                        </tr>
-                                    );
-                                })}
-                                {(timelineRange === 'monthly' ? bookings.timeline : bookings.timelineWeekly).length === 0 && (
-                                    <tr>
-                                        <td colSpan={4} className="py-8 text-center text-gray-500 italic">No historical booking data available.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
 
-                {/* Peak Days (DOW) */}
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 lg:col-span-2">
-                    <h3 className="text-lg font-black italic uppercase mb-6">Peak Booking Days</h3>
-                    <div className="flex h-48 items-end gap-2 px-2">
-                        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
-                            const count = (bookings.peakDays || {})[day] || 0;
-                            const max = Math.max(...Object.values(bookings.peakDays || {}) as number[], 1);
-                            const height = (count / max) * 100;
-                            return (
-                                <div key={day} className="flex-1 flex flex-col items-center group relative h-full justify-end">
-                                    <div className="absolute -top-8 bg-black border border-white/10 px-2 py-1 rounded text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
-                                        {count} bookings
+                    {/* Action Lever */}
+                    <button className="w-full py-4 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 rounded-xl transition-all group/lever overflow-hidden relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover/lever:translate-x-full transition-transform duration-1000" />
+                        <span className="relative z-10 text-[10px] font-black italic uppercase tracking-[0.3em] text-cyan-400">Manifest Demand Boost</span>
+                    </button>
+                </RefractionMasterCard>
+
+                <div className="grid grid-cols-1 gap-6">
+                    <RefractionMasterCard className="p-0 overflow-hidden">
+                        <div className="p-6 border-b border-white/5">
+                            <h3 className="text-xs font-black italic uppercase tracking-widest text-gray-500">Facility Resonance</h3>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            {Object.entries(bookings.byFacility || {}).sort((a: any, b: any) => b[1] - a[1]).slice(0, 4).map(([facility, count]: any) => {
+                                const max = Math.max(...Object.values(bookings.byFacility || {}) as number[], 1);
+                                return (
+                                    <div key={facility} className="space-y-1">
+                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-tighter">
+                                            <span className="text-gray-400">{facility}</span>
+                                            <span className="text-cyan-400">{count} Events</span>
+                                        </div>
+                                        <div className="h-1 bg-black rounded-full overflow-hidden">
+                                            <div className="h-full bg-cyan-500 opacity-50" style={{ width: `${(count / max) * 100}%` }} />
+                                        </div>
                                     </div>
-                                    <div className="w-full bg-blue-500 rounded-t-sm transition-all duration-300 group-hover:bg-white" style={{ height: `${height}%`, minHeight: count > 0 ? '4px' : '0' }}></div>
-                                    <div className="text-[10px] text-gray-600 mt-2 font-bold uppercase">{day.substring(0, 3)}</div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                                );
+                            })}
+                        </div>
+                    </RefractionMasterCard>
                 </div>
-
-                {/* Peak Times */}
-                <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 lg:col-span-2">
-                    <h3 className="text-lg font-black italic uppercase mb-6">Peak Booking Times (24h)</h3>
-                    <div className="flex items-end gap-1 h-32 w-full pt-8">
-                        {Array.from({ length: 24 }).map((_, hour) => {
-                            const count = bookings.peakTimes[hour] || 0;
-                            const max = Object.values(bookings.peakTimes).length > 0 ? Math.max(...Object.values(bookings.peakTimes) as number[]) : 1;
-                            const height = (count / max) * 100;
-
-                            return (
-                                <div key={hour} className="flex-1 flex flex-col items-center group relative cursor-pointer">
-                                    <div className="absolute -top-8 bg-black border border-white/10 px-2 py-1 rounded text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
-                                        {count} bookings
-                                    </div>
-                                    <div className="w-full bg-[#28D160] rounded-t-sm transition-all duration-300 group-hover:bg-white" style={{ height: `${height}%`, minHeight: count > 0 ? '4px' : '0' }}></div>
-                                    <div className="text-[8px] text-gray-600 mt-2 font-mono">{hour}:00</div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
             </div>
+
+            {/* VIEWPORT 3: FRICTION POINTS (System Drag & Opaque Glass) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <RefractionMasterCard momentum={health.momentum} className="border-l-magenta-500/30">
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <p className="text-magenta-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Friction Points</p>
+                            <h3 className="text-2xl font-black italic uppercase leading-none">Sleepers</h3>
+                        </div>
+                        <ZapOff className="text-magenta-400" size={24} />
+                    </div>
+                    <div className="text-5xl font-black italic tracking-tighter mb-4 text-magenta-400">{health.sleepers}</div>
+                    <p className="text-[10px] text-gray-600 font-bold uppercase mb-6">At-risk identities detected in system</p>
+
+                    {/* Action Lever */}
+                    <button className="w-full py-3 bg-magenta-500/10 hover:bg-magenta-500/20 border border-magenta-500/20 rounded-xl transition-all text-[10px] font-black italic uppercase tracking-[0.2em] text-magenta-400">
+                        Trigger Re-engagement Swarm
+                    </button>
+                </RefractionMasterCard>
+
+                <RefractionMasterCard>
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Opacity Index</p>
+                            <h3 className="text-2xl font-black italic uppercase leading-none">Utilization</h3>
+                        </div>
+                        <BarChart3 className="text-amber-500" size={24} />
+                    </div>
+                    <div className="text-5xl font-black italic tracking-tighter mb-2">{health.utilizationRate.toFixed(1)}%</div>
+                    <div className="w-full bg-black h-2 rounded-full overflow-hidden mb-4">
+                        <div className="h-full bg-amber-500" style={{ width: `${health.utilizationRate}%` }} />
+                    </div>
+                    <p className="text-[10px] text-gray-600 font-bold uppercase">Average platform capacity drain</p>
+                </RefractionMasterCard>
+
+                <RefractionMasterCard>
+                    <div className="flex justify-between items-start mb-6">
+                        <div>
+                            <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Negative Force</p>
+                            <h3 className="text-2xl font-black italic uppercase leading-none">Voided</h3>
+                        </div>
+                        <AlertCircle className="text-red-500" size={24} />
+                    </div>
+                    <div className="text-5xl font-black italic tracking-tighter mb-2">{cancellations.total}</div>
+                    <p className="text-[10px] text-gray-600 font-bold uppercase">Total historical session cancellations</p>
+                </RefractionMasterCard>
+            </div>
+
+            {/* TELEMETRY LAYER (THE SYSTEM NERVOUS SYSTEM) */}
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-xl border-t border-white/5 py-4">
+                <div className="container mx-auto px-6 flex items-center gap-6">
+                    <div className="flex items-center gap-2 shrink-0">
+                        <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                        <span className="text-[10px] font-black italic uppercase tracking-widest text-cyan-400">Live Telemetry</span>
+                    </div>
+                    <RunningText
+                        text={telemetry?.join('  ::  ') || 'ESTABLISHING CONNECTION TO SYSTEM NERVOUS SYSTEM...'}
+                        speed={40}
+                        className="text-[10px] font-mono text-gray-500 uppercase flex-1"
+                    />
+                    <div className="shrink-0 flex gap-4">
+                        <button onClick={fetchMetrics} className="text-gray-500 hover:text-white transition-colors">
+                            <RefreshCcw size={14} className={loading ? 'animate-spin' : ''} />
+                        </button>
+                        <div className="text-[10px] font-mono text-gray-700">HK-NODE-01</div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     );
 }

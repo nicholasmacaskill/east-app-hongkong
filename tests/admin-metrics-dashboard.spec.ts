@@ -22,25 +22,20 @@ test.describe('Admin Key Metrics Dashboard', () => {
         const mainTitle = page.locator('h1', { hasText: 'Key Metrics' });
         await expect(mainTitle).toBeVisible();
 
-        // 6. Check that top level KPI cards are visible (Wait for data to load)
-        await expect(page.locator('h3:has-text("Estimated MRR")')).toBeVisible({ timeout: 10000 });
-        await expect(page.locator('h3:has-text("Subscriber Growth")')).toBeVisible();
-        await expect(page.locator('h3:has-text("Active Subscribers")')).toBeVisible();
-        await expect(page.locator('h3:has-text("Retention & Churn")')).toBeVisible();
+        // 6. Check that the intent viewports are visible (Wait for data to load)
+        await expect(page.locator('h3:has-text("Net Revenue")')).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('p:has-text("Active Mass")')).toBeVisible();
+        await expect(page.locator('p:has-text("Stability Index")')).toBeVisible();
 
-        // Check health metrics
-        await expect(page.locator('p:has-text("MAU (30D)")')).toBeVisible();
-        await expect(page.locator('p:has-text("Sleepers (At Risk)")')).toBeVisible();
-        await expect(page.locator('p:has-text("Credit Velocity")')).toBeVisible();
+        // Check kinetic energy viewport
+        await expect(page.locator('h3:has-text("Intent Throughput")')).toBeVisible();
+        await expect(page.locator('p:has-text("Credit Flow")')).toBeVisible();
 
-        // 7. Verify the lower charts/tables components
-        await expect(page.locator('h3:has-text("Total Bookings")')).toBeVisible();
-        await expect(page.locator('h3:has-text("Credits Spent")')).toBeVisible();
+        // Check friction points viewport
+        await expect(page.locator('h3:has-text("Sleepers")')).toBeVisible();
+        await expect(page.locator('p:has-text("Opacity Index")')).toBeVisible();
 
-        // 7. Verify the lower charts/tables components
-        await expect(page.locator('h3:has-text("Bookings by Facility")')).toBeVisible();
-        await expect(page.locator('h3:has-text("Bookings by Coach")')).toBeVisible();
-        await expect(page.locator('h3:has-text("Activity Timeline")')).toBeVisible();
-        await expect(page.locator('h3:has-text("Peak Booking Times (24h)")')).toBeVisible();
+        // 7. Verify the telemetry layer
+        await expect(page.locator('span:has-text("Live Telemetry")')).toBeVisible();
     });
 });
