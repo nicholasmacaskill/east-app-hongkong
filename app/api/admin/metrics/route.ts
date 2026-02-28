@@ -43,8 +43,8 @@ export async function GET(request: Request) {
 
         if (profilesError) throw profilesError;
 
-        // Exclude Admins from all calculations
-        const customerProfiles = profiles.filter(p => !['admin', 'sys-admin'].includes(p.role || ''));
+        // Exclude Admins & Coaches from all calculations
+        const customerProfiles = profiles.filter(p => !['admin', 'sys-admin', 'coach'].includes(p.role || ''));
         console.log(`Fetched ${profiles.length} profiles, ${customerProfiles.length} customer profiles`);
 
         // Fetch Registrations with Sessions
