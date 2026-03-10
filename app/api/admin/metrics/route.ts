@@ -122,17 +122,26 @@ export async function GET(request: Request) {
 
         // Churned: had a membership (membership_tier is set) but are NOT currently active
         // This is the correct denominator for retention: ever-subscribed users who left
-        const totalChurned = customerProfiles.filter(p => {
+        const churnedProfiles = customerProfiles.filter(p => {
             const status = (p.subscription_status || '').toLowerCase();
             const accountStatus = (p.account_status || '').toLowerCase();
             const wasMember = !!(p.membership_tier || p.tier); // Ever had a tier assigned
             const isCurrentlyActive = ['active', 'trialing'].includes(status) || accountStatus === 'active';
             const isTerminalState = ['cancelled', 'canceled', 'past_due', 'unpaid', 'overdue', 'inactive'].includes(status);
             return wasMember && !isCurrentlyActive && isTerminalState;
-        }).length;
+        });
+
+        const totalChurned = churnedProfiles.length;
+
+        const churnedUsers = churnedProfiles.map(p => ({
+            id: p.id,
+            name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.contact_email?.split('@')[0] || 'Unknown',
+            email: p.contact_email || '',
+            status: p.subscription_status || 'inactive',
+            joinedAt: p.created_at
+        }));
 
         // retentionRate: % of ever-subscribed users still active
-        // If no one has ever churned, show N/A-friendly value of 100 only when there ARE active subs
         const everSubscribed = totalSubscribers + totalChurned;
         const retentionRate = everSubscribed > 0 ? (totalSubscribers / everSubscribed) * 100 : 0;
 
@@ -163,6 +172,7 @@ export async function GET(request: Request) {
         const subscriberMetrics = {
             total: totalSubscribers,
             churned: totalChurned,
+            churnedUsers: churnedUsers,
             retentionRate: retentionRate,
             yearly: yearlySubs,
             monthly: monthlySubs,

@@ -13,6 +13,7 @@ export default function KeyMetricsDashboard() {
     const [error, setError] = useState<string | null>(null);
     const [timelineRange, setTimelineRange] = useState<'monthly' | 'weekly'>('monthly');
     const [showSleeperModal, setShowSleeperModal] = useState(false);
+    const [showChurnModal, setShowChurnModal] = useState(false);
 
     useEffect(() => {
         fetchMetrics();
@@ -115,8 +116,11 @@ export default function KeyMetricsDashboard() {
                         </div>
                     </div>
 
-                    <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
-                        <div className="absolute top-4 right-4 text-[#28D160]/20"><Activity size={80} /></div>
+                    <button
+                        onClick={() => setShowChurnModal(true)}
+                        className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden group text-left cursor-pointer hover:border-red-500/40 hover:bg-red-500/5 transition-all"
+                    >
+                        <div className="absolute top-4 right-4 text-[#28D160]/20 group-hover:text-red-500/20 transition-colors"><Activity size={80} /></div>
                         <div className="relative z-10">
                             <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Retention & Churn</h3>
                             <div className="text-4xl font-black italic">{subscribers.retentionRate.toFixed(1)}%</div>
@@ -124,8 +128,9 @@ export default function KeyMetricsDashboard() {
                                 <span className="text-gray-500">{subscribers.churned} Total Churned</span>
                                 <span className="text-red-500">{(100 - subscribers.retentionRate).toFixed(1)}% Churn Rate</span>
                             </div>
+                            <p className="text-[10px] text-[#28D160]/60 font-bold uppercase tracking-wider mt-2 group-hover:text-red-400 transition-colors">Click to view →</p>
                         </div>
-                    </div>
+                    </button>
                 </div>
 
                 {/* Row 2: SaaS Health Tiles */}
@@ -375,8 +380,8 @@ export default function KeyMetricsDashboard() {
                                                     <span className="text-[10px] font-black uppercase tracking-wider bg-red-500/15 text-red-400 px-2 py-1 rounded-lg">Never booked</span>
                                                 ) : (
                                                     <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-lg ${user.daysSinceBooking > 60
-                                                            ? 'bg-red-500/15 text-red-400'
-                                                            : 'bg-amber-500/15 text-amber-400'
+                                                        ? 'bg-red-500/15 text-red-400'
+                                                        : 'bg-amber-500/15 text-amber-400'
                                                         }`}>
                                                         {user.daysSinceBooking}d ago
                                                     </span>
@@ -392,6 +397,59 @@ export default function KeyMetricsDashboard() {
                         <div className="p-4 border-t border-white/10 shrink-0">
                             <p className="text-gray-600 text-[10px] font-bold uppercase tracking-widest text-center">
                                 {(health.sleeperUsers || []).length} members shown · sorted by inactivity
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Churned Modal */}
+            {showChurnModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4 animate-fadeIn" onClick={() => setShowChurnModal(false)}>
+                    <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-xl max-h-[80vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+                        {/* Modal Header */}
+                        <div className="flex items-center justify-between p-6 border-b border-white/10 shrink-0">
+                            <div>
+                                <h2 className="font-black italic uppercase text-lg">Churned Customers</h2>
+                                <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-0.5">Users who previously had a membership that is now inactive</p>
+                            </div>
+                            <button onClick={() => setShowChurnModal(false)} className="text-gray-500 hover:text-white transition-colors p-1">
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="overflow-y-auto flex-1 p-4">
+                            {(subscribers.churnedUsers || []).length === 0 ? (
+                                <div className="py-12 text-center text-gray-500 italic">No churned customers — exceptional retention!</div>
+                            ) : (
+                                <div className="flex flex-col gap-2">
+                                    {(subscribers.churnedUsers || []).map((user: any) => (
+                                        <div key={user.id} className="flex items-center justify-between gap-4 bg-black/40 border border-white/5 rounded-xl px-4 py-3 hover:border-white/10 transition-colors">
+                                            <div className="min-w-0">
+                                                <p className="font-bold text-sm text-white truncate">{user.name}</p>
+                                                <p className="text-gray-500 text-xs truncate flex items-center gap-1 mt-0.5">
+                                                    <Mail size={10} />{user.email}
+                                                </p>
+                                            </div>
+                                            <div className="shrink-0 text-right">
+                                                <span className="text-[10px] font-black uppercase tracking-wider bg-red-500/15 text-red-500 px-2 py-1 rounded-lg">
+                                                    {user.status}
+                                                </span>
+                                                <p className="text-[10px] text-gray-600 font-bold uppercase mt-1">
+                                                    Joined {user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'Unknown'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Modal Footer */}
+                        <div className="p-4 border-t border-white/10 shrink-0">
+                            <p className="text-gray-600 text-[10px] font-bold uppercase tracking-widest text-center">
+                                {(subscribers.churnedUsers || []).length} churned users total
                             </p>
                         </div>
                     </div>
