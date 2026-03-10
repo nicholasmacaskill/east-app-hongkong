@@ -106,6 +106,9 @@ export async function GET(request: Request) {
         // --- Aggregation logic ---
 
         // 1. Subscribers Metrics
+        // Fetch profiles WITH membership_expires for accurate churn detection
+        // A user is "churned" if they previously had a membership that is now expired
+        // OR their subscription_status is a terminal canceled state
         const now = new Date();
         const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
         const sevenDaysAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
@@ -116,11 +119,22 @@ export async function GET(request: Request) {
             return ['active', 'trialing'].includes(status) || accountStatus === 'active';
         });
         const totalSubscribers = activeProfiles.length;
+
+        // Churned: had a membership (membership_tier is set) but are NOT currently active
+        // This is the correct denominator for retention: ever-subscribed users who left
         const totalChurned = customerProfiles.filter(p => {
             const status = (p.subscription_status || '').toLowerCase();
-            return ['cancelled', 'canceled', 'past_due', 'unpaid', 'overdue'].includes(status);
+            const accountStatus = (p.account_status || '').toLowerCase();
+            const wasMember = !!(p.membership_tier || p.tier); // Ever had a tier assigned
+            const isCurrentlyActive = ['active', 'trialing'].includes(status) || accountStatus === 'active';
+            const isTerminalState = ['cancelled', 'canceled', 'past_due', 'unpaid', 'overdue', 'inactive'].includes(status);
+            return wasMember && !isCurrentlyActive && isTerminalState;
         }).length;
-        const retentionRate = (totalSubscribers + totalChurned) > 0 ? (totalSubscribers / (totalSubscribers + totalChurned)) * 100 : 100;
+
+        // retentionRate: % of ever-subscribed users still active
+        // If no one has ever churned, show N/A-friendly value of 100 only when there ARE active subs
+        const everSubscribed = totalSubscribers + totalChurned;
+        const retentionRate = everSubscribed > 0 ? (totalSubscribers / everSubscribed) * 100 : 0;
 
         let monthlySubs = 0;
         let yearlySubs = 0;
@@ -285,8 +299,9 @@ export async function GET(request: Request) {
         const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
         const currentMonthNewSubs = activeProfiles.filter(p => p.created_at && new Date(p.created_at) >= firstDayOfCurrentMonth).length;
-        const lastMonthSubsCount = totalSubscribers - currentMonthNewSubs; // Simple approximation
-        const momGrowth = lastMonthSubsCount > 0 ? (currentMonthNewSubs / lastMonthSubsCount) * 100 : 100;
+        const lastMonthSubsCount = totalSubscribers - currentMonthNewSubs;
+        // Return 0 if no prior subscribers (avoids misleading 100% on a fresh system)
+        const momGrowth = lastMonthSubsCount > 0 ? (currentMonthNewSubs / lastMonthSubsCount) * 100 : 0;
 
         return NextResponse.json({
             subscribers: subscriberMetrics,
