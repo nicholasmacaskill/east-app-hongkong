@@ -186,6 +186,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole, initialStep }:
                                 </p>
                             )}
                             <Link href="/forgot-password" className="text-[10px] text-white/20 hover:text-east-light opacity-40 hover:opacity-100 transition-all uppercase font-bold tracking-[0.2em] block">Forgot Password?</Link>
+                            <Link href="/faq" className="text-[10px] text-white/20 hover:text-east-light opacity-40 hover:opacity-100 transition-all uppercase font-bold tracking-[0.2em] block">Help Centre</Link>
                         </div>
                     </>
                 )}

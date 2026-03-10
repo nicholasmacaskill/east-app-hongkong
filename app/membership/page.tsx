@@ -209,7 +209,7 @@ function MembershipContent() {
                 <div className="absolute inset-0 bg-black/80" />
             </div>
 
-            <div className="w-full max-w-[370px] bg-white text-black h-fit max-h-[96vh] relative flex flex-col z-10 border border-white/20 shadow-2xl rounded-[2.5rem] overflow-hidden m-2">
+            <div className="w-full max-w-[370px] bg-white text-black h-screen sm:h-auto sm:max-h-[96vh] relative flex flex-col z-10 border border-white/20 shadow-2xl sm:rounded-[2.5rem] overflow-hidden sm:m-2">
                 <div className="h-2.5 w-full bg-black shrink-0" />
 
                 {/* MODERATE HEADER */}

@@ -16,7 +16,7 @@ export default function BottomNav({ activeTab, setTab }: BottomNavProps) {
         className={`flex flex-col items-center justify-center w-full py-2 transition-colors duration-200 ${isActive ? 'text-white' : 'text-gray-500'}`}
       >
         <Icon size={24} className={isActive ? 'stroke-[3px]' : 'stroke-2'} />
-        <span className="text-[10px] font-bold font-montserrat mt-1 uppercase tracking-wider">{label}</span>
+        <span className="text-xs font-bold font-montserrat mt-1 uppercase tracking-wider">{label}</span>
       </button>
     );
   };

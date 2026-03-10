@@ -522,7 +522,7 @@ export default function ClassModal({
                                 <div className="border-t border-gray-100 pt-6">
                                     <h3 className="font-montserrat font-black italic text-sm mb-4 uppercase text-gray-400 tracking-tight">SELECT INSTRUCTOR:</h3>
 
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                         {Array.from(uniqueInstructors).filter(i => !!i).map(instructorName => {
                                             const exampleSession = sessions.find(s => s.instructor === instructorName);
                                             const imgUrl = exampleSession?.coach_image_url || exampleSession?.image_url;
@@ -559,7 +559,7 @@ export default function ClassModal({
                                 <div className="border-t border-gray-100 pt-6">
                                     <h3 className="font-montserrat font-black italic text-sm mb-4 uppercase text-gray-400 tracking-tight">SELECT SERVICE:</h3>
 
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                         {Array.from(uniqueTitles).map(title => {
                                             const exampleSession = sessions.find(s => s.title === title);
                                             const imgUrl = exampleSession?.image_url;

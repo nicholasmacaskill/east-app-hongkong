@@ -221,7 +221,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
               </div>
             )}
 
-            <div className="grid grid-cols-3 w-full gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 w-full gap-2">
               {[
                 { l: 'CREDITS\nAVAILABLE', v: profileData.credits || 0, icon: Coins, action: onShowHistory },
                 { l: 'TOP SCORER\n(TEAM)', v: 'coming soon', icon: Award },

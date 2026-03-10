@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import { Plus, Trophy, Settings, ChevronLeft, Lock } from 'lucide-react';
+import { Plus, Trophy, Settings, ChevronLeft, Lock, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -105,18 +105,21 @@ export default function AppHeader({
                 )}
             </div>
 
-            <div className="w-20 flex justify-end gap-5 items-center">
+            <div className="w-24 flex justify-end gap-3 items-center">
                 {!onBack && (
                     <Link href="/stats" className="text-gray-400 hover:text-east-light transition-colors active:scale-90 duration-200">
-                        <Trophy size={22} className="stroke-[1.5px]" />
+                        <Trophy size={18} className="stroke-[1.5px]" />
                     </Link>
                 )}
 
                 {onOpenSettings && (
                     <button onClick={onOpenSettings} className="text-gray-400 hover:text-white transition-colors active:scale-90 duration-200">
-                        <Settings size={22} className="stroke-[1.5px]" />
+                        <Settings size={18} className="stroke-[1.5px]" />
                     </button>
                 )}
+                <Link href="/faq" className="text-gray-400 hover:text-east-light transition-colors active:scale-90 duration-200">
+                    <HelpCircle size={17} className="stroke-[1.5px]" />
+                </Link>
             </div>
         </div>
     );

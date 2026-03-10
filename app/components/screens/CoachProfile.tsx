@@ -329,7 +329,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                         </div>
 
                         {/* Stat Grid */}
-                        <div className="grid grid-cols-3 w-full gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 w-full gap-2">
                             {[
                                 { l: 'WIN\nRATE', v: PROFILE_STATS.win_rate, icon: Trophy },
                                 { l: 'SESSIONS\nDONE', v: PROFILE_STATS.total_sessions, icon: Video },

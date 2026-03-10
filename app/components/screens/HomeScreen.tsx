@@ -357,17 +357,17 @@ export default function HomeScreen({
         <div>
           <SectionHeader title="Facilities" />
           {loading ? (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[1, 2, 3].map(i => <Skeleton key={i} className="aspect-square rounded-2xl" />)}
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {serviceFacilities.map((fac) => (
                 <div key={fac.id} onClick={() => handleServiceClick(fac)} className="flex flex-col gap-2 cursor-pointer group active:scale-95 transition-transform duration-200">
                   <div className="aspect-square rounded-2xl overflow-hidden border border-gray-800 bg-[#0a0a0a] relative shadow-lg group-hover:border-east-light transition-colors">
                     <img src={fac.image_url || 'https://images.unsplash.com/photo-1541744158664-972170366318?w=400'} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" alt={fac.title} />
                   </div>
-                  <span className="font-montserrat font-bold italic text-[9px] uppercase text-center text-gray-400 group-hover:text-white transition-colors">{fac.title}</span>
+                  <span className="font-montserrat font-bold italic text-[11px] uppercase text-center text-gray-400 group-hover:text-white transition-colors">{fac.title}</span>
                 </div>
               ))}
             </div>
@@ -378,22 +378,22 @@ export default function HomeScreen({
         <div>
           <SectionHeader title="Classes" />
           {loading ? (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[1, 2, 3].map(i => <Skeleton key={i} className="aspect-square rounded-2xl" />)}
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {serviceClasses.map((cls) => (
                 <div key={cls.id} onClick={() => handleServiceClick(cls)} className="flex flex-col gap-2 cursor-pointer group active:scale-95 transition-transform duration-200">
                   <div className="aspect-square rounded-2xl overflow-hidden border border-gray-800 bg-[#0a0a0a] relative shadow-lg group-hover:border-east-light transition-colors">
                     <img src={cls.image_url || 'https://images.unsplash.com/photo-1549466723-863a9af4535e?w=400'} alt={cls.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" />
                     {isGroupBooked(cls.title, 'CLASS') && (
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                        <span className="text-east-light text-[8px] font-black uppercase tracking-widest border border-east-light px-2 py-1 rounded-full bg-black">Booked</span>
+                        <span className="text-east-light text-[10px] font-black uppercase tracking-widest border border-east-light px-2 py-1 rounded-full bg-black">Booked</span>
                       </div>
                     )}
                   </div>
-                  <span className="font-montserrat font-bold italic text-[9px] uppercase text-center text-gray-400 group-hover:text-white transition-colors">{cls.title}</span>
+                  <span className="font-montserrat font-bold italic text-[11px] uppercase text-center text-gray-400 group-hover:text-white transition-colors">{cls.title}</span>
                 </div>
               ))}
             </div>
@@ -404,17 +404,17 @@ export default function HomeScreen({
         <div>
           <SectionHeader title="Private Lessons" />
           {loading ? (
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {[1, 2, 3, 4].map(i => <Skeleton key={i} className="aspect-square rounded-xl" />)}
             </div>
           ) : (
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {servicePrivate.map((p) => (
                 <div key={p.id} onClick={() => handleServiceClick(p)} className="flex flex-col items-center gap-1.5 cursor-pointer group active:scale-95 transition-transform duration-200">
                   <div className="w-full aspect-square rounded-xl overflow-hidden border border-gray-800 bg-[#0a0a0a] relative shadow-md group-hover:border-east-light transition-all">
                     <img src={p.image_url || 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400'} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500" alt={p.title} />
                   </div>
-                  <span className="font-montserrat font-bold italic text-[8px] uppercase text-center text-gray-500 group-hover:text-white transition-colors truncate w-full">{p.title}</span>
+                  <span className="font-montserrat font-bold italic text-[10px] uppercase text-center text-gray-500 group-hover:text-white transition-colors truncate w-full">{p.title}</span>
                 </div>
               ))}
             </div>
