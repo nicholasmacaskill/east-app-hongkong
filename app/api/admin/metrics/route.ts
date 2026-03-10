@@ -39,7 +39,7 @@ export async function GET(request: Request) {
         // Fetch Subscribers
         const { data: profiles, error: profilesError } = await supabaseAdmin
             .from('profiles')
-            .select('id, tier, membership_tier, subscription_status, created_at, account_status, role, contact_email');
+            .select('id, tier, membership_tier, subscription_status, created_at, account_status, role, contact_email, first_name, last_name');
 
         if (profilesError) throw profilesError;
 
@@ -280,7 +280,32 @@ export async function GET(request: Request) {
 
         // Sleeper Subscribers: Active subscribers with no bookings in last 30 days
         const recentUserIds = new Set(recentRegistrations.map(r => r.userId));
-        const sleepers = activeProfiles.filter(p => !recentUserIds.has(p.id)).length;
+        const sleeperProfiles = activeProfiles.filter(p => !recentUserIds.has(p.id));
+        const sleepers = sleeperProfiles.length;
+
+        // Build sleeper user list with last booking date for drilldown
+        const sleeperUsers = sleeperProfiles.map(p => {
+            const userBookings = bookingsList.filter(b => b.userId === p.id);
+            const lastBooking = userBookings.length > 0
+                ? userBookings.reduce((latest, b) =>
+                    b.registeredAt > latest.registeredAt ? b : latest
+                ).registeredAt.toISOString()
+                : null;
+            return {
+                id: p.id,
+                name: [p.first_name, p.last_name].filter(Boolean).join(' ') || p.contact_email?.split('@')[0] || 'Unknown',
+                email: p.contact_email || '',
+                lastBooking,
+                daysSinceBooking: lastBooking
+                    ? Math.floor((now.getTime() - new Date(lastBooking).getTime()) / (1000 * 60 * 60 * 24))
+                    : null,
+            };
+        }).sort((a, b) => {
+            // Sort: never booked first, then by most days since last booking
+            if (a.daysSinceBooking === null) return -1;
+            if (b.daysSinceBooking === null) return 1;
+            return b.daysSinceBooking - a.daysSinceBooking;
+        });
 
         // Credit Velocity: Avg credits spent per week
         const last7DaysCredits = bookingsList.filter(b => b.registeredAt >= sevenDaysAgo).reduce((sum, b) => sum + b.creditCost, 0);
@@ -325,6 +350,7 @@ export async function GET(request: Request) {
             health: {
                 mau: mau,
                 sleepers: sleepers,
+                sleeperUsers: sleeperUsers,
                 creditVelocity: creditVelocity,
                 utilizationRate: utilizationRate,
                 conversionRate: conversionRate,
