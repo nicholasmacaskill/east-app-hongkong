@@ -70,6 +70,7 @@ export default defineConfig({
         // No storageState here, tests will handle their own auth
       },
       testMatch: [
+        'tests/faq-role-access.spec.ts',
         'tests/check-in-qr.spec.ts',
         'tests/golf-stats.spec.ts',
         'tests/family-management.spec.ts',

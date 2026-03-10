@@ -25,10 +25,17 @@ export async function GET(request: Request) {
         }
 
         // 2. Fetch Transactions using ADMIN client to guarantee visibility
+        // Joined with sessions to get the start_time and title for bookings/refunds
         const supabaseAdmin = getSupabaseAdmin();
         const { data: transactions, error: dbError } = await supabaseAdmin
             .from('transactions')
-            .select('*')
+            .select(`
+                *,
+                sessions (
+                    start_time,
+                    title
+                )
+            `)
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
 

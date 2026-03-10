@@ -9,6 +9,11 @@ interface Transaction {
     type: string;
     description: string;
     stripe_session_id?: string;
+    session_id?: number;
+    sessions?: {
+        start_time: string;
+        title: string;
+    };
 }
 
 interface TransactionHistoryModalProps {
@@ -54,6 +59,16 @@ export default function TransactionHistoryModal({ onClose }: TransactionHistoryM
         });
     };
 
+    const formatSessionDate = (dateStr: string) => {
+        return new Date(dateStr).toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
     return (
         <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
             <div className="bg-[#1e1e1e] p-6 rounded-[2rem] w-full max-w-md border border-white/10 relative shadow-2xl flex flex-col max-h-[80vh]">
@@ -93,9 +108,16 @@ export default function TransactionHistoryModal({ onClose }: TransactionHistoryM
                                         }`}>
                                         {tx.amount > 0 ? <ArrowDownLeft size={14} /> : <ArrowUpRight size={14} />}
                                     </div>
-                                    <div>
-                                        <p className="text-white font-bold text-sm">{tx.description || tx.type.toUpperCase()}</p>
-                                        <p className="text-[10px] text-gray-500 font-mono uppercase tracking-wide">{formatDate(tx.created_at)}</p>
+                                    <div className="flex flex-col">
+                                        <p className="text-white font-bold text-sm tracking-tight">{tx.description || tx.type.toUpperCase()}</p>
+                                        <div className="flex flex-col gap-0.5">
+                                            {tx.sessions && (
+                                                <p className="text-[10px] text-east-light/80 font-bold uppercase tracking-wide">
+                                                    Session: {formatSessionDate(tx.sessions.start_time)}
+                                                </p>
+                                            )}
+                                            <p className="text-[9px] text-gray-500 font-mono uppercase tracking-wide">Booked: {formatDate(tx.created_at)}</p>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className={`font-mono font-black italic text-lg ${tx.amount > 0 ? 'text-east-light' : 'text-white'}`}>

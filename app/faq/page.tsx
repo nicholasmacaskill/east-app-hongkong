@@ -3,6 +3,9 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { ChevronLeft, ChevronDown, ChevronUp, User, Users, Dumbbell, Shield, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { supabase } from '@/app/lib/supabase';
+import { fetchProfileResilient } from '@/app/lib/authProfile';
+import type { UserRole } from '@/app/types';
 
 type TabId = 'player' | 'parent' | 'coach' | 'admin';
 
@@ -523,14 +526,72 @@ function HelpCenterContent() {
     const searchParams = useSearchParams();
     const tabParam = searchParams.get('tab') as TabId | null;
     const [activeTab, setActiveTab] = useState<TabId>(tabParam || 'player');
+    const [userRole, setUserRole] = useState<UserRole | undefined>(undefined);
+    const [loadingRole, setLoadingRole] = useState(true);
 
     useEffect(() => {
-        if (tabParam && TABS.find(t => t.id === tabParam)) {
-            setActiveTab(tabParam);
-        }
-    }, [tabParam]);
+        let mounted = true;
 
-    const activeSections = TABS.find(t => t.id === activeTab)?.sections || [];
+        async function updateRole(userId: string | null) {
+            if (!userId) {
+                if (mounted) {
+                    setUserRole(undefined);
+                    setLoadingRole(false);
+                }
+                return;
+            }
+
+            try {
+                const profile = await fetchProfileResilient(userId);
+                if (mounted && profile?.role) {
+                    setUserRole(profile.role as UserRole);
+                }
+            } catch (err) {
+                console.error('[HELP_CENTRE] Role fetch failed:', err);
+            } finally {
+                if (mounted) setLoadingRole(false);
+            }
+        }
+
+        // Initial check
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user) updateRole(user.id);
+            else updateRole(null);
+        });
+
+        // Listen for changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (session?.user) updateRole(session.user.id);
+            else updateRole(null);
+        });
+
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+        };
+    }, []);
+
+    // Filter tabs based on role
+    const allowedTabs = TABS.filter(tab => {
+        if (!userRole) return tab.id === 'player'; // Guest/Loading default
+        if (userRole === 'admin' || userRole === 'sys-admin') return true;
+        if (userRole === 'parent') return tab.id === 'player' || tab.id === 'parent';
+        if (userRole === 'coach') return tab.id === 'player' || tab.id === 'coach';
+        if (userRole === 'player') return tab.id === 'player';
+        return tab.id === 'player';
+    });
+
+    useEffect(() => {
+        if (tabParam && allowedTabs.find(t => t.id === tabParam)) {
+            setActiveTab(tabParam);
+        } else if (allowedTabs.length > 0 && !allowedTabs.find(t => t.id === activeTab)) {
+            // If current tab is not allowed (e.g. role changed or refreshed on forbidden tab), reset to first allowed
+            setActiveTab(allowedTabs[0].id);
+        }
+    }, [tabParam, userRole, loadingRole]);
+
+    const activeSections = allowedTabs.find(t => t.id === activeTab)?.sections || [];
+    const showTabs = allowedTabs.length > 1;
 
     return (
         <div className="min-h-screen bg-black text-white font-montserrat pb-24 animate-fadeIn">
@@ -548,25 +609,33 @@ function HelpCenterContent() {
                 </div>
 
                 {/* Tab Bar */}
-                <div className="grid grid-cols-4 gap-1.5 bg-white/5 p-1.5 rounded-2xl mb-8 border border-white/8">
-                    {TABS.map(tab => {
-                        const Icon = tab.icon;
-                        const isActive = activeTab === tab.id;
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex flex-col items-center gap-1.5 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${isActive
-                                    ? 'bg-east-light text-black shadow-lg'
-                                    : 'text-gray-500 hover:text-white'
-                                    }`}
-                            >
-                                <Icon size={15} />
-                                {tab.label}
-                            </button>
-                        );
-                    })}
-                </div>
+                {loadingRole ? (
+                    <div className="grid grid-cols-4 gap-1.5 bg-white/5 p-1.5 rounded-2xl mb-8 border border-white/8 animate-pulse">
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="h-12 bg-white/5 rounded-xl" />
+                        ))}
+                    </div>
+                ) : showTabs && (
+                    <div className={`grid ${allowedTabs.length === 2 ? 'grid-cols-2' : 'grid-cols-4'} gap-1.5 bg-white/5 p-1.5 rounded-2xl mb-8 border border-white/8`}>
+                        {allowedTabs.map(tab => {
+                            const Icon = tab.icon;
+                            const isActive = activeTab === tab.id;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex flex-col items-center gap-1.5 py-3 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${isActive
+                                        ? 'bg-east-light text-black shadow-lg'
+                                        : 'text-gray-500 hover:text-white'
+                                        }`}
+                                >
+                                    <Icon size={15} />
+                                    {tab.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
 
                 {/* Section Content */}
                 <div className="space-y-8">
