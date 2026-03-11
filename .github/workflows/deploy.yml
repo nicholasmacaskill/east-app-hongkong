@@ -22,6 +22,10 @@ jobs:
           script: |
             cd /var/www/eastapp.booking.dynevents.com
             git pull origin main
+            # Clean build cache to prevent Server Action ID mismatch
+            sudo rm -rf .next
             npm install
             npm run build
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 restart EastApp
+            # Robust restart: Update env and handle missing process cases
+            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 restart EastApp --update-env || echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 start npm --name "EastApp" -- start
+            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 save
