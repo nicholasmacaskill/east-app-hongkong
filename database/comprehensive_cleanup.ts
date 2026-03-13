@@ -48,49 +48,29 @@ async function comprehensiveCleanup() {
 
         // 2. Identify Cleanup Targets
         const authUserIds = new Set(allAuthUsers.map(u => u.id));
-        const testPatterns = [
-            /@pw\.test$/,
-            /test/,
-            /login/,
-            /audit/,
-            /@test\.com$/
-        ];
-
         const targets: Set<string> = new Set();
         const targetDetails: any[] = [];
 
-        // Check Auth Users for test patterns
+        // Check Auth Users: Target everything except admin@east.com
         allAuthUsers.forEach(user => {
             const email = user.email?.toLowerCase() || '';
-            const matchesPattern = testPatterns.some(p => p.test(email));
-            const isSeed = SEED_EMAILS.includes(email);
+            const isToKeep = email === 'admin@east.com';
 
-            if (matchesPattern && !isSeed) {
+            if (!isToKeep) {
                 targets.add(user.id);
-                targetDetails.push({ id: user.id, email: email, reason: 'Auth Pattern Match' });
+                targetDetails.push({ id: user.id, email: email, reason: 'Non-Admin Account' });
             }
         });
 
-        // Check Profiles for test patterns or orphans
+        // Check Profiles: Target orphans or everything except admin@east.com
         allProfiles.forEach(profile => {
             const email = (profile.contact_email || '').toLowerCase();
-            const username = (profile.username || '').toLowerCase();
-            const isSeed = SEED_EMAILS.includes(email);
+            const isToKeep = email === 'admin@east.com';
 
-            // Pattern match in profile
-            const matchesPattern = testPatterns.some(p => p.test(email)) || username.includes('test');
-            if (matchesPattern && !isSeed) {
+            if (!isToKeep) {
                 if (!targets.has(profile.id)) {
                     targets.add(profile.id);
-                    targetDetails.push({ id: profile.id, email: email || 'N/A', username: username, reason: 'Profile Pattern Match' });
-                }
-            }
-
-            // Orphan check
-            if (!authUserIds.has(profile.id)) {
-                if (!targets.has(profile.id)) {
-                    targets.add(profile.id);
-                    targetDetails.push({ id: profile.id, email: email || 'N/A', reason: 'Orphaned Profile' });
+                    targetDetails.push({ id: profile.id, email: email || 'N/A', reason: authUserIds.has(profile.id) ? 'Non-Admin Profile' : 'Orphaned Profile' });
                 }
             }
         });

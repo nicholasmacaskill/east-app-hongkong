@@ -26,31 +26,19 @@ export default function AppHeader({
     className = "",
     showLogo = true,
     subscriptionStatus,
-    accountStatus
+    accountStatus,
+    role
 }: AppHeaderProps) {
 
     // Check locked status
     // Unlocked if: (Subscription Active OR Trialing) OR (Account Manually Active)
     const isSubscriber = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
     const isManuallyActive = accountStatus === 'active';
-    const isUnlocked = isSubscriber || isManuallyActive;
+    const isBypass = role === 'admin' || role === 'coach' || role === 'sys-admin';
+    const isUnlocked = isSubscriber || isManuallyActive || isBypass;
 
     // Only apply locking to player/parent roles. Admins/Coaches bypass this.
-    // If we don't have a role (e.g. initial load), we default to unlocked to avoid flickering red.
-    const isLocked = isUnlocked ? false : true;
-    // Wait, I need the ROLE in AppHeader to do this properly.
-
-    // WAIT: The issue description says "Users remain LOCKED even after Admin manually activates".
-    // This implies `subscriptionStatus` passed here is NOT 'active' even after admin change.
-    // OR the logic `subscriptionStatus && ...` fails if it's null?
-
-    // Let's refine the logic to be safer:
-    // Locked if: status exists AND is NOT active/trialing.
-    // If status is Missing/Null, is it locked? Yes, usually.
-
-    // Correct Logic: 
-    // Unlocked = active OR trialing.
-    // Locked = NOT (active OR trialing).
+    const isLocked = !isUnlocked;
 
     return (
         <div className={`sticky top-0 z-50 px-4 sm:px-6 py-4 border-b border-white/5 flex justify-between items-center backdrop-blur-xl bg-black/50 transition-all duration-300 ${className}`}>
@@ -74,8 +62,8 @@ export default function AppHeader({
                 )}
             </div>
 
-            {/* Center Area - Now for Credits or Title */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center pointer-events-none">
+            {/* Center Area - Elevated z-index to avoid overlap blocking */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-30 flex flex-col items-center pointer-events-none">
                 <div className="pointer-events-auto">
                     {title ? (
                         <h1 className="font-montserrat font-black italic text-lg text-white uppercase tracking-tight">{title}</h1>
