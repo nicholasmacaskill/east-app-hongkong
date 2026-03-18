@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "debugId": "2a3ed52d-7f0b-9ce4-1091-62dacfeb13f2",
+  "sections": [
+    {"offset": {"line": 5, "column": 0}, "map": {"version":3,"sources":["file:///Users/nicholasmacaskill/Downloads/east-app-hongkong-main/app/not-found.tsx"],"sourcesContent":["\n'use client';\nimport Link from 'next/link';\n\nexport default function NotFound() {\n    return (\n        <div className=\"min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center font-montserrat\">\n            <h1 className=\"text-6xl font-black italic text-east-light mb-4\">404</h1>\n            <h2 className=\"text-2xl font-bold uppercase tracking-widest mb-6\">Page Not Found</h2>\n            <p className=\"text-gray-400 max-w-md mb-8\">\n                The play you are looking for has been whistled dead. Let's get you back to the bench.\n            </p>\n            <Link href=\"/\" className=\"bg-white text-black font-black italic uppercase px-8 py-4 rounded-full hover:bg-east-light transition-colors\">\n                Return Home\n            </Link>\n        </div>\n    );\n}\n"],"names":[],"mappings":";;;;;AAEA;AADA;;;AAGe,SAAS;IACpB,qBACI,8OAAC;QAAI,WAAU;;0BACX,8OAAC;gBAAG,WAAU;0BAAkD;;;;;;0BAChE,8OAAC;gBAAG,WAAU;0BAAoD;;;;;;0BAClE,8OAAC;gBAAE,WAAU;0BAA8B;;;;;;0BAG3C,8OAAC,uKAAI;gBAAC,MAAK;gBAAI,WAAU;0BAA+G;;;;;;;;;;;;AAKpJ"}}]
+}

@@ -112,13 +112,24 @@ export async function POST(request: Request) {
 
     // 1. Call the Atomic Master Booking RPC
     const supabaseAdmin = getSupabaseAdmin();
+    
+    // Get the actual caller's ID from the token for attribution
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    let callerId: string | null = null;
+    if (token) {
+      const { data: { user: caller } } = await supabaseAdmin.auth.getUser(token);
+      callerId = caller?.id || null;
+    }
+
     const { data: result, error: rpcError } = await supabaseAdmin.rpc('master_book_atomic', {
       p_user_id: userId,
       p_session_id: sessionId,
       p_attendee_ids: targets,
       p_coach_id: coachId,
       p_coach_tier: coachTier,
-      p_origin: origin
+      p_origin: origin,
+      p_created_by: callerId
     });
 
     if (rpcError) {

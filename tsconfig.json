@@ -35,7 +35,9 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    ".next-test/types/**/*.ts",
+    ".next-test/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
@@ -46,7 +48,7 @@
     "project-docs",
     "tests"
   ],
-  // ⬅️ THIS BLOCK IS THE FIX FOR @/app ALIASES 
+  // ⬅️ THIS BLOCK IS THE FIX FOR @/app ALIASES
   "ts-node": {
     "require": [
       "tsconfig-paths/register"

@@ -156,7 +156,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole, initialStep }:
                 {step === 'login' && (
                     <>
                         <AuthHeader title={
-                            expectedRole === 'admin' ? "Admin Portal Access" :
+                            expectedRole === 'admin' ? "Investor Admin Login" :
                                 expectedRole === 'coach' ? "Coach Login" :
                                     expectedRole === 'parent' ? "Parent Login" :
                                         "Athlete Login"

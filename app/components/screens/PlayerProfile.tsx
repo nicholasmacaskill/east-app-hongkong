@@ -52,6 +52,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<'streaks' | 'full_stats'>('streaks');
   const [stats, setStats] = useState<PlayerStats | null>(initialStats || null);
+  const [uploading, setUploading] = useState(false);
 
   // Removed gallery state and refs
   const avatarInputRef = React.useRef<HTMLInputElement>(null);
@@ -120,30 +121,40 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const originalFile = e.target.files[0];
+    setUploading(true);
 
-    // Compress image before upload
-    const file = await compressImage(originalFile);
+    try {
+      // Compress image before upload
+      const file = await compressImage(originalFile);
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `avatar-${profileData.id}-${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `avatar-${profileData.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
 
-    const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
+      const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
 
-    if (uploadError) {
-      addToast('Avatar upload failed', 'error');
-      return;
-    }
+      if (uploadError) {
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
 
-    const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
-    const { error: dbError } = await supabase
-      .from('profiles')
-      .update({ avatar_url: data.publicUrl })
-      .eq('id', profileData.id);
+      const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
+      const { error: dbError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: data.publicUrl })
+        .eq('id', profileData.id);
 
-    if (!dbError) {
+      if (dbError) {
+        throw new Error(`Profile update failed: ${dbError.message}`);
+      }
+
       addToast('Avatar updated!', 'success');
-      window.location.reload();
+      if (onRefresh) onRefresh();
+      else window.location.reload();
+    } catch (error: any) {
+      console.error('Avatar upload error:', error);
+      addToast(error.message || 'Avatar upload failed', 'error');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -190,12 +201,16 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
               >
                 <img
                   src={profileData.avatar_url || "https://images.pexels.com/photos/6550836/pexels-photo-6550836.jpeg"}
-                  className={`w-full h-full object-cover opacity-90 transition-opacity ${isReadOnly ? '' : 'group-hover:opacity-40'}`}
+                  className={`w-full h-full object-cover transition-opacity ${isReadOnly ? '' : 'group-hover:opacity-40'} ${uploading ? 'opacity-20' : 'opacity-90'}`}
                   alt="profile"
                 />
                 {!isReadOnly && (
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Camera size={32} className="text-white" />
+                    {uploading ? (
+                      <div className="w-8 h-8 border-4 border-east-light border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Camera size={32} className="text-white" />
+                    )}
                   </div>
                 )}
               </div>

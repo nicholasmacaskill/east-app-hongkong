@@ -1,53 +1,56 @@
-
 'use client';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
 import { ChevronLeft, Check, TrendingUp } from 'lucide-react';
+import { getStripePriceId } from '@/app/lib/stripe-config';
 
-const TOPUP_OPTIONS = [
-    {
-        id: process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER || '',
-        credits: 500,
-        price: 'HKD $500',
-        label: 'Starter',
-        color: 'bg-gray-800'
-    },
-    {
-        id: process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD || '',
-        credits: 1000,
-        price: 'HKD $1,000',
-        label: 'Standard',
-        color: 'bg-gray-800'
-    },
-    {
-        id: process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO || '',
-        credits: 2500,
-        price: 'HKD $2,500',
-        label: 'Pro',
-        color: 'bg-east-blue/20 border-east-blue'
-    },
-    {
-        id: process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE || '',
-        credits: 5000,
-        price: 'HKD $5,000',
-        label: 'Elite',
-        color: 'bg-gray-800'
-    },
-    {
-        id: process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE || '',
-        credits: 10000,
-        price: 'HKD $10,000',
-        label: 'Ultimate',
-        color: 'bg-east-light text-black',
-        textColor: 'text-black',
-        highlight: true
-    }
-];
 
 export default function TopUpPage() {
     const router = useRouter();
     const { addToast } = useToast();
+
+    // --- DYNAMIC PRICE RESOLUTION ---
+    const TOPUP_OPTIONS = React.useMemo(() => [
+        {
+            id: getStripePriceId('TOPUP_STARTER'),
+            credits: 500,
+            price: 'HKD $500',
+            label: 'Starter',
+            color: 'bg-gray-800'
+        },
+        {
+            id: getStripePriceId('TOPUP_STANDARD'),
+            credits: 1000,
+            price: 'HKD $1,000',
+            label: 'Standard',
+            color: 'bg-gray-800'
+        },
+        {
+            id: getStripePriceId('TOPUP_PRO'),
+            credits: 2500,
+            price: 'HKD $2,500',
+            label: 'Pro',
+            color: 'bg-east-blue/20 border-east-blue'
+        },
+        {
+            id: getStripePriceId('TOPUP_ELITE'),
+            credits: 5000,
+            price: 'HKD $5,000',
+            label: 'Elite',
+            color: 'bg-gray-800'
+        },
+        {
+            id: getStripePriceId('TOPUP_ULTIMATE'),
+            credits: 10000,
+            price: 'HKD $10,000',
+            label: 'Ultimate',
+            color: 'bg-east-light text-black',
+            textColor: 'text-black',
+            highlight: true
+        }
+    ], []);
 
     const handleCheckout = async (priceId: string) => {
         try {

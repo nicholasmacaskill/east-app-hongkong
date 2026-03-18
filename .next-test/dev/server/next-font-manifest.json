@@ -1,0 +1,59 @@
+{
+  "app": {
+    "[project]/app/admin-login/page": [
+      "static/media/e8f2fbee2754df70-s.p.9b7a96b4.woff2",
+      "static/media/cf514f5d0007dafa-s.p.417aa1a2.woff2"
+    ],
+    "[project]/app/admin-ops/bookings/page": [
+      "static/media/e8f2fbee2754df70-s.p.9b7a96b4.woff2",
+      "static/media/cf514f5d0007dafa-s.p.417aa1a2.woff2"
+    ],
+    "[project]/app/admin-ops/coaches/page": [
+      "static/media/e8f2fbee2754df70-s.p.9b7a96b4.woff2",
+      "static/media/cf514f5d0007dafa-s.p.417aa1a2.woff2"
+    ],
+    "[project]/app/admin-ops/page": [
+      "static/media/e8f2fbee2754df70-s.p.9b7a96b4.woff2",
+      "static/media/cf514f5d0007dafa-s.p.417aa1a2.woff2"
+    ],
+    "[project]/app/admin-ops/schedule/page": [
+      "static/media/e8f2fbee2754df70-s.p.9b7a96b4.woff2",
+      "static/media/cf514f5d0007dafa-s.p.417aa1a2.woff2"
+    ],
+    "[project]/app/admin-ops/services/page": [
+      "static/media/e8f2fbee2754df70-s.p.9b7a96b4.woff2",
+      "static/media/cf514f5d0007dafa-s.p.417aa1a2.woff2"
+    ],
+    "[project]/app/faq/page": [
+      "static/media/e8f2fbee2754df70-s.p.9b7a96b4.woff2",
+      "static/media/cf514f5d0007dafa-s.p.417aa1a2.woff2"
+    ],
+    "[project]/app/login/page": [
+      "static/media/e8f2fbee2754df70-s.p.9b7a96b4.woff2",
+      "static/media/cf514f5d0007dafa-s.p.417aa1a2.woff2"
+    ],
+    "[project]/app/membership/page": [
+      "static/media/e8f2fbee2754df70-s.p.9b7a96b4.woff2",
+      "static/media/cf514f5d0007dafa-s.p.417aa1a2.woff2"
+    ],
+    "[project]/app/page": [
+      "static/media/e8f2fbee2754df70-s.p.9b7a96b4.woff2",
+      "static/media/cf514f5d0007dafa-s.p.417aa1a2.woff2"
+    ],
+    "[project]/app/sys-admin/directory/page": [
+      "static/media/e8f2fbee2754df70-s.p.9b7a96b4.woff2",
+      "static/media/cf514f5d0007dafa-s.p.417aa1a2.woff2"
+    ],
+    "[project]/app/sys-admin/page": [
+      "static/media/e8f2fbee2754df70-s.p.9b7a96b4.woff2",
+      "static/media/cf514f5d0007dafa-s.p.417aa1a2.woff2"
+    ],
+    "[project]/app/top-up/page": [
+      "static/media/e8f2fbee2754df70-s.p.9b7a96b4.woff2",
+      "static/media/cf514f5d0007dafa-s.p.417aa1a2.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

@@ -7,6 +7,7 @@ import { supabase } from '@/app/lib/supabase';
 import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 import { safeFetch } from '@/app/lib/apiUtils';
 import { useToast } from '@/app/components/ui/Toast';
+import { getStripePriceId } from '@/app/lib/stripe-config';
 
 interface ClassModalProps {
     sessions: Session[];
@@ -328,7 +329,7 @@ export default function ClassModal({
     const handleTopUp = async () => {
         setIsProcessing(true);
         try {
-            const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP;
+            const priceId = getStripePriceId('TOPUP');
             if (!priceId) {
                 addToast("Top Up not configured", "error");
                 setIsProcessing(false);
@@ -342,7 +343,13 @@ export default function ClassModal({
             const res = await safeFetch('/api/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ priceId, userId: currentUserId, userEmail: email })
+                body: JSON.stringify({ 
+                    priceId, 
+                    userId: currentUserId, 
+                    userEmail: email,
+                    successUrl: `${window.location.origin}/?success=true`,
+                    cancelUrl: `${window.location.origin}/?canceled=true`
+                })
             });
 
             if (res.success && res.data.url) {

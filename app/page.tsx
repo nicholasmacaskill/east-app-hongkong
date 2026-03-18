@@ -30,6 +30,7 @@ import ProcessingOverlay from '@/app/components/ui/ProcessingOverlay';
 import type { UserRole, Tab, UserProfileData } from './types';
 import { Session } from '@/app/types/index';
 import { fetchProfileResilient } from '@/app/lib/authProfile';
+import { getStripeMode } from '@/app/lib/stripe-config';
 
 // 1. Updated Interface to include credits and role
 
@@ -331,6 +332,41 @@ function AppContent() {
       const tid = addToast("Payment Received. Finalizing credits...", "loading", 0);
       processingToastIdRef.current = tid;
 
+      // --- TEST MODE AUTO-SYNC ---
+      // If we are in test mode, the webhook might not fire (no public listener).
+      // We call a dedicated "confirm" endpoint to sync manually.
+      if (getStripeMode() === 'test' && currentUserId) {
+        console.log("🧪 TEST MODE: Triggering manual sync...");
+        fetch('/api/stripe/test-confirm', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: currentUserId })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            console.log("✅ TEST MODE: Sync successful!");
+            // Clear waiting state immediately for feedback
+            isWaitingForCreditsRef.current = false;
+            if (processingToastIdRef.current) {
+              removeToast(processingToastIdRef.current);
+              processingToastIdRef.current = null;
+            }
+            addToast("Test Credits Activated!", "success");
+            setRefreshKey(prev => prev + 1);
+          } else {
+            console.warn("⚠️ TEST MODE: Sync failed or no session found:", data.error);
+            addToast(`Sync Failed: ${data.error || 'No paid session found'}`, "error");
+            isWaitingForCreditsRef.current = false;
+            if (processingToastIdRef.current) {
+              removeToast(processingToastIdRef.current);
+              processingToastIdRef.current = null;
+            }
+          }
+        })
+        .catch(err => console.error("❌ TEST MODE: Sync error:", err));
+      }
+
       // Safety timeout - if no webhook in 30s, refresh manually
       setTimeout(() => {
         if (isWaitingForCreditsRef.current) {
@@ -344,7 +380,7 @@ function AppContent() {
         }
       }, 30000);
     }
-  }, [searchParams, router, addToast]);
+  }, [searchParams, router, addToast, currentUserId]);
 
 
   const handleSaveProfile = async (updatedData: UserProfileData) => {

@@ -120,33 +120,39 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
         const originalFile = e.target.files[0];
         setUploading(true);
 
-        // Compress image before upload
-        const file = await compressImage(originalFile);
+        try {
+            // Compress image before upload
+            const file = await compressImage(originalFile);
 
-        const fileExt = file.name.split('.').pop();
-        const fileName = `avatar-${profileData.id}-${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
+            const fileExt = file.name.split('.').pop();
+            const fileName = `avatar-${profileData.id}-${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
 
-        const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
+            const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
 
-        if (uploadError) {
-            addToast('Avatar upload failed', 'error');
-            setUploading(false);
-            return;
-        }
+            if (uploadError) {
+                throw new Error(`Upload failed: ${uploadError.message}`);
+            }
 
-        const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
+            const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
 
-        const { error: dbError } = await supabase
-            .from('profiles')
-            .update({ avatar_url: data.publicUrl })
-            .eq('id', profileData.id);
+            const { error: dbError } = await supabase
+                .from('profiles')
+                .update({ avatar_url: data.publicUrl })
+                .eq('id', profileData.id);
 
-        if (!dbError) {
-            profileData.avatar_url = data.publicUrl;
+            if (dbError) {
+                throw new Error(`Profile update failed: ${dbError.message}`);
+            }
+
+            addToast('Avatar updated!', 'success');
             window.location.reload();
+        } catch (error: any) {
+            console.error('Coach avatar upload error:', error);
+            addToast(error.message || 'Avatar upload failed', 'error');
+        } finally {
+            setUploading(false);
         }
-        setUploading(false);
     };
 
     // Video Upload
@@ -155,27 +161,32 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
         const file = e.target.files[0];
         setUploading(true);
 
-        const fileExt = file.name.split('.').pop();
-        const fileName = `video-${profileData.id}-${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `video-${profileData.id}-${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
 
-        const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
+            const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
 
-        if (uploadError) {
-            addToast('Video upload failed: ' + uploadError.message, 'error');
-            setUploading(false);
-            return;
-        }
+            if (uploadError) {
+                throw new Error(`Video upload failed: ${uploadError.message}`);
+            }
 
-        const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
-        const { error: dbError } = await supabase.from('profiles').update({ intro_video_url: data.publicUrl }).eq('id', profileData.id);
+            const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
+            const { error: dbError } = await supabase.from('profiles').update({ intro_video_url: data.publicUrl }).eq('id', profileData.id);
 
-        if (!dbError) {
-            profileData.intro_video_url = data.publicUrl;
+            if (dbError) {
+                throw new Error(`Video profile update failed: ${dbError.message}`);
+            }
+
             addToast('Intro video uploaded!', 'success');
             window.location.reload();
+        } catch (error: any) {
+            console.error('Coach video upload error:', error);
+            addToast(error.message || 'Video upload failed', 'error');
+        } finally {
+            setUploading(false);
         }
-        setUploading(false);
     };
 
     // Gallery Upload
@@ -184,35 +195,41 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
         const originalFile = e.target.files[0];
         setUploading(true);
 
-        // Compress image before upload
-        const file = await compressImage(originalFile);
+        try {
+            // Compress image before upload
+            const file = await compressImage(originalFile);
 
-        const fileExt = file.name.split('.').pop();
-        const fileName = `gallery-${profileData.id}-${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
+            const fileExt = file.name.split('.').pop();
+            const fileName = `gallery-${profileData.id}-${Date.now()}.${fileExt}`;
+            const filePath = `${fileName}`;
 
-        const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
+            const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
 
-        if (uploadError) {
-            addToast('Upload failed', 'error');
-            setUploading(false);
-            return;
-        }
+            if (uploadError) {
+                throw new Error(`Gallery upload failed: ${uploadError.message}`);
+            }
 
-        const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
-        const newImageUrl = data.publicUrl;
+            const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
+            const newImageUrl = data.publicUrl;
 
-        const updatedGallery = [...(profileData.gallery_images || []), newImageUrl];
-        const { error: dbError } = await supabase
-            .from('profiles')
-            .update({ gallery_images: updatedGallery })
-            .eq('id', profileData.id);
+            const updatedGallery = [...(profileData.gallery_images || []), newImageUrl];
+            const { error: dbError } = await supabase
+                .from('profiles')
+                .update({ gallery_images: updatedGallery })
+                .eq('id', profileData.id);
 
-        if (!dbError) {
+            if (dbError) {
+                throw new Error(`Gallery update failed: ${dbError.message}`);
+            }
+
             addToast('Photo added to gallery!', 'success');
             window.location.reload();
+        } catch (error: any) {
+            console.error('Coach gallery upload error:', error);
+            addToast(error.message || 'Gallery upload failed', 'error');
+        } finally {
+            setUploading(false);
         }
-        setUploading(false);
     };
 
     // Save Bio

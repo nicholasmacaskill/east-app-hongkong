@@ -8,9 +8,10 @@ import { checkRateLimit, paymentRateLimit, getClientIdentifier } from '@/app/lib
 
 // 1. Setup Stripe
 // 1. Setup Stripe
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!); (Lazy init below)
-// Webhook secret (Updated: 2026-01-25)
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+import { getStripeSecretKey, getStripeWebhookSecret, getStripePriceId } from '@/app/lib/stripe-config';
+
+// 1. Setup Stripe
+// Webhook secrets and Stripe clients are resolved dynamically in the handler
 
 // 2. Setup Supabase Admin (Bypass RLS)
 // Initialize Admin Client lazily inside handler
@@ -19,52 +20,31 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 // Export for testing
 export const PLAN_DETAILS: Record<string, { credits: number; tier: string }> = {};
 
-// Individual (Pro)
-const INDIVIDUAL_PRICES = [
-    process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY,
-].filter(Boolean);
-INDIVIDUAL_PRICES.forEach(id => {
-    PLAN_DETAILS[id!] = { credits: 1000, tier: 'individual' };
-});
+function populatePlanDetails() {
+    const plans = [
+        { key: 'MONTHLY', credits: 1000, tier: 'individual' },
+        { key: 'YEARLY', credits: 15000, tier: 'individual' },
+        { key: 'FAMILY_1_MONTHLY', credits: 1000, tier: 'family_1' },
+        { key: 'FAMILY_1_YEARLY', credits: 15000, tier: 'family_1' },
+        { key: 'FAMILY_2_MONTHLY', credits: 2500, tier: 'family_2' },
+        { key: 'FAMILY_2_YEARLY', credits: 33000, tier: 'family_2' },
+        { key: 'FAMILY_3_MONTHLY', credits: 3500, tier: 'family_3plus' },
+        { key: 'FAMILY_3_YEARLY', credits: 45000, tier: 'family_3plus' },
+    ];
 
-// Family 1 (Same price as Individual, but for parents)
-const FAMILY_1_PRICES = [
-    process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_1_MONTHLY
-].filter(Boolean);
-FAMILY_1_PRICES.forEach(id => {
-    PLAN_DETAILS[id!] = { credits: 1000, tier: 'family_1' };
-});
+    plans.forEach(plan => {
+        // Add both test and live IDs to the lookup map
+        const testId = process.env[`NEXT_PUBLIC_STRIPE_PRICE_${plan.key}_TEST`];
+        const liveId = process.env[`NEXT_PUBLIC_STRIPE_PRICE_${plan.key}_LIVE`];
+        const legacyId = process.env[`NEXT_PUBLIC_STRIPE_PRICE_${plan.key}`];
 
-const INDIVIDUAL_YEARLY = [
-    process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY,
-].filter(Boolean);
-INDIVIDUAL_YEARLY.forEach(id => {
-    PLAN_DETAILS[id!] = { credits: 15000, tier: 'individual' }; // Yearly 15,000 credits
-});
-
-// Family 1 Yearly
-const FAMILY_1_YEARLY = [
-    process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_1_YEARLY
-].filter(Boolean);
-FAMILY_1_YEARLY.forEach(id => {
-    PLAN_DETAILS[id!] = { credits: 15000, tier: 'family_1' };
-});
-
-// Family 2
-if (process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY) {
-    PLAN_DETAILS[process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY] = { credits: 2500, tier: 'family_2' };
-}
-if (process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY) {
-    PLAN_DETAILS[process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY] = { credits: 33000, tier: 'family_2' };
+        if (testId) PLAN_DETAILS[testId] = { credits: plan.credits, tier: plan.tier };
+        if (liveId) PLAN_DETAILS[liveId] = { credits: plan.credits, tier: plan.tier };
+        if (legacyId) PLAN_DETAILS[legacyId] = { credits: plan.credits, tier: plan.tier };
+    });
 }
 
-// Family 3+
-if (process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY) {
-    PLAN_DETAILS[process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY] = { credits: 3500, tier: 'family_3plus' };
-}
-if (process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY) {
-    PLAN_DETAILS[process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY] = { credits: 45000, tier: 'family_3plus' };
-}
+populatePlanDetails();
 
 export async function POST(request: Request) {
     try {
@@ -93,20 +73,12 @@ export async function POST(request: Request) {
         // 1. Diagnostics & Runtime Check
         console.log(`[STRIPE WEBHOOK] Inbound Request. Method: ${request.method}, URL: ${request.url}`);
 
-        // Check for required environment variables
-        const requiredEnv = [
-            'STRIPE_SECRET_KEY',
-            'STRIPE_WEBHOOK_SECRET',
-            'NEXT_PUBLIC_SUPABASE_URL',
-            'SUPABASE_SERVICE_ROLE_KEY'
-        ];
-        const missing = requiredEnv.filter(k => !process.env[k]);
-        if (missing.length > 0) {
-            console.error(`❌ CRITICAL ERROR: Missing environment variables: ${missing.join(', ')}`);
-            return NextResponse.json({
-                error: 'Configuration Error',
-                missing_vars: missing
-            }, { status: 500 });
+        const secretKey = getStripeSecretKey();
+        const webhookSecret = getStripeWebhookSecret();
+
+        if (!secretKey || !webhookSecret) {
+          console.error(`❌ CRITICAL ERROR: Missing Stripe configuration for current mode.`);
+          return NextResponse.json({ error: 'Configuration Error' }, { status: 500 });
         }
 
         // 2. Setup Headers & Signature
@@ -114,7 +86,7 @@ export async function POST(request: Request) {
         const url = new URL(request.url, 'http://localhost');
         const isTest = url.searchParams.get('test') === 'true';
 
-        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+        const stripe = new Stripe(secretKey);
         let event: Stripe.Event;
 
         // 3. Signature Verification
@@ -124,7 +96,7 @@ export async function POST(request: Request) {
                 const sig = headersList.get('stripe-signature');
                 if (!sig) throw new Error('No stripe-signature header found');
 
-                event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
+                event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
                 console.log(`✅ Webhook Signature Verified. Event: ${event.type}`);
             } else {
                 event = JSON.parse(body) as Stripe.Event;

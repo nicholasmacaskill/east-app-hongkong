@@ -2,19 +2,19 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { BASE_URL } from '@/app/lib/email';
-
-// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!); (Lazy init below)
+import { getStripeSecretKey, getStripePriceId } from '@/app/lib/stripe-config';
 
 export async function POST(request: Request) {
   try {
     const { priceId, userId, userEmail, successUrl, cancelUrl } = await request.json();
 
-    if (!process.env.STRIPE_SECRET_KEY) {
-      console.error("CRITICAL: STRIPE_SECRET_KEY is missing in environment variables.");
-      return NextResponse.json({ error: 'Server Error: Stripe Secret Key is missing.' }, { status: 500 });
+    const secretKey = getStripeSecretKey();
+    if (!secretKey) {
+      console.error("CRITICAL: Stripe Secret Key is missing for the current mode.");
+      return NextResponse.json({ error: 'Server Error: Stripe configuration error.' }, { status: 500 });
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(secretKey);
 
     console.log("---- CHECKOUT REQUEST RECEIVED ----");
     console.log("Price ID:", priceId);
@@ -29,15 +29,21 @@ export async function POST(request: Request) {
     // Determine mode based on Price ID (Top Up is one-time payment)
     const TOPUP_RATES: Record<string, number> = {};
 
-    // Dynamic mapping from Env Vars
-    if (process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER) TOPUP_RATES[process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER] = 500;
-    if (process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD) TOPUP_RATES[process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD] = 1000;
-    if (process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO) TOPUP_RATES[process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO] = 2500;
-    if (process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE) TOPUP_RATES[process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE] = 5000;
-    if (process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE) TOPUP_RATES[process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE] = 10000;
+    const topupKeys = {
+      STARTER: 500,
+      STANDARD: 1000,
+      PRO: 2500,
+      ELITE: 5000,
+      ULTIMATE: 10000,
+      TOPUP: 1200 // Legacy support
+    };
 
-    // Legacy Support (Optional - can be removed if strictly using new env vars)
-    // if (process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP) TOPUP_RATES[process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP] = 1200;
+    Object.entries(topupKeys).forEach(([key, amount]) => {
+      const priceIdFromEnv = getStripePriceId(key);
+      if (priceIdFromEnv) {
+        TOPUP_RATES[priceIdFromEnv] = amount;
+      }
+    });
 
     const topUpAmount = TOPUP_RATES[priceId];
     const isTopUp = !!topUpAmount;
@@ -47,7 +53,10 @@ export async function POST(request: Request) {
     console.log("Session Mode:", mode, "Credit Amount:", topUpAmount);
 
     // Default URLs if not provided
-    const baseUrl = BASE_URL;
+    const referer = request.headers.get('referer');
+    const origin = request.headers.get('origin');
+    const detectedBaseUrl = origin || (referer ? new URL(referer).origin : null);
+    const baseUrl = BASE_URL || detectedBaseUrl || 'http://localhost:3000';
 
     let defaultSuccessPath = '/?success=true';
     if (mode === 'subscription') {

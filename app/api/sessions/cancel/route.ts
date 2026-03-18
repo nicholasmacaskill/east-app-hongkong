@@ -89,10 +89,19 @@ export async function DELETE(request: Request) {
       }
 
       // C. Execute Cancellation RPC with Explicit Refund Amount
+      const authHeader = request.headers.get('Authorization');
+      const token = authHeader?.replace('Bearer ', '');
+      let callerId: string | null = null;
+      if (token) {
+        const { data: { user: caller } } = await supabaseAdmin.auth.getUser(token);
+        callerId = caller?.id || null;
+      }
+
       const { data: result, error } = await supabaseAdmin.rpc('cancel_session_and_refund_v2', {
         p_attendee_id: userId,
         p_session_id: targetSesId,
-        p_refund_amount: refundAmount
+        p_refund_amount: refundAmount,
+        p_created_by: callerId
       });
 
       if (error) {

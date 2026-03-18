@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "debugId": "20bc000f-1c1b-69c2-3a49-a990ba5bd3ef",
+  "sections": [
+    {"offset": {"line": 5, "column": 0}, "map": {"version":3,"sources":["file:///Users/nicholasmacaskill/Downloads/east-app-hongkong-main/app/loading.tsx"],"sourcesContent":["\nexport default function Loading() {\n    return (\n        <div className=\"min-h-screen bg-black flex items-center justify-center text-white\">\n            <div className=\"flex flex-col items-center gap-4\">\n                <div className=\"w-12 h-12 border-4 border-white/10 border-t-east-light rounded-full animate-spin\" />\n                <p className=\"font-montserrat font-black italic uppercase text-xs tracking-[0.2em] animate-pulse text-east-light\">\n                    Loading...\n                </p>\n            </div>\n        </div>\n    );\n}\n"],"names":[],"mappings":";;;;;;AACe,SAAS;IACpB,qBACI,8OAAC;QAAI,WAAU;kBACX,cAAA,8OAAC;YAAI,WAAU;;8BACX,8OAAC;oBAAI,WAAU;;;;;;8BACf,8OAAC;oBAAE,WAAU;8BAAqG;;;;;;;;;;;;;;;;;AAMlI"}}]
+}

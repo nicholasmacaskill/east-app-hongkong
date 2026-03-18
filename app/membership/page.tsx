@@ -10,60 +10,8 @@ import type { Tab } from '../types';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
 import { formatHK } from '@/app/lib/dateUtils';
+import { getStripePriceId } from '@/app/lib/stripe-config';
 
-// --- PRICE IDS ---
-// Individual (Pro)
-const INDIVIDUAL_PRICE_MONTHLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY || '';
-const INDIVIDUAL_PRICE_YEARLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY || '';
-
-// Family - 1 Member
-const FAMILY_1_PRICE_MONTHLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_1_MONTHLY || INDIVIDUAL_PRICE_MONTHLY;
-const FAMILY_1_PRICE_YEARLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_1_YEARLY || INDIVIDUAL_PRICE_YEARLY;
-
-// Family - 2 Members
-const FAMILY_2_PRICE_MONTHLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY || '';
-const FAMILY_2_PRICE_YEARLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY || '';
-
-// Family - 3+ Members
-const FAMILY_3_PRICE_MONTHLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY || '';
-const FAMILY_3_PRICE_YEARLY = process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY || '';
-
-const plans: any = {
-    individual: {
-        id: 'pro',
-        name: 'PRO',
-        prices: {
-            monthly: { id: INDIVIDUAL_PRICE_MONTHLY, display: '2,000', credits: '1,000' },
-            yearly: { id: INDIVIDUAL_PRICE_YEARLY, display: '24,000', credits: '15,000', savings: '3,000 BONUS' }
-        }
-    },
-    family: {
-        '1': {
-            id: 'family-1',
-            name: 'PRO FAMILY (1)',
-            prices: {
-                monthly: { id: FAMILY_1_PRICE_MONTHLY, display: '2,000', credits: '1,000' },
-                yearly: { id: FAMILY_1_PRICE_YEARLY, display: '24,000', credits: '15,000', savings: '3,000 BONUS' }
-            }
-        },
-        '2': {
-            id: 'family-2',
-            name: 'PRO FAMILY (2)',
-            prices: {
-                monthly: { id: FAMILY_2_PRICE_MONTHLY, display: '4,000', credits: '2,500' },
-                yearly: { id: FAMILY_2_PRICE_YEARLY, display: '48,000', credits: '33,000', savings: 'SAVE 7,000' }
-            }
-        },
-        '3+': {
-            id: 'family-3+',
-            name: 'PRO FAMILY (3+)',
-            prices: {
-                monthly: { id: FAMILY_3_PRICE_MONTHLY, display: '5,500', credits: '3,500' },
-                yearly: { id: FAMILY_3_PRICE_YEARLY, display: '66,000', credits: '45,000', savings: 'SAVE 10,000' }
-            }
-        }
-    }
-};
 
 const BENEFITS = [
     {
@@ -99,6 +47,58 @@ function MembershipContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { addToast } = useToast();
+
+    // --- DYNAMIC PRICE RESOLUTION ---
+    const plans = React.useMemo(() => {
+        const INDIVIDUAL_PRICE_MONTHLY = getStripePriceId('MONTHLY');
+        const INDIVIDUAL_PRICE_YEARLY = getStripePriceId('YEARLY');
+        
+        const FAMILY_1_PRICE_MONTHLY = getStripePriceId('FAMILY_1_MONTHLY') || INDIVIDUAL_PRICE_MONTHLY;
+        const FAMILY_1_PRICE_YEARLY = getStripePriceId('FAMILY_1_YEARLY') || INDIVIDUAL_PRICE_YEARLY;
+        
+        const FAMILY_2_PRICE_MONTHLY = getStripePriceId('FAMILY_2_MONTHLY');
+        const FAMILY_2_PRICE_YEARLY = getStripePriceId('FAMILY_2_YEARLY');
+        
+        const FAMILY_3_PRICE_MONTHLY = getStripePriceId('FAMILY_3_MONTHLY');
+        const FAMILY_3_PRICE_YEARLY = getStripePriceId('FAMILY_3_YEARLY');
+
+        return {
+            individual: {
+                id: 'pro',
+                name: 'PRO',
+                prices: {
+                    monthly: { id: INDIVIDUAL_PRICE_MONTHLY, display: '2,000', credits: '1,000' },
+                    yearly: { id: INDIVIDUAL_PRICE_YEARLY, display: '24,000', credits: '15,000', savings: '3,000 BONUS' }
+                }
+            },
+            family: {
+                '1': {
+                    id: 'family-1',
+                    name: 'PRO FAMILY (1)',
+                    prices: {
+                        monthly: { id: FAMILY_1_PRICE_MONTHLY, display: '2,000', credits: '1,000' },
+                        yearly: { id: FAMILY_1_PRICE_YEARLY, display: '24,000', credits: '15,000', savings: '3,000 BONUS' }
+                    }
+                },
+                '2': {
+                    id: 'family-2',
+                    name: 'PRO FAMILY (2)',
+                    prices: {
+                        monthly: { id: FAMILY_2_PRICE_MONTHLY, display: '4,000', credits: '2,500' },
+                        yearly: { id: FAMILY_2_PRICE_YEARLY, display: '48,000', credits: '33,000', savings: 'SAVE 7,000' }
+                    }
+                },
+                '3+': {
+                    id: 'family-3+',
+                    name: 'PRO FAMILY (3+)',
+                    prices: {
+                        monthly: { id: FAMILY_3_PRICE_MONTHLY, display: '5,500', credits: '3,500' },
+                        yearly: { id: FAMILY_3_PRICE_YEARLY, display: '66,000', credits: '45,000', savings: 'SAVE 10,000' }
+                    }
+                }
+            }
+        };
+    }, []);
 
     // Selection States
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -157,7 +157,7 @@ function MembershipContent() {
         ? plans.individual
         : plans.family[memberCount];
 
-    const activeDetails = billingCycle === 'monthly' ? activePlan.prices.monthly : activePlan.prices.yearly;
+    const activeDetails = (billingCycle === 'monthly' ? activePlan.prices.monthly : activePlan.prices.yearly) as { id: string, display: string, credits: string, savings?: string };
 
     const handlePurchase = async () => {
         if (!currentUserId) {

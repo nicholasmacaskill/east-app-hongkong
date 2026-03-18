@@ -167,11 +167,11 @@ export default function LeaderboardPage() {
                 </Link>
 
                 <div className="text-center mb-10">
-                    <h1 className="text-[5.5rem] leading-none font-black italic text-stroke-thin text-transparent uppercase opacity-5 absolute top-4 left-1/2 -translate-x-1/2 select-none whitespace-nowrap tracking-tighter w-full">LEADERBOARD</h1>
-                    <h1 className="text-5xl font-black italic uppercase relative z-10 text-white tracking-tight drop-shadow-2xl">Leaderboard</h1>
+                    <h1 className="text-[4rem] sm:text-[5.5rem] leading-none font-black italic text-stroke-thin text-transparent uppercase opacity-5 absolute top-4 left-1/2 -translate-x-1/2 select-none whitespace-nowrap tracking-tighter w-full">LEADERBOARD</h1>
+                    <h1 className="text-4xl sm:text-5xl font-black italic uppercase relative z-10 text-white tracking-tight drop-shadow-2xl">Leaderboard</h1>
 
                     {/* SPORT SELECTOR */}
-                    <div className="flex justify-center gap-3 mt-8">
+                    <div className="flex justify-center gap-2 sm:gap-3 mt-8 flex-wrap">
                         {[
                             { id: 'hockey', icon: <Shield size={14} />, label: 'Hockey' },
                             { id: 'golf', icon: <Flag size={14} />, label: 'Golf' },
@@ -180,7 +180,7 @@ export default function LeaderboardPage() {
                             <button
                                 key={item.id}
                                 onClick={() => setSport(item.id as any)}
-                                className={`px-8 py-3 rounded-full border uppercase font-black italic text-[11px] tracking-[0.2em] transition-all duration-300 ${sport === item.id ? 'bg-east-light text-black border-east-light shadow-[0_0_20px_rgba(40,209,96,0.4)]' : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'}`}
+                                className={`px-4 sm:px-8 py-2.5 sm:py-3 rounded-full border uppercase font-black italic text-[10px] sm:text-[11px] tracking-widest sm:tracking-[0.2em] transition-all duration-300 ${sport === item.id ? 'bg-east-light text-black border-east-light shadow-[0_0_20px_rgba(40,209,96,0.4)]' : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'}`}
                             >
                                 <div className="flex items-center gap-2">
                                     {item.icon}
@@ -191,12 +191,12 @@ export default function LeaderboardPage() {
                     </div>
 
                     {/* STAT CATEGORY FILTERS */}
-                    <div className="flex justify-center gap-2 mt-8 mb-10 overflow-x-auto no-scrollbar pb-2 px-2 flex-wrap">
+                    <div className="flex justify-start sm:justify-center gap-2 mt-8 mb-10 overflow-x-auto no-scrollbar pb-4 px-2 -mx-4 sm:mx-0 flex-nowrap sm:flex-wrap">
                         {STAT_FIELDS[sport].map(field => (
                             <button
                                 key={field.key}
                                 onClick={() => setActiveFilter(field.key)}
-                                className={`px-6 py-2.5 rounded-full border uppercase font-black italic text-[10px] tracking-widest transition-all duration-300 whitespace-nowrap ${activeFilter === field.key
+                                className={`px-5 sm:px-6 py-2 sm:py-2.5 rounded-full border uppercase font-black italic text-[9px] sm:text-[10px] tracking-widest transition-all duration-300 whitespace-nowrap flex-shrink-0 ${activeFilter === field.key
                                     ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]'
                                     : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'
                                     }`}

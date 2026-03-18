@@ -12,7 +12,7 @@ const DEFAULT_OPTIONS: CompressionOptions = {
     maxWidth: 1920,
     maxHeight: 1920,
     quality: 0.8,
-    outputFormat: 'webp'
+    outputFormat: 'jpeg'
 };
 
 /**
