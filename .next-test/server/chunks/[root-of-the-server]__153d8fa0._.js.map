@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "debugId": "ca8074d6-a47f-4c30-a149-136cc463f3fb",
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["../../../app/lib/supabaseAdmin.ts"],"sourcesContent":["import { createClient, SupabaseClient } from '@supabase/supabase-js';\n\nlet supabaseAdmin: SupabaseClient | null = null;\n\n// Admin Client with Service Role Key (Bypasses RLS)\nexport const getSupabaseAdmin = () => {\n    if (supabaseAdmin) return supabaseAdmin;\n\n    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;\n    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;\n\n    if (!serviceRoleKey) {\n        throw new Error('❌ Missing SUPABASE_SERVICE_ROLE_KEY. Cannot initialize Admin client.');\n    }\n\n    supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {\n        auth: {\n            autoRefreshToken: false,\n            persistSession: false,\n        },\n    });\n\n    return supabaseAdmin;\n};\n"],"names":[],"mappings":"6vBAAA,IAAA,EAAA,EAAA,CAAA,CAAA,OAEA,IAAI,EAAuC,+BAGX,KAC5B,GAAI,EAAe,OAAO,EAG1B,IAAM,EAAiB,QAAQ,GAAG,CAAC,yBAAyB,CAE5D,GAAI,CAAC,EACD,MAAM,AAAI,MAAM,EADC,sEAWrB,OAPA,AAOO,EAPS,CAAA,EAAA,EAAA,YAAA,AAAY,EAPtB,AAOuB,2CAAa,EAAgB,CACtD,KAAM,CACF,kBAAkB,EAClB,gBAAgB,CACpB,CACJ,EAGJ"}}]
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "debugId": "14a367d7-5aa5-c55a-1c0d-541ed52ed893",
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["../../../../app/lib/supabase.ts"],"sourcesContent":["import { createBrowserClient } from '@supabase/ssr'\n\nconst supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'\nconst supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'\n\nexport const supabase = createBrowserClient(supabaseUrl, supabaseKey)"],"names":[],"mappings":"uCAAA,EAAA,CAAA,CAAA,OAKO,IAAM,EAAW,CAAA,EALxB,AAKwB,EALxB,CAAA,CAAA,MAKwB,mBAAA,AAAmB,EAHvB,AAGwB,aAAa,8BAFrC,IADwC,mNACK"}}]
+}

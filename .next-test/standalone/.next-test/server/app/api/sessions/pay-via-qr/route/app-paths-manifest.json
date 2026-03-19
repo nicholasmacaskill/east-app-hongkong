@@ -1,0 +1,3 @@
+{
+  "/api/sessions/pay-via-qr/route": "app/api/sessions/pay-via-qr/route.js"
+}

@@ -58,7 +58,7 @@ export default function AdminOpsLayout({
             <header className="bg-[#1e1e1e] border-b border-white/10 py-5 px-6 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <img src="/east-logo-transparent.png" alt="EAST Logo" className="h-14 w-auto object-contain" />
+                        <img src="/alternative-logo.png" alt="Empire Admin Logo" className="h-14 w-auto object-contain" />
                         <div className="bg-[#28D160] text-black text-[10px] font-bold px-2 py-1 rounded uppercase">
                             Ops Panel
                         </div>

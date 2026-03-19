@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/sys-admin/layout,_N_T_/sys-admin/services/layout,_N_T_/sys-admin/services/page,_N_T_/sys-admin/services"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/sys-admin/services/__PAGE__",
+    "/sys-admin/services",
+    "/sys-admin",
+    "/_index",
+    "/_head"
+  ]
+}

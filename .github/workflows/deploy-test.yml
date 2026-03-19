@@ -1,0 +1,32 @@
+name: Deploy Test Mode to Singapore VPS
+
+on:
+  push:
+    branches:
+      - test
+
+jobs:
+  deploy-test:
+    runs-on: ubuntu-latest
+    environment: test
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: dyn1.dynevents.com
+          username: nicholas
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 60022
+          script: |
+            cd /var/www/test.eastapp.booking.dynevents.com
+            git pull origin test
+            # Clean build cache to prevent Server Action ID mismatch
+            sudo rm -rf .next-test
+            npm install
+            NEXT_PUBLIC_STRIPE_MODE=test npm run build
+            # Robust restart: Update env and handle missing process cases
+            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 restart EastAppTest --update-env || echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 start npm --name "EastAppTest" -- start
+            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 save

@@ -1,0 +1,5 @@
+;!function(){try { var e="undefined"!=typeof globalThis?globalThis:"undefined"!=typeof global?global:"undefined"!=typeof window?window:"undefined"!=typeof self?self:{},n=(new e.Error).stack;n&&((e._debugIds|| (e._debugIds={}))[n]="1183c7c2-182c-93ca-f785-7a01564ad87b")}catch(e){}}();
+(globalThis.TURBOPACK||(globalThis.TURBOPACK=[])).push(["object"==typeof document?document.currentScript:void 0,91450,e=>{"use strict";var t=e.i(43476),s=e.i(71645),c=e.i(18566);function a(){let e=(0,c.useRouter)();return(0,s.useEffect)(()=>{e.replace("/sys-admin/stats")},[e]),(0,t.jsx)("div",{className:"min-h-screen bg-black text-white flex items-center justify-center",children:(0,t.jsxs)("div",{className:"text-center",children:[(0,t.jsx)("h1",{className:"text-2xl font-black italic uppercase mb-4",children:"Redirecting..."}),(0,t.jsx)("p",{className:"text-gray-400",children:"This page has moved to Stats Management"})]})})}e.s(["default",()=>a])}]);
+
+//# debugId=1183c7c2-182c-93ca-f785-7a01564ad87b
+//# sourceMappingURL=4da498a14fdc6d01.js.map

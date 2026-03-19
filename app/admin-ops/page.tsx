@@ -74,7 +74,7 @@ export default function AdminOpsDashboard() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none mb-4">
-                        Investor <span className="text-[#28D160]">Admin Panel</span>
+                        Empire <span className="text-[#28D160]">Admin</span>
                     </h1>
                     <p className="text-gray-400 font-medium max-w-lg">
                         Manage your team, define your services, and orchestrate the ultimate athlete experience from one unified cockpit.

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "debugId": "0bd333a6-42bf-81c0-f29c-b5df919bbe8b",
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["../../../../app/sys-admin/leaderboard/page.tsx"],"sourcesContent":["'use client';\nimport { useEffect } from 'react';\nimport { useRouter } from 'next/navigation';\n\nexport default function OldLeaderboardRedirect() {\n    const router = useRouter();\n\n    useEffect(() => {\n        router.replace('/sys-admin/stats');\n    }, [router]);\n\n    return (\n        <div className=\"min-h-screen bg-black text-white flex items-center justify-center\">\n            <div className=\"text-center\">\n                <h1 className=\"text-2xl font-black italic uppercase mb-4\">Redirecting...</h1>\n                <p className=\"text-gray-400\">This page has moved to Stats Management</p>\n            </div>\n        </div>\n    );\n}\n"],"names":[],"mappings":"wDACA,EAAA,EAAA,CAAA,CAAA,OACA,EAAA,EAAA,CAAA,CAAA,OAEe,SAAS,IACpB,IAAM,EAAS,CAAA,EAAA,EAAA,SAAA,AAAS,IAMxB,MAJA,CAAA,EAAA,EAAA,SAAA,AAAS,EAAC,KACN,EAAO,OAAO,CAAC,mBACnB,EAAG,CAAC,EAAO,EAGP,CAAA,EAAA,EAAA,GAAA,EAAC,MAAA,CAAI,UAAU,6EACX,CAAA,EAAA,EAAA,IAAA,EAAC,MAAA,CAAI,UAAU,wBACX,CAAA,EAAA,EAAA,GAAA,EAAC,KAAA,CAAG,UAAU,qDAA4C,mBAC1D,CAAA,EAAA,EAAA,GAAA,EAAC,IAAA,CAAE,UAAU,yBAAgB,gDAI7C"}}]
+}

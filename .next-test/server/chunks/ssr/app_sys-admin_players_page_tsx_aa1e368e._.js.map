@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "debugId": "a417931e-2003-ae90-d323-bbd88e3e6192",
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["../../../../app/sys-admin/players/page.tsx"],"sourcesContent":["'use client'; import { useEffect } from 'react'; import { useRouter } from 'next/navigation'; export default function Redirect() { const router = useRouter(); useEffect(() => { router.replace('/sys-admin/directory'); }, [router]); return null; }\n"],"names":[],"mappings":"uCAAc,IAAA,EAAA,EAAA,CAAA,CAAA,OAAmC,EAAA,EAAA,CAAA,CAAA,OAA4D,SAAS,IAAa,IAAM,EAAS,CAAA,EAAA,EAAA,SAAA,AAAS,IAA4E,MAAxE,CAAA,EAAA,EAAA,SAAA,AAAS,EAAC,KAAQ,EAAO,OAAO,CAAC,uBAAyB,EAAG,CAAC,EAAO,EAAU,IAAM"}}]
+}

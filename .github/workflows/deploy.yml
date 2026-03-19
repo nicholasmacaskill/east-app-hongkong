@@ -1,4 +1,4 @@
-name: Deploy to Singapore VPS
+name: Deploy Live Mode to Singapore VPS
 
 on:
   push:
@@ -6,8 +6,9 @@ on:
       - main
 
 jobs:
-  deploy:
+  deploy-live:
     runs-on: ubuntu-latest
+    environment: live
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -25,7 +26,7 @@ jobs:
             # Clean build cache to prevent Server Action ID mismatch
             sudo rm -rf .next
             npm install
-            npm run build
+            NEXT_PUBLIC_STRIPE_MODE=live npm run build
             # Robust restart: Update env and handle missing process cases
             echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 restart EastApp --update-env || echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 start npm --name "EastApp" -- start
             echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 save

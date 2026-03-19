@@ -1,0 +1,3 @@
+{
+  "/api/admin/ocr-stats/route": "app/api/admin/ocr-stats/route.js"
+}

@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": [],
+  "debugId": "7d87bda8-5620-dbec-f9e6-affe305f06e1",
+  "sections": [
+    {"offset": {"line": 1, "column": 0}, "map": {"version":3,"sources":["../../../../app/check-in/layout.tsx"],"sourcesContent":["export default function CheckInLayout({\n  children,\n}: {\n  children: React.ReactNode\n}) {\n  return children;\n}"],"names":[],"mappings":"uCAAe,SAAS,EAAc,UACpC,CAAQ,CAGT,EACC,OAAO,CACT"}}]
+}

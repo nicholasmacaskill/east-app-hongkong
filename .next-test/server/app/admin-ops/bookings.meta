@@ -1,0 +1,16 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/admin-ops/layout,_N_T_/admin-ops/bookings/layout,_N_T_/admin-ops/bookings/page,_N_T_/admin-ops/bookings"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/admin-ops/bookings/__PAGE__",
+    "/admin-ops/bookings",
+    "/admin-ops",
+    "/_index",
+    "/_head"
+  ]
+}
