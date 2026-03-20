@@ -23,10 +23,33 @@ jobs:
           script: |
             cd /var/www/eastapp.booking.dynevents.com
             git pull origin main
+            
+            # Create/Update .env.production with latest secrets
+            echo "NEXT_PUBLIC_STRIPE_MODE=live" > .env.production
+            echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY_LIVE }}" >> .env.production
+            echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET_LIVE }}" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE }}" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_LIVE }}" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_YEARLY_LIVE }}" >> .env.production
+            echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.production
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.production
+            echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.production
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.production
+            echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env.production
+            echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
+
             # Clean build cache to prevent Server Action ID mismatch
             sudo rm -rf .next
             npm install
-            NEXT_PUBLIC_STRIPE_MODE=live npm run build
+            
+            # Export env vars from .env.production for build-time baking into client bundle
+            export $(grep -v '^#' .env.production | xargs) && npm run build
+            
+            # Copy static assets to standalone directory (required for standalone mode)
+            mkdir -p .next/standalone/.next/static
+            cp -r .next/static/* .next/standalone/.next/static/
+            cp -r public .next/standalone/
+            
             # Robust restart: Update env and handle missing process cases
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 restart EastApp --update-env || echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 start npm --name "EastApp" -- start
+            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 restart EastApp --update-env || echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 start node --name "EastApp" -- .next/standalone/server.js
             echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 save
