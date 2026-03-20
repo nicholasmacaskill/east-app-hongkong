@@ -38,7 +38,9 @@ pm2 start /var/www/eastapp.booking.dynevents.com/ecosystem.config.js
 
 # Setup nginx configuration
 echo "Setting up nginx configuration..."
-sudo tee /etc/nginx/sites-available/eastapp-live << 'EOF'
+if [ ! -f "/etc/nginx/sites-available/eastapp-live" ]; then
+    echo "Creating nginx configuration for live environment..."
+    sudo tee /etc/nginx/sites-available/eastapp-live << 'EOF'
 server {
     listen 80;
     server_name eastapp.booking.dynevents.com;
@@ -56,8 +58,13 @@ server {
     }
 }
 EOF
+else
+    echo "Nginx configuration for live environment already exists, skipping..."
+fi
 
-sudo tee /etc/nginx/sites-available/eastapp-test << 'EOF'
+if [ ! -f "/etc/nginx/sites-available/eastapp-test" ]; then
+    echo "Creating nginx configuration for test environment..."
+    sudo tee /etc/nginx/sites-available/eastapp-test << 'EOF'
 server {
     listen 80;
     server_name test.eastapp.booking.dynevents.com;
@@ -75,6 +82,9 @@ server {
     }
 }
 EOF
+else
+    echo "Nginx configuration for test environment already exists, skipping..."
+fi
 
 # Enable nginx sites
 sudo ln -sf /etc/nginx/sites-available/eastapp-live /etc/nginx/sites-enabled/

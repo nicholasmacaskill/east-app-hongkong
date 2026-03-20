@@ -23,10 +23,32 @@ jobs:
           script: |
             cd /var/www/test.eastapp.booking.dynevents.com
             git pull origin test
+            # Create/Update .env.test with latest secrets
+            echo "NEXT_PUBLIC_STRIPE_MODE=test" > .env.test
+            echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY_TEST }}" >> .env.test
+            echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET_TEST }}" >> .env.test
+            echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST }}" >> .env.test
+            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_YEARLY_TEST }}" >> .env.test
+            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_TEST }}" >> .env.test
+            echo "NEXT_PUBLIC_STRIPE_PRICE_CREDIT=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_CREDIT_TEST }}" >> .env.test
+            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_TEST }}" >> .env.test
+            echo "NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY_TEST }}" >> .env.test
+            echo "NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY_TEST }}" >> .env.test
+            echo "NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY_TEST }}" >> .env.test
+            echo "NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY_TEST }}" >> .env.test
+            echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.test
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.test
+            echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.test
+            
             # Clean build cache to prevent Server Action ID mismatch
             sudo rm -rf .next-test
             npm install
-            NEXT_PUBLIC_STRIPE_MODE=test npm run build
+            # Export env vars from .env.test for build-time baking into client bundle
+            export $(grep -v '^#' .env.test | xargs) && npm run build
+            # Copy static assets to standalone directory (required for standalone mode)
+            mkdir -p .next-test/standalone/.next/static
+            cp -r .next-test/static/* .next-test/standalone/.next/static/
+            cp -r public .next-test/standalone/
             # Robust restart: Update env and handle missing process cases
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 restart EastAppTest --update-env || echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 start npm --name "EastAppTest" -- start
+            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 restart EastAppTest --update-env || echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 start node --name "EastAppTest" -- .next-test/standalone/server.js
             echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 save
