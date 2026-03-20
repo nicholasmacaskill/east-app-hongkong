@@ -23,20 +23,6 @@ jobs:
           script: |
             cd /var/www/eastapp.booking.dynevents.com
             git pull origin main
-            # Create/Update .env.production with latest secrets
-            echo "NEXT_PUBLIC_STRIPE_MODE=live" > .env.production
-            echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY_LIVE }}" >> .env.production
-            echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_YEARLY_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_LIVE }}" >> .env.production
-            # Note: Add other LIVE prices to GitHub Secrets: CREDIT_LIVE, TOPUP_LIVE, etc.
-            echo "NEXT_PUBLIC_STRIPE_PRICE_CREDIT=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_CREDIT_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.production
-            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.production
-            echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.production
-            
             # Clean build cache to prevent Server Action ID mismatch
             sudo rm -rf .next
             npm install
