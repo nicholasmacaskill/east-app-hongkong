@@ -24,6 +24,12 @@ jobs:
             cd /var/www/eastapp.booking.dynevents.com
             git pull origin main
             
+            # Validation: Fail early if critical secrets are missing from GitHub
+            if [ -z "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ]; then
+              echo "❌ ERROR: NEXT_PUBLIC_SUPABASE_URL secret is missing!"
+              exit 1
+            fi
+
             # Create/Update .env.production with latest secrets
             echo "NEXT_PUBLIC_STRIPE_MODE=live" > .env.production
             echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY_LIVE }}" >> .env.production
@@ -38,18 +44,18 @@ jobs:
             echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env.production
             echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
 
-            # Clean build cache to prevent Server Action ID mismatch
+            # Clean build cache
             sudo rm -rf .next
             npm install
             
             # Export env vars from .env.production for build-time baking into client bundle
-            export $(grep -v '^#' .env.production | xargs) && npm run build
+            export $(cat .env.production | xargs) && npm run build
             
             # Copy static assets to standalone directory (required for standalone mode)
             mkdir -p .next/standalone/.next/static
             cp -r .next/static/* .next/standalone/.next/static/
             cp -r public .next/standalone/
             
-            # Robust restart: Update env and handle missing process cases
+            # PM2 Restart
             echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 restart EastApp --update-env || echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 start node --name "EastApp" -- .next/standalone/server.js
             echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 save
