@@ -96,3 +96,4 @@ For developers and system administrators, please refer to the specific guides be
 ---
 
 *This operational core is property of EAST Sports Group.*
+# Trigger deployment
