@@ -11,7 +11,7 @@ export default function AdminLoginPage() {
     useEffect(() => {
         const storedRole = localStorage.getItem('userRole');
         if (storedRole === 'admin' || storedRole === 'sys-admin') {
-            router.replace('/admin-ops');
+            router.replace('/sys-admin');
         } else if (storedRole) {
             router.replace('/');
         }
@@ -20,7 +20,9 @@ export default function AdminLoginPage() {
     // Handle success
     const handleAuthSuccess = (role: UserRole) => {
         localStorage.setItem('userRole', role);
-        if (role === 'admin' || role === 'sys-admin') {
+        if (role === 'sys-admin') {
+            router.push('/sys-admin');
+        } else if (role === 'admin') {
             router.push('/admin-ops');
         } else {
             // Non-admins shouldn't really use this page, but if they do, toss them to the regular dashboard

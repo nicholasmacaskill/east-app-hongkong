@@ -463,8 +463,10 @@ function AppContent() {
           expectedRole={selectedRole || undefined}
           initialStep={selectedAuthStep}
           onAuthSuccess={(role) => {
-            if (role === 'admin' || role === 'sys-admin') {
+            if (role === 'sys-admin') {
               window.location.href = '/sys-admin';
+            } else if (role === 'admin') {
+              window.location.href = '/admin-ops';
             } else {
               setRefreshKey(prev => prev + 1);
             }
@@ -512,10 +514,10 @@ function AppContent() {
           </p>
 
           <button
-            onClick={() => window.location.href = '/sys-admin'}
+            onClick={() => window.location.href = userProfile.role === 'admin' ? '/admin-ops' : '/sys-admin'}
             className="group relative bg-[#28D160] text-black font-black italic text-xl px-12 py-5 rounded-2xl uppercase tracking-widest hover:bg-white transition-all shadow-[0_0_30px_rgba(40,209,96,0.3)] hover:shadow-[0_0_50px_rgba(255,255,255,0.5)] hover:-translate-y-1 active:translate-y-0.5 active:scale-95 duration-300"
           >
-            Enter Portal
+            Enter {userProfile.role === 'admin' ? 'Investor' : 'System'} Portal
             <div className="absolute inset-0 bg-white/20 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
           </button>
 

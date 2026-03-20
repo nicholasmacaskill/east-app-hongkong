@@ -91,7 +91,7 @@ export default function LandingScreen({ onSelectAuth }: LandingScreenProps) {
                         <div className="pt-12 mt-4 border-t border-white/10 w-full animate-fadeIn" style={{ animationDelay: '600ms' }}>
                             <LoginButton
                                 label="ADMIN PORTAL"
-                                onClick={() => onSelectAuth('admin', 'login')}
+                                onClick={() => onSelectAuth('sys-admin', 'login')}
                                 variant="ghost"
                             />
                         </div>

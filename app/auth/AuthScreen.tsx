@@ -156,10 +156,11 @@ export default function AuthScreen({ onAuthSuccess, expectedRole, initialStep }:
                 {step === 'login' && (
                     <>
                         <AuthHeader title={
-                            expectedRole === 'admin' ? "Empire Admin Login" :
-                                expectedRole === 'coach' ? "Coach Login" :
-                                    expectedRole === 'parent' ? "Parent Login" :
-                                        "Athlete Login"
+                            expectedRole === 'sys-admin' ? "Sys-Admin Login" :
+                                expectedRole === 'admin' ? "Empire Admin Login" :
+                                    expectedRole === 'coach' ? "Coach Login" :
+                                        expectedRole === 'parent' ? "Parent Login" :
+                                            "Athlete Login"
                         } />
                         <form onSubmit={handleLogin} className="space-y-2">
                             <InputField label="Email Address" name="email" type="email" value={formData.email} icon={Mail} onChange={handleChange} placeholder="Enter your email" />
