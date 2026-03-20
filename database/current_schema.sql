@@ -186,6 +186,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- 2. Create the Trigger
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
 -- RPC: BOOK COACH ATOMIC (Updated)
 DROP FUNCTION IF EXISTS book_coach_atomic(uuid, uuid, bigint, int, uuid, text);
 DROP FUNCTION IF EXISTS book_coach_atomic(uuid, uuid, bigint, int, uuid); 
