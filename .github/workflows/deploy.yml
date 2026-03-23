@@ -131,8 +131,9 @@ jobs:
             
             # G. BUILD
             echo "🏗️ Building for LIVE mode (Bypassing Lint)..."
-            # Ensure no stale build cache exists
+            # Ensure no stale build cache exists anywhere (Root and Standalone)
             rm -rf .next/cache || true
+            rm -rf .next/standalone/.next/cache || true
             NEXT_PUBLIC_STRIPE_MODE=live NODE_ENV=production pnpm build
             
             # H. STANDALONE PREP
