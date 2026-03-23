@@ -29,24 +29,26 @@ jobs:
             set -ex
             cd /var/www/eastapp.booking.dynevents.com
             
-            echo "🔄 User: $(whoami) | RAM Check: $(free -m | grep Mem)"
+            echo "📊 SYSTEM AUDIT:"
+            echo "User: $(whoami)"
+            echo "RAM: $(free -m)"
+            echo "Disk: $(df -h .)"
+            echo "Node: $(node -v) | pnpm: $(pnpm -v || echo 'not found')"
             
             # A. KILL PM2
             echo "🛑 Stopping and Killing all PM2 processes..."
             echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
             
             # B. NUCLEAR PURGE
-            echo "💣 DELETING EVERYTHING in target folder (Guaranteed)..."
-            # Using find to delete everything except the actual directory itself
+            echo "💣 DELETING EVERYTHING in target folder..."
             echo "$SUDO_PASS" | sudo -S find . -mindepth 1 -delete
             
             # C. OWNERSHIP FIX
             echo "🔑 Ensuring $(whoami) owns $(pwd)..."
             echo "$SUDO_PASS" | sudo -S chown -R $(whoami):$(whoami) .
             
-            # D. TOKEN-BASED CLONE (Bypasses SSH permission issues)
+            # D. TOKEN-BASED CLONE 
             echo "🔄 Fresh re-initialization (HTTPS Token Clone)..."
-            # We use the token from env (passed via envs)
             git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/nicholasmacaskill/east-app-hongkong.git" .
             git checkout main
             
@@ -67,34 +69,45 @@ jobs:
             echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
 
             # F. DEPENDENCIES
-            echo "📦 Installing pnpm..."
+            echo "📦 Checking/Installing pnpm..."
             if ! command -v pnpm &> /dev/null; then
               echo "$SUDO_PASS" | sudo -S npm install -g pnpm
             fi
 
-            echo "📦 Installing fresh dependencies..."
+            echo "📦 Installing dependencies..."
             pnpm install --no-lockfile
             
             # G. BUILD
-            echo "🏗️ Building for LIVE mode..."
+            echo "🏗️ Building for LIVE mode (Verbose)..."
+            # We use 15.1.4 as a known stable target
+            sed -i 's/"next": "15.1.0"/"next": "15.1.4"/g' package.json
             NEXT_PUBLIC_STRIPE_MODE=live NODE_ENV=production pnpm build
             
             # H. STANDALONE PREP
-            echo "📂 Preparing standalone directory..."
+            echo "📂 Verifying standalone output..."
+            ls -la .next
+            if [ ! -d ".next/standalone" ]; then
+                echo "❌ Standalone directory NOT found. Checking build logs..."
+                exit 1
+            fi
+
+            echo "📂 Mirroring assets into standalone..."
             mkdir -p .next/standalone/.next/static
             cp -rv .next/static/* .next/standalone/.next/static/
-            cp -rv public .next/standalone/
+            if [ -d "public" ]; then
+              cp -rv public .next/standalone/
+            fi
             
             # I. LAUNCH
             echo "🚀 Launching via ecosystem.config.js..."
             echo "$SUDO_PASS" | sudo -S pm2 start ecosystem.config.js --only EastApp --update-env
             echo "$SUDO_PASS" | sudo -S pm2 save
             
-            echo "📋 Recent Server Logs (Last 20 lines):"
-            echo "$SUDO_PASS" | sudo -S pm2 logs EastApp --lines 20 --no-daemon &
+            echo "📋 FINAL HEALTH CHECK:"
+            echo "$SUDO_PASS" | sudo -S pm2 logs EastApp --lines 50 --no-daemon &
             LOG_PID=$!
-            sleep 15
+            sleep 20
             kill $LOG_PID || true
             
-            echo "✅ FINAL NUCLEAR RESET COMPLETE!"
+            echo "✅ RECOVERY COMPLETE!"
             pm2 list
