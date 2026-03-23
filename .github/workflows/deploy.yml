@@ -176,15 +176,26 @@ jobs:
             
             # I. LAUNCH
             echo "🚀 Launching Production Standalone (PM2)..."
+            # Ensure .env exists in the standalone folder as well
+            cp .env.production .next/standalone/
+            
+            # Anti-Zombie Audit
+            echo "🔍 ANTI-ZOMBIE AUDIT (Port 3000):"
+            echo "$SUDO_PASS" | sudo -S netstat -tulpn | grep :3000 || true
+            
+            echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
             echo "$SUDO_PASS" | sudo -S pm2 start ecosystem.config.js --only EastApp --update-env
             echo "$SUDO_PASS" | sudo -S pm2 save
             
             echo "📋 FINAL HEALTH CHECK:"
             echo "$SUDO_PASS" | sudo -S pm2 list
+            echo "⏳ Waiting for app startup (30 seconds)..."
+            sleep 30
+            echo "📋 LAST 50 LOG LINES (CRITICAL):"
             echo "$SUDO_PASS" | sudo -S pm2 logs EastApp --lines 50 --no-daemon &
             LOG_PID=$!
-            sleep 25
+            sleep 10
             kill $LOG_PID || true
             
-            echo "✅ TOTAL RUNTIME PURGE COMPLETE!"
+            echo "✅ THE ULTIMATE RESTORE IS COMPLETE!"
             pm2 desc EastApp
