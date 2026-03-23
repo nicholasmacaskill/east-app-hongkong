@@ -119,7 +119,8 @@ jobs:
             
             # G. BUILD
             echo "🏗️ Building for LIVE mode (Bypassing Lint)..."
-            # next.config.js already set to ignore lint in commit 612d7f7
+            # Ensure no stale build cache exists
+            rm -rf .next/cache || true
             NEXT_PUBLIC_STRIPE_MODE=live NODE_ENV=production pnpm build
             
             # H. STANDALONE PREP
