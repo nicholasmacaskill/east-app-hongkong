@@ -45,8 +45,16 @@ export function getStripeSecretKey(): string {
   
   if (!key) {
     console.error(`CRITICAL: Stripe Secret Key missing for ${mode} mode.`);
+    return '';
   }
-  return key || '';
+
+  // Security Hardening: Enforce sk_live_ prefix for production
+  if (mode === 'live' && !key.startsWith('sk_live_')) {
+    console.error(`❌ SECURITY ERROR: Stripe Secret Key for LIVE mode does not start with sk_live_. Check your Environment Variables.`);
+    return ''; // Block usage of incorrect key
+  }
+
+  return key;
 }
 
 export function getStripePublishableKey(): string {

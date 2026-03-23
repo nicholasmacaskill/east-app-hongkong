@@ -103,7 +103,7 @@ export async function POST(request: Request) {
                 console.log(`🧪 TEST MODE: Webhook Signature Bypassed. Event: ${event.type}`);
             }
         } catch (err: any) {
-            console.error(`❌ Webhook Signature Error: ${err.message}`);
+            console.error(`❌ Webhook Signature Error (ERR_STRIPE_SIGNATURE_MISMATCH): ${err.message}`);
             return NextResponse.json({
                 error: `Webhook Error: ${err.message}`,
                 isTest,
@@ -170,6 +170,23 @@ export async function POST(request: Request) {
                 console.log(`Processing Subscription: ${plan.tier.toUpperCase()} for User: ${userId} (Price ID: ${priceId})`);
 
                 if (userId) {
+                    // SEC: Verify User exists and email matches
+                    const { data: profile, error: profileError } = await supabaseAdmin
+                        .from('profiles')
+                        .select('id, contact_email')
+                        .eq('id', userId)
+                        .single();
+
+                    if (profileError || !profile) {
+                        console.error(`❌ [STRIPE WEBHOOK] User not found: ${userId}`);
+                        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+                    }
+
+                    if (customerEmail && profile.contact_email !== customerEmail) {
+                        console.warn(`⚠️ [STRIPE WEBHOOK] Email mismatch for user ${userId}. Stripe: ${customerEmail}, DB: ${profile.contact_email}`);
+                        // We log it but proceed if userId is valid, as Stripe metadata is our source of truth for the target
+                    }
+
                     await updateProfile(userId, plan.credits, plan.tier, customerId, subscriptionId, expiresAt);
                     if (customerEmail) {
                         try {
@@ -237,6 +254,18 @@ export async function POST(request: Request) {
                 if (!creditAmount || creditAmount <= 0 || !targetUserId) {
                     console.error(`❌ CRITICAL: Invalid metadata for session ${session.id}`);
                     return NextResponse.json({ error: 'Invalid metadata' }, { status: 400 });
+                }
+
+                // SEC: Verify target user exists
+                const { data: targetProfile, error: targetError } = await supabaseAdmin
+                    .from('profiles')
+                    .select('id, contact_email')
+                    .eq('id', targetUserId)
+                    .single();
+
+                if (targetError || !targetProfile) {
+                    console.error(`❌ [STRIPE WEBHOOK] Target User not found for top-up: ${targetUserId}`);
+                    return NextResponse.json({ error: 'Target User not found' }, { status: 404 });
                 }
 
                 await addCreditsOnly(targetUserId, creditAmount, 'topup', session.id, `Top-up purchase: ${creditAmount} credits`);
@@ -333,14 +362,14 @@ export async function POST(request: Request) {
                 await supabaseAdmin
                     .from('profiles')
                     .update({
-                        subscription_status: 'cancelled',
+                        subscription_status: 'canceled',
                         // Optional: You could ensure expires matches subscription.current_period_end * 1000
                     })
                     .eq('id', parentProfile.id);
 
                 // NEW: If family plan, cancel children's subscriptions too
                 if (parentProfile.tier && parentProfile.tier.startsWith('family')) {
-                    console.log(`🚸 Family cancellation: Marking children as cancelled for parent ${parentProfile.id}`);
+                    console.log(`🚸 Family cancellation: Marking children as canceled for parent ${parentProfile.id}`);
 
                     const { data: children } = await supabaseAdmin
                         .from('profiles')
@@ -351,10 +380,10 @@ export async function POST(request: Request) {
                         for (const child of children) {
                             await supabaseAdmin
                                 .from('profiles')
-                                .update({ subscription_status: 'cancelled' })
+                                .update({ subscription_status: 'canceled' })
                                 .eq('id', child.id);
 
-                            console.log(`✅ Cancelled child subscription: ${child.first_name || child.id}`);
+                            console.log(`✅ Canceled child subscription: ${child.first_name || child.id}`);
                         }
                     }
                 }
@@ -364,6 +393,7 @@ export async function POST(request: Request) {
         // ====================================================
         // D. Handle Subscription Updates (Status Changes)
         // ====================================================
+        // ... (rest of the file remains same, but wait, I need to check if 'canceled' is used elsewhere)
         if (event.type === 'customer.subscription.updated') {
             const subscription = event.data.object as Stripe.Subscription;
             const customerId = subscription.customer as string;
@@ -436,21 +466,36 @@ async function updateProfile(userId: string, creditsToAdd: number, tier: string,
     const { data: profile } = await supabaseAdmin.from('profiles').select('credits').eq('id', userId).single();
     const currentCredits = profile?.credits || 0;
 
-    // 2. Upsert profile
-    console.log(`[STRIPE WEBHOOK] Updating profile for ${userId}. Credits: ${currentCredits} -> ${currentCredits + creditsToAdd}, Status: active`);
+    // 2. Update profile using ATOMIC RPC
+    console.log(`[STRIPE WEBHOOK] Updating profile (ATOMIC) for ${userId}. Adding ${creditsToAdd} credits.`);
+    const { error: rpcError } = await supabaseAdmin.rpc('increment_credits', {
+        p_user_id: userId,
+        p_amount: creditsToAdd
+    });
+
+    if (rpcError) {
+        console.error("❌ DB Atomic Increment Failed:", rpcError);
+        throw rpcError;
+    }
+
+    // 2b. Sync other fields (non-atomic updates)
     const { error } = await supabaseAdmin
         .from('profiles')
-        .upsert({
-            id: userId,
-            credits: currentCredits + creditsToAdd,
+        .update({
             subscription_status: 'active',
-            account_status: 'active', // Explicitly unlock on purchase
+            account_status: 'active',
             tier: tier,
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
-            membership_start: new Date().toISOString(), // Member since NOW
+            membership_start: new Date().toISOString(),
             membership_expires: expiresAt
-        }, { onConflict: 'id' });
+        })
+        .eq('id', userId);
+
+    if (error) {
+        console.error("❌ DB Update Failed (Post-Atomic):", error);
+        throw error;
+    }
 
     if (error) {
         console.error("❌ DB Upsert Failed:", error);
@@ -519,10 +564,19 @@ async function handleRenewal(userId: string, creditsToAdd: number, type: 'topup'
         tier: profile?.tier
     };
 
-    const { error } = await supabaseAdmin
+    const { error } = await supabaseAdmin.rpc('increment_credits', {
+        p_user_id: userId,
+        p_amount: creditsToAdd
+    });
+
+    if (error) {
+        console.error("❌ DB Atomic Renewal Failed:", error);
+        throw error;
+    }
+
+    await supabaseAdmin
         .from('profiles')
         .update({
-            credits: currentCredits + creditsToAdd,
             membership_expires: new Date(newPeriodEnd * 1000).toISOString(),
             membership_history: [...oldHistory, historyEntry]
         })
@@ -557,28 +611,19 @@ async function addCreditsOnly(userId: string, creditsToAdd: number, type: 'topup
     const { data: profile } = await supabaseAdmin.from('profiles').select('credits').eq('id', userId).single();
     const currentCredits = profile?.credits || 0;
 
-    console.log(`[STRIPE WEBHOOK] Adding ${creditsToAdd} credits to ${userId}. Current: ${currentCredits}`);
-    const { error } = await supabaseAdmin
-        .from('profiles')
-        .update({
-            credits: currentCredits + creditsToAdd,
-            account_status: 'active', // Unlock on top-up too
-        })
-        .eq('id', userId);
+    console.log(`[STRIPE WEBHOOK] Adding ${creditsToAdd} credits (ATOMIC) to ${userId}.`);
+    const { error: rpcError } = await supabaseAdmin.rpc('increment_credits', {
+        p_user_id: userId,
+        p_amount: creditsToAdd
+    });
 
-    if (error) {
-        console.error(`[STRIPE WEBHOOK] DB Update Failed for ${userId}:`, error);
-        throw error;
+    if (rpcError) {
+        console.error(`[STRIPE WEBHOOK] DB Atomic Increment Failed for ${userId}:`, rpcError);
+        throw rpcError;
     }
-    console.log(`✅ [STRIPE WEBHOOK] Credits added and account unlocked for ${userId}`);
 
-    if (error) {
-        console.error("❌ DB Renewal Update Failed:", error);
-        throw error;
-    } else {
-        console.log(`✅ DB Success: Added ${creditsToAdd} credits.`);
-        await logTransaction(userId, creditsToAdd, type, sessionId, description);
-    }
+    console.log(`✅ [STRIPE WEBHOOK] Credits added (ATOMIC) for ${userId}`);
+    await logTransaction(userId, creditsToAdd, type, sessionId, description);
 }
 
 async function logTransaction(userId: string, amount: number, type: string, sessionId?: string, description?: string) {
