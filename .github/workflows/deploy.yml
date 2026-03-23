@@ -15,11 +15,15 @@ jobs:
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          SUDO_PASS: ${{ secrets.SUDO_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
         with:
           host: dyn1.dynevents.com
           username: nicholas
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 60022
+          envs: SUDO_PASS,SUPABASE_URL
           script: |
             set -e
             cd /var/www/eastapp.booking.dynevents.com
@@ -29,7 +33,7 @@ jobs:
             git reset --hard origin/main
             
             # Validation: Fail early if critical secrets are missing from GitHub
-            if [ -z "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ]; then
+            if [ -z "$SUPABASE_URL" ]; then
               echo "❌ ERROR: NEXT_PUBLIC_SUPABASE_URL secret is missing!"
               exit 1
             fi
@@ -64,14 +68,14 @@ jobs:
             echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env.production
             echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
 
-            # Clean build cache (trying without sudo first)
+            # Clean build cache using authenticated sudo
             echo "🧹 Cleaning .next directory (CurrentUser: $(whoami))..."
-            rm -rf .next || (echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S rm -rf .next)
+            echo "$SUDO_PASS" | sudo -S rm -rf .next
             
             # Ensure pnpm is available
             if ! command -v pnpm &> /dev/null; then
               echo "⚠️ pnpm not found. Installing..."
-              npm install -g pnpm || (echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S npm install -g pnpm)
+              echo "$SUDO_PASS" | sudo -S npm install -g pnpm
             fi
 
             echo "📦 Installing dependencies..."
@@ -89,8 +93,8 @@ jobs:
             
             # PM2 Restart - Explicit name matching
             echo "🚀 Restarting PM2 process 'EastApp'..."
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 delete EastApp || true
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 start node --name "EastApp" -- .next/standalone/server.js
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 save
+            echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
+            echo "$SUDO_PASS" | sudo -S pm2 start node --name "EastApp" -- .next/standalone/server.js
+            echo "$SUDO_PASS" | sudo -S pm2 save
             
             echo "✅ Deployment Complete!"
