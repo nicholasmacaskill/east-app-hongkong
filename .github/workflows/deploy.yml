@@ -26,24 +26,36 @@ jobs:
           envs: SUDO_PASS,SUPABASE_URL
           script: |
             set -ex
-            # 1. Stop PM2 first to free all handles
-            echo "🛑 Stopping PM2..."
+            cd /var/www/eastapp.booking.dynevents.com
+            
+            echo "🔄 User: $(whoami) | RAM Check: $(free -m | grep Mem)"
+            
+            # A. PREPARE SSH ACCESS (Critical for fresh clone)
+            echo "🔑 Preparing SSH known_hosts..."
+            mkdir -p ~/.ssh
+            ssh-keyscan github.com >> ~/.ssh/known_hosts || true
+            chmod 700 ~/.ssh
+            chmod 600 ~/.ssh/known_hosts
+            
+            # B. KILL ALL Node/PM2 processes before cleanup
+            echo "🛑 Stopping and Killing all PM2 processes..."
             echo "$SUDO_PASS" | sudo -S pm2 stop EastApp || true
             echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
             
-            # 2. Re-create the folder to ensure absolute clean state
-            # (We go to /var/www to delete the contents of the target folder)
-            cd /var/www/eastapp.booking.dynevents.com
-            echo "🔄 User: $(whoami) | RAM Check: $(free -m | grep Mem) | Node: $(node -v)"
+            # C. NUCLEAR PURGE (Everything EXCEPT essential backups)
+            echo "💣 DELETING EVERYTHING in target folder..."
+            echo "$SUDO_PASS" | sudo -S rm -rf .[!.]* * || true
             
-            echo "💣 NUCLEAR RESET: Purging all files..."
-            echo "$SUDO_PASS" | sudo -H -S rm -rf .[^.]* * || true
+            # D. OWNERSHIP FIX (Critical for SSH/Git keys)
+            echo "🔑 Ensuring $(whoami) owns $(pwd)..."
+            echo "$SUDO_PASS" | sudo -S chown -R $(whoami):$(whoami) .
             
+            # E. FRESH CLONE (As normal user)
             echo "🔄 Fresh re-initialization (re-cloning)..."
             git clone git@github.com:nicholasmacaskill/east-app-hongkong.git .
             git checkout main
             
-            # Recreate .env.production with ALL essential keys
+            # F. ENV SETUP
             BUILD_ID=$(date +%s)
             echo "📝 Creating fresh .env.production (Build ID: $BUILD_ID)..."
             echo "NODE_ENV=production" > .env.production
@@ -59,33 +71,35 @@ jobs:
             echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env.production
             echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
 
+            # G. DEPENDENCIES
             echo "📦 Installing pnpm..."
             if ! command -v pnpm &> /dev/null; then
-              echo "$SUDO_PASS" | sudo -H -S npm install -g pnpm
+              echo "$SUDO_PASS" | sudo -S npm install -g pnpm
             fi
 
-            echo "📦 Installing dependencies (fresh)..."
+            echo "📦 Installing fresh dependencies..."
             pnpm install --no-lockfile
             
-            echo "🏗️ Building from zero-state..."
-            # Using --no-lint and --ignore-build-errors for emergency recovery
+            # H. BUILD
+            echo "🏗️ Building for LIVE mode..."
             NEXT_PUBLIC_STRIPE_MODE=live NODE_ENV=production pnpm build
             
-            echo "📂 Mirroring assets into standalone folder..."
+            # I. STANDALONE PREP
+            echo "📂 Preparing standalone directory..."
             mkdir -p .next/standalone/.next/static
             cp -rv .next/static/* .next/standalone/.next/static/
             cp -rv public .next/standalone/
             
-            echo "🚀 Orchestrating launch via ecosystem.config.js..."
-            # ecosystem.config.js handles env_file and args correctly
-            echo "$SUDO_PASS" | sudo -H -S pm2 start ecosystem.config.js --only EastApp --update-env
-            echo "$SUDO_PASS" | sudo -H -S pm2 save
+            # J. LAUNCH
+            echo "🚀 Launching via ecosystem.config.js..."
+            echo "$SUDO_PASS" | sudo -S pm2 start ecosystem.config.js --only EastApp --update-env
+            echo "$SUDO_PASS" | sudo -S pm2 save
             
-            echo "📋 Server Health Check (Logs):"
-            echo "$SUDO_PASS" | sudo -H -S pm2 logs EastApp --lines 20 --no-daemon &
+            echo "📋 Recent Server Logs (Last 20 lines):"
+            echo "$SUDO_PASS" | sudo -S pm2 logs EastApp --lines 20 --no-daemon &
             LOG_PID=$!
             sleep 10
             kill $LOG_PID || true
             
-            echo "✅ NUCLEAR RESET COMPLETE!"
+            echo "✅ SURGEON'S RESET COMPLETE!"
             pm2 list
