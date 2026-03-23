@@ -70,14 +70,18 @@ jobs:
 
             pnpm install --frozen-lockfile || pnpm install
             
-            # Export env vars from .env.production for build-time baking into client bundle
-            export $(cat .env.production | xargs) && pnpm build
+            # Build for production with environment variables
+            echo "Building with NEXT_PUBLIC_STRIPE_MODE=live..."
+            NEXT_PUBLIC_STRIPE_MODE=live pnpm build
             
-            # Copy static assets to standalone directory (required for standalone mode)
+            # Verify and copy assets into standalone bundle
+            echo "Copying static assets to standalone directory..."
             mkdir -p .next/standalone/.next/static
-            cp -r .next/static/* .next/standalone/.next/static/
-            cp -r public .next/standalone/
+            cp -rv .next/static/* .next/standalone/.next/static/
+            cp -rv public .next/standalone/
             
-            # PM2 Restart
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 restart EastApp --update-env || echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 start node --name "EastApp" -- .next/standalone/server.js
+            # PM2 Restart - Explicit name matching
+            echo "Restarting PM2 process 'EastApp'..."
+            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 delete EastApp || true
+            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 start node --name "EastApp" -- .next/standalone/server.js
             echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 save
