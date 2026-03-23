@@ -68,9 +68,16 @@ jobs:
             echo "NEXT_PUBLIC_STRIPE_MODE=test" >> .env.test
             echo "NEXT_PUBLIC_BUILD_ID=$BUILD_ID" >> .env.test
             
+            # SECRETS (With expected _TEST suffix for stripe-config.ts)
+            write_env "STRIPE_SECRET_KEY_TEST" "$STRIPE_SECRET_KEY_TEST"
+            write_env "STRIPE_WEBHOOK_SECRET_TEST" "$STRIPE_WEBHOOK_SECRET_TEST"
+            write_env "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST" "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST"
+            
+            # Fallbacks for code that looks for the plain name
             write_env "STRIPE_SECRET_KEY" "$STRIPE_SECRET_KEY_TEST"
             write_env "STRIPE_WEBHOOK_SECRET" "$STRIPE_WEBHOOK_SECRET_TEST"
             write_env "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST"
+            
             write_env "NEXT_PUBLIC_SUPABASE_URL" "$SUPABASE_URL"
             write_env "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
             write_env "SUPABASE_SERVICE_ROLE_KEY" "$SUPABASE_SERVICE_ROLE_KEY"
@@ -81,21 +88,13 @@ jobs:
             # STRIPE PRICE IDS (TEST)
             echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_TEST=price_1StdqN1xd62IoClxM9w6tP5R" >> .env.test
             echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY_TEST=price_1StdqO1xd62IoClx8Y9s9W5G" >> .env.test
-            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=price_1StdqN1xd62IoClxM9w6tP5R" >> .env.test
-            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY=price_1StdqO1xd62IoClx8Y9s9W5G" >> .env.test
-
-            # TOP-UP PRICE IDS (TEST)
+            
+            # TOP-UP PRICE IDS (TEST Suffix)
             write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER_TEST" "$PRICE_500"
             write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD_TEST" "$PRICE_1000"
             write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO_TEST" "$PRICE_2500"
             write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE_TEST" "$PRICE_5000"
             write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE_TEST" "$PRICE_10000"
-            
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER" "$PRICE_500"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD" "$PRICE_1000"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO" "$PRICE_2500"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE" "$PRICE_5000"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE" "$PRICE_10000"
 
             # F. DEPENDENCIES
             pnpm install --no-lockfile
@@ -109,26 +108,19 @@ jobs:
             export NEXT_PUBLIC_SUPABASE_URL="$SUPABASE_URL"
             export NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY"
             export NEXT_PUBLIC_STRIPE_MODE=test
+            export STRIPE_SECRET_KEY_TEST="$STRIPE_SECRET_KEY_TEST"
             export STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY_TEST"
             
             pnpm build
             
-            # H. STANDALONE PREP (Hyper-Mirroring for Assets)
+            # H. STANDALONE PREP
             echo "📂 Syncing standalone static assets..."
-            # Note: Next.js standalone server needs its internal chunks
             mkdir -p .next/standalone/.next/static
             cp -rv .next/static/* .next/standalone/.next/static/
             
-            # Also copy to root for safe fallback mapping
-            mkdir -p public/_next/static
-            cp -rv .next/static/* public/_next/static/
-            
-            # PUBLIC ROOT MIRRORING (CRITICAL for Logos)
-            echo "🖼️ Mirroring Public folder (Logos/Images) everywhere..."
+            # Mirror Public Assets (Logos)
             mkdir -p .next/standalone/public
             cp -rv public/* .next/standalone/public/
-            
-            # Standalone Public Path needs the _next/static folder as well
             mkdir -p .next/standalone/public/_next/static
             cp -rv .next/static/* .next/standalone/public/_next/static/
             
@@ -139,9 +131,5 @@ jobs:
             echo "$SUDO_PASS" | sudo -S pm2 delete EastAppTest || true
             echo "$SUDO_PASS" | sudo -S pm2 start ecosystem.config.js --only EastAppTest --update-env
             echo "$SUDO_PASS" | sudo -S pm2 save
-            
-            echo "📋 DIAGNOSTIC: Logo Check..."
-            ls -la public/east-logo-transparent.png || true
-            ls -la .next/standalone/public/east-logo-transparent.png || true
             
             echo "✅ TEST RESTORE COMPLETE!"
