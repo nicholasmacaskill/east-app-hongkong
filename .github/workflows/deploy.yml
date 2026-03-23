@@ -20,10 +20,10 @@ jobs:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          host: ${{ secrets.SERVER_HOST }}
+          host: dyn1.dynevents.com
           username: nicholas
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
+          port: 60022
           envs: SUDO_PASS,SUPABASE_URL,GITHUB_TOKEN
           script: |
             set -ex

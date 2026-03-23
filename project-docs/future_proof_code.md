@@ -6,7 +6,7 @@
 ## 1. Architecture & Constraints
 
 ### Current State:
-- **Stack:** Next.js 16.1.1 + Supabase + Stripe
+- **Stack:** Next.js 15.1.0 + Supabase + Stripe
 - **Database:** PostgreSQL (Supabase)
 - **Auth:** Supabase Auth with custom RLS policies
 - **Payment:** Stripe Webhooks
