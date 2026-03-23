@@ -41,6 +41,10 @@ jobs:
             echo "$SUDO_PASS" | sudo -S fuser -k 3000/tcp || true
             echo "$SUDO_PASS" | sudo -S fuser -k 3001/tcp || true
             
+            echo "🧹 PURGING NGINX CACHE..."
+            echo "$SUDO_PASS" | sudo -S rm -rf /var/cache/nginx/* || true
+            echo "$SUDO_PASS" | sudo -S systemctl restart nginx || true
+            
             # B. NUCLEAR DIRECTORY PURGE
             echo "💣 DELETING EVERYTHING in target folder..."
             echo "$SUDO_PASS" | sudo -S find . -mindepth 1 -delete
