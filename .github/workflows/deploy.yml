@@ -30,16 +30,21 @@ jobs:
             
             echo "🔄 User: $(whoami) | RAM Check: $(free -m | grep Mem)"
             
-            echo "🛑 Stopping PM2 to free up memory..."
+            echo "🛑 Stopping and Deleting current PM2 processes..."
             echo "$SUDO_PASS" | sudo -S pm2 stop EastApp || true
+            echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
             
-            echo "🔄 Fetching latest code and resetting..."
-            git fetch origin main
-            git reset --hard origin/main
+            echo "💣 NUCLEAR RESET: Purging entire deployment directory..."
+            # Delete EVERYTHING (including hidden files) except for possible backup.zip
+            echo "$SUDO_PASS" | sudo -S find . -mindepth 1 ! -name 'east-app-hongkong-backup.zip' -delete
             
-            # Create/Update .env.production with EVERYTHING the app needs
+            echo "🔄 Fresh re-initialization (re-cloning into current directory)..."
+            git clone git@github.com:nicholasmacaskill/east-app-hongkong.git .
+            git checkout main
+            
+            # Recreate .env.production with ALL essential keys
             BUILD_ID=$(date +%s)
-            echo "📝 Updating .env.production (Build ID: $BUILD_ID)..."
+            echo "📝 Creating fresh .env.production (Build ID: $BUILD_ID)..."
             echo "NODE_ENV=production" > .env.production
             echo "NEXT_PUBLIC_STRIPE_MODE=live" >> .env.production
             echo "NEXT_PUBLIC_BUILD_ID=$BUILD_ID" >> .env.production
@@ -53,38 +58,31 @@ jobs:
             echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env.production
             echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
 
-            echo "🧹 Cleaning previous build and cache..."
-            echo "$SUDO_PASS" | sudo -S rm -rf .next .next-test node_modules/.cache
-
             echo "📦 Installing pnpm..."
             if ! command -v pnpm &> /dev/null; then
               echo "$SUDO_PASS" | sudo -S npm install -g pnpm
             fi
 
-            echo "📦 Installing dependencies..."
-            pnpm install --no-frozen-lockfile
+            echo "📦 Installing dependencies (fresh)..."
+            pnpm install --no-lockfile
             
-            echo "🏗️ Building for LIVE mode..."
+            echo "🏗️ Building from zero-state..."
             NEXT_PUBLIC_STRIPE_MODE=live NODE_ENV=production pnpm build
             
-            echo "📂 Preparing standalone directory..."
+            echo "📂 Mirroring assets into standalone folder..."
             mkdir -p .next/standalone/.next/static
             cp -rv .next/static/* .next/standalone/.next/static/
             cp -rv public .next/standalone/
             
-            echo "🔍 Verifying build assets..."
-            ls -R .next/standalone/.next/static | grep ".js" | head -n 10
-            
-            echo "🚀 Starting EastApp via ecosystem.config.js..."
-            echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
+            echo "🚀 Orchestrating launch via ecosystem.config.js..."
             echo "$SUDO_PASS" | sudo -S pm2 start ecosystem.config.js --only EastApp --update-env
             echo "$SUDO_PASS" | sudo -S pm2 save
             
-            echo "📋 Recent Application Logs:"
-            echo "$SUDO_PASS" | sudo -S pm2 logs EastApp --lines 50 --no-daemon &
+            echo "📋 Server Health Check (Logs):"
+            echo "$SUDO_PASS" | sudo -S pm2 logs EastApp --lines 20 --no-daemon &
             LOG_PID=$!
-            sleep 5
+            sleep 7
             kill $LOG_PID || true
             
-            echo "✅ Deployment Complete!"
+            echo "✅ NUCLEAR RESET COMPLETE!"
             pm2 list
