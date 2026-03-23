@@ -158,5 +158,6 @@ jobs:
             echo "🔍 ENVIRONMENT KEY DISCOVERY (Masked):"
             env | cut -d= -f1 | sort
             echo "🔍 NGINX CONFIG AUDIT:"
-            echo "$SUDO_PASS" | sudo -S find /etc/nginx/sites-enabled -type f -exec cat {} +
+            ls -la /etc/nginx/sites-enabled/
+            echo "$SUDO_PASS" | sudo -S cat /etc/nginx/sites-enabled/*
             pm2 desc EastApp
