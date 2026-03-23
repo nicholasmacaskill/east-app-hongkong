@@ -12,43 +12,141 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          SUDO_PASS: ${{ secrets.SUDO_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STRIPE_SECRET_KEY_TEST: ${{ secrets.STRIPE_SECRET_KEY_TEST }}
+          STRIPE_WEBHOOK_SECRET_TEST: ${{ secrets.STRIPE_WEBHOOK_SECRET_TEST }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST || secrets.DATABASE_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          PRICE_500: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER_TEST }}
+          PRICE_1000: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD_TEST }}
+          PRICE_2500: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO_TEST }}
+          PRICE_5000: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE_TEST }}
+          PRICE_10000: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE_TEST }}
         with:
           host: dyn1.dynevents.com
           username: nicholas
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 60022
+          envs: SUDO_PASS,SUPABASE_URL,GITHUB_TOKEN,STRIPE_SECRET_KEY_TEST,STRIPE_WEBHOOK_SECRET_TEST,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,DATABASE_URL_TEST,RESEND_API_KEY,PRICE_500,PRICE_1000,PRICE_2500,PRICE_5000,PRICE_10000
           script: |
+            set -ex
             cd /var/www/test.eastapp.booking.dynevents.com
-            git pull origin test
-            # Create/Update .env.test with latest secrets
-            echo "NEXT_PUBLIC_STRIPE_MODE=test" > .env.test
-            echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY_TEST }}" >> .env.test
-            echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET_TEST }}" >> .env.test
-            echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST }}" >> .env.test
-            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_YEARLY_TEST }}" >> .env.test
-            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_TEST }}" >> .env.test
-            echo "NEXT_PUBLIC_STRIPE_PRICE_CREDIT=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_CREDIT_TEST }}" >> .env.test
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_TEST }}" >> .env.test
-            echo "NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY_TEST }}" >> .env.test
-            echo "NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY_TEST }}" >> .env.test
-            echo "NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY_TEST }}" >> .env.test
-            echo "NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY_TEST }}" >> .env.test
-            echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.test
-            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.test
-            echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.test
             
-            # Clean build cache to prevent Server Action ID mismatch
-            sudo rm -rf .next-test
-            npm install
-            # Export env vars from .env.test for build-time baking into client bundle
-            export $(grep -v '^#' .env.test | xargs) && npm run build
-            # Copy static assets to standalone directory (required for standalone mode)
-            mkdir -p .next-test/standalone/.next/static
-            cp -r .next-test/static/* .next-test/standalone/.next/static/
-            cp -r public .next-test/standalone/
-            # Robust restart: Update env and handle missing process cases
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 restart EastAppTest --update-env || echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 start node --name "EastAppTest" -- .next-test/standalone/server.js
-            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 save
+            # THE SEARCH & DESTROY: Kill any lingering cache
+            echo "🧹 PURGING NGINX CACHE..."
+            echo "$SUDO_PASS" | sudo -S rm -rf /var/cache/nginx/* || true
+            
+            # A. TOTAL RUNTIME PURGE
+            echo "⚠️ KILLING TEST NODE PROCESSES (Nuclear Runtime Purge)..."
+            echo "$SUDO_PASS" | sudo -S pm2 delete EastAppTest || true
+            echo "$SUDO_PASS" | sudo -S fuser -k 3001/tcp || true
+            
+            # B. NUCLEAR DIRECTORY PURGE
+            echo "💣 DELETING everything in test target folder..."
+            echo "$SUDO_PASS" | sudo -S find . -mindepth 1 -delete
+            
+            # C. OWNERSHIP FIX
+            echo "$SUDO_PASS" | sudo -S chown -R $(whoami):$(whoami) .
+            
+            # D. TOKEN-BASED CLONE 
+            git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/nicholasmacaskill/east-app-hongkong.git" .
+            git checkout test
+            
+            # E. ENV SETUP (PRINTF HARDENING)
+            BUILD_ID=$(date +%s)
+            
+            # Helper to write variables safely
+            write_env() {
+              printf '%s=%q\n' "$1" "$2" >> .env.test
+            }
+            
+            echo "NODE_ENV=production" > .env.test
+            echo "NEXT_PUBLIC_STRIPE_MODE=test" >> .env.test
+            echo "NEXT_PUBLIC_BUILD_ID=$BUILD_ID" >> .env.test
+            
+            write_env "STRIPE_SECRET_KEY" "$STRIPE_SECRET_KEY_TEST"
+            write_env "STRIPE_WEBHOOK_SECRET" "$STRIPE_WEBHOOK_SECRET_TEST"
+            write_env "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST"
+            write_env "NEXT_PUBLIC_SUPABASE_URL" "$SUPABASE_URL"
+            write_env "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
+            write_env "SUPABASE_SERVICE_ROLE_KEY" "$SUPABASE_SERVICE_ROLE_KEY"
+            write_env "DATABASE_URL" "$DATABASE_URL_TEST"
+            write_env "RESEND_API_KEY" "$RESEND_API_KEY"
+            echo "NEXT_PUBLIC_BASE_URL=https://test.eastapp.booking.dynevents.com" >> .env.test
+            
+            # STRIPE PRICE IDS (TEST)
+            # Monthly/Yearly (Hardcoded for clarity as these are standard test IDs)
+            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_TEST=price_1StdqN1xd62IoClxM9w6tP5R" >> .env.test
+            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY_TEST=price_1StdqO1xd62IoClx8Y9s9W5G" >> .env.test
+            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=price_1StdqN1xd62IoClxM9w6tP5R" >> .env.test
+            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY=price_1StdqO1xd62IoClx8Y9s9W5G" >> .env.test
+            
+            # TOP-UP PRICE IDS (TEST)
+            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER_TEST" "$PRICE_500"
+            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD_TEST" "$PRICE_1000"
+            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO_TEST" "$PRICE_2500"
+            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE_TEST" "$PRICE_5000"
+            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE_TEST" "$PRICE_10000"
+            
+            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER" "$PRICE_500"
+            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD" "$PRICE_1000"
+            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO" "$PRICE_2500"
+            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE" "$PRICE_5000"
+            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE" "$PRICE_10000"
+
+            # F. DEPENDENCIES
+            echo "📦 Checking/Installing pnpm..."
+            if ! command -v pnpm &> /dev/null; then
+              echo "$SUDO_PASS" | sudo -S npm install -g pnpm
+            fi
+            
+            echo "📦 Installing dependencies..."
+            pnpm install --no-lockfile
+            
+            # G. BUILD
+            echo "🏗️ Building for TEST mode..."
+            rm -rf .next-test/cache || true
+            
+            export NODE_ENV=production
+            export DATABASE_URL="$DATABASE_URL_TEST"
+            export NEXT_PUBLIC_SUPABASE_URL="$SUPABASE_URL"
+            export NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY"
+            export NEXT_PUBLIC_STRIPE_MODE=test
+            export STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY_TEST"
+            
+            pnpm build
+            
+            # Rename build output to .next-test if needed (STANDALONE puts it in .next)
+            # Standalone build usually creates .next/standalone
+            
+            # H. STANDALONE PREP
+            echo "📂 Mirroring assets into ALL POSSIBLE PATHS (Nginx Overkill - Test)..."
+            # 1. Standalone Internal Path
+            mkdir -p .next/standalone/.next/static
+            cp -rv .next/static/* .next/standalone/.next/static/
+            
+            # 2. Public Folder Path
+            mkdir -p public/_next/static
+            cp -rv .next/static/* public/_next/static/
+            
+            # 3. Standalone Public Path
+            mkdir -p .next/standalone/public/_next/static
+            cp -rv .next/static/* .next/standalone/public/_next/static/
+            
+            # I. LAUNCH
+            echo "🚀 Launching Test Standalone (PM2)..."
+            cp .env.test .next/standalone/.env.test
+            
+            echo "$SUDO_PASS" | sudo -S pm2 delete EastAppTest || true
+            echo "$SUDO_PASS" | sudo -S pm2 start ecosystem.config.js --only EastAppTest --update-env
+            echo "$SUDO_PASS" | sudo -S pm2 save
+            
+            echo "✅ TEST RESTORE COMPLETE!"
