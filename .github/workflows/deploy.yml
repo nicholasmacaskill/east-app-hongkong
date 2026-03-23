@@ -31,14 +31,14 @@ jobs:
             
             echo "🔄 User: $(whoami) | RAM Check: $(free -m | grep Mem)"
             
-            # A. KILL ALL Node/PM2 processes before cleanup
+            # A. KILL PM2
             echo "🛑 Stopping and Killing all PM2 processes..."
-            echo "$SUDO_PASS" | sudo -S pm2 stop EastApp || true
             echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
             
-            # B. NUCLEAR PURGE (Everything EXCEPT essential backups)
-            echo "💣 DELETING EVERYTHING in target folder..."
-            echo "$SUDO_PASS" | sudo -S rm -rf .[!.]* * || true
+            # B. NUCLEAR PURGE
+            echo "💣 DELETING EVERYTHING in target folder (Guaranteed)..."
+            # Using find to delete everything except the actual directory itself
+            echo "$SUDO_PASS" | sudo -S find . -mindepth 1 -delete
             
             # C. OWNERSHIP FIX
             echo "🔑 Ensuring $(whoami) owns $(pwd)..."
@@ -46,6 +46,7 @@ jobs:
             
             # D. TOKEN-BASED CLONE (Bypasses SSH permission issues)
             echo "🔄 Fresh re-initialization (HTTPS Token Clone)..."
+            # We use the token from env (passed via envs)
             git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/nicholasmacaskill/east-app-hongkong.git" .
             git checkout main
             
@@ -95,5 +96,5 @@ jobs:
             sleep 15
             kill $LOG_PID || true
             
-            echo "✅ TOKEN RESET COMPLETE!"
+            echo "✅ FINAL NUCLEAR RESET COMPLETE!"
             pm2 list
