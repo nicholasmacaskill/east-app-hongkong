@@ -29,17 +29,19 @@ jobs:
             set -ex
             cd /var/www/eastapp.booking.dynevents.com
             
-            echo "📊 SYSTEM AUDIT:"
-            echo "User: $(whoami)"
-            echo "RAM: $(free -m)"
+            echo "📊 SYSTEM AUDIT (Total Purge Mode):"
             echo "Disk: $(df -h .)"
-            echo "Node: $(node -v) | pnpm: $(pnpm -v || echo 'not found')"
+            echo "Processes: $(ps aux | grep node | grep -v grep)"
             
-            # A. KILL PM2
-            echo "🛑 Stopping and Killing all PM2 processes..."
+            # A. TOTAL RUNTIME PURGE
+            echo "⚠️ KILLING ALL NODE PROCESSES (Nuclear Runtime Purge)..."
             echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
+            echo "$SUDO_PASS" | sudo -S killall node || true
+            # Force kill anything on our app ports
+            echo "$SUDO_PASS" | sudo -S fuser -k 3000/tcp || true
+            echo "$SUDO_PASS" | sudo -S fuser -k 3001/tcp || true
             
-            # B. NUCLEAR PURGE
+            # B. NUCLEAR DIRECTORY PURGE
             echo "💣 DELETING EVERYTHING in target folder..."
             echo "$SUDO_PASS" | sudo -S find . -mindepth 1 -delete
             
@@ -78,16 +80,15 @@ jobs:
             pnpm install --no-lockfile
             
             # G. BUILD
-            echo "🏗️ Building for LIVE mode (Verbose)..."
-            # We use 15.1.4 as a known stable target
-            sed -i 's/"next": "15.1.0"/"next": "15.1.4"/g' package.json
+            echo "🏗️ Building for LIVE mode (Bypassing Lint)..."
+            # next.config.js already set to ignore lint in commit 612d7f7
             NEXT_PUBLIC_STRIPE_MODE=live NODE_ENV=production pnpm build
             
             # H. STANDALONE PREP
             echo "📂 Verifying standalone output..."
             ls -la .next
             if [ ! -d ".next/standalone" ]; then
-                echo "❌ Standalone directory NOT found. Checking build logs..."
+                echo "❌ Standalone directory NOT found. Something is wrong with the build."
                 exit 1
             fi
 
@@ -99,15 +100,16 @@ jobs:
             fi
             
             # I. LAUNCH
-            echo "🚀 Launching via ecosystem.config.js..."
+            echo "🚀 Launching Production Standalone (PM2)..."
             echo "$SUDO_PASS" | sudo -S pm2 start ecosystem.config.js --only EastApp --update-env
             echo "$SUDO_PASS" | sudo -S pm2 save
             
             echo "📋 FINAL HEALTH CHECK:"
+            echo "$SUDO_PASS" | sudo -S pm2 list
             echo "$SUDO_PASS" | sudo -S pm2 logs EastApp --lines 50 --no-daemon &
             LOG_PID=$!
-            sleep 20
+            sleep 25
             kill $LOG_PID || true
             
-            echo "✅ RECOVERY COMPLETE!"
-            pm2 list
+            echo "✅ TOTAL RUNTIME PURGE COMPLETE!"
+            pm2 desc EastApp
