@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 // ✅ Import AuthScreen here (this is the correct place)
