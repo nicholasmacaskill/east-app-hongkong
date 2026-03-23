@@ -59,12 +59,19 @@ jobs:
             echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env.production
             echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
 
-            # Clean build cache
+            # Clean build cache and install dependencies using pnpm
             sudo rm -rf .next
-            npm install
+            
+            # Ensure pnpm is available
+            if ! command -v pnpm &> /dev/null; then
+              echo "⚠️ pnpm not found. Installing..."
+              npm install -g pnpm
+            fi
+
+            pnpm install --frozen-lockfile || pnpm install
             
             # Export env vars from .env.production for build-time baking into client bundle
-            export $(cat .env.production | xargs) && npm run build
+            export $(cat .env.production | xargs) && pnpm build
             
             # Copy static assets to standalone directory (required for standalone mode)
             mkdir -p .next/standalone/.next/static
