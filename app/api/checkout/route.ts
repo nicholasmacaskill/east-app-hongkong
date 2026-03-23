@@ -30,11 +30,11 @@ export async function POST(request: Request) {
     const TOPUP_RATES: Record<string, number> = {};
 
     const topupKeys = {
-      STARTER: 500,
-      STANDARD: 1000,
-      PRO: 2500,
-      ELITE: 5000,
-      ULTIMATE: 10000,
+      TOPUP_STARTER: 500,
+      TOPUP_STANDARD: 1000,
+      TOPUP_PRO: 2500,
+      TOPUP_ELITE: 5000,
+      TOPUP_ULTIMATE: 10000,
       TOPUP: 1200 // Legacy support
     };
 
