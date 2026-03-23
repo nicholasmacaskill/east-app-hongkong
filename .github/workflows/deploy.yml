@@ -64,8 +64,8 @@ jobs:
             echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env.production
             echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
 
-            # Clean build cache and install dependencies using pnpm
-            sudo rm -rf .next
+            # Clean build cache using authenticated sudo
+            echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S rm -rf .next
             
             # Ensure pnpm is available
             if ! command -v pnpm &> /dev/null; then
