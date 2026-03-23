@@ -25,19 +25,15 @@ jobs:
           port: 60022
           envs: SUDO_PASS,SUPABASE_URL
           script: |
-            set -e
+            set -ex
             cd /var/www/eastapp.booking.dynevents.com
             
-            echo "🔄 Fetching latest code and resetting local changes..."
+            echo "🔄 User: $(whoami) | PWD: $(pwd)"
+            
+            echo "🔄 Fetching latest code..."
             git fetch origin main
             git reset --hard origin/main
             
-            # Validation: Fail early if critical secrets are missing from GitHub
-            if [ -z "$SUPABASE_URL" ]; then
-              echo "❌ ERROR: NEXT_PUBLIC_SUPABASE_URL secret is missing!"
-              exit 1
-            fi
-
             # Create/Update .env.production with latest secrets
             echo "📝 Updating .env.production..."
             echo "NEXT_PUBLIC_STRIPE_MODE=live" > .env.production
@@ -68,33 +64,29 @@ jobs:
             echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env.production
             echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
 
-            # Clean build cache using authenticated sudo
-            echo "🧹 Cleaning .next directory (CurrentUser: $(whoami))..."
-            echo "$SUDO_PASS" | sudo -S rm -rf .next
+            echo "🧹 Cleaning .next directory..."
+            $SUDO_PASS | sudo -S rm -rf .next || rm -rf .next
             
-            # Ensure pnpm is available
+            echo "📦 Installing pnpm if missing..."
             if ! command -v pnpm &> /dev/null; then
-              echo "⚠️ pnpm not found. Installing..."
-              echo "$SUDO_PASS" | sudo -S npm install -g pnpm
+              $SUDO_PASS | sudo -S npm install -g pnpm || npm install -g pnpm
             fi
 
             echo "📦 Installing dependencies..."
-            pnpm install --frozen-lockfile || pnpm install
+            pnpm install --no-frozen-lockfile
             
-            # Build for production with environment variables
             echo "🏗️ Building with NEXT_PUBLIC_STRIPE_MODE=live..."
             NEXT_PUBLIC_STRIPE_MODE=live pnpm build
             
-            # Verify and copy assets into standalone bundle
-            echo "📂 Copying static assets to standalone directory..."
+            echo "📂 Copying assets into standalone folder..."
             mkdir -p .next/standalone/.next/static
             cp -rv .next/static/* .next/standalone/.next/static/
             cp -rv public .next/standalone/
             
-            # PM2 Restart - Explicit name matching
-            echo "🚀 Restarting PM2 process 'EastApp'..."
-            echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
-            echo "$SUDO_PASS" | sudo -S pm2 start node --name "EastApp" -- .next/standalone/server.js
-            echo "$SUDO_PASS" | sudo -S pm2 save
+            echo "🚀 Process Lifecycle: EastApp"
+            $SUDO_PASS | sudo -S pm2 delete EastApp || true
+            $SUDO_PASS | sudo -S pm2 start node --name "EastApp" -- .next/standalone/server.js
+            $SUDO_PASS | sudo -S pm2 save
             
-            echo "✅ Deployment Complete!"
+            echo "✅ Deployment Successful!"
+            pm2 list
