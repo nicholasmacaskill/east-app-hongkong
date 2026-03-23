@@ -122,9 +122,13 @@ jobs:
                 exit 1
             fi
 
-            echo "📂 Mirroring assets into standalone..."
+            echo "📂 Mirroring assets into standalone AND root (for Nginx)..."
+            # Ensure standalone has assets
             mkdir -p .next/standalone/.next/static
             cp -rv .next/static/* .next/standalone/.next/static/
+            # Ensure root has assets (for Nginx served from /var/www/...)
+            mkdir -p .next/static
+            cp -rv .next/standalone/.next/static/* .next/static/
             if [ -d "public" ]; then
               cp -rv public .next/standalone/
             fi
