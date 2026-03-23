@@ -40,7 +40,7 @@ export function getStripeMode(): StripeMode {
 export function getStripeSecretKey(): string {
   const mode = getStripeMode();
   const key = mode === 'live' 
-    ? process.env.STRIPE_SECRET_KEY_LIVE 
+    ? (process.env.STRIPE_SECRET_KEY_LIVE || process.env.STRIPE_SECRET_KEY)
     : (process.env.STRIPE_SECRET_KEY_TEST || process.env.STRIPE_SECRET_KEY);
   
   if (!key) {
@@ -52,7 +52,7 @@ export function getStripeSecretKey(): string {
 export function getStripePublishableKey(): string {
   const mode = getStripeMode();
   const key = mode === 'live'
-    ? process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE
+    ? (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
     : (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
   return key || '';
@@ -61,7 +61,7 @@ export function getStripePublishableKey(): string {
 export function getStripeWebhookSecret(): string {
   const mode = getStripeMode();
   const key = mode === 'live'
-    ? process.env.STRIPE_WEBHOOK_SECRET_LIVE
+    ? (process.env.STRIPE_WEBHOOK_SECRET_LIVE || process.env.STRIPE_WEBHOOK_SECRET)
     : (process.env.STRIPE_WEBHOOK_SECRET_TEST || process.env.STRIPE_WEBHOOK_SECRET);
 
   return key || '';
@@ -89,12 +89,25 @@ export function getStripePriceId(key: string): string {
   };
 
   const livePrices: Record<string, string | undefined> = {
-    'MONTHLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_LIVE,
-    'YEARLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY_LIVE,
-    'FAMILY_2_MONTHLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY_LIVE,
-    'FAMILY_2_YEARLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY_LIVE,
-    'FAMILY_3_MONTHLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY_LIVE,
-    'FAMILY_3_YEARLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY_LIVE,
+    'MONTHLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY,
+    'YEARLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY,
+    'STARTER': process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER,
+    'STANDARD': process.env.NEXT_PUBLIC_STRIPE_PRICE_STANDARD_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_STANDARD,
+    'PRO': process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO,
+    'ELITE': process.env.NEXT_PUBLIC_STRIPE_PRICE_ELITE_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_ELITE,
+    'ULTIMATE': process.env.NEXT_PUBLIC_STRIPE_PRICE_ULTIMATE_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_ULTIMATE,
+    'FAMILY_1_MONTHLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY,
+    'FAMILY_1_YEARLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_YEARLY,
+    'FAMILY_2_MONTHLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY,
+    'FAMILY_2_YEARLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY,
+    'FAMILY_3_MONTHLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY,
+    'FAMILY_3_YEARLY': process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY,
+    'TOPUP_STARTER': process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER,
+    'TOPUP_STANDARD': process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD,
+    'TOPUP_PRO': process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO,
+    'TOPUP_ELITE': process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE,
+    'TOPUP_ULTIMATE': process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE,
+    'TOPUP': process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_LIVE || process.env.NEXT_PUBLIC_STRIPE_PRICE_TOPUP,
   };
 
   const priceId = mode === 'test' ? testPrices[key.toUpperCase()] : livePrices[key.toUpperCase()];
