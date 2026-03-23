@@ -21,8 +21,12 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 60022
           script: |
+            set -e
             cd /var/www/eastapp.booking.dynevents.com
-            git pull origin main
+            
+            echo "🔄 Fetching latest code and resetting local changes..."
+            git fetch origin main
+            git reset --hard origin/main
             
             # Validation: Fail early if critical secrets are missing from GitHub
             if [ -z "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ]; then
@@ -31,6 +35,7 @@ jobs:
             fi
 
             # Create/Update .env.production with latest secrets
+            echo "📝 Updating .env.production..."
             echo "NEXT_PUBLIC_STRIPE_MODE=live" > .env.production
             echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY_LIVE }}" >> .env.production
             echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET_LIVE }}" >> .env.production
@@ -68,20 +73,23 @@ jobs:
               npm install -g pnpm
             fi
 
+            echo "📦 Installing dependencies..."
             pnpm install --frozen-lockfile || pnpm install
             
             # Build for production with environment variables
-            echo "Building with NEXT_PUBLIC_STRIPE_MODE=live..."
+            echo "🏗️ Building with NEXT_PUBLIC_STRIPE_MODE=live..."
             NEXT_PUBLIC_STRIPE_MODE=live pnpm build
             
             # Verify and copy assets into standalone bundle
-            echo "Copying static assets to standalone directory..."
+            echo "📂 Copying static assets to standalone directory..."
             mkdir -p .next/standalone/.next/static
             cp -rv .next/static/* .next/standalone/.next/static/
             cp -rv public .next/standalone/
             
             # PM2 Restart - Explicit name matching
-            echo "Restarting PM2 process 'EastApp'..."
+            echo "🚀 Restarting PM2 process 'EastApp'..."
             echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 delete EastApp || true
             echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 start node --name "EastApp" -- .next/standalone/server.js
             echo '${{ secrets.SUDO_PASSWORD }}' | sudo -S pm2 save
+            
+            echo "✅ Deployment Complete!"
