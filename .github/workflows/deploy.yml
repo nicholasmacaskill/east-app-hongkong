@@ -8,11 +8,9 @@ on:
 jobs:
   deploy-live:
     runs-on: ubuntu-latest
-    environment: live
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         env:
@@ -52,7 +50,11 @@ jobs:
             # THE SEARCH & DESTROY: Kill the 1-year cache in Nginx
             echo "🧨 SEARCH & DESTROY: Killing Nginx 1-year cache..."
             # Find any file containing the suspicious header and remove it
-            echo "$SUDO_PASS" | sudo -S grep -rl "s-maxage=31536000" /etc/nginx/sites-enabled | xargs -I {} sudo sed -i 's/s-maxage=31536000,//g' {} || true
+            echo "$SUDO_PASS" | sudo -S grep -rl "s-maxage=31536000" /etc/nginx/sites-enabled | xargs -r echo | while read -r file; do
+              if [ -n "$file" ]; then
+                echo "$SUDO_PASS" | sudo -S sed -i 's/s-maxage=31536000,//g' "$file"
+              fi
+            done
             # Restart Nginx to apply changes
             echo "$SUDO_PASS" | sudo -S systemctl restart nginx || true
 
