@@ -394,6 +394,19 @@ CREATE TABLE IF NOT EXISTS "public"."voice_commands" (
 ALTER TABLE "public"."voice_commands" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS public.transactions (
+    id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    amount integer NOT NULL,
+    type text NOT NULL CHECK (type IN ('topup', 'membership', 'transfer', 'booking', 'refund')),
+    stripe_session_id text UNIQUE, 
+    description text,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+ALTER TABLE "public"."transactions" OWNER TO "postgres";
+
+
 ALTER TABLE ONLY "public"."availability"
     ADD CONSTRAINT "availability_pkey" PRIMARY KEY ("id");
 
@@ -456,6 +469,10 @@ ALTER TABLE ONLY "public"."sessions"
 
 ALTER TABLE ONLY "public"."voice_commands"
     ADD CONSTRAINT "voice_commands_pkey" PRIMARY KEY ("id");
+
+
+ALTER TABLE ONLY "public"."transactions"
+    ADD CONSTRAINT "transactions_pkey" PRIMARY KEY ("id");
 
 
 
@@ -536,6 +553,7 @@ ALTER TABLE "public"."messages" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."availability" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."voice_commands" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."player_relationships" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."transactions" ENABLE ROW LEVEL SECURITY;
 
 
 
