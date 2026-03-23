@@ -69,6 +69,13 @@ jobs:
             echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.production
             echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env.production
             echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
+            
+            # STRIPE PRICE IDS (LIVE)
+            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_LIVE=price_1SuxcY1xd62IoClxe1kbgS6M" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY_LIVE=price_1SuxcX1xd62IoClxwsByYtDV" >> .env.production
+            # Adding fallbacks for generic keys often used in code
+            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=price_1SuxcY1xd62IoClxe1kbgS6M" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY=price_1SuxcX1xd62IoClxwsByYtDV" >> .env.production
 
             # F. DEPENDENCIES
             echo "📦 Checking/Installing pnpm..."
