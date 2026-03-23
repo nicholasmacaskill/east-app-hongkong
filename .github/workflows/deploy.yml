@@ -65,11 +65,11 @@ jobs:
             echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
 
             echo "🧹 Cleaning .next directory..."
-            $SUDO_PASS | sudo -S rm -rf .next || rm -rf .next
+            echo "$SUDO_PASS" | sudo -S rm -rf .next || rm -rf .next
             
             echo "📦 Installing pnpm if missing..."
             if ! command -v pnpm &> /dev/null; then
-              $SUDO_PASS | sudo -S npm install -g pnpm || npm install -g pnpm
+              echo "$SUDO_PASS" | sudo -S npm install -g pnpm || npm install -g pnpm
             fi
 
             echo "📦 Installing dependencies..."
@@ -84,9 +84,9 @@ jobs:
             cp -rv public .next/standalone/
             
             echo "🚀 Process Lifecycle: EastApp"
-            $SUDO_PASS | sudo -S pm2 delete EastApp || true
-            $SUDO_PASS | sudo -S pm2 start node --name "EastApp" -- .next/standalone/server.js
-            $SUDO_PASS | sudo -S pm2 save
+            echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
+            echo "$SUDO_PASS" | sudo -S pm2 start node --name "EastApp" -- .next/standalone/server.js
+            echo "$SUDO_PASS" | sudo -S pm2 save
             
             echo "✅ Deployment Successful!"
             pm2 list
