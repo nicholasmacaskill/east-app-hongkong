@@ -1,4 +1,4 @@
-name: Deploy Live Mode to Singapore VPS
+# Deploy Live Mode to Singapore VPS (Final Verified Restoration - Run #82)
 
 on:
   push:
