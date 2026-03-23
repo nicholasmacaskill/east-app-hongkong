@@ -43,9 +43,19 @@ jobs:
             cd /var/www/eastapp.booking.dynevents.com
             
             echo "📊 SYSTEM AUDIT (Total Purge Mode):"
-            echo "Disk: $(df -h .)"
-            echo "Processes: $(ps aux | grep node | grep -v grep)"
+            echo "🔍 ENVIRONMENT KEY DISCOVERY (Masked):"
+            env | cut -d= -f1 | sort
+            echo "🔍 NGINX CONFIG AUDIT (Pre-Repair):"
+            ls -la /etc/nginx/sites-enabled/
+            echo "$SUDO_PASS" | sudo -S cat /etc/nginx/sites-enabled/*
             
+            # THE SEARCH & DESTROY: Kill the 1-year cache in Nginx
+            echo "🧨 SEARCH & DESTROY: Killing Nginx 1-year cache..."
+            # Find any file containing the suspicious header and remove it
+            echo "$SUDO_PASS" | sudo -S grep -rl "s-maxage=31536000" /etc/nginx/sites-enabled | xargs -I {} sudo sed -i 's/s-maxage=31536000,//g' {} || true
+            # Restart Nginx to apply changes
+            echo "$SUDO_PASS" | sudo -S systemctl restart nginx || true
+
             # A. TOTAL RUNTIME PURGE
             echo "⚠️ KILLING ALL NODE PROCESSES (Nuclear Runtime Purge)..."
             echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
@@ -155,9 +165,4 @@ jobs:
             kill $LOG_PID || true
             
             echo "✅ TOTAL RUNTIME PURGE COMPLETE!"
-            echo "🔍 ENVIRONMENT KEY DISCOVERY (Masked):"
-            env | cut -d= -f1 | sort
-            echo "🔍 NGINX CONFIG AUDIT:"
-            ls -la /etc/nginx/sites-enabled/
-            echo "$SUDO_PASS" | sudo -S cat /etc/nginx/sites-enabled/*
             pm2 desc EastApp
