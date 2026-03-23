@@ -145,16 +145,29 @@ jobs:
                 exit 1
             fi
 
-            echo "📂 Mirroring assets into standalone AND root (for Nginx)..."
-            # Ensure standalone has assets
+            echo "📂 Mirroring assets into ALL POSSIBLE PATHS (Nginx Overkill)..."
+            # 1. Standalone Internal Path
             mkdir -p .next/standalone/.next/static
             cp -rv .next/static/* .next/standalone/.next/static/
-            # Ensure root has assets (for Nginx served from /var/www/...)
+            
+            # 2. Root .next Path (Original)
             mkdir -p .next/static
             cp -rv .next/standalone/.next/static/* .next/static/
+            
+            # 3. Public Folder Path (Common Nginx Root)
+            mkdir -p public/_next/static
+            cp -rv .next/static/* public/_next/static/
+            
+            # 4. Standalone Public Path
+            mkdir -p .next/standalone/public/_next/static
+            cp -rv .next/static/* .next/standalone/public/_next/static/
+            
             if [ -d "public" ]; then
-              cp -rv public .next/standalone/
+              cp -rv public/* .next/standalone/public/
             fi
+            
+            echo "📋 DIAGNOSTIC: Checking Nginx Path Mapping..."
+            echo "$SUDO_PASS" | sudo -S grep -r "root\|alias" /etc/nginx/sites-enabled/ || true
             
             # I. LAUNCH
             echo "🚀 Launching Production Standalone (PM2)..."
