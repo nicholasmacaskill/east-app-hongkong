@@ -123,4 +123,6 @@ jobs:
             kill $LOG_PID || true
             
             echo "✅ TOTAL RUNTIME PURGE COMPLETE!"
+            echo "🔍 NGINX CONFIG AUDIT:"
+            echo "$SUDO_PASS" | sudo -S find /etc/nginx/sites-enabled -type f -exec cat {} +
             pm2 desc EastApp
