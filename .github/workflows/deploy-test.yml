@@ -40,17 +40,13 @@ jobs:
             set -ex
             cd /var/www/test.eastapp.booking.dynevents.com
             
-            # THE SEARCH & DESTROY: Kill any lingering cache
-            echo "🧹 PURGING NGINX CACHE..."
-            echo "$SUDO_PASS" | sudo -S rm -rf /var/cache/nginx/* || true
-            
-            # A. TOTAL RUNTIME PURGE
-            echo "⚠️ KILLING TEST NODE PROCESSES (Nuclear Runtime Purge)..."
+            # A. TOTAL RUNTIME PURGE (TEST)
+            echo "⚠️ KILLING TEST NODE PROCESSES..."
             echo "$SUDO_PASS" | sudo -S pm2 delete EastAppTest || true
             echo "$SUDO_PASS" | sudo -S fuser -k 3001/tcp || true
             
             # B. NUCLEAR DIRECTORY PURGE
-            echo "💣 DELETING everything in test target folder..."
+            echo "💣 DELETING target folder..."
             echo "$SUDO_PASS" | sudo -S find . -mindepth 1 -delete
             
             # C. OWNERSHIP FIX
@@ -88,7 +84,7 @@ jobs:
             echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY_TEST=price_1StdqO1xd62IoClx8Y9s9W5G" >> .env.test
             echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=price_1StdqN1xd62IoClxM9w6tP5R" >> .env.test
             echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY=price_1StdqO1xd62IoClx8Y9s9W5G" >> .env.test
-            
+
             # TOP-UP PRICE IDS (TEST)
             write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER_TEST" "$PRICE_500"
             write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD_TEST" "$PRICE_1000"
@@ -103,17 +99,11 @@ jobs:
             write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE" "$PRICE_10000"
 
             # F. DEPENDENCIES
-            echo "📦 Checking/Installing pnpm..."
-            if ! command -v pnpm &> /dev/null; then
-              echo "$SUDO_PASS" | sudo -S npm install -g pnpm
-            fi
-            
-            echo "📦 Installing dependencies..."
             pnpm install --no-lockfile
             
-            # G. BUILD
+            # G. BUILD (Standard Pathing)
             echo "🏗️ Building for TEST mode..."
-            rm -rf .next-test/cache || true
+            rm -rf .next/cache || true
             
             export NODE_ENV=production
             export DATABASE_URL="$DATABASE_URL_TEST"
@@ -124,29 +114,35 @@ jobs:
             
             pnpm build
             
-            # Rename build output to .next-test if needed (STANDALONE puts it in .next)
-            # Standalone build usually creates .next/standalone
-            
-            # H. STANDALONE PREP
-            echo "📂 Mirroring assets into ALL POSSIBLE PATHS (Nginx Overkill - Test)..."
-            # 1. Standalone Internal Path
+            # H. STANDALONE PREP (Standard Internal Folder)
+            echo "📂 Syncing standalone static assets..."
+            # Note: Internal Next.js structure ALWAYS uses .next
             mkdir -p .next/standalone/.next/static
             cp -rv .next/static/* .next/standalone/.next/static/
             
-            # 2. Public Folder Path
+            # Public Folder Path (For Nginx fallback)
             mkdir -p public/_next/static
             cp -rv .next/static/* public/_next/static/
             
-            # 3. Standalone Public Path
+            # Standalone Public Path
             mkdir -p .next/standalone/public/_next/static
             cp -rv .next/static/* .next/standalone/public/_next/static/
             
+            # Copy all public assets to standalone/public
+            if [ -d "public" ]; then
+              cp -rv public/* .next/standalone/public/
+            fi
+
             # I. LAUNCH
             echo "🚀 Launching Test Standalone (PM2)..."
-            cp .env.test .next/standalone/.env.test
+            cp .env.test .next/standalone/
             
             echo "$SUDO_PASS" | sudo -S pm2 delete EastAppTest || true
+            # Standard path: .next/standalone/server.js
             echo "$SUDO_PASS" | sudo -S pm2 start ecosystem.config.js --only EastAppTest --update-env
             echo "$SUDO_PASS" | sudo -S pm2 save
+            
+            echo "📋 DIAGNOSTIC: Nginx Test Audit..."
+            echo "$SUDO_PASS" | sudo -S cat /etc/nginx/sites-enabled/test* || true
             
             echo "✅ TEST RESTORE COMPLETE!"
