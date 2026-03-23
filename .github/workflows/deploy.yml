@@ -84,42 +84,47 @@ jobs:
             git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/nicholasmacaskill/east-app-hongkong.git" .
             git checkout main
             
-            # E. ENV SETUP
+            # E. ENV SETUP (Surgical & Shell-Safe)
             BUILD_ID=$(date +%s)
             echo "📝 Creating fresh .env.production (Build ID: $BUILD_ID)..."
+            
+            # Helper to escape single quotes for safekeeping
+            safe_val() {
+              echo "$1" | sed "s/'/'\\\\''/g"
+            }
+            
             echo "NODE_ENV=production" > .env.production
             echo "NEXT_PUBLIC_STRIPE_MODE=live" >> .env.production
             echo "NEXT_PUBLIC_BUILD_ID=$BUILD_ID" >> .env.production
-            echo "STRIPE_SECRET_KEY='$STRIPE_SECRET_KEY_LIVE'" >> .env.production
-            echo "STRIPE_WEBHOOK_SECRET='$STRIPE_WEBHOOK_SECRET_LIVE'" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY='$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE'" >> .env.production
-            echo "NEXT_PUBLIC_SUPABASE_URL='$SUPABASE_URL'" >> .env.production
-            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY='$NEXT_PUBLIC_SUPABASE_ANON_KEY'" >> .env.production
-            echo "SUPABASE_SERVICE_ROLE_KEY='$SUPABASE_SERVICE_ROLE_KEY'" >> .env.production
-            echo "DATABASE_URL='$DATABASE_URL'" >> .env.production
-            echo "RESEND_API_KEY='$RESEND_API_KEY'" >> .env.production
+            echo "STRIPE_SECRET_KEY='$(safe_val "$STRIPE_SECRET_KEY_LIVE")'" >> .env.production
+            echo "STRIPE_WEBHOOK_SECRET='$(safe_val "$STRIPE_WEBHOOK_SECRET_LIVE")'" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY='$(safe_val "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE")'" >> .env.production
+            echo "NEXT_PUBLIC_SUPABASE_URL='$(safe_val "$SUPABASE_URL")'" >> .env.production
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY='$(safe_val "$NEXT_PUBLIC_SUPABASE_ANON_KEY")'" >> .env.production
+            echo "SUPABASE_SERVICE_ROLE_KEY='$(safe_val "$SUPABASE_SERVICE_ROLE_KEY")'" >> .env.production
+            echo "DATABASE_URL='$(safe_val "$DATABASE_URL")'" >> .env.production
+            echo "RESEND_API_KEY='$(safe_val "$RESEND_API_KEY")'" >> .env.production
             echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
             
             # STRIPE PRICE IDS (LIVE)
             echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_LIVE=price_1SuxcY1xd62IoClxe1kbgS6M" >> .env.production
             echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY_LIVE=price_1SuxcX1xd62IoClxwsByYtDV" >> .env.production
-            # Adding fallbacks for generic keys often used in code
-            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=$NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_LIVE" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY=$NEXT_PUBLIC_STRIPE_PRICE_YEARLY_LIVE" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=price_1SuxcY1xd62IoClxe1kbgS6M" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY=price_1SuxcX1xd62IoClxwsByYtDV" >> .env.production
             
             # TOP-UP PRICE IDS (LIVE)
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER_LIVE='$PRICE_500'" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD_LIVE='$PRICE_1000'" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO_LIVE='$PRICE_2500'" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE_LIVE='$PRICE_5000'" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE_LIVE='$PRICE_10000'" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER_LIVE='$(safe_val "$PRICE_500")'" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD_LIVE='$(safe_val "$PRICE_1000")'" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO_LIVE='$(safe_val "$PRICE_2500")'" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE_LIVE='$(safe_val "$PRICE_5000")'" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE_LIVE='$(safe_val "$PRICE_10000")'" >> .env.production
             
             # Fallbacks for generic keys
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER='$PRICE_500'" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD='$PRICE_1000'" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO='$PRICE_2500'" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE='$PRICE_5000'" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE='$PRICE_10000'" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER='$(safe_val "$PRICE_500")'" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD='$(safe_val "$PRICE_1000")'" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO='$(safe_val "$PRICE_2500")'" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE='$(safe_val "$PRICE_5000")'" >> .env.production
+            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE='$(safe_val "$PRICE_10000")'" >> .env.production
 
             # F. DEPENDENCIES
             echo "📦 Checking/Installing pnpm..."
