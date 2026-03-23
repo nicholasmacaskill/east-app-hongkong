@@ -30,63 +30,59 @@ jobs:
             
             echo "🔄 User: $(whoami) | PWD: $(pwd)"
             
-            echo "🔄 Fetching latest code..."
+            echo "🔄 Fetching latest code and resetting..."
             git fetch origin main
             git reset --hard origin/main
             
-            # Create/Update .env.production with latest secrets
+            # Create/Update .env.production
             echo "📝 Updating .env.production..."
             echo "NEXT_PUBLIC_STRIPE_MODE=live" > .env.production
+            echo "NODE_ENV=production" >> .env.production
             echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY_LIVE }}" >> .env.production
             echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET_LIVE }}" >> .env.production
             echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_YEARLY_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_STARTER=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_STARTER_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_STANDARD=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_STANDARD_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_PRO=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_PRO_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_ELITE=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_ELITE_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_ULTIMATE=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_ULTIMATE_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_MONTHLY_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_2_YEARLY_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_MONTHLY_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_FAMILY_3_YEARLY_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE_LIVE }}" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_TOPUP=${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_LIVE }}" >> .env.production
             echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.production
             echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.production
             echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> .env.production
             echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.production
             echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env.production
             echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
+            # (Add all other price IDs here if needed, but keeping it brief for now to ensure speed)
 
-            echo "🧹 Cleaning .next directory..."
-            echo "$SUDO_PASS" | sudo -S rm -rf .next || rm -rf .next
-            
-            echo "📦 Installing pnpm if missing..."
+            echo "🧹 Cleaning previous build..."
+            echo "$SUDO_PASS" | sudo -S rm -rf .next .next-test
+
+            echo "📦 Installing pnpm..."
             if ! command -v pnpm &> /dev/null; then
-              echo "$SUDO_PASS" | sudo -S npm install -g pnpm || npm install -g pnpm
+              echo "$SUDO_PASS" | sudo -S npm install -g pnpm
             fi
 
             echo "📦 Installing dependencies..."
             pnpm install --no-frozen-lockfile
             
-            echo "🏗️ Building with NEXT_PUBLIC_STRIPE_MODE=live..."
-            NEXT_PUBLIC_STRIPE_MODE=live pnpm build
+            echo "🏗️ Building for LIVE mode..."
+            NEXT_PUBLIC_STRIPE_MODE=live NODE_ENV=production pnpm build
             
-            echo "📂 Copying assets into standalone folder..."
+            echo "📂 Preparing standalone directory..."
+            # According to Next.js docs, static files should be in .next/standalone/.next/static
+            # AND public files should be in .next/standalone/public
             mkdir -p .next/standalone/.next/static
             cp -rv .next/static/* .next/standalone/.next/static/
             cp -rv public .next/standalone/
             
-            echo "🚀 Process Lifecycle: EastApp"
+            # Additional safety: Copy static to .next/standalone/_next/static as some configs expect this
+            mkdir -p .next/standalone/_next/static
+            cp -rv .next/static/* .next/standalone/_next/static/ || true
+
+            echo "🔍 Verifying build assets..."
+            ls -R .next/standalone/.next/static | grep ".js" | head -n 10
+            
+            echo "🚀 Restarting EastApp via PM2..."
+            # Using restart if exists, otherwise start
             echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
-            echo "$SUDO_PASS" | sudo -S pm2 start node --name "EastApp" -- .next/standalone/server.js
+            cd .next/standalone
+            echo "$SUDO_PASS" | sudo -S NODE_ENV=production pm2 start server.js --name "EastApp"
             echo "$SUDO_PASS" | sudo -S pm2 save
             
-            echo "✅ Deployment Successful!"
+            echo "✅ Deployment Complete!"
             pm2 list
