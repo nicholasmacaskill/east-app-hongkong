@@ -28,16 +28,21 @@ jobs:
             set -ex
             cd /var/www/eastapp.booking.dynevents.com
             
-            echo "🔄 User: $(whoami) | PWD: $(pwd)"
+            echo "🔄 User: $(whoami) | RAM Check: $(free -m | grep Mem)"
+            
+            echo "🛑 Stopping PM2 to free up memory for build..."
+            echo "$SUDO_PASS" | sudo -S pm2 stop EastApp || true
             
             echo "🔄 Fetching latest code and resetting..."
             git fetch origin main
             git reset --hard origin/main
             
-            # Create/Update .env.production
-            echo "📝 Updating .env.production..."
+            # Create/Update .env.production with cache busting
+            BUILD_ID=$(date +%s)
+            echo "📝 Updating .env.production (Build ID: $BUILD_ID)..."
             echo "NEXT_PUBLIC_STRIPE_MODE=live" > .env.production
             echo "NODE_ENV=production" >> .env.production
+            echo "NEXT_PUBLIC_BUILD_ID=$BUILD_ID" >> .env.production
             echo "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY_LIVE }}" >> .env.production
             echo "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET_LIVE }}" >> .env.production
             echo "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE }}" >> .env.production
@@ -47,10 +52,10 @@ jobs:
             echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env.production
             echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env.production
             echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
-            # (Add all other price IDs here if needed, but keeping it brief for now to ensure speed)
+            # Price IDs (Brief for speed, add as needed)
 
-            echo "🧹 Cleaning previous build..."
-            echo "$SUDO_PASS" | sudo -S rm -rf .next .next-test
+            echo "🧹 Cleaning previous build and cache..."
+            echo "$SUDO_PASS" | sudo -S rm -rf .next .next-test node_modules/.cache
 
             echo "📦 Installing pnpm..."
             if ! command -v pnpm &> /dev/null; then
@@ -60,28 +65,25 @@ jobs:
             echo "📦 Installing dependencies..."
             pnpm install --no-frozen-lockfile
             
-            echo "🏗️ Building for LIVE mode..."
+            echo "🏗️ Building for LIVE mode (This will take 1-3 minutes)..."
             NEXT_PUBLIC_STRIPE_MODE=live NODE_ENV=production pnpm build
             
             echo "📂 Preparing standalone directory..."
-            # According to Next.js docs, static files should be in .next/standalone/.next/static
-            # AND public files should be in .next/standalone/public
             mkdir -p .next/standalone/.next/static
             cp -rv .next/static/* .next/standalone/.next/static/
             cp -rv public .next/standalone/
             
-            # Additional safety: Copy static to .next/standalone/_next/static as some configs expect this
+            # Additional safety mapping
             mkdir -p .next/standalone/_next/static
             cp -rv .next/static/* .next/standalone/_next/static/ || true
 
             echo "🔍 Verifying build assets..."
             ls -R .next/standalone/.next/static | grep ".js" | head -n 10
             
-            echo "🚀 Restarting EastApp via PM2..."
-            # Using restart if exists, otherwise start
+            echo "🚀 Starting EastApp via PM2..."
             echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
             cd .next/standalone
-            echo "$SUDO_PASS" | sudo -S NODE_ENV=production pm2 start server.js --name "EastApp"
+            echo "$SUDO_PASS" | sudo -S NODE_ENV=production pm2 start server.js --name "EastApp" --update-env
             echo "$SUDO_PASS" | sudo -S pm2 save
             
             echo "✅ Deployment Complete!"
