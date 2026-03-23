@@ -79,7 +79,6 @@ jobs:
             echo "NEXT_PUBLIC_BASE_URL=https://test.eastapp.booking.dynevents.com" >> .env.test
             
             # STRIPE PRICE IDS (TEST)
-            # Monthly/Yearly (Hardcoded for clarity as these are standard test IDs)
             echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_TEST=price_1StdqN1xd62IoClxM9w6tP5R" >> .env.test
             echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY_TEST=price_1StdqO1xd62IoClx8Y9s9W5G" >> .env.test
             echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=price_1StdqN1xd62IoClxM9w6tP5R" >> .env.test
@@ -101,7 +100,7 @@ jobs:
             # F. DEPENDENCIES
             pnpm install --no-lockfile
             
-            # G. BUILD (Standard Pathing)
+            # G. BUILD
             echo "🏗️ Building for TEST mode..."
             rm -rf .next/cache || true
             
@@ -114,35 +113,35 @@ jobs:
             
             pnpm build
             
-            # H. STANDALONE PREP (Standard Internal Folder)
+            # H. STANDALONE PREP (Hyper-Mirroring for Assets)
             echo "📂 Syncing standalone static assets..."
-            # Note: Internal Next.js structure ALWAYS uses .next
+            # Note: Next.js standalone server needs its internal chunks
             mkdir -p .next/standalone/.next/static
             cp -rv .next/static/* .next/standalone/.next/static/
             
-            # Public Folder Path (For Nginx fallback)
+            # Also copy to root for safe fallback mapping
             mkdir -p public/_next/static
             cp -rv .next/static/* public/_next/static/
             
-            # Standalone Public Path
+            # PUBLIC ROOT MIRRORING (CRITICAL for Logos)
+            echo "🖼️ Mirroring Public folder (Logos/Images) everywhere..."
+            mkdir -p .next/standalone/public
+            cp -rv public/* .next/standalone/public/
+            
+            # Standalone Public Path needs the _next/static folder as well
             mkdir -p .next/standalone/public/_next/static
             cp -rv .next/static/* .next/standalone/public/_next/static/
             
-            # Copy all public assets to standalone/public
-            if [ -d "public" ]; then
-              cp -rv public/* .next/standalone/public/
-            fi
-
             # I. LAUNCH
             echo "🚀 Launching Test Standalone (PM2)..."
             cp .env.test .next/standalone/
             
             echo "$SUDO_PASS" | sudo -S pm2 delete EastAppTest || true
-            # Standard path: .next/standalone/server.js
             echo "$SUDO_PASS" | sudo -S pm2 start ecosystem.config.js --only EastAppTest --update-env
             echo "$SUDO_PASS" | sudo -S pm2 save
             
-            echo "📋 DIAGNOSTIC: Nginx Test Audit..."
-            echo "$SUDO_PASS" | sudo -S cat /etc/nginx/sites-enabled/test* || true
+            echo "📋 DIAGNOSTIC: Logo Check..."
+            ls -la public/east-logo-transparent.png || true
+            ls -la .next/standalone/public/east-logo-transparent.png || true
             
             echo "✅ TEST RESTORE COMPLETE!"
