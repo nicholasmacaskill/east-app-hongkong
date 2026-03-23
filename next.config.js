@@ -67,7 +67,9 @@ const nextConfig = {
   },
 };
 
-module.exports = withSentryConfig(
+// module.exports = withSentryConfig(
+module.exports = nextConfig;
+/*
   nextConfig,
   {
     // For all available options, see:
@@ -97,3 +99,4 @@ module.exports = withSentryConfig(
     disableLogger: true,
   }
 );
+*/
