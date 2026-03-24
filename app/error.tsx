@@ -17,6 +17,21 @@ export default function Error({
 
     useEffect(() => {
         console.error(error);
+
+        // Auto-reload on chunk load failures (stale cache after new deployment)
+        const isChunkError = error.message?.includes('Loading chunk') ||
+            error.message?.includes('ChunkLoadError') ||
+            error.name === 'ChunkLoadError';
+
+        if (isChunkError) {
+            console.warn('Chunk load error detected — reloading to fetch fresh assets.');
+            // Only reload once to prevent infinite loops
+            const hasReloaded = sessionStorage.getItem('chunk_reload');
+            if (!hasReloaded) {
+                sessionStorage.setItem('chunk_reload', '1');
+                window.location.reload();
+            }
+        }
     }, [error]);
 
     const handleCopyDebugInfo = async () => {
