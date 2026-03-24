@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, Suspense } from 'react';
 import { User, Mail, Lock, Phone, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -7,6 +7,27 @@ import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
 import { fetchProfileResilient } from '@/app/lib/authProfile';
 import type { UserRole } from '../types';
+
+/**
+ * Isolated inner component that safely reads the URL search params.
+ * By isolating useSearchParams here and wrapping it in Suspense at the
+ * call-site, we prevent this hook from ever suspending the parent tree.
+ */
+function EmailConfirmationHandler() {
+    const { addToast } = useToast();
+    const searchParams = useSearchParams();
+    const hasNotifiedRef = useRef(false);
+
+    useEffect(() => {
+        const confirmed = searchParams.get('confirmed');
+        if (confirmed === 'true' && !hasNotifiedRef.current) {
+            addToast('Email verified! You can now log in.', 'success');
+            hasNotifiedRef.current = true;
+        }
+    }, [searchParams, addToast]);
+
+    return null; // Renders nothing, only a side-effect
+}
 
 type AuthStep = 'login' | 'register' | 'success';
 
@@ -63,23 +84,12 @@ const InputField: React.FC<{ label: string; name: keyof FormData; type: string; 
 
 export default function AuthScreen({ onAuthSuccess, expectedRole, initialStep }: AuthScreenProps) {
     const { addToast } = useToast();
-    const searchParams = useSearchParams();
-    const hasNotifiedRef = useRef(false);
     const [step, setStep] = useState<AuthStep>(initialStep || 'login');
     const [formData, setFormData] = useState<FormData>({
         ...initialFormData,
         role: (expectedRole === 'parent' || expectedRole === 'coach' || expectedRole === 'player') ? expectedRole : 'player'
     });
     const [loading, setLoading] = useState(false);
-
-    // Handle verification confirmation
-    useEffect(() => {
-        const confirmed = searchParams.get('confirmed');
-        if (confirmed === 'true' && !hasNotifiedRef.current) {
-            addToast('Email verified! You can now log in.', 'success');
-            hasNotifiedRef.current = true;
-        }
-    }, [searchParams, addToast]);
 
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -146,6 +156,10 @@ export default function AuthScreen({ onAuthSuccess, expectedRole, initialStep }:
 
     return (
         <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 relative overflow-hidden font-montserrat">
+            {/* Isolated Suspense wrapper: reads URL params without suspending the whole page */}
+            <Suspense fallback={null}>
+                <EmailConfirmationHandler />
+            </Suspense>
             {/* Background Image Layer */}
             <div className="fixed inset-0 z-0">
                 <img

@@ -1,6 +1,6 @@
 'use client';
 export const dynamic = 'force-dynamic';
-import React, { useEffect, Suspense } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 // ✅ Import AuthScreen here (this is the correct place)
 import AuthScreen from '../auth/AuthScreen';
@@ -28,12 +28,10 @@ export default function LoginPage() {
     };
 
     return (
-        <Suspense fallback={<div className="min-h-screen bg-black" />}>
-            <div className="flex flex-col min-h-screen bg-black">
-                <AuthScreen
-                    onAuthSuccess={handleAuthSuccess}
-                />
-            </div>
-        </Suspense>
+        <div className="flex flex-col min-h-screen bg-black">
+            <AuthScreen
+                onAuthSuccess={handleAuthSuccess}
+            />
+        </div>
     );
 }
