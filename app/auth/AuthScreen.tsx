@@ -1,7 +1,8 @@
 'use client';
-import React, { useState, useCallback } from 'react';
-import { User, Mail, Lock, Phone, LogIn, CheckCircle } from 'lucide-react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { User, Mail, Lock, Phone, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
 import { fetchProfileResilient } from '@/app/lib/authProfile';
@@ -62,12 +63,23 @@ const InputField: React.FC<{ label: string; name: keyof FormData; type: string; 
 
 export default function AuthScreen({ onAuthSuccess, expectedRole, initialStep }: AuthScreenProps) {
     const { addToast } = useToast();
+    const searchParams = useSearchParams();
+    const hasNotifiedRef = useRef(false);
     const [step, setStep] = useState<AuthStep>(initialStep || 'login');
     const [formData, setFormData] = useState<FormData>({
         ...initialFormData,
         role: (expectedRole === 'parent' || expectedRole === 'coach' || expectedRole === 'player') ? expectedRole : 'player'
     });
     const [loading, setLoading] = useState(false);
+
+    // Handle verification confirmation
+    useEffect(() => {
+        const confirmed = searchParams.get('confirmed');
+        if (confirmed === 'true' && !hasNotifiedRef.current) {
+            addToast('Email verified! You can now log in.', 'success');
+            hasNotifiedRef.current = true;
+        }
+    }, [searchParams, addToast]);
 
     const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;

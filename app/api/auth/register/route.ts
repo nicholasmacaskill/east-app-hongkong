@@ -66,7 +66,7 @@ export async function POST(request: Request) {
             email,
             password,
             options: {
-                redirectTo: `${BASE_URL}/auth?confirmed=true`
+                redirectTo: `${BASE_URL}/login?confirmed=true`
             }
         });
 
