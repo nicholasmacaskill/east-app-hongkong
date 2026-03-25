@@ -13,6 +13,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env.local') });
  */
 export default defineConfig({
   timeout: 120000,
+  globalSetup: require.resolve('./tests/global-setup.ts'),
   globalTeardown: require.resolve('./tests/global-teardown.ts'),
   testDir: './tests',
   fullyParallel: false,

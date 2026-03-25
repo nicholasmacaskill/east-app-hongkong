@@ -1,4 +1,4 @@
-name: Deploy Test Mode to Singapore VPS
+# Deploy Test Mode to Singapore VPS (Zero-CPU Build Mode)
 
 on:
   push:
@@ -10,130 +10,120 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy-test:
+  build:
+    name: 🏗️ Build Standalone (Test)
     runs-on: ubuntu-latest
     environment: test
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Application
+        run: pnpm build
         env:
-          SUDO_PASS: ${{ secrets.SUDO_PASSWORD }}
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          STRIPE_SECRET_KEY_TEST: ${{ secrets.STRIPE_SECRET_KEY_TEST }}
-          STRIPE_WEBHOOK_SECRET_TEST: ${{ secrets.STRIPE_WEBHOOK_SECRET_TEST }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST }}
+          NODE_ENV: production
+          NEXT_PUBLIC_STRIPE_MODE: test
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STRIPE_SECRET_KEY_TEST: ${{ secrets.STRIPE_SECRET_KEY_TEST }}
           DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST || secrets.DATABASE_URL }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          PRICE_500: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER_TEST }}
-          PRICE_1000: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD_TEST }}
-          PRICE_2500: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO_TEST }}
-          PRICE_5000: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE_TEST }}
-          PRICE_10000: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE_TEST }}
+
+      - name: Prepare Standalone Bundle
+        run: |
+          mkdir -p deploy_bundle
+          cp -r .next/standalone/* deploy_bundle/
+          mkdir -p deploy_bundle/.next/static
+          cp -r .next/static/* deploy_bundle/.next/static/
+          cp -r public deploy_bundle/
+          cp ecosystem.config.js deploy_bundle/
+          tar -czf bundle-test.tar.gz -C deploy_bundle .
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-bundle-test
+          path: bundle-test.tar.gz
+          retention-days: 1
+
+  deploy-test:
+    name: 🚀 Deploy to VPS (Test Sync)
+    needs: build
+    runs-on: ubuntu-latest
+    environment: test
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-bundle-test
+
+      - name: Upload Bundle to VPS
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: dyn1.dynevents.com
           username: nicholas
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 60022
-          envs: SUDO_PASS,SUPABASE_URL,GITHUB_TOKEN,STRIPE_SECRET_KEY_TEST,STRIPE_WEBHOOK_SECRET_TEST,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,DATABASE_URL_TEST,RESEND_API_KEY,PRICE_500,PRICE_1000,PRICE_2500,PRICE_5000,PRICE_10000
+          source: "bundle-test.tar.gz"
+          target: "/var/www/test.eastapp.booking.dynevents.com"
+
+      - name: Finalize & Restart on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          SUDO_PASS: ${{ secrets.SUDO_PASSWORD }}
+          STRIPE_SECRET_KEY_TEST: ${{ secrets.STRIPE_SECRET_KEY_TEST }}
+          STRIPE_WEBHOOK_SECRET_TEST: ${{ secrets.STRIPE_WEBHOOK_SECRET_TEST }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST || secrets.DATABASE_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        with:
+          host: dyn1.dynevents.com
+          username: nicholas
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 60022
+          envs: SUDO_PASS,STRIPE_SECRET_KEY_TEST,STRIPE_WEBHOOK_SECRET_TEST,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,DATABASE_URL_TEST,RESEND_API_KEY
           script: |
             set -ex
             cd /var/www/test.eastapp.booking.dynevents.com
             
-            # A. TOTAL RUNTIME PURGE (TEST)
-            echo "⚠️ KILLING TEST NODE PROCESSES..."
-            echo "$SUDO_PASS" | sudo -S pm2 delete EastAppTest || true
-            echo "$SUDO_PASS" | sudo -S fuser -k 3001/tcp || true
+            echo "📦 Unpacking bundle..."
+            tar -xzf bundle-test.tar.gz -C .
+            rm bundle-test.tar.gz
             
-            # B. NUCLEAR DIRECTORY PURGE
-            echo "💣 DELETING target folder..."
-            echo "$SUDO_PASS" | sudo -S find . -mindepth 1 -delete
-            
-            # C. OWNERSHIP FIX
-            echo "$SUDO_PASS" | sudo -S chown -R $(whoami):$(whoami) .
-            
-            # D. TOKEN-BASED CLONE 
-            git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/nicholasmacaskill/east-app-hongkong.git" .
-            git checkout test
-            
-            # E. ENV SETUP (PRINTF HARDENING)
-            BUILD_ID=$(date +%s)
-            
-            # Helper to write variables safely
+            echo "📝 Creating .env.test..."
             write_env() {
               printf '%s=%q\n' "$1" "$2" >> .env.test
             }
-            
             echo "NODE_ENV=production" > .env.test
             echo "NEXT_PUBLIC_STRIPE_MODE=test" >> .env.test
-            echo "NEXT_PUBLIC_BUILD_ID=$BUILD_ID" >> .env.test
-            
-            # SECRETS (With expected _TEST suffix for stripe-config.ts)
-            write_env "STRIPE_SECRET_KEY_TEST" "$STRIPE_SECRET_KEY_TEST"
-            write_env "STRIPE_WEBHOOK_SECRET_TEST" "$STRIPE_WEBHOOK_SECRET_TEST"
-            write_env "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST" "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST"
-            
-            # Fallbacks for code that looks for the plain name
             write_env "STRIPE_SECRET_KEY" "$STRIPE_SECRET_KEY_TEST"
             write_env "STRIPE_WEBHOOK_SECRET" "$STRIPE_WEBHOOK_SECRET_TEST"
             write_env "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST"
-            
-            write_env "NEXT_PUBLIC_SUPABASE_URL" "$SUPABASE_URL"
+            write_env "NEXT_PUBLIC_SUPABASE_URL" "$NEXT_PUBLIC_SUPABASE_URL"
             write_env "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
             write_env "SUPABASE_SERVICE_ROLE_KEY" "$SUPABASE_SERVICE_ROLE_KEY"
             write_env "DATABASE_URL" "$DATABASE_URL_TEST"
             write_env "RESEND_API_KEY" "$RESEND_API_KEY"
-            echo "NEXT_PUBLIC_BASE_URL=https://test.eastapp.booking.dynevents.com" >> .env.test
             
-            # STRIPE PRICE IDS (TEST)
-            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_TEST=price_1StdqN1xd62IoClxM9w6tP5R" >> .env.test
-            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY_TEST=price_1StdqO1xd62IoClx8Y9s9W5G" >> .env.test
-            
-            # TOP-UP PRICE IDS (TEST Suffix)
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER_TEST" "$PRICE_500"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD_TEST" "$PRICE_1000"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO_TEST" "$PRICE_2500"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE_TEST" "$PRICE_5000"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE_TEST" "$PRICE_10000"
- 
-            # F. DEPENDENCIES
-            pnpm install --no-lockfile
-            
-            # G. BUILD
-            echo "🏗️ Building for TEST mode..."
-            rm -rf .next/cache || true
-            
-            export NODE_ENV=production
-            export DATABASE_URL="$DATABASE_URL_TEST"
-            export NEXT_PUBLIC_SUPABASE_URL="$SUPABASE_URL"
-            export NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY"
-            export NEXT_PUBLIC_STRIPE_MODE=test
-            export STRIPE_SECRET_KEY_TEST="$STRIPE_SECRET_KEY_TEST"
-            export STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY_TEST"
-            
-            pnpm build
-            
-            # H. STANDALONE PREP
-            echo "📂 Syncing standalone static assets..."
-            mkdir -p .next/standalone/.next/static
-            cp -rv .next/static/* .next/standalone/.next/static/
-            
-            # Mirror Public Assets (Logos)
-            mkdir -p .next/standalone/public
-            cp -rv public/* .next/standalone/public/
-            mkdir -p .next/standalone/public/_next/static
-            cp -rv .next/static/* .next/standalone/public/_next/static/
-            
-            # I. LAUNCH
-            echo "🚀 Launching Test Standalone (PM2)..."
-            cp .env.test .next/standalone/
-            
+            echo "🚀 Restarting EastAppTest (Minimal CPU Impact)..."
             echo "$SUDO_PASS" | sudo -S pm2 delete EastAppTest || true
             echo "$SUDO_PASS" | sudo -S pm2 start ecosystem.config.js --only EastAppTest --update-env
             echo "$SUDO_PASS" | sudo -S pm2 save
             
-            echo "✅ TEST RESTORE COMPLETE!"
+            echo "✅ ZERO-CPU TEST DEPLOY COMPLETE!"

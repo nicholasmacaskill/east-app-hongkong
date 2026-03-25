@@ -9,38 +9,46 @@ async function globalTeardown() {
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { autoRefreshToken: false, persistSession: false }
+    });
 
     try {
-        // 1. Fetch all users
-        const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+        const { data: { users }, error: listError } = await supabase.auth.admin.listUsers({ perPage: 1000 });
         if (listError) throw listError;
 
-        // 2. Define strict pattern for deletion
-        // We strictly only delete accounts ending in @pw.test. The .test TLD is reserved 
-        // by the IETF for testing purposes and cannot be registered by real users.
-        const testPatterns = [
-            /@pw\.test$/
-        ];
+        const keywords = ['test', 'qa', 'reminder'];
+        const protectedEmails = ['admin@east.com', 'rick@dynevents.com', 'nicholasmacaskill@proton.me'];
 
         const usersToDelete = users.filter(user => {
-            const email = user.email?.toLowerCase() || '';
-            return testPatterns.some(pattern => pattern.test(email));
+            const email = (user.email || '').toLowerCase();
+            const isProtected = protectedEmails.includes(email);
+            const matchesMatch = keywords.some(k => email.includes(k));
+            return matchesMatch && !isProtected;
         });
 
         console.log(`Found ${usersToDelete.length} test accounts to delete.`);
 
-        // 3. Delete users (Cascades to profiles if configured, but we'll be thorough)
-        for (const user of usersToDelete) {
-            console.log(`Deleting: ${user.email}`);
+        const ids = usersToDelete.map(u => u.id);
+        if (ids.length > 0) {
+            // Clear dependencies first
+            await Promise.all([
+                supabase.from('admin_audit_logs').delete().in('admin_id', ids),
+                supabase.from('announcements').delete().in('created_by', ids),
+                supabase.from('likes').delete().in('user_id', ids),
+                supabase.from('posts').delete().in('user_id', ids),
+                supabase.from('players_stats').update({ verified_by: null }).in('verified_by', ids),
+                supabase.from('transactions').delete().in('user_id', ids),
+            ]);
+            
+            await supabase.from('profiles').delete().in('id', ids);
 
-            // Delete from profiles first to be safe with FKs
-            await supabase.from('profiles').delete().eq('id', user.id);
-
-            // Delete from auth
-            const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
-            if (deleteError) {
-                console.error(`❌ Failed to delete auth user ${user.id}:`, deleteError.message);
+            for (const user of usersToDelete) {
+                console.log(`Deleting: ${user.email}`);
+                const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+                if (deleteError) {
+                    console.error(`❌ Failed to delete auth user ${user.id}:`, deleteError.message);
+                }
             }
         }
 

@@ -1,5 +1,5 @@
-# Deploy Live Mode to Singapore VPS (Final Victory Restoration - Run #84 - Force Build)
-# Stripe Live Top-Up Price IDs Confirmed from Dashboard
+# Deploy Live Mode to Singapore VPS (Zero-CPU Build Mode)
+# Off-Server Build Strategy: Build on GitHub Runner, Sync only artifacts to VPS.
 
 on:
   push:
@@ -11,17 +11,80 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy-live:
+  build:
+    name: 🏗️ Build Standalone (CI)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      - name: Deploy via SSH
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Application
+        run: pnpm build
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_STRIPE_MODE: live
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY_LIVE }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Prepare Standalone Bundle
+        run: |
+          mkdir -p deploy_bundle
+          cp -r .next/standalone/* deploy_bundle/
+          mkdir -p deploy_bundle/.next/static
+          cp -r .next/static/* deploy_bundle/.next/static/
+          cp -r public deploy_bundle/
+          # Include ecosystem file for PM2
+          cp ecosystem.config.js deploy_bundle/
+          # Create a compressed tarball for fast transfer
+          tar -czf bundle.tar.gz -C deploy_bundle .
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-bundle
+          path: bundle.tar.gz
+          retention-days: 1
+
+  deploy-live:
+    name: 🚀 Deploy to VPS (Sync)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-bundle
+
+      - name: Upload Bundle to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: dyn1.dynevents.com
+          username: nicholas
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 60022
+          source: "bundle.tar.gz"
+          target: "/var/www/eastapp.booking.dynevents.com"
+
+      - name: Finalize & Restart on VPS
         uses: appleboy/ssh-action@v1.0.3
         env:
           SUDO_PASS: ${{ secrets.SUDO_PASSWORD }}
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STRIPE_SECRET_KEY_LIVE: ${{ secrets.STRIPE_SECRET_KEY_LIVE }}
           STRIPE_WEBHOOK_SECRET_LIVE: ${{ secrets.STRIPE_WEBHOOK_SECRET_LIVE }}
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE }}
@@ -40,174 +103,40 @@ jobs:
           username: nicholas
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 60022
-          envs: SUDO_PASS,SUPABASE_URL,GITHUB_TOKEN,STRIPE_SECRET_KEY_LIVE,STRIPE_WEBHOOK_SECRET_LIVE,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,DATABASE_URL,RESEND_API_KEY,PRICE_500,PRICE_1000,PRICE_2500,PRICE_5000,PRICE_10000
+          envs: SUDO_PASS,STRIPE_SECRET_KEY_LIVE,STRIPE_WEBHOOK_SECRET_LIVE,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,DATABASE_URL,RESEND_API_KEY,PRICE_500,PRICE_1000,PRICE_2500,PRICE_5000,PRICE_10000
           script: |
             set -ex
             cd /var/www/eastapp.booking.dynevents.com
             
-            echo "📊 SYSTEM AUDIT (Total Purge Mode):"
-            echo "🔍 ENVIRONMENT KEY DISCOVERY (Masked):"
-            env | cut -d= -f1 | sort
-            echo "🔍 NGINX CONFIG AUDIT (Pre-Repair):"
-            ls -la /etc/nginx/sites-enabled/
-            echo "$SUDO_PASS" | sudo -S cat /etc/nginx/sites-enabled/*
+            # 1. Unpack the bundle
+            echo "📦 Unpacking bundle..."
+            tar -xzf bundle.tar.gz -C .
+            rm bundle.tar.gz
             
-            # THE SEARCH & DESTROY: Kill the 1-year cache in Nginx
-            echo "🧨 SEARCH & DESTROY: Killing Nginx 1-year cache..."
-            # Find any file containing the suspicious header and remove it
-            echo "$SUDO_PASS" | sudo -S grep -rl "s-maxage=31536000" /etc/nginx/sites-enabled | xargs -r echo | while read -r file; do
-              if [ -n "$file" ]; then
-                echo "$SUDO_PASS" | sudo -S sed -i 's/s-maxage=31536000,//g' "$file"
-              fi
-            done
-            # Restart Nginx to apply changes
-            echo "SUDO_PASS" | sudo -S systemctl restart nginx || true
-
-            # A. TOTAL RUNTIME PURGE
-            echo "⚠️ KILLING ALL NODE PROCESSES (Nuclear Runtime Purge)..."
-            echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
-            echo "$SUDO_PASS" | sudo -S killall node || true
-            # Force kill anything on our app ports
-            echo "$SUDO_PASS" | sudo -S fuser -k 3000/tcp || true
-            echo "$SUDO_PASS" | sudo -S fuser -k 3001/tcp || true
-            
-            echo "🧹 PURGING NGINX CACHE..."
-            echo "$SUDO_PASS" | sudo -S rm -rf /var/cache/nginx/* || true
-            echo "$SUDO_PASS" | sudo -S systemctl restart nginx || true
-            
-            # B. NUCLEAR DIRECTORY PURGE
-            echo "💣 DELETING EVERYTHING in target folder..."
-            echo "$SUDO_PASS" | sudo -S find . -mindepth 1 -delete
-            
-            # C. OWNERSHIP FIX
-            echo "🔑 Ensuring $(whoami) owns $(pwd)..."
-            echo "$SUDO_PASS" | sudo -S chown -R $(whoami):$(whoami) .
-            
-            # D. TOKEN-BASED CLONE 
-            echo "🔄 Fresh re-initialization (HTTPS Token Clone)..."
-            git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/nicholasmacaskill/east-app-hongkong.git" .
-            git checkout main
-            
-            # E. ENV SETUP (PRINTF HARDENING)
-            BUILD_ID=$(date +%s)
-            echo "📝 Creating fresh .env.production via Printf (Build ID: $BUILD_ID)..."
-            
-            # Helper to write variables safely
+            # 2. Env Setup (Still needed for the standalone server)
+            echo "📝 Creating .env.production..."
             write_env() {
               printf '%s=%q\n' "$1" "$2" >> .env.production
             }
-            
             echo "NODE_ENV=production" > .env.production
             echo "NEXT_PUBLIC_STRIPE_MODE=live" >> .env.production
-            echo "NEXT_PUBLIC_BUILD_ID=$BUILD_ID" >> .env.production
-            
             write_env "STRIPE_SECRET_KEY" "$STRIPE_SECRET_KEY_LIVE"
             write_env "STRIPE_WEBHOOK_SECRET" "$STRIPE_WEBHOOK_SECRET_LIVE"
             write_env "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_LIVE"
-            write_env "NEXT_PUBLIC_SUPABASE_URL" "$SUPABASE_URL"
+            write_env "NEXT_PUBLIC_SUPABASE_URL" "$NEXT_PUBLIC_SUPABASE_URL"
             write_env "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
             write_env "SUPABASE_SERVICE_ROLE_KEY" "$SUPABASE_SERVICE_ROLE_KEY"
             write_env "DATABASE_URL" "$DATABASE_URL"
             write_env "RESEND_API_KEY" "$RESEND_API_KEY"
-            echo "NEXT_PUBLIC_BASE_URL=https://eastapp.booking.dynevents.com" >> .env.production
             
-            # STRIPE PRICE IDS (LIVE)
-            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY_LIVE=price_1SuxcY1xd62IoClxe1kbgS6M" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY_LIVE=price_1SuxcX1xd62IoClxwsByYtDV" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_MONTHLY=price_1SuxcY1xd62IoClxe1kbgS6M" >> .env.production
-            echo "NEXT_PUBLIC_STRIPE_PRICE_YEARLY=price_1SuxcX1xd62IoClxwsByYtDV" >> .env.production
+            # 3. Nginx Asset Alignment (Mirroring what was in G before)
+            # We already unzipped into the root, which includes public/ and .next/static/
+            # Nginx usually looks for these in the root or /public
             
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER_LIVE" "$PRICE_500"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD_LIVE" "$PRICE_1000"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO_LIVE" "$PRICE_2500"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE_LIVE" "$PRICE_5000"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE_LIVE" "$PRICE_10000"
-            
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STARTER" "$PRICE_500"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_STANDARD" "$PRICE_1000"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO" "$PRICE_2500"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE" "$PRICE_5000"
-            write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE" "$PRICE_10000"
-
-            # F. DEPENDENCIES
-            echo "📦 Checking/Installing pnpm..."
-            if ! command -v pnpm &> /dev/null; then
-              echo "$SUDO_PASS" | sudo -S npm install -g pnpm
-            fi
-
-            echo "📦 Installing dependencies..."
-            pnpm install --no-lockfile
-            
-            # G. BUILD
-            echo "🏗️ Building for LIVE mode (Bypassing Lint)..."
-            # Ensure no stale build cache exists anywhere (Root and Standalone)
-            rm -rf .next/cache || true
-            rm -rf .next/standalone/.next/cache || true
-            
-            # Export all secrets to the build command (Very Important for Next.js 15 Standalone)
-            export NODE_ENV=production
-            export DATABASE_URL="$DATABASE_URL"
-            export NEXT_PUBLIC_SUPABASE_URL="$SUPABASE_URL"
-            export NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY"
-            export NEXT_PUBLIC_STRIPE_MODE=live
-            export STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY_LIVE"
-            
-            pnpm build
-            
-            # H. STANDALONE PREP
-            echo "📂 Verifying standalone output..."
-            ls -la .next
-            if [ ! -d ".next/standalone" ]; then
-                echo "❌ Standalone directory NOT found. Something is wrong with the build."
-                exit 1
-            fi
-
-            echo "📂 Mirroring assets into ALL POSSIBLE PATHS (Nginx Overkill)..."
-            # 1. Standalone Internal Path
-            mkdir -p .next/standalone/.next/static
-            cp -rv .next/static/* .next/standalone/.next/static/
-            
-            # 2. Root .next Path (Original)
-            mkdir -p .next/static
-            cp -rv .next/standalone/.next/static/* .next/static/
-            
-            # 3. Public Folder Path (Common Nginx Root)
-            mkdir -p public/_next/static
-            cp -rv .next/static/* public/_next/static/
-            
-            # 4. Standalone Public Path
-            mkdir -p .next/standalone/public/_next/static
-            cp -rv .next/static/* .next/standalone/public/_next/static/
-            
-            if [ -d "public" ]; then
-              cp -rv public/* .next/standalone/public/
-            fi
-            
-            echo "📋 DIAGNOSTIC: Checking Nginx Path Mapping..."
-            echo "$SUDO_PASS" | sudo -S grep -r "root\|alias" /etc/nginx/sites-enabled/ || true
-            
-            # I. LAUNCH
-            echo "🚀 Launching Production Standalone (PM2)..."
-            # Ensure .env exists in the standalone folder as well
-            cp .env.production .next/standalone/
-            
-            # Anti-Zombie Audit
-            echo "🔍 ANTI-ZOMBIE AUDIT (Port 3000):"
-            echo "$SUDO_PASS" | sudo -S netstat -tulpn | grep :3000 || true
-            
+            # 4. Launch (PM2)
+            echo "🚀 Restarting EastApp (Minimal CPU Impact)..."
             echo "$SUDO_PASS" | sudo -S pm2 delete EastApp || true
             echo "$SUDO_PASS" | sudo -S pm2 start ecosystem.config.js --only EastApp --update-env
             echo "$SUDO_PASS" | sudo -S pm2 save
             
-            echo "📋 FINAL HEALTH CHECK:"
-            echo "$SUDO_PASS" | sudo -S pm2 list
-            echo "⏳ Waiting for app startup (30 seconds)..."
-            sleep 30
-            echo "📋 LAST 50 LOG LINES (CRITICAL):"
-            echo "$SUDO_PASS" | sudo -S pm2 logs EastApp --lines 50 --no-daemon &
-            LOG_PID=$!
-            sleep 10
-            kill $LOG_PID || true
-            
-            echo "✅ THE ULTIMATE RESTORE IS COMPLETE!"
-            pm2 desc EastApp
+            echo "✅ ZERO-CPU DEPLOY COMPLETE!"
