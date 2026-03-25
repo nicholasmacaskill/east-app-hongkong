@@ -5,6 +5,10 @@ on:
     branches:
       - test
 
+concurrency:
+  group: deploy-test
+  cancel-in-progress: true
+
 jobs:
   deploy-test:
     runs-on: ubuntu-latest
@@ -95,7 +99,7 @@ jobs:
             write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_PRO_TEST" "$PRICE_2500"
             write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ELITE_TEST" "$PRICE_5000"
             write_env "NEXT_PUBLIC_STRIPE_PRICE_TOPUP_ULTIMATE_TEST" "$PRICE_10000"
-
+ 
             # F. DEPENDENCIES
             pnpm install --no-lockfile
             

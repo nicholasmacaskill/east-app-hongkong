@@ -6,6 +6,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: deploy-live
+  cancel-in-progress: true
+
 jobs:
   deploy-live:
     runs-on: ubuntu-latest
@@ -57,7 +61,7 @@ jobs:
               fi
             done
             # Restart Nginx to apply changes
-            echo "$SUDO_PASS" | sudo -S systemctl restart nginx || true
+            echo "SUDO_PASS" | sudo -S systemctl restart nginx || true
 
             # A. TOTAL RUNTIME PURGE
             echo "⚠️ KILLING ALL NODE PROCESSES (Nuclear Runtime Purge)..."
