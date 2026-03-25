@@ -1,0 +1,26 @@
+name: Server Diagnostics
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Remote Diagnostics
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: dyn1.dynevents.com
+          username: nicholas
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 60022
+          script: |
+             echo "📊 PM2 STATUS:"
+             pm2 list
+             echo "🔥 TOP PROCESSES (CPU):"
+             top -b -n 1 | head -n 20
+             echo "💾 DISK USAGE:"
+             df -h
+             echo "🛡️ NODE PROCESSES:"
+             ps aux | grep node | grep -v grep
+             echo "📦 PNPM PROCESSES:"
+             ps aux | grep pnpm | grep -v grep
