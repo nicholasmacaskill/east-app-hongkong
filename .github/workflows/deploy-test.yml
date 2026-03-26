@@ -43,24 +43,26 @@ jobs:
 
       - name: Prepare Standalone Bundle
         run: |
+          # Cleanup from previous runs
+          rm -rf deploy_bundle
           mkdir -p deploy_bundle
           
           echo "📂 STANDALONE STRUCTURE:"
-          find .next/standalone -maxdepth 3
+          find next/standalone -maxdepth 3
           
           # Flatten standalone output
-          cp -r .next/standalone/. deploy_bundle/
+          cp -r next/standalone/. deploy_bundle/
           
           # Universal Asset Fallback: Mirror static assets in public folder
           # This allows the standalone server to serve them if Nginx fails
           mkdir -p deploy_bundle/public/_next/static
           mkdir -p deploy_bundle/public/next/static
-          cp -r .next/static/. deploy_bundle/public/_next/static/
-          cp -r .next/static/. deploy_bundle/public/next/static/
+          cp -r next/static/. deploy_bundle/public/_next/static/
+          cp -r next/static/. deploy_bundle/public/next/static/
           
           # Standard Next.js standalone expectation
-          mkdir -p deploy_bundle/.next/static
-          cp -r .next/static/. deploy_bundle/.next/static/
+          mkdir -p deploy_bundle/next/static
+          cp -r next/static/. deploy_bundle/next/static/
           cp -r public/. deploy_bundle/public/
           
           echo "📦 DEPLOY BUNDLE STRUCTURE:"
@@ -146,8 +148,8 @@ jobs:
             sudo systemctl restart nginx || sudo service nginx restart
             
             echo "🔗 Creating asset symlink (normalization)..."
-            rm -rf next
-            ln -s .next next
+            rm -rf .next
+            ln -s next .next
             
             echo "📝 Creating .env.test..."
             write_env() {
