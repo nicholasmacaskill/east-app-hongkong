@@ -14,13 +14,11 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 60022
           script: |
-             echo "📊 PM2 STATUS:"
-             pm2 list
-             echo "🔥 TOP PROCESSES (CPU):"
-             top -b -n 1 | head -n 20
-             echo "💾 DISK USAGE:"
-             df -h
-             echo "🛡️ NODE PROCESSES:"
-             ps aux | grep node | grep -v grep
-             echo "📦 PNPM PROCESSES:"
-             ps aux | grep pnpm | grep -v grep
+             echo "🔌 NETWORK PORTS:"
+             sudo netstat -tulpn | grep LISTEN
+             echo "🌐 NGINX CONFIG (test):"
+             sudo cat /etc/nginx/sites-enabled/test.eastapp.booking.dynevents.com
+             echo "📂 FILES IN TEST BUNDLE:"
+             ls -R /var/www/test.eastapp.booking.dynevents.com/.next/server/app/sys-admin
+             echo "🕒 DEPLOY BREADCRUMB:"
+             cat /var/www/test.eastapp.booking.dynevents.com/DEPLOYED_AT.txt
