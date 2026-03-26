@@ -128,6 +128,11 @@ jobs:
             pm2 delete EastAppTestV3 || true
             pm2 start ecosystem.config.js --only EastAppTest
             pm2 save
+            
+            echo "🔐 Setting permissions..."
+            sudo chown -R www-data:www-data /var/www/test.eastapp.booking.dynevents.com
+            sudo chmod -R 755 /var/www/test.eastapp.booking.dynevents.com
+            
             echo "📝 Creating .env.test..."
             write_env() {
               printf '%s=%q\n' "$1" "$2" >> .env.test
