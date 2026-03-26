@@ -99,6 +99,10 @@ jobs:
             set -ex
             cd /var/www/test.eastapp.booking.dynevents.com
             
+            echo "🧹 Cleaning up old files (preserving environment)..."
+            # Delete everything except .env.test and the new bundle
+            find . -maxdepth 1 ! -name '.env.test' ! -name 'bundle-test.tar.gz' ! -name '.' -exec rm -rf {} +
+            
             echo "📦 Unpacking bundle..."
             tar -xzf bundle-test.tar.gz -C .
             rm bundle-test.tar.gz

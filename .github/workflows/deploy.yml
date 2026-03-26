@@ -107,6 +107,10 @@ jobs:
             cd /var/www/eastapp.booking.dynevents.com
             
             # 1. Unpack the bundle
+            echo "🧹 Cleaning up old files (preserving environment)..."
+            # Delete everything except .env.production and the new bundle
+            find . -maxdepth 1 ! -name '.env.production' ! -name 'bundle.tar.gz' ! -name '.' -exec rm -rf {} +
+            
             echo "📦 Unpacking bundle..."
             tar -xzf bundle.tar.gz -C .
             rm bundle.tar.gz
