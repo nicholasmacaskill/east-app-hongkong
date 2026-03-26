@@ -133,6 +133,9 @@ jobs:
             sudo chown -R www-data:www-data /var/www/test.eastapp.booking.dynevents.com
             sudo chmod -R 755 /var/www/test.eastapp.booking.dynevents.com
             
+            echo "🔄 Refreshing Nginx..."
+            sudo systemctl restart nginx || sudo service nginx restart
+            
             echo "📝 Creating .env.test..."
             write_env() {
               printf '%s=%q\n' "$1" "$2" >> .env.test
