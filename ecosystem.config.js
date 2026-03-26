@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'EastApp',
       script: 'node',
-      args: '.next/standalone/server.js',
+      args: 'server.js',
       cwd: '/var/www/eastapp.booking.dynevents.com',
       env_file: '.env.production',
       env: {
@@ -19,7 +19,7 @@ module.exports = {
     {
       name: 'EastAppTest',
       script: 'node',
-      args: '.next/standalone/server.js',
+      args: 'server.js',
       cwd: '/var/www/test.eastapp.booking.dynevents.com',
       env_file: '.env.test',
       env: {
