@@ -15,16 +15,9 @@ export async function GET() {
                 status: 'healthy',
                 timestamp: new Date().toISOString(),
                 database: 'connected',
-                environment: process.env.NODE_ENV,
-                cwd: process.cwd(),
-                debug_id: 'PHASE4_FINAL_V1'
+                environment: process.env.NODE_ENV
             },
-            { 
-                status: 200,
-                headers: {
-                    'X-Phase4-Debug': 'PHASE4_FINAL_V1'
-                }
-            }
+            { status: 200 }
         );
     } catch (e: any) {
         return NextResponse.json(
