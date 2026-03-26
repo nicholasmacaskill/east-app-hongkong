@@ -111,8 +111,9 @@ jobs:
             cd /var/www/test.eastapp.booking.dynevents.com
             echo "📍 CURRENT DIRECTORY: $(pwd)"
             
-            echo "🧹 Cleaning up old files..."
-            find . -maxdepth 1 ! -name 'bundle-test.tar.gz' ! -name '.env.test' -exec rm -rf {} +
+            echo "🧹 TOTAL WIPE: Purging deployment directory..."
+            # Delete everything except the zip and .env.test
+            find . -maxdepth 1 ! -name '.env.test' ! -name 'bundle-test.tar.gz' -exec rm -rf {} +
             
             echo "📦 Unpacking bundle (verbose)..."
             tar -xvzf bundle-test.tar.gz
