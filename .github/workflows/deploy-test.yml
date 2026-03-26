@@ -136,6 +136,10 @@ jobs:
             echo "🔄 Refreshing Nginx..."
             sudo systemctl restart nginx || sudo service nginx restart
             
+            echo "🔗 Creating asset symlink (normalization)..."
+            rm -rf next
+            ln -s .next next
+            
             echo "📝 Creating .env.test..."
             write_env() {
               printf '%s=%q\n' "$1" "$2" >> .env.test
