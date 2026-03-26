@@ -1,5 +1,4 @@
 /** @type {import('next').NextConfig} */
-const { withSentryConfig } = require('@sentry/nextjs');
 
 const nextConfig = {
   distDir: '.next',
@@ -76,6 +75,7 @@ const nextConfig = {
     // !! WARN !!
     ignoreDuringBuilds: true,
   },
+  staticPageGenerationTimeout: 1000,
 };
 
 // module.exports = withSentryConfig(
