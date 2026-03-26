@@ -57,6 +57,10 @@ const nextConfig = {
         source: '/supabase/:path*',
         destination: 'http://127.0.0.1:54321/:path*',
       },
+      {
+        source: '/next/:path*',
+        destination: '/_next/:path*',
+      },
     ]
   },
   // Enable standalone output for Docker/Cloud Run
