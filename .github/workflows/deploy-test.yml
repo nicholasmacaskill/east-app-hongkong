@@ -116,6 +116,7 @@ jobs:
             
             echo "📦 Unpacking bundle (verbose)..."
             tar -xvzf bundle-test.tar.gz
+            mv server.js server-v4.js
             
             echo "🕒 DEPLOYED AT: $(date)" > DEPLOYED_AT.txt
             
