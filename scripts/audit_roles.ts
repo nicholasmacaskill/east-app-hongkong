@@ -35,8 +35,22 @@ async function auditRoles() {
 
         console.table(roleStats);
 
-    } catch (err) {
-        console.error('Error:', err);
+        // --- ANOMALY DETECTION ---
+        const sysAdmins = roleStats['sys-admin']?.total || 0;
+        if (sysAdmins > 5) {
+            throw new Error(`🚩 SECURITY ANOMALY: Too many sys-admins detected (${sysAdmins}). Max allowed: 5.`);
+        }
+
+        const suspiciousSubs = profiles.filter(p => !p.contact_email?.includes('@') && p.role !== 'player').length;
+        if (suspiciousSubs > 0) {
+            throw new Error(`🚩 DATA ANOMALY: Detected ${suspiciousSubs} profiles with invalid emails and elevated roles.`);
+        }
+
+        console.log('✅ Audit Completed: No critical anomalies detected.');
+
+    } catch (err: any) {
+        console.error('❌ Audit Failed:', err?.message || err);
+        process.exit(1); // Ensure CI fails
     }
 }
 

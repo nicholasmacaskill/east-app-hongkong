@@ -93,99 +93,102 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: true, data });
         }
 
-        if (action === 'DELETE') {
-            if (!id) return NextResponse.json({ error: 'ID is required for delete' }, { status: 400 });
+        if (action === 'DELETE' || action === 'BULK_DELETE') {
+            const ids = action === 'BULK_DELETE' ? body.ids : [id];
+            if (!ids || ids.length === 0) return NextResponse.json({ error: 'IDs are required' }, { status: 400 });
 
-            // Fetch session details for refund calculation
-            const { data: session } = await supabaseAdmin
-                .from('sessions')
-                .select('start_time, title')
-                .eq('id', id)
-                .single();
+            for (const targetId of ids) {
+                // Fetch session details for refund calculation
+                const { data: session } = await supabaseAdmin
+                    .from('sessions')
+                    .select('start_time, title')
+                    .eq('id', targetId)
+                    .single();
 
-            // Soft delete: set status to cancelled
-            const { error } = await supabaseAdmin
-                .from('sessions')
-                .update({ status: 'cancelled' })
-                .eq('id', id);
+                if (!session) continue;
 
-            if (error) throw error;
+                // Soft delete: set status to cancelled
+                const { error: deleteError } = await supabaseAdmin
+                    .from('sessions')
+                    .update({ status: 'cancelled' })
+                    .eq('id', targetId);
 
-            // Fetch all registrations for this session to process refunds
-            const { data: registrations } = await supabaseAdmin
-                .from('registrations')
-                .select('id, user_id, payer_id, credits_paid')
-                .eq('session_id', id)
-                .neq('status', 'cancelled'); // Only active registrations
+                if (deleteError) throw deleteError;
 
-            // Process refunds for each registration
-            if (registrations && registrations.length > 0 && session) {
-                const startTime = new Date(session.start_time).getTime();
-                const now = Date.now();
-                const hoursUntilStart = (startTime - now) / (1000 * 60 * 60);
+                // Fetch all registrations for this session to process refunds
+                const { data: registrations } = await supabaseAdmin
+                    .from('registrations')
+                    .select('id, user_id, payer_id, credits_paid')
+                    .eq('session_id', targetId)
+                    .neq('status', 'cancelled'); // Only active registrations
 
-                // Calculate refund multiplier based on cancellation policy
-                let refundMultiplier = 1;
-                if (hoursUntilStart < 24) refundMultiplier = 0;
-                else if (hoursUntilStart < 48) refundMultiplier = 0.5;
+                // Process refunds for each registration
+                if (registrations && registrations.length > 0) {
+                    const startTime = new Date(session.start_time).getTime();
+                    const now = Date.now();
+                    const hoursUntilStart = (startTime - now) / (1000 * 60 * 60);
 
-                for (const reg of registrations) {
-                    const payerId = reg.payer_id || reg.user_id;
-                    const refundAmount = Math.floor((reg.credits_paid || 0) * refundMultiplier);
+                    // Calculate refund multiplier based on cancellation policy
+                    let refundMultiplier = 1;
+                    if (hoursUntilStart < 24) refundMultiplier = 0;
+                    else if (hoursUntilStart < 48) refundMultiplier = 0.5;
 
-                    if (refundAmount > 0) {
-                        // Refund credits to payer
-                        const { data: profile } = await supabaseAdmin
-                            .from('profiles')
-                            .select('credits')
-                            .eq('id', payerId)
-                            .single();
+                    for (const reg of registrations) {
+                        const payerId = reg.payer_id || reg.user_id;
+                        const refundAmount = Math.floor((reg.credits_paid || 0) * refundMultiplier);
 
-                        if (profile) {
-                            await supabaseAdmin
+                        if (refundAmount > 0) {
+                            // Refund credits to payer
+                            const { data: profile } = await supabaseAdmin
                                 .from('profiles')
-                                .update({ credits: (profile.credits || 0) + refundAmount })
-                                .eq('id', payerId);
+                                .select('credits')
+                                .eq('id', payerId)
+                                .single();
+
+                            if (profile) {
+                                await supabaseAdmin
+                                    .from('profiles')
+                                    .update({ credits: (profile.credits || 0) + refundAmount })
+                                    .eq('id', payerId);
+                            }
+
+                            // Log transaction
+                            await supabaseAdmin
+                                .from('transactions')
+                                .insert({
+                                    user_id: payerId,
+                                    amount: refundAmount,
+                                    type: 'refund',
+                                    description: `Admin cancelled: ${session.title} (${refundMultiplier * 100}% refund)`
+                                });
                         }
 
-                        // Log transaction
-                        await supabaseAdmin
-                            .from('transactions')
-                            .insert({
-                                user_id: payerId,
-                                amount: refundAmount,
-                                type: 'refund',
-                                description: `Admin cancelled: ${session.title} (${refundMultiplier * 100}% refund)`
-                            });
+                        // Log the individual booking cancellation
+                        await logAdminAction(
+                            user.id,
+                            'CANCEL_BOOKING',
+                            'registration',
+                            reg.id,
+                            {
+                                sessionId: targetId,
+                                sessionTitle: session.title,
+                                userId: reg.user_id
+                            }
+                        );
                     }
-
-                    // Log the individual booking cancellation
-                    await logAdminAction(
-                        user.id,
-                        'CANCEL_BOOKING',
-                        'registration',
-                        reg.id,
-                        {
-                            sessionId: id,
-                            sessionTitle: session.title,
-                            userId: reg.user_id
-                        }
-                    );
                 }
+
+                // Mark all registrations for this session as cancelled
+                await supabaseAdmin
+                    .from('registrations')
+                    .update({ status: 'cancelled' })
+                    .eq('session_id', targetId);
+
+                // Audit Logging
+                await logAdminAction(user.id, 'DELETE_SESSION', 'session', targetId);
             }
 
-            // Mark all registrations for this session as cancelled
-            const { error: regError } = await supabaseAdmin
-                .from('registrations')
-                .update({ status: 'cancelled' })
-                .eq('session_id', id);
-
-            if (regError) console.warn('Failed to cancel registrations for session:', id, regError);
-
-            // Audit Logging
-            await logAdminAction(user.id, 'DELETE_SESSION', 'session', id);
-
-            return NextResponse.json({ success: true });
+            return NextResponse.json({ success: true, count: ids.length });
         }
 
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

@@ -127,3 +127,12 @@ jobs:
             echo "$SUDO_PASS" | sudo -S pm2 save
             
             echo "✅ ZERO-CPU TEST DEPLOY COMPLETE!"
+
+      - name: 🔍 Agentic Verification (Post-Deploy)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_BASE_URL: https://test.eastapp.booking.dynevents.com
+        run: |
+          echo "🏁 Deployment verified! Starting sanity agent..."
+          node scripts/deploy-verify.js

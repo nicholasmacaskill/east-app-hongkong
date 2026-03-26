@@ -243,6 +243,32 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 </Link>
+
+                {/* Bug Tracker Card */}
+                <Link href="/sys-admin/tickets" className="group col-span-1 md:col-span-2">
+                    <div className="bg-gradient-to-br from-[#1e1e1e] to-[#252525] rounded-2xl p-8 border border-white/5 hover:border-[#28D160] transition-all relative overflow-hidden h-full shadow-2xl">
+                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-30 transition-opacity">
+                            <Shield size={160} />
+                        </div>
+
+                        <div className="relative z-10 flex flex-col h-full gap-6">
+                            <div className="w-14 h-14 rounded-2xl bg-[#28D160]/20 flex items-center justify-center text-[#28D160] shadow-inner">
+                                <Shield size={32} />
+                            </div>
+
+                            <div className="max-w-xl">
+                                <h2 className="text-2xl font-black italic uppercase mb-3 tracking-tighter">Issue Dashboard & Bug Tracker</h2>
+                                <p className="text-gray-400 text-base leading-relaxed">
+                                    Track engineering tickets, submit bug reports, and verify fixes on the sandbox environment. Centralized hub for COO/CEO verification gates.
+                                </p>
+                            </div>
+
+                            <div className="mt-auto pt-6 flex items-center gap-3 text-[#28D160] text-sm font-black uppercase tracking-widest group-hover:text-white transition-all transform group-hover:translate-x-1">
+                                Open Jira-Lite Dashboard <ArrowRight size={18} />
+                            </div>
+                        </div>
+                    </div>
+                </Link>
             </div>
 
         </div>

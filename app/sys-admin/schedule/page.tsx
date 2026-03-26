@@ -76,6 +76,7 @@ export default function MasterSchedule() {
     const [repeatDays, setRepeatDays] = useState<number[]>([]); // 0-6 (Sun-Sat)
     const [repeatWeeks, setRepeatWeeks] = useState(4);
     const [registrations, setRegistrations] = useState<any[]>([]); // Registered users
+    const [selectedSessionIds, setSelectedSessionIds] = useState<Set<number>>(new Set());
 
     useEffect(() => {
         if (autoInstructor && !hasAutoOpened.current) {
@@ -287,12 +288,50 @@ export default function MasterSchedule() {
                 body: JSON.stringify({ action: 'DELETE', id: editingSession.id })
             });
             if ((await res.json()).success) {
-                setShowModal(false);
                 fetchSchedule();
             }
         } catch (e) {
             console.error(e);
         }
+    };
+
+    const handleBulkDelete = async () => {
+        const count = selectedSessionIds.size;
+        if (count === 0) return;
+        if (!confirm(`Are you sure you want to CANCEL ${count} selected sessions?`)) return;
+
+        try {
+            setLoading(true);
+            const ids = Array.from(selectedSessionIds);
+            const res = await fetch('/api/admin/sessions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'BULK_DELETE', ids })
+            });
+
+            if ((await res.json()).success) {
+                addToast(`Successfully cancelled ${count} sessions.`, 'success');
+                setSelectedSessionIds(new Set());
+                fetchSchedule();
+            } else {
+                addToast("Failed to cancel some sessions.", "error");
+            }
+        } catch (e) {
+            console.error(e);
+            addToast("Error during bulk delete", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const toggleSessionSelection = (id: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setSelectedSessionIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
     };
 
     return (
@@ -324,6 +363,14 @@ export default function MasterSchedule() {
                     <button onClick={fetchSchedule} className="p-3 bg-[#1e1e1e] rounded-xl hover:bg-white/10 transition-colors border border-white/5">
                         <RefreshCw size={18} className={loading ? 'animate-spin text-[#28D160]' : 'text-gray-400'} />
                     </button>
+                    {selectedSessionIds.size > 0 && (
+                        <button
+                            onClick={handleBulkDelete}
+                            className="flex items-center gap-2 px-4 py-3 bg-red-600 text-white rounded-xl font-black italic uppercase text-[10px] hover:bg-white hover:text-red-600 transition-all shadow-lg animate-fadeIn"
+                        >
+                            <Trash2 size={16} /> Cancel Selected ({selectedSessionIds.size})
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -559,8 +606,17 @@ export default function MasterSchedule() {
                                                 handleSessionClick(item);
                                             }
                                         }}
-                                            className={`group flex gap-4 p-4 rounded-2xl transition-all cursor-pointer border ${isSlot ? 'bg-black/20 border-white/5 border-dashed hover:border-[#28D160]/30' : 'bg-[#1e1e1e] border-white/10 hover:border-[#28D160] hover:shadow-xl hover:shadow-[#28D160]/5'} ${item.status === 'cancelled' ? 'opacity-40 grayscale-[0.5]' : ''}`}
+                                            className={`group flex items-center gap-4 p-4 rounded-2xl transition-all cursor-pointer border ${isSlot ? 'bg-black/20 border-white/5 border-dashed hover:border-[#28D160]/30' : 'bg-[#1e1e1e] border-white/10 hover:border-[#28D160] hover:shadow-xl hover:shadow-[#28D160]/5'} ${item.status === 'cancelled' ? 'opacity-40 grayscale-[0.5]' : ''} ${!isSlot && selectedSessionIds.has(item.id) ? 'border-[#28D160] bg-[#28D160]/5 ring-1 ring-[#28D160]/20' : ''}`}
                                         >
+                                            {!isSlot && (
+                                                <div
+                                                    onClick={(e) => toggleSessionSelection(item.id, e)}
+                                                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all shrink-0 ${selectedSessionIds.has(item.id) ? 'bg-[#28D160] border-[#28D160] text-black' : 'border-white/10 group-hover:border-white/30'}`}
+                                                >
+                                                    {selectedSessionIds.has(item.id) && <RefreshCw size={12} className="animate-spin-slow" />}
+                                                    {!selectedSessionIds.has(item.id) && <div className="w-2 h-2 rounded-sm bg-white/5" />}
+                                                </div>
+                                            )}
                                             <div className="flex flex-col items-center justify-center min-w-[70px] border-r border-white/5 pr-4">
                                                 <span className={`text-lg font-black italic leading-none ${isSlot ? 'text-gray-600' : 'text-white'}`}>{startTime}</span>
                                                 <span className="text-[9px] font-bold text-gray-600 uppercase mt-1">{duration} MIN</span>

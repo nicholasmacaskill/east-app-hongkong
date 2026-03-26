@@ -263,6 +263,7 @@ export default function DirectoryPage() {
                     position: editingUser.position,
                     username: editingUser.username,
                     role: editingUser.role,
+                    parentId: editingUser.parentId,
                     mobile: editingUser.mobile,
                     bio: editingUser.bio,
                     password: editingUser.password,

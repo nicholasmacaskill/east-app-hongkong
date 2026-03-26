@@ -174,11 +174,14 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90" />
       </div>
 
-      <div className="relative z-10 w-full max-w-md mx-auto">
-        {/* HEADER CONTAINER */}
-        <div className="flex flex-col">
-          {/* 1. TOP VISUALS */}
-          <div className="relative h-[250px] w-full shrink-0">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="lg:grid lg:grid-cols-12 lg:gap-12 lg:items-start pt-8 lg:pt-16">
+          {/* LEFT COLUMN: PROFILE INFO */}
+          <div className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-8">
+            {/* HEADER CONTAINER */}
+            <div className="flex flex-col">
+              {/* 1. TOP VISUALS */}
+              <div className="relative h-[250px] w-full shrink-0">
             {!isReadOnly && (
               <div className="absolute top-4 right-6 z-30 flex gap-2">
                 <button data-testid="settings-button" onClick={onOpenSettings} className="bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-colors border border-white/10">
@@ -282,12 +285,15 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
               <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">TEAM</div>
               <span className="text-[10px] text-white/80 font-black italic lowercase">coming soon</span>
             </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* CONTENT AREA */}
-        <div className="px-4 pb-24 w-full mt-8">
-          <div className="flex flex-col gap-8 animate-fadeIn">
+          {/* RIGHT COLUMN: STATS & PERFORMANCE */}
+          <div className="lg:col-span-7 xl:col-span-8 mt-12 lg:mt-0">
+            {/* CONTENT AREA */}
+            <div className="w-full">
+              <div className="flex flex-col gap-8 animate-fadeIn">
             {STAT_FIELDS[sport] && stats && Object.keys(stats).filter(k => stats[k] !== '' && stats[k] !== null).length > 0 ? (
               <div className="flex flex-col gap-3">
                 <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">{sport} PERFORMANCE</h3>
@@ -313,6 +319,8 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">No stats verified yet</p>
               </div>
             )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
