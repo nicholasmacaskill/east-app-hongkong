@@ -23,23 +23,55 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
-        const body = await req.json();
-        const { title, description, priority, category, reporter_id } = body;
+        const formData = await req.formData();
+        const title = formData.get('title') as string;
+        const description = formData.get('description') as string;
+        const priority = formData.get('priority') as string;
+        const reporter_id = formData.get('reporter_id') as string;
+        const screenshot = formData.get('screenshot') as File | null;
 
         if (!title || !reporter_id) {
             return NextResponse.json({ error: 'Title and Reporter ID are required' }, { status: 400 });
         }
 
         const supabase = getSupabaseAdmin();
+        let screenshot_url = null;
+
+        // Upload screenshot if provided
+        if (screenshot && screenshot.size > 0) {
+            const fileExt = screenshot.name.split('.').pop();
+            const fileName = `screenshots/${reporter_id}/${Date.now()}.${fileExt}`;
+            
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('ticket-attachments')
+                .upload(fileName, screenshot, {
+                    contentType: screenshot.type,
+                    upsert: false
+                });
+
+            if (uploadError) {
+                console.error('[TICKETS_UPLOAD_ERROR]', uploadError);
+                throw new Error(`Failed to upload screenshot: ${uploadError.message}`);
+            }
+
+            // Get public URL
+            const { data: publicUrlData } = supabase.storage
+                .from('ticket-attachments')
+                .getPublicUrl(fileName);
+            
+            screenshot_url = publicUrlData.publicUrl;
+        }
+
         const { data, error } = await supabase
             .from('engineering_tickets')
             .insert({
                 title,
                 description,
                 priority: priority || 'medium',
-                category: category || 'bug',
+                category: 'bug',
                 reporter_id,
-                status: 'open'
+                status: 'open',
+                screenshot_url
             })
             .select()
             .single();

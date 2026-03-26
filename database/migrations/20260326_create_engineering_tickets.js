@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS public.engineering_tickets (
     test_url TEXT,
     coo_approval BOOLEAN DEFAULT FALSE,
     ceo_approval BOOLEAN DEFAULT FALSE,
+    screenshot_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -109,6 +110,24 @@ WITH CHECK (
 GRANT ALL ON public.engineering_tickets TO service_role;
 GRANT SELECT, INSERT, UPDATE ON public.engineering_tickets TO authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.engineering_tickets_id_seq TO authenticated;
+
+-- 6. Create storage bucket for screenshots (if not exists)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('ticket-attachments', 'ticket-attachments', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- 7. Storage policies for ticket attachments
+CREATE POLICY "Authenticated users can upload ticket attachments"
+ON storage.objects
+FOR INSERT
+TO authenticated
+WITH CHECK (bucket_id = 'ticket-attachments');
+
+CREATE POLICY "Anyone can view ticket attachments"
+ON storage.objects
+FOR SELECT
+TO public
+USING (bucket_id = 'ticket-attachments');
 `;
 
     console.log('📡 Sending migration to Supabase...');

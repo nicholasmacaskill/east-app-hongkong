@@ -33,6 +33,7 @@ interface Ticket {
     test_url: string;
     coo_approval: boolean;
     ceo_approval: boolean;
+    screenshot_url: string | null;
     created_at: string;
     updated_at: string;
     reporter: {
@@ -62,6 +63,9 @@ export default function DashboardContent() {
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+    const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fetchTickets = async () => {
         try {
@@ -103,23 +107,25 @@ export default function DashboardContent() {
 
     const handleCreateTicket = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const formData = new FormData(e.currentTarget);
+        setIsSubmitting(true);
         
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
-            const ticketData = {
-                title: formData.get('title'),
-                description: formData.get('description'),
-                priority: formData.get('priority'),
-                reporter_id: user.id
-            };
+            const formData = new FormData();
+            formData.append('title', (e.currentTarget.elements.namedItem('title') as HTMLInputElement).value);
+            formData.append('description', (e.currentTarget.elements.namedItem('description') as HTMLTextAreaElement).value);
+            formData.append('priority', (e.currentTarget.elements.namedItem('priority') as HTMLSelectElement).value);
+            formData.append('reporter_id', user.id);
+            
+            if (screenshotFile) {
+                formData.append('screenshot', screenshotFile);
+            }
 
             const res = await fetch('/api/admin/tickets', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(ticketData)
+                body: formData
             });
             
             const data = await res.json();
@@ -127,9 +133,13 @@ export default function DashboardContent() {
 
             toast.success('Ticket created');
             setIsCreateModalOpen(false);
+            setScreenshotFile(null);
+            setScreenshotPreview(null);
             fetchTickets();
         } catch (error: any) {
             toast.error(error.message);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -275,6 +285,26 @@ export default function DashboardContent() {
 
                         {/* Modal Body */}
                         <div className="p-8 overflow-y-auto custom-scrollbar flex flex-col gap-8">
+                            {/* Screenshot */}
+                            {selectedTicket.screenshot_url && (
+                                <div className="flex flex-col gap-3">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[#28D160]">Screenshot</h3>
+                                    <a 
+                                        href={selectedTicket.screenshot_url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="block bg-black/20 p-4 rounded-2xl border border-white/5 hover:border-[#28D160]/50 transition-colors"
+                                    >
+                                        <img 
+                                            src={selectedTicket.screenshot_url} 
+                                            alt="Bug screenshot" 
+                                            className="max-h-48 w-auto mx-auto rounded-lg"
+                                        />
+                                        <p className="text-center text-[10px] text-gray-500 mt-2">Click to view full size</p>
+                                    </a>
+                                </div>
+                            )}
+
                             {/* Description */}
                             <div className="flex flex-col gap-3">
                                 <h3 className="text-[10px] font-black uppercase tracking-widest text-[#28D160]">Summary & Context</h3>
@@ -417,6 +447,54 @@ export default function DashboardContent() {
                             />
                         </div>
 
+                        <div className="flex flex-col gap-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Screenshot (Optional)</label>
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            setScreenshotFile(file);
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => {
+                                                setScreenshotPreview(reader.result as string);
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                    }}
+                                    className="hidden"
+                                    id="screenshot-upload"
+                                />
+                                <label
+                                    htmlFor="screenshot-upload"
+                                    className="flex items-center justify-center gap-2 bg-black/40 border border-white/5 border-dashed rounded-2xl px-5 py-4 cursor-pointer hover:border-[#28D160] transition-colors"
+                                >
+                                    {screenshotPreview ? (
+                                        <img src={screenshotPreview} alt="Preview" className="h-20 object-contain rounded" />
+                                    ) : (
+                                        <>
+                                            <Plus size={20} className="text-gray-500" />
+                                            <span className="text-sm text-gray-500">Click to upload screenshot</span>
+                                        </>
+                                    )}
+                                </label>
+                                {screenshotPreview && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setScreenshotFile(null);
+                                            setScreenshotPreview(null);
+                                        }}
+                                        className="absolute top-2 right-2 p-1 bg-red-500/20 text-red-400 rounded-full hover:bg-red-500/40 transition-colors"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Priority</label>
@@ -428,8 +506,19 @@ export default function DashboardContent() {
                                 </select>
                             </div>
                             <div className="flex flex-col gap-2 pt-6">
-                                <button type="submit" className="bg-[#28D160] text-black h-full rounded-2xl font-black uppercase italic tracking-tighter text-sm hover:bg-white transition-colors">
-                                    Create Ticket
+                                <button 
+                                    type="submit" 
+                                    disabled={isSubmitting}
+                                    className="bg-[#28D160] text-black h-full rounded-2xl font-black uppercase italic tracking-tighter text-sm hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                                            Creating...
+                                        </>
+                                    ) : (
+                                        'Create Ticket'
+                                    )}
                                 </button>
                             </div>
                         </div>
