@@ -28,7 +28,9 @@ jobs:
         run: npm install
 
       - name: Build Application
-        run: npm run build
+        run: |
+          rm -rf .next
+          npm run build
         env:
           NODE_ENV: production
           NEXT_PUBLIC_STRIPE_MODE: test
