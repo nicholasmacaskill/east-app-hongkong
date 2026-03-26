@@ -17,7 +17,7 @@ module.exports = {
       max_memory_restart: '1G'
     },
     {
-      name: 'EastAppTestV3',
+      name: 'EastAppTest',
       script: 'node',
       args: 'server.js',
       cwd: '/var/www/test.eastapp.booking.dynevents.com',
@@ -25,7 +25,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         NEXT_PUBLIC_STRIPE_MODE: 'test',
-        PORT: 3002,
+        PORT: 3001,
         ENV: 'test'
       },
       instances: 1,

@@ -119,11 +119,13 @@ jobs:
             
             echo "🕒 DEPLOYED AT: $(date)" > DEPLOYED_AT.txt
             
-            echo "🔄 Restarting application (V3 on Port 3002)..."
+            echo "🔄 Restarting application (Nuclear Reset Port 3001)..."
+            # Force kill anything on 3001 to bypass zombies
+            fuser -k 3001/tcp || true
             pm2 delete EastAppTest || true
             pm2 delete EastAppTestV2 || true
             pm2 delete EastAppTestV3 || true
-            pm2 start ecosystem.config.js --only EastAppTestV3
+            pm2 start ecosystem.config.js --only EastAppTest
             pm2 save
             echo "📝 Creating .env.test..."
             write_env() {
