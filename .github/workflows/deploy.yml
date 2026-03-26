@@ -40,14 +40,17 @@ jobs:
       - name: Prepare Standalone Bundle
         run: |
           mkdir -p deploy_bundle
-          cp -r .next/standalone/* deploy_bundle/
+          # Flatten standalone output: copy the contents of the project folder AND node_modules
+          cp -r .next/standalone/. deploy_bundle/
+          # Ensure static files are in the right place for the standalone server
           mkdir -p deploy_bundle/.next/static
-          cp -r .next/static/* deploy_bundle/.next/static/
+          cp -r .next/static/. deploy_bundle/.next/static/
           cp -r public deploy_bundle/
-          # Include ecosystem file for PM2
           cp ecosystem.config.js deploy_bundle/
-          # Create a compressed tarball for fast transfer
           tar -czf bundle.tar.gz -C deploy_bundle .
+
+      - name: Snapshot Sanity Check
+        run: ls -R deploy_bundle
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
@@ -142,5 +145,6 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           NEXT_PUBLIC_BASE_URL: https://eastapp.booking.dynevents.com
         run: |
-          echo "🏁 Deployment verified! Starting sanity agent..."
+          echo "🏁 Deployment verified! Installing verification agent..."
+          npm install @supabase/supabase-js --no-package-lock
           node scripts/deploy-verify.js
