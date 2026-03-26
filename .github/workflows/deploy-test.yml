@@ -42,12 +42,20 @@ jobs:
       - name: Prepare Standalone Bundle
         run: |
           mkdir -p deploy_bundle
+          
+          echo "📂 STANDALONE STRUCTURE:"
+          find .next/standalone -maxdepth 3
+          
           # Flatten standalone output: copy the contents of the project folder AND node_modules
           cp -r .next/standalone/. deploy_bundle/
           # Ensure static files are in the right place for the standalone server
           mkdir -p deploy_bundle/.next/static
           cp -r .next/static/. deploy_bundle/.next/static/
           cp -r public deploy_bundle/
+          
+          echo "📦 DEPLOY BUNDLE STRUCTURE:"
+          find deploy_bundle -maxdepth 3
+          
           cp ecosystem.config.js deploy_bundle/
           tar -czf bundle-test.tar.gz -C deploy_bundle .
 
