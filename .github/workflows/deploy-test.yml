@@ -118,12 +118,12 @@ jobs:
             cd /var/www/test.eastapp.booking.dynevents.com
             echo "📍 CURRENT DIRECTORY: $(pwd)"
             
-            echo "🧹 TOTAL WIPE: Purging deployment directory..."
-            # Delete everything except the zip and .env.test
-            find . -maxdepth 1 ! -name '.env.test' ! -name 'bundle-test.tar.gz' -exec rm -rf {} +
+            echo "🧹 Purging old deployment (preserving new bundle)..."
+            # IMPORTANT: do NOT delete bundle-test.tar.gz here - it was just uploaded
+            find . -maxdepth 1 ! -name 'bundle-test.tar.gz' ! -name '.' -exec rm -rf {} +
             
-            echo "📦 Unpacking bundle (verbose)..."
-            tar -xvzf bundle-test.tar.gz
+            echo "📦 Extracting fresh bundle..."
+            tar -xzf bundle-test.tar.gz
             mv server.js server-v4.js
             
             echo "🕒 DEPLOYED AT: $(date)" > DEPLOYED_AT.txt
@@ -132,8 +132,6 @@ jobs:
             # Force kill anything on 3001 to bypass zombies
             fuser -k 3001/tcp || true
             pm2 delete EastAppTest || true
-            pm2 delete EastAppTestV2 || true
-            pm2 delete EastAppTestV3 || true
             pm2 start ecosystem.config.js --only EastAppTest
             pm2 save
             
@@ -144,8 +142,7 @@ jobs:
             echo "🔄 Refreshing Nginx..."
             sudo systemctl restart nginx || sudo service nginx restart
             
-            echo "🔗 Asset Path Bridging (Standard Only)..."
-            # Remove any old symlinks that might cause loops
+            echo "🔗 Standard Links Only..."
             rm -rf next
             ln -s .next next
             
@@ -179,4 +176,4 @@ jobs:
         run: |
           echo "🏁 Deployment verified! Installing verification agent..."
           npm install @supabase/supabase-js --no-package-lock
-          node scripts/deploy-verify.js
+          node "$GITHUB_WORKSPACE/scripts/deploy-verify.js"
