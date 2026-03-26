@@ -75,7 +75,7 @@ const nextConfig = {
     // !! WARN !!
     ignoreDuringBuilds: true,
   },
-  staticPageGenerationTimeout: 1000,
+  staticPageGenerationTimeout: 60,
 };
 
 // module.exports = withSentryConfig(
