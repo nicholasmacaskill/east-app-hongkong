@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
-  distDir: 'next',
+  distDir: '.next',
   async headers() {
     return [
       {
