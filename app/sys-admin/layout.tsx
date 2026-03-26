@@ -109,7 +109,7 @@ export default function AdminLayout({
                             <AdminNavLink href="/sys-admin/bookings" icon={CreditCard} label="Booking Logs" />
                             <AdminNavLink href="/sys-admin/audit" icon={Shield} label="Audit Logs" />
                             <AdminNavLink href="/sys-admin/metrics" icon={BarChart3} label="Metrics" />
-                            <AdminNavLink href="/sys-admin/tickets" icon={Shield} label="Bugs" />
+                            <AdminNavLink href="/sys-admin/issue-tracker" icon={Shield} label="Bugs" />
                             <AdminNavLink href="/faq?tab=admin" icon={HelpCircle} label="Admin Guide" />
                         </div>
 
@@ -208,7 +208,7 @@ function MobileMenu() {
                             <BarChart3 size={16} /> Metrics
                         </Link>
                         <Link
-                            href="/sys-admin/tickets"
+                            href="/sys-admin/issue-tracker"
                             onClick={() => setIsOpen(false)}
                             className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors"
                         >

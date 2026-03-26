@@ -245,7 +245,7 @@ export default function AdminDashboard() {
                 </Link>
 
                 {/* Bug Tracker Card */}
-                <Link href="/sys-admin/tickets" className="group col-span-1 md:col-span-2">
+                <Link href="/sys-admin/issue-tracker" className="group col-span-1 md:col-span-2">
                     <div className="bg-gradient-to-br from-[#1e1e1e] to-[#252525] rounded-2xl p-8 border border-white/5 hover:border-[#28D160] transition-all relative overflow-hidden h-full shadow-2xl">
                         <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-30 transition-opacity">
                             <Shield size={160} />

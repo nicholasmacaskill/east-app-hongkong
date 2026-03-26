@@ -65,7 +65,7 @@ export default function EngineeringTickets() {
 
     const fetchTickets = async () => {
         try {
-            const res = await fetch('/api/admin/tickets');
+            const res = await fetch('/api/admin/issues');
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             setTickets(data);
@@ -83,7 +83,7 @@ export default function EngineeringTickets() {
 
     const updateTicket = async (id: number, updates: Partial<Ticket>) => {
         try {
-            const res = await fetch('/api/admin/tickets', {
+            const res = await fetch('/api/admin/issues', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id, ...updates })
@@ -116,7 +116,7 @@ export default function EngineeringTickets() {
                 reporter_id: user.id
             };
 
-            const res = await fetch('/api/admin/tickets', {
+            const res = await fetch('/api/admin/issues', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(ticketData)
