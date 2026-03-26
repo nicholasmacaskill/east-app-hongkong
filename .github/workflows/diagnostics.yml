@@ -17,7 +17,11 @@ jobs:
              echo "🔌 NETWORK PORTS:"
              sudo netstat -tulpn | grep LISTEN
              echo "🌐 NGINX CONFIG (test):"
-             sudo cat /etc/nginx/sites-enabled/test.eastapp.booking.dynevents.com
+             cat /etc/nginx/sites-enabled/* | grep -A 50 "test.eastapp" || echo "Config not found"
+             
+             echo "🔍 HTML SOURCE (test):"
+             curl -v http://localhost:3001/sys-admin/tickets 2>&1 | head -n 100
+             
              echo "📂 FILES IN TEST BUNDLE:"
              ls -R /var/www/test.eastapp.booking.dynevents.com/.next/server/app/sys-admin
              echo "🕒 DEPLOY BREADCRUMB:"
