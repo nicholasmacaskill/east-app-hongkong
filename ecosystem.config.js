@@ -21,7 +21,7 @@ module.exports = {
       script: 'node',
       args: 'server-v4.js',
       cwd: '/var/www/test.eastapp.booking.dynevents.com',
-      env_file: '.env.test',
+      env_file: '/var/www/test.eastapp.booking.dynevents.com/.env.test',
       env: {
         NODE_ENV: 'production',
         NEXT_PUBLIC_STRIPE_MODE: 'test',
