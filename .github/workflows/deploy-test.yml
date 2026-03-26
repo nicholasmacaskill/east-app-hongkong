@@ -43,29 +43,26 @@ jobs:
 
       - name: Prepare Standalone Bundle
         run: |
-          # Cleanup from previous runs
+          # Standard Cleanup
           rm -rf deploy_bundle
           mkdir -p deploy_bundle
           
-          echo "📂 STANDALONE STRUCTURE:"
-          find .next/standalone -maxdepth 3
-          
-          # Flatten standalone output
+          # Standard Standalone Copy
           cp -r .next/standalone/. deploy_bundle/
           
-          # Universal Asset Fallback: Mirror static assets in public folder
-          # This allows the standalone server to serve them if Nginx fails
-          mkdir -p deploy_bundle/public/_next/static
-          mkdir -p deploy_bundle/public/next/static
-          cp -r .next/static/. deploy_bundle/public/_next/static/
-          cp -r .next/static/. deploy_bundle/public/next/static/
-          
-          # Standard Next.js standalone expectation
+          # Standard Static Copy
           mkdir -p deploy_bundle/.next/static
           cp -r .next/static/. deploy_bundle/.next/static/
-          cp -r public/. deploy_bundle/public/
           
-          echo "📦 DEPLOY BUNDLE STRUCTURE:"
+          # Public Mirror (Fallback)
+          cp -r public/. deploy_bundle/public/
+          mkdir -p deploy_bundle/public/_next/static
+          cp -r .next/static/. deploy_bundle/public/_next/static/
+          
+          # Cleanup any potential /next (no dot) interference
+          rm -rf deploy_bundle/next
+          
+          echo "📦 DEPLOY BUNDLE STRUCTURE (Standard):"
           find deploy_bundle -maxdepth 4
           
           cp ecosystem.config.js deploy_bundle/
@@ -147,7 +144,8 @@ jobs:
             echo "🔄 Refreshing Nginx..."
             sudo systemctl restart nginx || sudo service nginx restart
             
-            echo "🔗 Creating asset symlink (normalization)..."
+            echo "🔗 Asset Path Bridging (Standard Only)..."
+            # Remove any old symlinks that might cause loops
             rm -rf next
             ln -s .next next
             
