@@ -2,7 +2,7 @@
 const { withSentryConfig } = require('@sentry/nextjs');
 
 const nextConfig = {
-  distDir: process.env.NEXT_PUBLIC_STRIPE_MODE === 'test' ? '.next-test' : '.next',
+  distDir: '.next',
   async headers() {
     return [
       {
