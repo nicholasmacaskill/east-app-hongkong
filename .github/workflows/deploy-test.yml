@@ -106,17 +106,21 @@ jobs:
           port: 60022
           envs: SUDO_PASS,STRIPE_SECRET_KEY_TEST,STRIPE_WEBHOOK_SECRET_TEST,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,DATABASE_URL_TEST,RESEND_API_KEY
           script: |
-            set -ex
             cd /var/www/test.eastapp.booking.dynevents.com
+            echo "📍 CURRENT DIRECTORY: $(pwd)"
             
-            echo "🧹 Cleaning up old files (preserving environment)..."
-            # Delete everything except .env.test and the new bundle
+            echo "🧹 Cleaning up old files..."
             find . -maxdepth 1 ! -name 'bundle-test.tar.gz' ! -name '.env.test' -exec rm -rf {} +
             
-            echo "📦 Unpacking bundle..."
-            tar -xzf bundle-test.tar.gz -C .
-            rm bundle-test.tar.gz
+            echo "📦 Unpacking bundle (verbose)..."
+            tar -xvzf bundle-test.tar.gz
             
+            echo "🕒 DEPLOYED AT: $(date)" > DEPLOYED_AT.txt
+            
+            echo "🔄 Restarting application..."
+            pm2 delete EastAppTest || true
+            pm2 start ecosystem.config.js --only EastAppTest
+            pm2 save
             echo "📝 Creating .env.test..."
             write_env() {
               printf '%s=%q\n' "$1" "$2" >> .env.test
