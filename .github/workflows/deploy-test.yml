@@ -119,7 +119,8 @@ jobs:
             
             echo "🔄 Restarting application..."
             pm2 delete EastAppTest || true
-            pm2 start ecosystem.config.js --only EastAppTest
+            pm2 delete EastAppTestV2 || true
+            pm2 start ecosystem.config.js --only EastAppTestV2
             pm2 save
             echo "📝 Creating .env.test..."
             write_env() {

@@ -17,7 +17,7 @@ module.exports = {
       max_memory_restart: '1G'
     },
     {
-      name: 'EastAppTest',
+      name: 'EastAppTestV2',
       script: 'node',
       args: 'server.js',
       cwd: '/var/www/test.eastapp.booking.dynevents.com',
