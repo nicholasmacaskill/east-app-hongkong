@@ -40,9 +40,10 @@ jobs:
       - name: Prepare Standalone Bundle
         run: |
           mkdir -p deploy_bundle
-          cp -r .next/standalone/* deploy_bundle/
+          # Note: next.config.js sets distDir to .next-test when NEXT_PUBLIC_STRIPE_MODE is 'test'
+          cp -r .next-test/standalone/* deploy_bundle/
           mkdir -p deploy_bundle/.next/static
-          cp -r .next/static/* deploy_bundle/.next/static/
+          cp -r .next-test/static/* deploy_bundle/.next/static/
           cp -r public deploy_bundle/
           cp ecosystem.config.js deploy_bundle/
           tar -czf bundle-test.tar.gz -C deploy_bundle .
