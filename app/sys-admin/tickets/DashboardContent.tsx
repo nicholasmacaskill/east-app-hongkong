@@ -56,7 +56,7 @@ const PRIORITY_COLORS: Record<TicketPriority, string> = {
     critical: 'bg-red-500/10 text-red-400 border-red-500/20 animate-pulse'
 };
 
-export default function EngineeringTickets() {
+export default function DashboardContent() {
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
