@@ -7,6 +7,7 @@
     "dev:test": "NEXT_PUBLIC_STRIPE_MODE=test next dev",
     "dev:live": "NEXT_PUBLIC_STRIPE_MODE=live next dev",
     "build": "next build",
+    "build:test": "BUILD_DIR=.next-test next build",
     "start": "next start",
     "lint": "eslint",
     "db:secure": "ts-node database/enable_rls_security.ts",

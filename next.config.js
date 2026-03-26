@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
+  distDir: process.env.BUILD_DIR || '.next',
   async headers() {
     return [
       {
