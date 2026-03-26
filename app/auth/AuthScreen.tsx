@@ -99,25 +99,37 @@ export default function AuthScreen({ onAuthSuccess, expectedRole, initialStep }:
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: formData.email,
-            password: formData.password,
-        });
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: formData.email,
+                password: formData.password,
+            });
 
-        if (error) {
-            addToast(error.message, 'error');
-            setLoading(false);
-        } else if (data.user) {
-            // Mirroring Admin Layout Logic: Check metadata first for immediate access
-            const metaRole = data.user.user_metadata?.role;
-            if (metaRole === 'admin' || metaRole === 'sys-admin') {
-                onAuthSuccess(metaRole);
-                return;
+            if (error) {
+                console.error('[AUTH_LOGIN] Sign-in error:', error);
+                addToast(error.message, 'error');
+                setLoading(false);
+            } else if (data.user) {
+                // Mirroring Admin Layout Logic: Check metadata first for immediate access
+                const metaRole = data.user.user_metadata?.role;
+                if (metaRole === 'admin' || metaRole === 'sys-admin') {
+                    onAuthSuccess(metaRole);
+                    return;
+                }
+
+                // Fetch role from profile (Resiliently)
+                const profile = await fetchProfileResilient(data.user.id, { select: 'role' });
+                onAuthSuccess(profile?.role || 'player');
             }
-
-            // Fetch role from profile (Resiliently)
-            const profile = await fetchProfileResilient(data.user.id, { select: 'role' });
-            onAuthSuccess(profile?.role || 'player');
+        } catch (err: any) {
+            console.error('[AUTH_LOGIN] Critical error during sign-in:', err);
+            // If it's a "Failed to Fetch", help the user diagnose
+            if (err.message === 'Failed to fetch') {
+                addToast('Network error: Browser cannot reach Supabase. Check CORS and URL.', 'error');
+            } else {
+                addToast(err.message || 'An unexpected error occurred', 'error');
+            }
+            setLoading(false);
         }
     };
 
