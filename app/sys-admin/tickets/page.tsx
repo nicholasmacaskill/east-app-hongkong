@@ -1,8 +1,5 @@
 'use client';
-import dynamic from 'next/dynamic';
-
-const DashboardContent = dynamic(() => import('./DashboardContent'), { ssr: false });
 
 export default function EngineeringTickets() {
-    return <DashboardContent />;
+    return <div>Hello World - Ticket Dashboard Debug</div>;
 }
