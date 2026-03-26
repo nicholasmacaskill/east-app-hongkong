@@ -24,17 +24,21 @@ export default function AdminLayout({
 }) {
     const router = useRouter();
     const [authorized, setAuthorized] = useState(false);
+    const [statusText, setStatusText] = useState('Initializing...');
 
     useEffect(() => {
         let timeoutId: NodeJS.Timeout;
 
         const checkAuth = async () => {
             try {
+                setStatusText('Checking Session...');
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) {
+                    setStatusText('Retrying Auth...');
                     await new Promise(r => setTimeout(r, 500));
                     const { data: { user: retryUser } } = await supabase.auth.getUser();
                     if (!retryUser) {
+                        setStatusText('Session Not Found');
                         router.replace('/');
                         return;
                     }
@@ -44,21 +48,24 @@ export default function AdminLayout({
                 await processUser(user);
             } catch (error) {
                 console.error("Auth check failed:", error);
+                setStatusText('Auth Error');
                 router.replace('/');
             }
         };
 
         const processUser = async (user: any) => {
+            setStatusText(`Validating Role (${user.user_metadata?.role || 'fetch'})...`);
             const metaRole = user.user_metadata?.role;
             if (metaRole === 'admin' || metaRole === 'sys-admin') {
                 setAuthorized(true);
                 return;
             }
 
-            // Use the resilient fetch instead of the single direct query
+            setStatusText('Fetching Profile...');
             const profile = await fetchProfileResilient(user.id, { select: 'role' });
 
             if (!profile || (profile.role !== 'admin' && profile.role !== 'sys-admin')) {
+                setStatusText('Access Denied');
                 router.replace('/');
             } else {
                 setAuthorized(true);
@@ -83,6 +90,7 @@ export default function AdminLayout({
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-8 h-8 border-2 border-[#28D160] border-t-transparent rounded-full animate-spin" />
                     <span className="text-xs font-bold uppercase tracking-widest text-[#28D160]">Verifying Access...</span>
+                    <span className="text-[10px] text-gray-500 font-mono">{statusText}</span>
                 </div>
             </div>
         );
