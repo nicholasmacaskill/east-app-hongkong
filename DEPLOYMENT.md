@@ -4,17 +4,17 @@
 
 This repository has two deployment environments:
 
-### Live Environment
+### Live Environment (Production)
 - **Branch**: `main`
-- **URL**: `https://eastapp.booking.dynevents.com`
+- **URL**: [https://app.eastsportsgroup.com/](https://app.eastsportsgroup.com/) (or your configured production domain)
 - **Mode**: Live Stripe mode
-- **Deployments**: Auto-deploy on push to main branch
+- **Deployments**: Auto-deploy on push to `main` branch.
 
-### Test Environment  
+### Test Environment (Staging)
 - **Branch**: `test`
-- **URL**: `https://test.eastapp.booking.dynevents.com`
+- **URL**: Accessible via Vercel Preview URLs or a custom domain (e.g., `test.eastsportsgroup.com`).
 - **Mode**: Test Stripe mode
-- **Deployments**: Auto-deploy on push to test branch
+- **Deployments**: Auto-deploy on push to `test` branch.
 
 ## Setup Instructions
 

@@ -36,6 +36,8 @@ interface Ticket {
     ceo_approval: boolean;
     cto_approval: boolean;
     screenshot_url: string | null;
+    root_cause?: string;
+    resolution?: string;
     created_at: string;
     updated_at: string;
     reporter: {
@@ -289,8 +291,15 @@ export default function DashboardContent() {
                                                     {ticket.reporter?.first_name || 'System'}
                                                 </span>
                                             </div>
-                                            <div className="text-[9px] text-gray-600 font-bold uppercase tracking-widest">
-                                                {new Date(ticket.created_at).toLocaleDateString()}
+                                            <div className="flex items-center gap-1.5">
+                                                {ticket.resolution && (
+                                                    <div className="w-4 h-4 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                                                        <Check size={10} strokeWidth={4} />
+                                                    </div>
+                                                )}
+                                                <div className="text-[9px] text-gray-600 font-bold uppercase tracking-widest">
+                                                    {new Date(ticket.created_at).toLocaleDateString()}
+                                                </div>
                                             </div>
                                         </div>
                                         
@@ -358,11 +367,35 @@ export default function DashboardContent() {
                                 </div>
                             )}
 
-                            {/* Description */}
+                             {/* Description */}
                             <div className="flex flex-col gap-3">
                                 <h3 className="text-[10px] font-black uppercase tracking-widest text-[#28D160]">Summary & Context</h3>
                                 <div className="bg-black/20 p-6 rounded-2xl border border-white/5 text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
                                     {selectedTicket.description || 'No description provided.'}
+                                </div>
+                            </div>
+                            
+                            {/* Root Cause & Resolution (Editable) */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="flex flex-col gap-3">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-orange-400">Root Cause</h3>
+                                    <textarea 
+                                        className="bg-black/40 border border-white/5 rounded-2xl p-4 text-xs text-gray-400 h-24 resize-none focus:outline-none focus:border-orange-400/50"
+                                        placeholder="Identify the underlying issue..."
+                                        value={selectedTicket.root_cause || ''}
+                                        onChange={(e) => setSelectedTicket({...selectedTicket, root_cause: e.target.value})}
+                                        onBlur={(e) => updateTicket(selectedTicket.id, { root_cause: e.target.value })}
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-3">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[#28D160]">Resolution</h3>
+                                    <textarea 
+                                        className="bg-black/40 border border-white/5 rounded-2xl p-4 text-xs text-gray-400 h-24 resize-none focus:outline-none focus:border-[#28D160]/50"
+                                        placeholder="Document the solution..."
+                                        value={selectedTicket.resolution || ''}
+                                        onChange={(e) => setSelectedTicket({...selectedTicket, resolution: e.target.value})}
+                                        onBlur={(e) => updateTicket(selectedTicket.id, { resolution: e.target.value })}
+                                    />
                                 </div>
                             </div>
 
