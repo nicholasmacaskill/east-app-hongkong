@@ -57,6 +57,9 @@ export async function POST(request: Request) {
 
       const toDelete = users.filter(u => {
         const email = u.email?.toLowerCase() || '';
+        // CRITICAL: Protect the main admin account from the purge
+        if (email === 'admin@east.com') return false;
+        
         // Criteria: includes 'test', includes 'audit', or ends with @east.com
         return email.includes('test') || email.includes('audit') || email.endsWith('@east.com');
       });
