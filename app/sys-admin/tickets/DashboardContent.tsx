@@ -109,23 +109,32 @@ export default function DashboardContent() {
 
     const handleCreateTicket = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        
+        const form = e.currentTarget;
         setIsSubmitting(true);
+        console.log('[TICKET_CREATE] Starting submission...');
         
         try {
+            // Check auth first
             const { data: { user }, error: authError } = await supabase.auth.getUser();
-            if (authError) throw authError;
-            if (!user) throw new Error('Not authenticated. Please log in again.');
+            
+            if (authError || !user) {
+                console.error('[TICKET_CREATE] Auth check failed:', authError);
+                throw new Error('You are not properly authenticated. Please LOG OUT and log back in with your permanent admin credentials.');
+            }
 
-            const formData = new FormData();
-            formData.append('title', (e.currentTarget.elements.namedItem('title') as HTMLInputElement).value);
-            formData.append('description', (e.currentTarget.elements.namedItem('description') as HTMLTextAreaElement).value);
-            formData.append('priority', (e.currentTarget.elements.namedItem('priority') as HTMLSelectElement).value);
+            console.log('[TICKET_CREATE] Authenticated as:', user.email);
+
+            // Use the form element directly to build FormData
+            const formData = new FormData(form);
             formData.append('reporter_id', user.id);
             
             if (screenshotFile) {
                 formData.append('screenshot', screenshotFile);
             }
 
+            console.log('[TICKET_CREATE] Sending request to /api/admin/tickets...');
+            
             const res = await fetch('/api/admin/tickets', {
                 method: 'POST',
                 body: formData
@@ -133,22 +142,26 @@ export default function DashboardContent() {
             
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({ error: 'Unknown server error' }));
-                throw new Error(errorData.error || `Server responded with ${res.status}`);
+                throw new Error(errorData.error || `Server error (${res.status}): Please contact engineering.`);
             }
 
             const data = await res.json();
             if (data.error) throw new Error(data.error);
 
+            console.log('[TICKET_CREATE] Success! Ticket ID:', data.id);
             toast.success('Ticket created successfully', {
                 position: 'bottom-right',
                 duration: 4000
             });
+            
             setIsCreateModalOpen(false);
             setScreenshotFile(null);
             setScreenshotPreview(null);
             fetchTickets();
         } catch (error: any) {
             console.error('[TICKET_CREATE_FAILURE]', error);
+            // Fallback alert if toast fails or is invisible
+            alert(`Error: ${error.message}`);
             toast.error(error.message || 'Failed to create ticket', {
                 position: 'bottom-right',
                 duration: 6000
