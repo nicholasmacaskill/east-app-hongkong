@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
+import { sendWhatsAppNotification } from '@/app/lib/whatsapp';
 
 export async function GET() {
     try {
@@ -89,6 +90,16 @@ export async function POST(req: Request) {
         }
 
         console.log('[TICKETS_POST] Success:', data.id);
+
+        // Async trigger notification - don't block the response
+        const reporterName = formData.get('reporter_name') as string || 'Engineering Agent';
+        sendWhatsAppNotification({
+            id: data.id,
+            title: data.title,
+            priority: data.priority,
+            reporter_name: reporterName
+        }).catch(err => console.error('[WHATSAPP_NOTIFY_ASYNC_ERROR]', err));
+
         return NextResponse.json(data);
     } catch (error: any) {
         console.error('[TICKETS_POST] Final catch error:', error);
