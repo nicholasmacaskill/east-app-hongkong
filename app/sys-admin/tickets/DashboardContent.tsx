@@ -279,9 +279,12 @@ export default function DashboardContent() {
                                         <h4 className="font-bold text-sm mb-3 group-hover:text-[#28D160] transition-colors line-clamp-2">{ticket.title}</h4>
                                         
                                         {ticket.resolution && (
-                                            <div className="mb-4 p-3 bg-black/20 rounded-xl border border-[#28D160]/10 text-[10px] leading-relaxed">
-                                                <div className="text-orange-400 font-black uppercase tracking-widest mb-1 opacity-70">Resolution Summary</div>
-                                                <p className="text-gray-400 line-clamp-3 italic">
+                                            <div className="mb-4 p-3 bg-[#28D160]/5 rounded-xl border border-[#28D160]/20 text-[10px] leading-relaxed relative group/summary">
+                                                <div className="absolute -left-1 top-2 w-0.5 h-6 bg-[#28D160] rounded-full" />
+                                                <div className="text-[#28D160] font-black uppercase tracking-widest mb-1 opacity-90 flex items-center gap-1">
+                                                    <Check size={10} strokeWidth={4} /> Resolution Summary
+                                                </div>
+                                                <p className="text-gray-300 line-clamp-4 italic">
                                                     {ticket.root_cause ? `${ticket.root_cause} → ` : ''}{ticket.resolution}
                                                 </p>
                                             </div>
@@ -393,7 +396,10 @@ export default function DashboardContent() {
                                         placeholder="Identify the underlying issue..."
                                         value={selectedTicket.root_cause || ''}
                                         onChange={(e) => setSelectedTicket({...selectedTicket, root_cause: e.target.value})}
-                                        onBlur={(e) => updateTicket(selectedTicket.id, { root_cause: e.target.value })}
+                                        onBlur={(e) => updateTicket(selectedTicket.id, { 
+                                            root_cause: e.target.value,
+                                            status: 'verify' 
+                                        })}
                                     />
                                 </div>
                                 <div className="flex flex-col gap-3">
@@ -403,7 +409,10 @@ export default function DashboardContent() {
                                         placeholder="Document the solution..."
                                         value={selectedTicket.resolution || ''}
                                         onChange={(e) => setSelectedTicket({...selectedTicket, resolution: e.target.value})}
-                                        onBlur={(e) => updateTicket(selectedTicket.id, { resolution: e.target.value })}
+                                        onBlur={(e) => updateTicket(selectedTicket.id, { 
+                                            resolution: e.target.value,
+                                            status: 'verify' 
+                                        })}
                                     />
                                 </div>
                             </div>
