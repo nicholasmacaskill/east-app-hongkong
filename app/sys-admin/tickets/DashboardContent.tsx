@@ -277,6 +277,15 @@ export default function DashboardContent() {
                                         </div>
 
                                         <h4 className="font-bold text-sm mb-3 group-hover:text-[#28D160] transition-colors line-clamp-2">{ticket.title}</h4>
+                                        
+                                        {ticket.resolution && (
+                                            <div className="mb-4 p-3 bg-black/20 rounded-xl border border-[#28D160]/10 text-[10px] leading-relaxed">
+                                                <div className="text-orange-400 font-black uppercase tracking-widest mb-1 opacity-70">Resolution Summary</div>
+                                                <p className="text-gray-400 line-clamp-3 italic">
+                                                    {ticket.root_cause ? `${ticket.root_cause} → ` : ''}{ticket.resolution}
+                                                </p>
+                                            </div>
+                                        )}
 
                                         <div className="flex items-center justify-between mt-auto">
                                             <div className="flex items-center gap-2">
