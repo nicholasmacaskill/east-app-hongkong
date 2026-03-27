@@ -165,19 +165,19 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
     <div className="animate-fadeIn bg-black min-h-screen pb-24 relative overflow-hidden font-montserrat">
 
       {/* Background Image Layer - Premium Blur Overlay */}
-      <div className="fixed inset-0 z-0">
+      <div className="fixed inset-0 z-0 overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=1200"
-          className="w-full h-full object-cover opacity-20 grayscale"
-          alt="bg"
+          src="https://images.unsplash.com/photo-1541534741688-6078c64b550d?auto=format&fit=crop&q=80&w=1200"
+          className="w-full h-full object-cover opacity-20 grayscale scale-110"
+          alt="Premium background"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/40 to-black/95" />
       </div>
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="lg:grid lg:grid-cols-12 lg:gap-12 lg:items-start pt-8 lg:pt-16">
-          {/* LEFT COLUMN: PROFILE INFO */}
-          <div className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-8">
+      <div className="relative z-10 w-full mx-auto px-4">
+        <div className="flex flex-col pt-8">
+          {/* PROFILE INFO HEADER */}
+          <div className="w-full">
             {/* HEADER CONTAINER */}
             <div className="flex flex-col">
               {/* 1. TOP VISUALS */}
@@ -222,7 +222,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
               {/* 2. MIDDLE CONTENT */}
               <div className="px-6 pb-8 flex flex-col gap-8 items-center w-full mt-4">
                 <div className="w-full flex flex-col items-center pt-2">
-                  <h2 className="font-black italic text-3xl text-white uppercase tracking-tighter leading-tight text-center">
+                  <h2 className="font-black italic text-2xl text-white uppercase tracking-tighter leading-tight text-center">
                     {profileData.name || 'PLAYER'} <span className="text-east-light">{profileData.surname || 'ELITE'}</span>
                   </h2>
                   {profileData.username && (
@@ -237,7 +237,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                   </div>
                 )}
 
-                <div className="grid grid-cols-3 w-full gap-4 mt-2">
+                <div className="grid grid-cols-2 w-full gap-3 mt-2">
                   {[
                     { l: 'CREDITS', l2: 'AVAILABLE', v: profileData.credits || 0, icon: Coins, action: onShowHistory },
                     { l: 'TOP SCORER', l2: '(TEAM)', v: 'soon', icon: Award },
@@ -246,7 +246,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                     <div
                       key={i}
                       onClick={badge.action}
-                      className={`flex flex-col items-center p-3 bg-white/5 rounded-2xl border border-white/10 group hover:border-east-light/50 transition-colors ${badge.action ? 'cursor-pointer' : ''} min-h-[100px] justify-center`}
+                      className={`flex flex-col items-center p-3 bg-white/5 rounded-2xl border border-white/10 group hover:border-[#28D160]/50 transition-colors ${badge.action ? 'cursor-pointer' : ''} min-h-[90px] justify-center ${i === 2 ? 'col-span-2' : ''}`}
                     >
                       <div className="w-10 h-10 rounded-full border border-east-light/30 bg-black/40 flex items-center justify-center mb-2 shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">
                         <badge.icon size={20} className="text-[#28D160] drop-shadow-md" />
@@ -270,54 +270,51 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
               </div>
 
               {/* 3. COLORED BANNER */}
-              <div className="w-full bg-gradient-to-r from-[#28D160] to-[#1a8e41] py-5 px-4 grid grid-cols-3 gap-2 shadow-lg border-y border-white/10 relative z-30">
+              <div className="w-full bg-gradient-to-r from-[#28D160] to-[#1a8e41] py-4 px-2 grid grid-cols-3 gap-1 shadow-lg border-y border-white/10 relative z-30 mb-8 mt-4 rounded-xl">
                 <div className="flex flex-col items-center justify-center border-r border-black/10">
-                  <div className="font-black italic text-[11px] text-black tracking-widest uppercase mb-0.5">AGE</div>
-                  <span className="text-[10px] text-black/60 font-black italic lowercase leading-none">soon</span>
+                  <div className="font-black italic text-[9px] text-black tracking-widest uppercase mb-0.5">AGE</div>
+                  <span className="text-[9px] text-black/60 font-black italic lowercase leading-none">soon</span>
                 </div>
                 <div className="flex flex-col items-center justify-center border-r border-black/10">
-                  <div className="font-black italic text-[11px] text-black tracking-widest uppercase mb-0.5">SEASON</div>
-                  <span className="text-[10px] text-black/60 font-black italic lowercase leading-none">soon</span>
+                  <div className="font-black italic text-[9px] text-black tracking-widest uppercase mb-0.5">SEASON</div>
+                  <span className="text-[9px] text-black/60 font-black italic lowercase leading-none">soon</span>
                 </div>
                 <div className="flex flex-col items-center justify-center">
-                  <div className="font-black italic text-[11px] text-black tracking-widest uppercase mb-0.5">TEAM</div>
-                  <span className="text-[10px] text-black/60 font-black italic lowercase leading-none">soon</span>
+                  <div className="font-black italic text-[9px] text-black tracking-widest uppercase mb-0.5">TEAM</div>
+                  <span className="text-[9px] text-black/60 font-black italic lowercase leading-none">soon</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: STATS & PERFORMANCE */}
-          <div className="lg:col-span-7 xl:col-span-8 mt-12 lg:mt-0">
-            {/* CONTENT AREA */}
-            <div className="w-full">
-              <div className="flex flex-col gap-8 animate-fadeIn">
-                {STAT_FIELDS[sport] && stats && Object.keys(stats).filter(k => stats[k] !== '' && stats[k] !== null).length > 0 ? (
-                  <div className="flex flex-col gap-3">
-                    <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">{sport} PERFORMANCE</h3>
-                    <div className="bg-gradient-to-r from-east-light to-east-dark rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-                      <div className="grid grid-cols-2">
-                        {STAT_FIELDS[sport].map((field, index) => {
-                          const val = stats?.[field.key];
-                          if (val === undefined || val === null || val === '') return null;
+          {/* PERFORMANCE AREA */}
+          <div className="w-full mt-4">
+            <div className="flex flex-col gap-6 animate-fadeIn">
+              {STAT_FIELDS[sport] && stats && Object.keys(stats).filter(k => stats[k] !== '' && stats[k] !== null).length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest text-center">{sport} PERFORMANCE</h3>
+                  <div className="bg-gradient-to-r from-[#28D160]/50 to-[#1a8e41]/50 rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+                    <div className="grid grid-cols-2">
+                      {STAT_FIELDS[sport].map((field: any, index: number) => {
+                        const val = stats?.[field.key];
+                        if (val === undefined || val === null || val === '') return null;
 
-                          return (
-                            <div key={field.key} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors border-white/10 ${index % 2 === 0 ? 'border-r' : ''} border-b`}>
-                              <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{field.label}</span>
-                              <span className="font-black text-lg text-white italic">{val} <span className="text-[10px] text-white/50 not-italic">{field.unit}</span></span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                        return (
+                          <div key={field.key} className={`flex flex-col items-center justify-center p-4 gap-1 hover:bg-white/5 transition-colors border-white/10 ${index % 2 === 0 ? 'border-r' : ''} border-b`}>
+                            <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{field.label}</span>
+                            <span className="font-black text-lg text-white italic">{val} <span className="text-[10px] text-white/50 not-italic">{field.unit}</span></span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                ) : (
-                  <div className="text-center p-8 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-sm shadow-2xl">
-                    <Award size={32} className="mx-auto text-white/20 mb-3" />
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">No stats verified yet</p>
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="text-center p-8 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-sm shadow-2xl">
+                  <Award size={32} className="mx-auto text-white/20 mb-3" />
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">No stats verified yet</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
