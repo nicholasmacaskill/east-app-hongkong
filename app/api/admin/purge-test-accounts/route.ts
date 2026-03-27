@@ -58,16 +58,41 @@ export async function POST(request: Request) {
       const toDelete = users.filter(u => {
         const email = u.email?.toLowerCase() || '';
         
-        // Criteria: ONLY includes 'test' or 'audit'
-        return email.includes('test') || email.includes('audit');
+        // PROTECT corporate accounts (ends with @east.com)
+        if (email.endsWith('@east.com')) return false;
+
+        // Criteria: includes 'test', 'audit', 'qa', or 'verify'
+        const keywords = ['test', 'audit', 'qa', 'verify'];
+        return keywords.some(k => email.includes(k));
       });
 
       for (const u of toDelete) {
-        const { error: delError } = await supabaseAdmin.auth.admin.deleteUser(u.id);
-        if (!delError) {
-          allDeleted.push(u.email);
-        } else {
-          console.error(`Failed to delete ${u.email}:`, delError.message);
+        try {
+          // 1. Delete from dependent tables to resolve FK constraints
+          // Many have ON DELETE CASCADE, but some (like profiles) might block auth deletion
+          await supabaseAdmin.from('engineering_tickets').delete().eq('reporter_id', u.id);
+          await supabaseAdmin.from('registrations').delete().or(`user_id.eq.${u.id},payer_id.eq.${u.id}`);
+          await supabaseAdmin.from('player_relationships').delete().or(`parent_id.eq.${u.id},child_id.eq.${u.id}`);
+          await supabaseAdmin.from('players_stats').delete().eq('player_id', u.id);
+          await supabaseAdmin.from('availability').delete().eq('coach_id', u.id);
+          await supabaseAdmin.from('messages').delete().or(`sender_id.eq.${u.id},receiver_id.eq.${u.id}`);
+          await supabaseAdmin.from('likes').delete().eq('user_id', u.id);
+          await supabaseAdmin.from('posts').delete().eq('user_id', u.id);
+          await supabaseAdmin.from('transactions').delete().eq('user_id', u.id);
+          
+          // 2. Delete the profile (which blocks auth.users deletion)
+          await supabaseAdmin.from('profiles').delete().eq('id', u.id);
+
+          // 3. Finally, delete the Auth User
+          const { error: delError } = await supabaseAdmin.auth.admin.deleteUser(u.id);
+          
+          if (!delError) {
+            allDeleted.push(u.email);
+          } else {
+            console.error(`Failed to delete Auth User ${u.email}:`, delError.message);
+          }
+        } catch (err: any) {
+          console.error(`Critical failure during purge for ${u.email}:`, err.message);
         }
       }
 
