@@ -12,7 +12,8 @@ import {
     Check,
     X,
     MoreHorizontal,
-    Search
+    Search,
+    Trash2
 } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import toast from 'react-hot-toast';
@@ -33,6 +34,7 @@ interface Ticket {
     test_url: string;
     coo_approval: boolean;
     ceo_approval: boolean;
+    cto_approval: boolean;
     screenshot_url: string | null;
     created_at: string;
     updated_at: string;
@@ -110,8 +112,9 @@ export default function DashboardContent() {
         setIsSubmitting(true);
         
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Not authenticated');
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            if (authError) throw authError;
+            if (!user) throw new Error('Not authenticated. Please log in again.');
 
             const formData = new FormData();
             formData.append('title', (e.currentTarget.elements.namedItem('title') as HTMLInputElement).value);
@@ -128,16 +131,53 @@ export default function DashboardContent() {
                 body: formData
             });
             
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ error: 'Unknown server error' }));
+                throw new Error(errorData.error || `Server responded with ${res.status}`);
+            }
+
             const data = await res.json();
             if (data.error) throw new Error(data.error);
 
-            toast.success('Ticket created');
+            toast.success('Ticket created successfully', {
+                position: 'bottom-right',
+                duration: 4000
+            });
             setIsCreateModalOpen(false);
             setScreenshotFile(null);
             setScreenshotPreview(null);
             fetchTickets();
         } catch (error: any) {
-            toast.error(error.message);
+            console.error('[TICKET_CREATE_FAILURE]', error);
+            toast.error(error.message || 'Failed to create ticket', {
+                position: 'bottom-right',
+                duration: 6000
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteTicket = async (id: number) => {
+        if (!window.confirm('Are you sure you want to permanently delete this ticket?')) return;
+        
+        setIsSubmitting(true);
+        try {
+            const res = await fetch(`/api/admin/tickets?id=${id}`, {
+                method: 'DELETE'
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ error: 'Unknown server error' }));
+                throw new Error(errorData.error || `Server responded with ${res.status}`);
+            }
+
+            toast.success('Ticket deleted successfully');
+            setSelectedTicket(null);
+            fetchTickets();
+        } catch (error: any) {
+            console.error('[TICKET_DELETE_FAILURE]', error);
+            toast.error(error.message || 'Failed to delete ticket');
         } finally {
             setIsSubmitting(false);
         }
@@ -242,7 +282,7 @@ export default function DashboardContent() {
                                         </div>
                                         
                                         {/* Status specific indicators */}
-                                        {ticket.coo_approval && ticket.ceo_approval && (
+                                        {ticket.coo_approval && ticket.ceo_approval && ticket.cto_approval && (
                                             <div className="absolute top-0 right-0 p-1">
                                                 <div className="bg-[#28D160]/20 text-[#28D160] rounded-bl-xl p-1">
                                                     <Check size={12} strokeWidth={4} />
@@ -361,7 +401,7 @@ export default function DashboardContent() {
                             {/* Approval Gates */}
                             <div className="flex flex-col gap-3">
                                 <h3 className="text-[10px] font-black uppercase tracking-widest text-[#28D160]">Executive Approval Gate</h3>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-3 gap-4">
                                     <div 
                                         onClick={() => updateTicket(selectedTicket.id, { coo_approval: !selectedTicket.coo_approval })}
                                         className={`p-6 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2 ${selectedTicket.coo_approval ? 'bg-[#28D160]/10 border-[#28D160]/40' : 'bg-white/[0.02] border-white/5 opacity-50'}`}
@@ -370,7 +410,7 @@ export default function DashboardContent() {
                                             <span className="text-xs font-black uppercase italic tracking-tighter">COO Approval</span>
                                             {selectedTicket.coo_approval ? <CheckCircle2 className="text-[#28D160]" size={18} /> : <div className="w-4 h-4 rounded-full border border-white/20" />}
                                         </div>
-                                        <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Nicholas Macaskill</p>
+                                        <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Fiona</p>
                                     </div>
 
                                     <div 
@@ -381,7 +421,18 @@ export default function DashboardContent() {
                                             <span className="text-xs font-black uppercase italic tracking-tighter">CEO Approval</span>
                                             {selectedTicket.ceo_approval ? <CheckCircle2 className="text-[#28D160]" size={18} /> : <div className="w-4 h-4 rounded-full border border-white/20" />}
                                         </div>
-                                        <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Global Executive</p>
+                                        <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Ben</p>
+                                    </div>
+
+                                    <div 
+                                        onClick={() => updateTicket(selectedTicket.id, { cto_approval: !selectedTicket.cto_approval })}
+                                        className={`p-6 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2 ${selectedTicket.cto_approval ? 'bg-[#28D160]/10 border-[#28D160]/40' : 'bg-white/[0.02] border-white/5 opacity-50'}`}
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-black uppercase italic tracking-tighter">CTO Approval</span>
+                                            {selectedTicket.cto_approval ? <CheckCircle2 className="text-[#28D160]" size={18} /> : <div className="w-4 h-4 rounded-full border border-white/20" />}
+                                        </div>
+                                        <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Nic</p>
                                     </div>
                                 </div>
                             </div>
@@ -404,7 +455,15 @@ export default function DashboardContent() {
                                 </div>
                             </div>
 
-                            {selectedTicket.status === 'verify' && selectedTicket.coo_approval && selectedTicket.ceo_approval && (
+                            <button 
+                                onClick={() => selectedTicket && handleDeleteTicket(selectedTicket.id)}
+                                disabled={isSubmitting}
+                                className="bg-red-500/10 text-red-500 border border-red-500/20 px-6 py-2.5 rounded-full font-black uppercase italic tracking-tighter text-sm flex items-center gap-2 hover:bg-red-500/20 transition-all disabled:opacity-50"
+                            >
+                                <Trash2 size={18} /> Delete Ticket
+                            </button>
+
+                            {selectedTicket.status === 'verify' && selectedTicket.coo_approval && selectedTicket.ceo_approval && selectedTicket.cto_approval && (
                                 <button 
                                     onClick={() => updateTicket(selectedTicket.id, { status: 'done' })}
                                     className="bg-[#28D160] text-black px-6 py-2.5 rounded-full font-black uppercase italic tracking-tighter text-sm flex items-center gap-2 shadow-xl hover:scale-105 transition-transform"
