@@ -213,6 +213,37 @@ export default function DirectoryPage() {
         }
     };
 
+    const handleNuclearPurge = async () => {
+        const confirmed = window.confirm("☢️ NUCLEAR PURGE\n\nThis will permanently delete ALL accounts containing 'test', 'audit', or '@east.com'.\n\nLegitimate accounts (Gmail, Yahoo, etc.) will be ignored.\n\nAre you sure?");
+        if (!confirmed) return;
+
+        setLoading(true);
+        addToast('Starting mass purge...', 'warning');
+
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const response = await fetch('/api/admin/purge-test-accounts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                }
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                addToast(`Successfully purged ${data.count} test accounts!`, 'success');
+                fetchProfiles();
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (error: any) {
+            addToast('Purge failed: ' + error.message, 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleQuickCreditUpdate = async (userId: string, currentCredits: number, delta: number) => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -353,6 +384,14 @@ export default function DirectoryPage() {
                     </div>
                 </div>
                 <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                    <button
+                        onClick={handleNuclearPurge}
+                        disabled={loading}
+                        className="bg-red-600/20 text-red-500 font-bold text-[10px] px-3 py-2 rounded-lg hover:bg-red-600 hover:text-white transition-colors flex items-center gap-2 uppercase tracking-wide border border-red-500/30"
+                        title="Mass delete all test/audit accounts"
+                    >
+                        <Trash2 size={14} /> Purge Test Data
+                    </button>
                     <button
                         onClick={() => {
                             setNewUser({ ...newUser, role: 'parent' });
