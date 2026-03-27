@@ -22,6 +22,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+    console.log('[TICKETS_POST] Request received');
     try {
         const formData = await req.formData();
         const title = formData.get('title') as string;
@@ -30,7 +31,10 @@ export async function POST(req: Request) {
         const reporter_id = formData.get('reporter_id') as string;
         const screenshot = formData.get('screenshot') as File | null;
 
+        console.log('[TICKETS_POST] Data:', { title, reporter_id, hasScreenshot: !!screenshot });
+
         if (!title || !reporter_id) {
+            console.error('[TICKETS_POST] Missing required fields');
             return NextResponse.json({ error: 'Title and Reporter ID are required' }, { status: 400 });
         }
 
@@ -39,6 +43,7 @@ export async function POST(req: Request) {
 
         // Upload screenshot if provided
         if (screenshot && screenshot.size > 0) {
+            console.log('[TICKETS_POST] Uploading screenshot:', screenshot.name);
             const fileExt = screenshot.name.split('.').pop();
             const fileName = `screenshots/${reporter_id}/${Date.now()}.${fileExt}`;
             
@@ -50,7 +55,7 @@ export async function POST(req: Request) {
                 });
 
             if (uploadError) {
-                console.error('[TICKETS_UPLOAD_ERROR]', uploadError);
+                console.error('[TICKETS_POST] Storage upload error:', uploadError);
                 throw new Error(`Failed to upload screenshot: ${uploadError.message}`);
             }
 
@@ -60,8 +65,10 @@ export async function POST(req: Request) {
                 .getPublicUrl(fileName);
             
             screenshot_url = publicUrlData.publicUrl;
+            console.log('[TICKETS_POST] Screenshot URL:', screenshot_url);
         }
 
+        console.log('[TICKETS_POST] Inserting into database...');
         const { data, error } = await supabase
             .from('engineering_tickets')
             .insert({
@@ -76,11 +83,15 @@ export async function POST(req: Request) {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error('[TICKETS_POST] Database insert error:', error);
+            throw error;
+        }
 
+        console.log('[TICKETS_POST] Success:', data.id);
         return NextResponse.json(data);
     } catch (error: any) {
-        console.error('[TICKETS_POST]', error);
+        console.error('[TICKETS_POST] Final catch error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
