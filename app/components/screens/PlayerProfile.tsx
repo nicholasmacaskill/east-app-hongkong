@@ -182,109 +182,107 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
             <div className="flex flex-col">
               {/* 1. TOP VISUALS */}
               <div className="relative h-[250px] w-full shrink-0">
-            {!isReadOnly && (
-              <div className="absolute top-4 right-6 z-30 flex gap-2">
-                <button data-testid="settings-button" onClick={onOpenSettings} className="bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-colors border border-white/10">
-                  <Edit2 size={20} className="text-gray-400" />
-                </button>
-              </div>
-            )}
-
-
-
-            <div className="absolute left-6 top-16 z-10">
-              <div
-                className={`w-44 h-44 rounded-full border-[6px] border-white/10 bg-white/5 overflow-hidden shadow-2xl backdrop-blur-sm relative ${isReadOnly ? '' : 'cursor-pointer group'}`}
-                onClick={(e) => {
-                  if (!isReadOnly) {
-                    e.stopPropagation();
-                    avatarInputRef.current?.click();
-                  }
-                }}
-              >
-                <img
-                  src={profileData.avatar_url || "https://images.pexels.com/photos/6550836/pexels-photo-6550836.jpeg"}
-                  className={`w-full h-full object-cover transition-opacity ${isReadOnly ? '' : 'group-hover:opacity-40'} ${uploading ? 'opacity-20' : 'opacity-90'}`}
-                  alt="profile"
-                />
                 {!isReadOnly && (
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    {uploading ? (
-                      <div className="w-8 h-8 border-4 border-east-light border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Camera size={32} className="text-white" />
-                    )}
+                  <div className="absolute top-4 right-6 z-30 flex gap-2">
+                    <button data-testid="settings-button" onClick={onOpenSettings} className="bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-colors border border-white/10">
+                      <Edit2 size={20} className="text-gray-400" />
+                    </button>
                   </div>
                 )}
-              </div>
-              <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
-            </div>
-          </div>
 
-          {/* 2. MIDDLE CONTENT */}
-          <div className="px-6 pb-8 flex flex-col gap-6 items-center w-full -mt-2">
-            <div className="w-full flex flex-col items-center pt-8">
-              <h2 className="font-black italic text-2xl text-white uppercase tracking-tighter leading-none text-center">
-                {profileData.name || 'PLAYER'} <span className="text-east-light">{profileData.surname || 'ELITE'}</span>
-              </h2>
-              {profileData.username && (
-                <p className="font-bold text-[10px] text-gray-500 uppercase tracking-widest mt-1">@{profileData.username}</p>
-              )}
-            </div>
-
-            {/* Bio Section */}
-            {profileData.bio && (
-              <div className="w-full bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl relative z-20 text-center">
-                <p className="text-white text-xs font-bold italic leading-relaxed opacity-90">"{profileData.bio}"</p>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 w-full gap-2">
-              {[
-                { l: 'CREDITS\nAVAILABLE', v: profileData.credits || 0, icon: Coins, action: onShowHistory },
-                { l: 'TOP SCORER\n(TEAM)', v: 'coming soon', icon: Award },
-                { l: 'MOST SHOTS\n(TEAM)', v: 'coming soon', icon: Award },
-              ].map((badge: any, i) => (
-                <div
-                  key={i}
-                  onClick={badge.action}
-                  className={`flex flex-col items-center p-3 bg-white/5 rounded-xl border border-white/10 group hover:border-east-light/50 transition-colors ${badge.action ? 'cursor-pointer' : ''}`}
-                >
-                  <div className="w-10 h-10 rounded-full border border-east-light/30 bg-black/40 flex items-center justify-center mb-2 shadow-lg group-hover:scale-110 transition-transform p-1">
-                    <badge.icon size={20} className="text-white drop-shadow-md" />
+                <div className="absolute left-6 top-16 z-10">
+                  <div
+                    className={`w-44 h-44 rounded-full border-[6px] border-white/10 bg-white/5 overflow-hidden shadow-2xl backdrop-blur-sm relative ${isReadOnly ? '' : 'cursor-pointer group'}`}
+                    onClick={(e) => {
+                      if (!isReadOnly) {
+                        e.stopPropagation();
+                        avatarInputRef.current?.click();
+                      }
+                    }}
+                  >
+                    <img
+                      src={profileData.avatar_url || "https://images.pexels.com/photos/6550836/pexels-photo-6550836.jpeg"}
+                      className={`w-full h-full object-cover transition-opacity ${isReadOnly ? '' : 'group-hover:opacity-40'} ${uploading ? 'opacity-20' : 'opacity-90'}`}
+                      alt="profile"
+                    />
+                    {!isReadOnly && (
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        {uploading ? (
+                          <div className="w-8 h-8 border-4 border-east-light border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Camera size={32} className="text-white" />
+                        )}
+                      </div>
+                    )}
                   </div>
-                  {badge.v === 'coming soon' ? (
-                    <>
-                      <span className="text-[7px] font-black uppercase text-center leading-tight text-gray-400 whitespace-pre-line group-hover:text-white transition-colors mb-1">{badge.l}</span>
-                      <span className="text-[10px] text-white/50 lowercase italic">{badge.v}</span>
-                    </>
-                  ) : (
-                    <>
-                      {badge.v !== undefined && (
-                        <span className="font-black text-lg text-white italic leading-none mb-1">{badge.v}</span>
-                      )}
-                      <span className="text-[7px] font-black uppercase text-center leading-tight text-gray-400 whitespace-pre-line group-hover:text-white transition-colors">{badge.l}</span>
-                    </>
+                  <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
+                </div>
+              </div>
+
+              {/* 2. MIDDLE CONTENT */}
+              <div className="px-6 pb-8 flex flex-col gap-8 items-center w-full mt-4">
+                <div className="w-full flex flex-col items-center pt-2">
+                  <h2 className="font-black italic text-3xl text-white uppercase tracking-tighter leading-tight text-center">
+                    {profileData.name || 'PLAYER'} <span className="text-east-light">{profileData.surname || 'ELITE'}</span>
+                  </h2>
+                  {profileData.username && (
+                    <p className="font-bold text-xs text-gray-500 uppercase tracking-widest mt-2">@{profileData.username}</p>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* 3. COLORED BANNER */}
-          <div className="w-full bg-gradient-to-r from-east-light to-east-dark py-4 px-8 flex justify-between items-center shadow-lg border-y border-white/10 relative z-30">
-            <div className="text-center">
-              <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">AGE</div>
-              <span className="text-[10px] text-white/80 font-black italic lowercase">coming soon</span>
-            </div>
-            <div className="text-center">
-              <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">SEASON</div>
-              <span className="text-[10px] text-white/80 font-black italic lowercase">coming soon</span>
-            </div>
-            <div className="text-center">
-              <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">TEAM</div>
-              <span className="text-[10px] text-white/80 font-black italic lowercase">coming soon</span>
-            </div>
+                {/* Bio Section */}
+                {profileData.bio && (
+                  <div className="w-full bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl relative z-20 text-center">
+                    <p className="text-white text-xs font-bold italic leading-relaxed opacity-90">"{profileData.bio}"</p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-3 w-full gap-4 mt-2">
+                  {[
+                    { l: 'CREDITS', l2: 'AVAILABLE', v: profileData.credits || 0, icon: Coins, action: onShowHistory },
+                    { l: 'TOP SCORER', l2: '(TEAM)', v: 'soon', icon: Award },
+                    { l: 'MOST SHOTS', l2: '(TEAM)', v: 'soon', icon: Award },
+                  ].map((badge: any, i) => (
+                    <div
+                      key={i}
+                      onClick={badge.action}
+                      className={`flex flex-col items-center p-3 bg-white/5 rounded-2xl border border-white/10 group hover:border-east-light/50 transition-colors ${badge.action ? 'cursor-pointer' : ''} min-h-[100px] justify-center`}
+                    >
+                      <div className="w-10 h-10 rounded-full border border-east-light/30 bg-black/40 flex items-center justify-center mb-2 shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">
+                        <badge.icon size={20} className="text-[#28D160] drop-shadow-md" />
+                      </div>
+                      {badge.v === 'soon' ? (
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="text-[8px] font-black uppercase text-center leading-none text-gray-400 group-hover:text-white transition-colors">{badge.l}</span>
+                          <span className="text-[8px] font-black uppercase text-center leading-none text-gray-400 group-hover:text-white transition-colors mb-1">{badge.l2}</span>
+                          <span className="text-[9px] text-white/40 lowercase italic leading-none">{badge.v}</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="font-black text-xl text-white italic leading-none">{badge.v}</span>
+                          <span className="text-[8px] font-black uppercase text-center leading-none text-gray-400 group-hover:text-white transition-colors mt-1">{badge.l}</span>
+                          <span className="text-[8px] font-black uppercase text-center leading-none text-gray-400 group-hover:text-white transition-colors">{badge.l2}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. COLORED BANNER */}
+              <div className="w-full bg-gradient-to-r from-[#28D160] to-[#1a8e41] py-5 px-4 grid grid-cols-3 gap-2 shadow-lg border-y border-white/10 relative z-30">
+                <div className="flex flex-col items-center justify-center border-r border-black/10">
+                  <div className="font-black italic text-[11px] text-black tracking-widest uppercase mb-0.5">AGE</div>
+                  <span className="text-[10px] text-black/60 font-black italic lowercase leading-none">soon</span>
+                </div>
+                <div className="flex flex-col items-center justify-center border-r border-black/10">
+                  <div className="font-black italic text-[11px] text-black tracking-widest uppercase mb-0.5">SEASON</div>
+                  <span className="text-[10px] text-black/60 font-black italic lowercase leading-none">soon</span>
+                </div>
+                <div className="flex flex-col items-center justify-center">
+                  <div className="font-black italic text-[11px] text-black tracking-widest uppercase mb-0.5">TEAM</div>
+                  <span className="text-[10px] text-black/60 font-black italic lowercase leading-none">soon</span>
+                </div>
               </div>
             </div>
           </div>
@@ -294,36 +292,36 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
             {/* CONTENT AREA */}
             <div className="w-full">
               <div className="flex flex-col gap-8 animate-fadeIn">
-            {STAT_FIELDS[sport] && stats && Object.keys(stats).filter(k => stats[k] !== '' && stats[k] !== null).length > 0 ? (
-              <div className="flex flex-col gap-3">
-                <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">{sport} PERFORMANCE</h3>
-                <div className="bg-gradient-to-r from-east-light to-east-dark rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-                  <div className="grid grid-cols-2">
-                    {STAT_FIELDS[sport].map((field, index) => {
-                      const val = stats?.[field.key];
-                      if (val === undefined || val === null || val === '') return null;
+                {STAT_FIELDS[sport] && stats && Object.keys(stats).filter(k => stats[k] !== '' && stats[k] !== null).length > 0 ? (
+                  <div className="flex flex-col gap-3">
+                    <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest px-2 text-center">{sport} PERFORMANCE</h3>
+                    <div className="bg-gradient-to-r from-east-light to-east-dark rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+                      <div className="grid grid-cols-2">
+                        {STAT_FIELDS[sport].map((field, index) => {
+                          const val = stats?.[field.key];
+                          if (val === undefined || val === null || val === '') return null;
 
-                      return (
-                        <div key={field.key} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors border-white/10 ${index % 2 === 0 ? 'border-r' : ''} border-b`}>
-                          <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{field.label}</span>
-                          <span className="font-black text-lg text-white italic">{val} <span className="text-[10px] text-white/50 not-italic">{field.unit}</span></span>
-                        </div>
-                      );
-                    })}
+                          return (
+                            <div key={field.key} className={`flex flex-col items-center justify-center p-6 gap-2 hover:bg-white/5 transition-colors border-white/10 ${index % 2 === 0 ? 'border-r' : ''} border-b`}>
+                              <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{field.label}</span>
+                              <span className="font-black text-lg text-white italic">{val} <span className="text-[10px] text-white/50 not-italic">{field.unit}</span></span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center p-8 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-sm shadow-2xl">
-                <Award size={32} className="mx-auto text-white/20 mb-3" />
-                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">No stats verified yet</p>
-              </div>
-            )}
+                ) : (
+                  <div className="text-center p-8 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-sm shadow-2xl">
+                    <Award size={32} className="mx-auto text-white/20 mb-3" />
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">No stats verified yet</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
