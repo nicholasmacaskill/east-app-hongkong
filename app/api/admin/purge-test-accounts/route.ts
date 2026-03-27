@@ -85,28 +85,55 @@ export async function POST(request: Request) {
     // 2. Scan PROFILES (To catch orphans or profiles without auth users)
     const { data: profiles, error: profError } = await supabaseAdmin
       .from('profiles')
-      .select('id, contact_email, username');
+      .select('id, contact_email, username, first_name, last_name');
 
     if (profError) throw profError;
 
+    const keywords = ['test', 'audit', 'qa', 'verify'];
     const toDeleteFromProfiles = (profiles || []).filter(p => {
-      const email = (p.contact_email || p.username || '').toLowerCase();
-      if (email.endsWith('@east.com')) return false;
-      const keywords = ['test', 'audit', 'qa', 'verify'];
-      return keywords.some(k => email.includes(k));
+      const email = (p.contact_email || '').toLowerCase();
+      const user = (p.username || '').toLowerCase();
+      const first = (p.first_name || '').toLowerCase();
+      const last = (p.last_name || '').toLowerCase();
+      
+      if (email.endsWith('@east.com') || user.endsWith('@east.com')) {
+         // CRITICAL: Still protect corporate @east.com unless it's a known test email
+         // and doesn't exactly match the admin account
+         if (email === 'admin@east.com') return false;
+      }
+
+      const match = keywords.some(k => 
+        email.includes(k) || 
+        user.includes(k) || 
+        first.includes(k) || 
+        last.includes(k)
+      );
+
+      return match;
     });
+
+    console.log(`Deep-Scan found ${toDeleteFromProfiles.length} matching profiles for keyword purge.`);
 
     for (const p of toDeleteFromProfiles) {
       try {
+        console.log(`Purging Profile: ${p.id} | Email: ${p.contact_email} | Name: ${p.first_name} ${p.last_name}`);
+        
+        // Scrub dependents
         await supabaseAdmin.from('engineering_tickets').delete().eq('reporter_id', p.id);
         await supabaseAdmin.from('registrations').delete().or(`user_id.eq.${p.id},payer_id.eq.${p.id}`);
         await supabaseAdmin.from('players_stats').delete().eq('player_id', p.id);
-        await supabaseAdmin.from('profiles').delete().eq('id', p.id);
-        // Also try to delete auth user just in case it exists but was missed
-        await supabaseAdmin.auth.admin.deleteUser(p.id);
+        
+        // Remove Profile
+        const { error: pErr } = await supabaseAdmin.from('profiles').delete().eq('id', p.id);
+        if (pErr) console.error(`Failed to delete profile record for ${p.id}:`, pErr.message);
+
+        // Remove Auth
+        const { error: aErr } = await supabaseAdmin.auth.admin.deleteUser(p.id);
+        if (aErr && aErr.status !== 404) console.error(`Failed to delete auth user for ${p.id}:`, aErr.message);
+
         allDeleted.add(p.contact_email || p.username || p.id);
-      } catch (err) {
-        // Ignore errors if auth user already deleted
+      } catch (err: any) {
+        console.error(`Deep-Scan purge process error for ${p.id}:`, err.message);
       }
     }
 
