@@ -30,3 +30,4 @@ playwright-report/
 *.env.*
 .env.production
 .env.preview
+.env*.local

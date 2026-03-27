@@ -26,31 +26,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing priceId or userId' }, { status: 400 });
     }
 
-    // Determine mode based on Price ID (Top Up is one-time payment)
-    const TOPUP_RATES: Record<string, number> = {};
+    // 1. Fetch Price details from Stripe to determine mode dynamically
+    const price = await stripe.prices.retrieve(priceId);
+    if (!price) {
+      return NextResponse.json({ error: 'Invalid Price ID' }, { status: 400 });
+    }
 
-    const topupKeys = {
-      TOPUP_STARTER: 500,
-      TOPUP_STANDARD: 1000,
-      TOPUP_PRO: 2500,
-      TOPUP_ELITE: 5000,
-      TOPUP_ULTIMATE: 10000,
-      TOPUP: 1200 // Legacy support
+    // Determine mode based on whether the price is recurring
+    const isRecurring = !!price.recurring;
+    const mode = isRecurring ? 'subscription' : 'payment';
+
+    // 2. Identify Top-Up amounts for metadata (Optional but helpful for credits)
+    // We can still use a map for internal credit logic if needed, 
+    // or just pass it from the frontend.
+    const TOPUP_MAP: Record<string, number> = {
+      [getStripePriceId('TOPUP_STARTER')]: 500,
+      [getStripePriceId('TOPUP_STANDARD')]: 1000,
+      [getStripePriceId('TOPUP_PRO')]: 2500,
+      [getStripePriceId('TOPUP_ELITE')]: 5000,
+      [getStripePriceId('TOPUP_ULTIMATE')]: 10000,
+      [getStripePriceId('TOPUP')]: 1200
     };
 
-    Object.entries(topupKeys).forEach(([key, amount]) => {
-      const priceIdFromEnv = getStripePriceId(key);
-      if (priceIdFromEnv) {
-        TOPUP_RATES[priceIdFromEnv] = amount;
-      }
-    });
+    const topUpAmount = TOPUP_MAP[priceId] || 0;
+    const isTopUp = !isRecurring && topUpAmount > 0;
 
-    const topUpAmount = TOPUP_RATES[priceId];
-    const isTopUp = !!topUpAmount;
-
-    const mode = isTopUp ? 'payment' : 'subscription';
-
-    console.log("Session Mode:", mode, "Credit Amount:", topUpAmount);
+    console.log(`Session Mode: ${mode} | Recurring: ${isRecurring} | TopUp Amount: ${topUpAmount}`);
 
     // Default URLs if not provided
     const referer = request.headers.get('referer');
@@ -66,36 +67,31 @@ export async function POST(request: Request) {
     const finalSuccessUrl = successUrl || `${baseUrl}${defaultSuccessPath}`;
     const finalCancelUrl = cancelUrl || `${baseUrl}/?canceled=true`;
 
-    // Create a Stripe Checkout Session
-    const session = await stripe.checkout.sessions.create({
+    // 3. Create a Stripe Checkout Session
+    const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       mode: mode,
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
-
-      // Redirect URLs
       success_url: finalSuccessUrl,
       cancel_url: finalCancelUrl,
-
-      // Pre-fill user email to simplify checkout
       customer_email: userEmail,
-
-      // For subscriptions, ensure metadata is passed to the subscription object
-      ...(mode === 'subscription' && {
-        subscription_data: {
-          metadata: {
-            userId: userId,
-          }
-        }
-      }),
-
-      // Metadata allows us to match the payment to the user in the Webhook
-      // ✅ UPDATED: Dynamic credit_amount from map
       metadata: {
         userId: userId,
         target_user_id: userId,
-        credit_amount: isTopUp ? topUpAmount.toString() : '0'
+        credit_amount: topUpAmount.toString()
       }
-    });
+    };
+
+    // For subscriptions, ensure metadata is passed to the subscription object
+    if (mode === 'subscription') {
+      sessionConfig.subscription_data = {
+        metadata: {
+          userId: userId,
+        }
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
