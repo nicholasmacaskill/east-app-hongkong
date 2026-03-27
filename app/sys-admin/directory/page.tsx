@@ -214,7 +214,7 @@ export default function DirectoryPage() {
     };
 
     const handleNuclearPurge = async () => {
-        const confirmed = window.confirm("☢️ NUCLEAR PURGE\n\nThis will permanently delete ALL accounts containing 'test' or 'audit'.\n\nAccounts using '@east.com' domains and other legitimate emails (Gmail, Yahoo, etc.) will be ignored.\n\nAre you sure?");
+        const confirmed = window.confirm("☢️ NUCLEAR PURGE\n\nThis will permanently delete ALL accounts containing 'test', 'audit', 'QA', or 'Verify'.\n\nAccounts using '@east.com' domains and other legitimate emails (Gmail, Yahoo, etc.) will be ignored.\n\nAre you sure?");
         if (!confirmed) return;
 
         setLoading(true);
