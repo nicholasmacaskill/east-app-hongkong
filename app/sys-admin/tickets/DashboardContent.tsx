@@ -63,6 +63,7 @@ const PRIORITY_COLORS: Record<TicketPriority, string> = {
 };
 
 export default function DashboardContent() {
+    // Vercel UI Synchronization Trigger
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
