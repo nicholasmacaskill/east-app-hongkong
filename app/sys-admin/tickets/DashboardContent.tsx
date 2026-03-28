@@ -255,7 +255,7 @@ export default function DashboardContent() {
                         <Shield className="text-[#28D160]" size={32} />
                         EAST JIRA-LITE
                     </h1>
-                    <p className="text-gray-400">Agentic Bug Tracking & Verification Control</p>
+                    <p className="text-gray-400">Agentic Bug Tracking & Verification Control (v1.0.CEO)</p>
                 </div>
 
                 <div className="flex items-center gap-4">
