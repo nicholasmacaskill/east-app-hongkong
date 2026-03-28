@@ -14,6 +14,8 @@ type Announcement = {
     published: boolean;
     event_date?: string;
     image_url?: string;
+    external_url?: string;
+    additional_images?: string[];
     created_at: string;
     updated_at: string;
 };
@@ -30,7 +32,9 @@ export default function NewsManagementPage() {
         type: 'news' as 'news' | 'event',
         published: false,
         event_date: '',
-        image_url: ''
+        image_url: '',
+        external_url: '',
+        additional_images: '' // Stored as comma-separated in form, converted to array on save
     });
 
     useEffect(() => {
@@ -74,10 +78,17 @@ export default function NewsManagementPage() {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
 
+            const payload = {
+                ...formData,
+                additional_images: formData.additional_images
+                    ? formData.additional_images.split(',').map(s => s.trim()).filter(s => s !== '')
+                    : []
+            };
+
             const method = editingItem ? 'PUT' : 'POST';
             const body = editingItem
-                ? { ...formData, id: editingItem.id }
-                : formData;
+                ? { ...payload, id: editingItem.id }
+                : payload;
 
             const response = await fetch('/api/admin/announcements', {
                 method,
@@ -97,7 +108,9 @@ export default function NewsManagementPage() {
                     type: 'news',
                     published: false,
                     event_date: '',
-                    image_url: ''
+                    image_url: '',
+                    external_url: '',
+                    additional_images: ''
                 });
                 fetchAnnouncements();
             }
@@ -161,7 +174,9 @@ export default function NewsManagementPage() {
             type: item.type,
             published: item.published,
             event_date: item.event_date ? safeDate(item.event_date)?.toISOString().split('T')[0] || '' : '',
-            image_url: item.image_url || ''
+            image_url: item.image_url || '',
+            external_url: item.external_url || '',
+            additional_images: item.additional_images?.join(', ') || ''
         });
         setShowModal(true);
     };
@@ -188,7 +203,9 @@ export default function NewsManagementPage() {
                                 type: 'news',
                                 published: false,
                                 event_date: '',
-                                image_url: ''
+                                image_url: '',
+                                external_url: '',
+                                additional_images: ''
                             });
                             setShowModal(true);
                         }}
@@ -344,6 +361,29 @@ export default function NewsManagementPage() {
                                     placeholder="https://..."
                                     className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">External URL (Optional)</label>
+                                <input
+                                    type="url"
+                                    value={formData.external_url}
+                                    onChange={(e) => setFormData({ ...formData, external_url: e.target.value })}
+                                    placeholder="https://... (e.g. Booking link, Article source)"
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Additional Images (Optional)</label>
+                                <textarea
+                                    value={formData.additional_images}
+                                    onChange={(e) => setFormData({ ...formData, additional_images: e.target.value })}
+                                    placeholder="Paste image URLs separated by commas..."
+                                    rows={3}
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all resize-none"
+                                />
+                                <p className="text-[10px] text-gray-500 mt-2">Useful for gym schedules or galleries. Enter full URLs separated by commas.</p>
                             </div>
 
                             <div className="flex items-center gap-3">

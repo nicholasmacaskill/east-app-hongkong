@@ -39,6 +39,7 @@ You can command the entire team from a single chat window using **Tags**:
     *   *Step 1:* Architect creates the Plan.
     *   *Step 2:* Auditor approves the Plan.
     *   *Step 3:* Executor (Antigravity) implements it.
+    *   *Step 4:* **Machine Verification:** Executor assigns the Playwright test path to the Jira-Lite ticket and moves it to **Verify**. The ticket is ONLY complete when the test passes.
 
 ## Agent Reality Breakdown
 - **Physically**: One IDE Chat Window.

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, Plus, Star, Users, Briefcase, Mail, Edit2, Trash2, Calendar, LayoutGrid, ChevronLeft, Shield, User, Coins, AlertCircle, X, Check } from 'lucide-react';
+import { Search, Plus, Star, Users, Briefcase, Mail, Edit2, Trash2, Calendar, LayoutGrid, ChevronLeft, Shield, User, Coins, AlertCircle, X, Check, Link2 } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { QRCodeSVG } from 'qrcode.react';
 import { UserRole } from '@/app/types';
@@ -41,7 +41,11 @@ export default function DirectoryPage() {
 
     // Edit User State
     const [showEditForm, setShowEditForm] = useState(false);
+    const [adjustmentAmount, setAdjustmentAmount] = useState<number>(0);
+    const [adjustmentReason, setAdjustmentReason] = useState<string>('');
+    const [isAdjustingCredits, setIsAdjustingCredits] = useState(false);
     const [editingUser, setEditingUser] = useState<any>(null);
+    const [isCashPayment, setIsCashPayment] = useState(false);
 
     const [showAvailability, setShowAvailability] = useState(false);
     const [selectedCoach, setSelectedCoach] = useState<any>(null);
@@ -268,6 +272,46 @@ export default function DirectoryPage() {
             fetchProfiles(); // Refresh
         } catch (error: any) {
             addToast('Failed to update credits: ' + error.message, 'error');
+        }
+    };
+
+    const handleCreditAdjustment = async (amount: number) => {
+        if (!editingUser || !editingUser.id || !adjustmentReason) {
+            addToast('Please provide a reason for the adjustment', 'warning');
+            return;
+        }
+
+        setIsAdjustingCredits(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
+            const response = await fetch('/api/admin/adjust-credits', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
+                body: JSON.stringify({
+                    userId: editingUser.id,
+                    amount: amount,
+                    description: adjustmentReason,
+                    type: isCashPayment ? 'cash_deposit' : 'transfer'
+                })
+            });
+
+            const data = await response.json();
+            if (!data.success) throw new Error(data.error);
+
+            addToast(`Credits adjusted: ${amount > 0 ? '+' : ''}${amount}`, 'success');
+            setEditingUser({ ...editingUser, credits: data.newCredits });
+            setAdjustmentReason('');
+            setAdjustmentAmount(0);
+            fetchProfiles();
+        } catch (error: any) {
+            addToast('Adjustment failed: ' + error.message, 'error');
+        } finally {
+            setIsAdjustingCredits(false);
         }
     };
 
@@ -577,17 +621,18 @@ export default function DirectoryPage() {
                                     />
                                 </div>
 
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Mobile / Contact Number</label>
+                                    <input
+                                        value={newUser.mobile}
+                                        onChange={e => setNewUser({ ...newUser, mobile: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                        placeholder="+852 ..."
+                                    />
+                                </div>
+
                                 {newUser.role === 'coach' && (
                                     <>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase">Mobile</label>
-                                            <input
-                                                value={newUser.mobile}
-                                                onChange={e => setNewUser({ ...newUser, mobile: e.target.value })}
-                                                className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
-                                                placeholder="+852 ..."
-                                            />
-                                        </div>
                                         <div>
                                             <label className="text-[10px] font-bold text-gray-500 uppercase">Bio</label>
                                             <textarea
@@ -675,16 +720,61 @@ export default function DirectoryPage() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Credits</label>
-                                        <input
-                                            type="number"
-                                            value={editingUser.credits}
-                                            onChange={e => setEditingUser({ ...editingUser, credits: e.target.value })}
-                                            className="w-full bg-black/50 border border-[#28D160]/30 p-2 rounded-lg text-white font-bold text-sm outline-none focus:border-[#28D160]"
-                                        />
+                                    <div className="bg-black/40 border border-[#28D160]/20 p-4 rounded-2xl flex flex-col gap-3">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-[10px] font-bold text-[#28D160] uppercase tracking-widest flex items-center gap-1">
+                                                <Coins size={12} /> Credit Adjustment
+                                            </label>
+                                            <span className="text-xs font-black text-white italic">{editingUser.credits} Available</span>
+                                        </div>
+                                        
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="number"
+                                                placeholder="Amt"
+                                                value={adjustmentAmount || ''}
+                                                onChange={e => setAdjustmentAmount(parseInt(e.target.value) || 0)}
+                                                className="w-20 bg-black/50 border border-white/10 p-2 rounded-lg text-white font-bold text-sm outline-none focus:border-[#28D160]"
+                                            />
+                                            <input
+                                                placeholder="Reason for adjustment..."
+                                                value={adjustmentReason}
+                                                onChange={e => setAdjustmentReason(e.target.value)}
+                                                className="flex-1 bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center gap-2 px-1">
+                                            <input 
+                                                type="checkbox" 
+                                                id="cashDeposit" 
+                                                checked={isCashPayment}
+                                                onChange={(e) => setIsCashPayment(e.target.checked)}
+                                                className="w-3 h-3 rounded"
+                                            />
+                                            <label htmlFor="cashDeposit" className="text-[10px] text-gray-400 font-bold uppercase tracking-widest cursor-pointer select-none">
+                                                Record as Cash Payment
+                                            </label>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <button 
+                                                onClick={() => handleCreditAdjustment(-Math.abs(adjustmentAmount))}
+                                                disabled={isAdjustingCredits || !adjustmentAmount}
+                                                className="flex-1 bg-red-500/10 text-red-500 border border-red-500/20 py-2 rounded-lg text-[10px] font-black uppercase italic hover:bg-red-500 hover:text-white transition-all disabled:opacity-30"
+                                            >
+                                                Deduct Credits
+                                            </button>
+                                            <button 
+                                                onClick={() => handleCreditAdjustment(Math.abs(adjustmentAmount))}
+                                                disabled={isAdjustingCredits || !adjustmentAmount}
+                                                className="flex-1 bg-[#28D160]/10 text-[#28D160] border border-[#28D160]/20 py-2 rounded-lg text-[10px] font-black uppercase italic hover:bg-[#28D160] hover:text-black transition-all disabled:opacity-30"
+                                            >
+                                                {isCashPayment ? 'Record Cash Dep.' : 'Add Credits'}
+                                            </button>
+                                        </div>
                                     </div>
+
                                     <div>
                                         <label className="text-[10px] font-bold text-gray-500 uppercase">Username</label>
                                         <input
@@ -693,7 +783,6 @@ export default function DirectoryPage() {
                                             className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                         />
                                     </div>
-                                </div>
 
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-500 uppercase">Email</label>
@@ -898,33 +987,44 @@ export default function DirectoryPage() {
                                     )}
                                 </div>
 
-                                {(editingUser.role === 'coach' || editingUser.role === 'player') && (
+                                {(editingUser.role === 'coach' || editingUser.role === 'player' || editingUser.role === 'parent' || editingUser.role === 'admin' || editingUser.role === 'sys-admin') && (
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase">{editingUser.role === 'coach' ? 'Mobile' : 'Team'}</label>
+                                            <label className="text-[10px] font-bold text-gray-500 uppercase">Mobile</label>
                                             <input
-                                                value={editingUser.role === 'coach' ? editingUser.mobile : editingUser.team}
-                                                onChange={e => setEditingUser({ ...editingUser, [editingUser.role === 'coach' ? 'mobile' : 'team']: e.target.value })}
+                                                value={editingUser.mobile || ''}
+                                                onChange={e => setEditingUser({ ...editingUser, mobile: e.target.value })}
                                                 className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                placeholder="+852 ..."
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase">{editingUser.role === 'coach' ? 'Bio' : 'Position'}</label>
-                                            {editingUser.role === 'coach' ? (
+                                            <label className="text-[10px] font-bold text-gray-500 uppercase">{editingUser.role === 'coach' ? 'Bio' : (editingUser.role === 'player' ? 'Position' : (editingUser.role === 'parent' ? 'Household notes' : 'Staff Bio'))}</label>
+                                            {editingUser.role === 'coach' || editingUser.role === 'parent' || editingUser.role === 'admin' || editingUser.role === 'sys-admin' ? (
                                                 <textarea
-                                                    value={editingUser.bio}
+                                                    value={editingUser.bio || ''}
                                                     onChange={e => setEditingUser({ ...editingUser, bio: e.target.value })}
                                                     rows={1}
                                                     className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                                 />
                                             ) : (
                                                 <input
-                                                    value={editingUser.position}
+                                                    value={editingUser.position || ''}
                                                     onChange={e => setEditingUser({ ...editingUser, position: e.target.value })}
                                                     className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
                                                 />
                                             )}
                                         </div>
+                                        {editingUser.role === 'player' && (
+                                            <div className="col-span-2">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase">Team</label>
+                                                <input
+                                                    value={editingUser.team || ''}
+                                                    onChange={e => setEditingUser({ ...editingUser, team: e.target.value })}
+                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
@@ -1012,6 +1112,12 @@ export default function DirectoryPage() {
                                                             <span className="text-[9px] font-black italic text-purple-400 uppercase shrink-0">{parent.role}</span>
                                                             <span className="text-gray-600 text-[10px]">•</span>
                                                             <span className="text-gray-500 text-[10px] truncate">{parent.contact_email}</span>
+                                                            {parent.mobile && (
+                                                                <>
+                                                                    <span className="text-gray-600 text-[10px]">•</span>
+                                                                    <span className="text-purple-300/70 text-[11px] truncate font-medium">Phone: {parent.mobile}</span>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1065,15 +1171,19 @@ export default function DirectoryPage() {
                                                                             <div className="flex items-center gap-1">
                                                                                 <Coins size={10} className="text-amber-500" />
                                                                                 <span className="text-[8px] text-gray-500 uppercase font-black italic">{child.credits}</span>
-                                                                                <div className="flex gap-1 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                                    <button
-                                                                                        onClick={() => handleQuickCreditUpdate(child.id, child.credits, 10)}
-                                                                                        className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-[8px] font-bold hover:bg-amber-500 hover:text-black"
-                                                                                    >
-                                                                                        +
-                                                                                    </button>
-                                                                                </div>
                                                                             </div>
+                                                                            {child.parent_id && (
+                                                                                <div className="flex items-center gap-0.5 text-[#28D160] opacity-80" title="Linked to Household">
+                                                                                    <Link2 size={10} strokeWidth={3} />
+                                                                                    <span className="text-[8px] font-black uppercase italic tracking-tighter">Linked</span>
+                                                                                </div>
+                                                                            )}
+                                                                            {child.mobile && (
+                                                                                <>
+                                                                                    <span className="text-gray-600 text-[10px]">•</span>
+                                                                                    <span className="text-gray-400 text-[10px] font-bold">Phone: {child.mobile}</span>
+                                                                                </>
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -1121,13 +1231,13 @@ export default function DirectoryPage() {
                                                                 <div className="flex items-center gap-1 group">
                                                                     <Coins size={10} className="text-amber-500" />
                                                                     <span className="text-[8px] text-gray-500 uppercase font-black italic">{player.credits}</span>
-                                                                    <button
-                                                                        onClick={() => handleQuickCreditUpdate(player.id, player.credits, 10)}
-                                                                        className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-[8px] font-bold hover:bg-amber-500 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                    >
-                                                                        +
-                                                                    </button>
                                                                 </div>
+                                                                {player.mobile && (
+                                                                    <>
+                                                                        <span className="text-gray-600 text-[10px]">•</span>
+                                                                        <span className="text-gray-400 text-[10px] font-bold">Phone: {player.mobile}</span>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1159,7 +1269,15 @@ export default function DirectoryPage() {
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="font-bold text-white text-sm truncate">{coach.first_name} {coach.last_name}</p>
-                                                    <p className="text-[10px] text-gray-500 truncate">{coach.contact_email}</p>
+                                                    <div className="flex items-center gap-1 truncate">
+                                                        <p className="text-[10px] text-gray-500 truncate">{coach.contact_email}</p>
+                                                        {coach.mobile && (
+                                                            <>
+                                                                <p className="text-gray-600 text-[10px]">•</p>
+                                                                <p className="text-[11px] text-blue-300/80 truncate font-medium">Phone: {coach.mobile}</p>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="flex gap-1 transition-opacity">
@@ -1197,7 +1315,15 @@ export default function DirectoryPage() {
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="font-bold text-white text-sm truncate">{admin.first_name} {admin.last_name}</p>
-                                                    <p className="text-[10px] text-gray-500 uppercase font-black italic text-rose-400 truncate">{admin.role}</p>
+                                                    <div className="flex items-center gap-1 truncate">
+                                                        <p className="text-[10px] text-gray-500 uppercase font-black italic text-rose-400 truncate">{admin.role}</p>
+                                                        {admin.mobile && (
+                                                            <>
+                                                                <p className="text-gray-600 text-[10px]">•</p>
+                                                                <p className="text-[11px] text-rose-300/80 truncate font-medium">Phone: {admin.mobile}</p>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="flex gap-1 transition-opacity">
@@ -1245,13 +1371,13 @@ export default function DirectoryPage() {
                                                             <div className="flex items-center gap-1 group">
                                                                 <Coins size={10} className="text-amber-500" />
                                                                 <span className="text-[8px] text-gray-500 uppercase font-black italic">{player.credits}</span>
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleQuickCreditUpdate(player.id, player.credits, 10); }}
-                                                                    className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center text-[8px] font-bold hover:bg-amber-500 hover:text-black opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                >
-                                                                    +
-                                                                </button>
                                                             </div>
+                                                            {player.mobile && (
+                                                                <>
+                                                                    <span className="text-gray-600 text-[10px]">•</span>
+                                                                    <span className="text-gray-400 text-[10px] font-bold">Phone: {player.mobile}</span>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </div>

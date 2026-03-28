@@ -65,7 +65,7 @@ export async function POST(request: Request) {
         }
 
         // 2. Sanitize Input
-        const { title, content, type, published, event_date, image_url } = validation.data;
+        const { title, content, type, published, event_date, image_url, external_url, additional_images } = validation.data;
         const safeTitle = sanitize(title);
         const safeContent = sanitize(content, false); // Allow basic HTML (rich text) if intended, or true for strict
 
@@ -106,6 +106,8 @@ export async function POST(request: Request) {
                 published: published || false,
                 event_date: event_date || null,
                 image_url: image_url || null,
+                external_url: external_url || null,
+                additional_images: additional_images || [],
                 created_by: user.id
             })
             .select()
@@ -142,7 +144,7 @@ export async function PUT(request: Request) {
         }
 
         // 2. Sanitize Input
-        const { title, content, type, published, event_date, image_url } = validation.data;
+        const { title, content, type, published, event_date, image_url, external_url, additional_images } = validation.data;
         const safeTitle = sanitize(title);
         const safeContent = sanitize(content, false);
 
@@ -183,6 +185,8 @@ export async function PUT(request: Request) {
                 published,
                 event_date: event_date || null,
                 image_url: image_url || null,
+                external_url: external_url || null,
+                additional_images: additional_images || [],
                 updated_at: new Date().toISOString()
             })
             .eq('id', id)

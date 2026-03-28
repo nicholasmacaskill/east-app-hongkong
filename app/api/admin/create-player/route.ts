@@ -5,7 +5,7 @@ import { logAdminAction } from '@/app/lib/audit';
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { email, firstName, lastName, team, position, role = 'player', parentId, password } = body;
+        const { email, firstName, lastName, team, position, role = 'player', parentId, mobile, password } = body;
 
         // Basic Validation
         if (!email || !firstName || !lastName) {
@@ -47,6 +47,7 @@ export async function POST(request: Request) {
             first_name: firstName,
             last_name: lastName,
             username: username,
+            mobile: mobile || '',
             credits: 0
         };
 

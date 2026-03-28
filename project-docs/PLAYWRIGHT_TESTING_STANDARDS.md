@@ -150,6 +150,7 @@ Before ANY test is committed to git:
 - [ ] Error messages are descriptive
 - [ ] Test is idempotent (can run multiple times)
 - [ ] Test data is cleaned up (in `afterAll`)
+- [x] **Dashboard Integration:** Test path is added to the Engineering Ticket and verified via the automated dashboard runner.
 
 ---
 

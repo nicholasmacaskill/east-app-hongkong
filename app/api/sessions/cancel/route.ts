@@ -126,6 +126,7 @@ export async function DELETE(request: Request) {
           if (profile?.contact_email && session) {
             await sendEmail({
               to: profile.contact_email,
+              cc: 'eastsportsgroup@gmail.com',
               subject: `Cancellation Confirmed: ${session.title}`,
               html: `
                 <p>Hi ${profile.first_name || 'Member'},</p>

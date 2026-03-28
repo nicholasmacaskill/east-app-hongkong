@@ -205,6 +205,7 @@ export async function POST(request: Request) {
         if (userProfile?.contact_email && mainSession) {
           await sendEmail({
             to: userProfile.contact_email,
+            cc: 'eastsportsgroup@gmail.com',
             subject: 'Booking Confirmation - EAST',
             html: `
               <div style="color: #ffffff;">

@@ -14,6 +14,7 @@ if (!process.env.NEXT_PUBLIC_BASE_URL) {
 
 interface EmailParams {
   to: string;
+  cc?: string | string[]; // Added: CC support for Resend
   subject: string;
   html: string;
   source?: string; // Optional: track where the email came from (e.g., 'booking', 'password-reset')
@@ -86,12 +87,12 @@ export function wrapEmailHtml(content: string, title?: string) {
   `;
 }
 
-export async function sendEmail({ to, subject, html, source }: EmailParams) {
+export async function sendEmail({ to, cc, subject, html, source }: EmailParams) {
   // 1. Wrap HTML if it's not already a full document
   const finalHtml = html.includes('<html') ? html : wrapEmailHtml(html, subject);
 
   // Log to database for testing (non-blocking)
-  await logEmailToDatabase({ to, subject, html: finalHtml, source });
+  await logEmailToDatabase({ to, cc, subject, html: finalHtml, source });
 
   // Check for API Key first
   if (!process.env.RESEND_API_KEY) {
@@ -117,6 +118,7 @@ export async function sendEmail({ to, subject, html, source }: EmailParams) {
     const { data, error } = await resend.emails.send({
       from: fromAddress,
       to,
+      cc, // Pass CC if provided
       subject,
       html: finalHtml,
     });

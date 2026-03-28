@@ -40,6 +40,7 @@ interface Ticket {
     resolution?: string;
     created_at: string;
     updated_at: string;
+    playwright_test?: string; // NEW: Path to verification script
     reporter: {
         first_name: string;
         last_name: string;
@@ -70,6 +71,8 @@ export default function DashboardContent() {
     const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
     const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [draggedTicketId, setDraggedTicketId] = useState<number | null>(null);
+    const [filterMode, setFilterMode] = useState<'all' | 'ready_for_ceo'>('all');
 
     const fetchTickets = async () => {
         try {
@@ -104,6 +107,27 @@ export default function DashboardContent() {
                 setSelectedTicket({ ...selectedTicket, ...updates });
             }
             toast.success('Ticket updated');
+
+            // NEW: Trigger automated verification if moving to 'verify'
+            if (updates.status === 'verify') {
+                const ticket = tickets.find(t => t.id === id) || selectedTicket;
+                const testPath = updates.playwright_test || ticket?.playwright_test;
+                
+                if (testPath) {
+                    toast.promise(
+                        fetch('/api/admin/run-test', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ticketId: id, testPath })
+                        }).then(r => r.json()),
+                        {
+                            loading: 'Triggering automated verification...',
+                            success: (data) => data.success ? 'Verification triggered!' : 'Test trigger failed',
+                            error: 'Failed to reach test runner'
+                        }
+                    );
+                }
+            }
         } catch (error: any) {
             toast.error('Update failed');
         }
@@ -198,10 +222,17 @@ export default function DashboardContent() {
         }
     };
 
-    const filteredTickets = tickets.filter(t => 
-        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.id.toString() === searchQuery.replace('#', '')
-    );
+    const filteredTickets = tickets.filter(t => {
+        const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            t.id.toString() === searchQuery.replace('#', '');
+        
+        if (filterMode === 'ready_for_ceo') {
+            const isReady = t.status === 'verify' && t.resolution?.includes('✅ Passed');
+            return matchesSearch && isReady;
+        }
+        
+        return matchesSearch;
+    });
 
     if (loading) {
         return (
@@ -227,6 +258,21 @@ export default function DashboardContent() {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    <div className="flex bg-[#1e1e1e] border border-white/5 rounded-full p-1 self-center">
+                        <button 
+                            onClick={() => setFilterMode('all')}
+                            className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${filterMode === 'all' ? 'bg-white/10 text-[#28D160]' : 'text-gray-500 hover:text-white'}`}
+                        >
+                            All Tickets
+                        </button>
+                        <button 
+                            onClick={() => setFilterMode('ready_for_ceo')}
+                            className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${filterMode === 'ready_for_ceo' ? 'bg-[#28D160] text-black italic' : 'text-gray-500 hover:text-white'}`}
+                        >
+                            Ready for CEO
+                        </button>
+                    </div>
+
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
                         <input 
@@ -260,14 +306,27 @@ export default function DashboardContent() {
                             </span>
                         </div>
 
-                        <div className="flex flex-col gap-3 min-h-[500px] bg-white/[0.02] rounded-3xl p-3 border border-dashed border-white/5">
+                        <div 
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                if (draggedTicketId) {
+                                    updateTicket(draggedTicketId, { status: col.id });
+                                    setDraggedTicketId(null);
+                                }
+                            }}
+                            className={`flex flex-col gap-3 min-h-[500px] bg-white/[0.02] rounded-3xl p-3 border border-dashed transition-colors ${draggedTicketId ? 'border-[#28D160]/30 bg-[#28D160]/5' : 'border-white/5'}`}
+                        >
                             {filteredTickets
                                 .filter(t => t.status === col.id)
                                 .map(ticket => (
                                     <div 
                                         key={ticket.id}
+                                        draggable
+                                        onDragStart={() => setDraggedTicketId(ticket.id)}
+                                        onDragEnd={() => setDraggedTicketId(null)}
                                         onClick={() => setSelectedTicket(ticket)}
-                                        className="bg-[#1e1e1e] p-4 rounded-2xl border border-white/5 hover:border-white/20 cursor-pointer transition-all group relative overflow-hidden active:scale-95"
+                                        className={`bg-[#1e1e1e] p-4 rounded-2xl border transition-all group relative overflow-hidden active:scale-95 ${draggedTicketId === ticket.id ? 'opacity-50 border-[#28D160]/50' : 'border-white/5 hover:border-white/20 cursor-grab active:cursor-grabbing'}`}
                                     >
                                         <div className="flex items-start justify-between mb-3">
                                             <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded border ${PRIORITY_COLORS[ticket.priority]}`}>
@@ -462,10 +521,42 @@ export default function DashboardContent() {
                                 </div>
                             )}
 
+                            {/* Change State (Relocated for Mobile Visibility) */}
+                            <div className="flex flex-col gap-3 p-6 bg-white/[0.03] rounded-2xl border border-white/5">
+                                <span className="text-[10px] text-gray-500 font-black tracking-[0.2em] uppercase">Set Ticket Stage:</span>
+                                <div className="grid grid-cols-2 sm:flex sm:flex-row bg-black p-1 rounded-xl gap-1">
+                                    {STATUS_COLUMNS.map((col) => (
+                                        <button
+                                            key={col.id}
+                                            onClick={() => updateTicket(selectedTicket.id, { status: col.id })}
+                                            className={`flex-1 px-3 py-3 sm:py-1.5 rounded-lg text-[10px] sm:text-[9px] font-black uppercase tracking-tighter transition-all flex items-center justify-center gap-2 ${selectedTicket.status === col.id ? 'bg-[#28D160] text-black shadow-lg scale-105 z-10' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}
+                                        >
+                                            <col.icon size={12} className={selectedTicket.status === col.id ? 'text-black' : col.color} />
+                                            {col.label.split(' ')[0]}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
                             {/* Approval Gates */}
                             <div className="flex flex-col gap-3">
-                                <h3 className="text-[10px] font-black uppercase tracking-widest text-[#28D160]">Executive Approval Gate</h3>
-                                <div className="grid grid-cols-3 gap-4">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[#28D160]">Executive Approval Gate</h3>
+                                    {selectedTicket.status === 'verify' && (
+                                        <button 
+                                            onClick={() => updateTicket(selectedTicket.id, { 
+                                                status: 'in_progress',
+                                                ceo_approval: false,
+                                                cto_approval: false,
+                                                coo_approval: false
+                                            })}
+                                            className="text-[10px] font-black uppercase text-red-500 flex items-center gap-1 hover:underline"
+                                        >
+                                            <X size={12} strokeWidth={3} /> Reject & Redo
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div 
                                         onClick={() => updateTicket(selectedTicket.id, { coo_approval: !selectedTicket.coo_approval })}
                                         className={`p-6 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2 ${selectedTicket.coo_approval ? 'bg-[#28D160]/10 border-[#28D160]/40' : 'bg-white/[0.02] border-white/5 opacity-50'}`}
@@ -503,26 +594,11 @@ export default function DashboardContent() {
                         </div>
 
                         {/* Modal Footer / Actions */}
-                        <div className="p-8 bg-black/40 border-t border-white/5 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-gray-500 font-black tracking-widest uppercase">Change State:</span>
-                                <div className="flex bg-black p-1 rounded-xl">
-                                    {['open', 'in_progress', 'verify', 'done'].map((s) => (
-                                        <button
-                                            key={s}
-                                            onClick={() => updateTicket(selectedTicket.id, { status: s as TicketStatus })}
-                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-tighter transition-all ${selectedTicket.status === s ? 'bg-white/10 text-white shadow-xl' : 'text-gray-600 hover:text-gray-400'}`}
-                                        >
-                                            {s.replace('_', ' ')}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
+                        <div className="p-8 bg-black/40 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
                             <button 
                                 onClick={() => selectedTicket && handleDeleteTicket(selectedTicket.id)}
                                 disabled={isSubmitting}
-                                className="bg-red-500/10 text-red-500 border border-red-500/20 px-6 py-2.5 rounded-full font-black uppercase italic tracking-tighter text-sm flex items-center gap-2 hover:bg-red-500/20 transition-all disabled:opacity-50"
+                                className="w-full md:w-auto bg-red-500/10 text-red-500 border border-red-500/20 px-6 py-2.5 rounded-full font-black uppercase italic tracking-tighter text-sm flex items-center justify-center gap-2 hover:bg-red-500/20 transition-all disabled:opacity-50"
                             >
                                 <Trash2 size={18} /> Delete Ticket
                             </button>
@@ -530,7 +606,7 @@ export default function DashboardContent() {
                             {selectedTicket.status === 'verify' && selectedTicket.coo_approval && selectedTicket.ceo_approval && selectedTicket.cto_approval && (
                                 <button 
                                     onClick={() => updateTicket(selectedTicket.id, { status: 'done' })}
-                                    className="bg-[#28D160] text-black px-6 py-2.5 rounded-full font-black uppercase italic tracking-tighter text-sm flex items-center gap-2 shadow-xl hover:scale-105 transition-transform"
+                                    className="w-full md:w-auto bg-[#28D160] text-black px-6 py-2.5 rounded-full font-black uppercase italic tracking-tighter text-sm flex items-center justify-center gap-2 shadow-xl hover:scale-105 transition-transform"
                                 >
                                     Promote to Production <ChevronRight size={18} />
                                 </button>

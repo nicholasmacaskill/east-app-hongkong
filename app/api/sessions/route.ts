@@ -111,6 +111,7 @@ export async function POST(request: Request) {
       // 6. Send Booking Confirmation Email
       await sendEmail({
         to: profile.contact_email,
+        cc: 'eastsportsgroup@gmail.com',
         subject: `Booking Confirmed: ${session.title}`,
         html: `
           <p>Hi ${profile.first_name || 'Member'},</p>

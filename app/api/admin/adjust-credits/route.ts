@@ -5,7 +5,7 @@ import { logAdminAction } from '@/app/lib/audit';
 
 export async function POST(request: Request) {
     try {
-        const { userId, amount, description } = await request.json();
+        const { userId, amount, description, type } = await request.json();
 
         // 1. AUTHENTICATION & ROLE CHECK
         const authHeader = request.headers.get('Authorization');
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
             .insert({
                 user_id: userId,
                 amount: amount,
-                type: 'transfer',
+                type: type || 'transfer',
                 description: description || `Manual adjustment by admin (${user.email})`
             });
 

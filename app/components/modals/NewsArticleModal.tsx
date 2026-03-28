@@ -6,8 +6,10 @@ import { useToast } from '../ui/Toast';
 interface NewsArticleModalProps {
     item: {
         title: string;
-        description?: string;
+        content?: string;
         image_url?: string;
+        external_url?: string;
+        additional_images?: string[];
         start_time: string;
     };
     onClose: () => void;
@@ -15,12 +17,19 @@ interface NewsArticleModalProps {
 
 export default function NewsArticleModal({ item, onClose }: NewsArticleModalProps) {
     const { addToast } = useToast();
+    
+    const handleExternalLink = () => {
+        if (item.external_url) {
+            window.open(item.external_url, '_blank', 'noopener,noreferrer');
+        }
+    };
+
     const handleShare = async () => {
         if (navigator.share) {
             try {
                 await navigator.share({
                     title: item.title,
-                    text: item.description,
+                    text: item.content,
                     url: window.location.href,
                 });
             } catch (err) {
@@ -28,7 +37,7 @@ export default function NewsArticleModal({ item, onClose }: NewsArticleModalProp
             }
         } else {
             // Fallback: Copy to clipboard
-            navigator.clipboard.writeText(`${item.title}\n\n${item.description}\n\nRead more on EAST App.`);
+            navigator.clipboard.writeText(`${item.title}\n\n${item.content}\n\nRead more on EAST App.`);
             addToast('Link copied to clipboard!', 'success');
         }
     };
@@ -95,9 +104,9 @@ export default function NewsArticleModal({ item, onClose }: NewsArticleModalProp
                         </div>
                     </div>
 
-                    <div className="space-y-6">
-                        {item.description ? (
-                            item.description.split('\n\n').map((paragraph, i) => (
+                    <div className="space-y-6 mb-12">
+                        {item.content ? (
+                            item.content.split('\n\n').map((paragraph, i) => (
                                 <p key={i} className="text-gray-300 font-opensans leading-[1.8] text-base opacity-90 first-letter:text-5xl first-letter:font-black first-letter:italic first-letter:text-east-light first-letter:mr-3 first-letter:float-left first-letter:mt-1">
                                     {paragraph}
                                 </p>
@@ -106,6 +115,28 @@ export default function NewsArticleModal({ item, onClose }: NewsArticleModalProp
                             <p className="text-gray-500 italic uppercase font-black text-xs tracking-widest text-center py-10">No detailed content available for this report.</p>
                         )}
                     </div>
+
+                    {/* ADDITIONAL IMAGES / GALLERY */}
+                    {item.additional_images && item.additional_images.length > 0 && (
+                        <div className="grid grid-cols-1 gap-4 mb-12 animate-fadeInUp">
+                            {item.additional_images.map((img, idx) => (
+                                <div key={idx} className="rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                                    <img src={img} alt={`${item.title} - extra ${idx + 1}`} className="w-full h-auto object-cover" />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* EXTERNAL LINK CTA */}
+                    {item.external_url && (
+                        <button
+                            onClick={handleExternalLink}
+                            className="w-full group bg-east-light hover:bg-white text-black font-black italic py-5 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-2xl mb-8"
+                        >
+                            VISIT SOURCE / BOOK NOW
+                            <Share2 size={18} className="rotate-[-45deg] group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                        </button>
+                    )}
 
                     {/* CTA / FOOTER */}
                     <div className="mt-16 pt-10 border-t border-white/10 flex flex-col items-center">

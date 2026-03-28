@@ -95,5 +95,16 @@ For developers and system administrators, please refer to the specific guides be
 
 ---
 
+## 🛡️ Quality Assurance & Accountability
+
+We maintain a **zero-trust** technical environment. Every change is verified through a multi-layered QA process integrated directly into our Engineering Dashboard:
+
+1.  **Automated Verification**: Engineering tickets in "Verify" stage automatically trigger Playwright E2E tests via the dashboard.
+2.  **Machine-Gated "Done"**: A ticket cannot reach "Production / Done" unless its associated verification script (`playwright_test`) returns a passing result.
+3.  **Triad Protocol**: All complex changes follow the **Architect -> Auditor -> Executor** chain documented in [`project-docs/AGENTS.md`](project-docs/AGENTS.md).
+4.  **Audit Trail**: Every manual credit adjustment or admin-level change is logged with a mandatory "Reason" for security review.
+
+---
+
 *This operational core is property of EAST Sports Group.*
 # Trigger deployment

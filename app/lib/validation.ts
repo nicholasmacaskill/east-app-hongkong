@@ -7,11 +7,13 @@ import { z } from 'zod';
 export const announcementSchema = z.object({
     id: z.string().uuid().optional(),
     title: z.string().min(1, "Title is required").max(100, "Title is too long"),
-    content: z.string().min(1, "Content is required").max(5000, "Content is too long"),
+    content: z.string().min(1, "Content is required").max(10000, "Content is too long"),
     type: z.enum(['news', 'event']),
     published: z.boolean(),
     event_date: z.string().optional().nullable(),
     image_url: z.string().url("Invalid image URL").optional().nullable().or(z.literal('')),
+    external_url: z.string().url("Invalid external URL").optional().nullable().or(z.literal('')),
+    additional_images: z.array(z.string().url()).optional().nullable().default([]),
 });
 
 // ============================================================================
