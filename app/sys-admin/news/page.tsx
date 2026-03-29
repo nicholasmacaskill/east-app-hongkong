@@ -170,9 +170,22 @@ export default function NewsManagementPage() {
     };
 
     const togglePublished = async (item: Announcement) => {
+        const t = toast.loading(`${item.published ? 'Unpublishing' : 'Publishing'}...`);
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
+            if (!session) {
+                toast.dismiss(t);
+                toast.error('Session expired');
+                return;
+            }
+
+            // Clean and Auto-fix URLs for current item
+            const fixUrl = (url: string | null | undefined) => {
+                const trimmed = url?.trim();
+                if (!trimmed) return null;
+                if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+                return `https://${trimmed}`;
+            };
 
             const response = await fetch('/api/admin/announcements', {
                 method: 'PUT',
@@ -182,14 +195,23 @@ export default function NewsManagementPage() {
                 },
                 body: JSON.stringify({
                     ...item,
+                    image_url: fixUrl(item.image_url),
+                    external_url: fixUrl(item.external_url),
+                    additional_images: item.additional_images?.map(s => fixUrl(s)).filter(Boolean) || [],
                     published: !item.published
                 })
             });
 
+            const data = await response.json();
+
             if (response.ok) {
+                toast.success(item.published ? 'Unpublished' : 'Published live!', { id: t });
                 fetchAnnouncements();
+            } else {
+                toast.error(data.error || 'Failed to update status', { id: t });
             }
         } catch (error) {
+            toast.error('A network error occurred', { id: t });
             console.error('Error:', error);
         }
     };
