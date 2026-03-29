@@ -1,4 +1,6 @@
 # 🚀 EAST App: Push & Test Guide
+> [!IMPORTANT]
+> **DEFAULT BRANCH POLICY**: Every change must go to the `test` branch first. **NO merges to `main`** should be made without explicit USER request after CEO review.
 
 Follow these 3 simple steps to move changes from your computer to the live site.
 
