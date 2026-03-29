@@ -67,6 +67,7 @@ export default function AdminOpsLayout({
                     <div className="flex items-center gap-6">
                         <div className="hidden md:flex items-center gap-6 mr-6 border-r border-white/10 pr-6">
                             <AdminNavLink href="/admin-ops" icon={Home} label="Ops Home" />
+                            <AdminNavLink href="/admin-ops/drills" icon={LayoutGrid} label="Drills" />
                             <AdminNavLink href="/admin-ops/coaches" icon={Users} label="Coaches" />
                             <AdminNavLink href="/admin-ops/services" icon={LayoutGrid} label="Services" />
                             <AdminNavLink href="/admin-ops/schedule" icon={Calendar} label="Schedule" />
