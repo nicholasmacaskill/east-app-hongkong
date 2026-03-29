@@ -475,7 +475,7 @@ export default function NewsManagementPage() {
                                     disabled={isSubmitting}
                                     className={`flex-1 bg-[#28D160] hover:bg-white text-black px-4 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                    {isSubmitting ? 'Saving...' : (editingItem ? 'Update' : 'Save Story [v1.0.1]')}
+                                    {isSubmitting ? 'Saving...' : (editingItem ? 'Update' : 'Save Story [v1.0.2]')}
                                 </button>
                             </div>
                         </form>
