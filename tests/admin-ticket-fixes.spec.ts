@@ -74,4 +74,41 @@ test.describe('Ticket Fixes Verification', () => {
         await cashCheckbox.check();
         await expect(page.locator('button:has-text("Record Cash Dep.")').first()).toBeVisible();
     });
+
+    test('Ticket #12: Delete Service cascades to sessions cleanup', async ({ page }) => {
+        await page.goto('/admin-ops/services');
+        
+        // Wait for page to load
+        await expect(page.locator('h1', { hasText: 'Manage Services' })).toBeVisible();
+
+        // 1. Create a dummy service
+        await page.click('button:has-text("Add New Service")');
+        
+        // Modal should appear
+        await expect(page.locator('h2:has-text("Blueprint New Service")')).toBeVisible();
+        
+        // Fill form
+        await page.fill('input[placeholder="e.g. STRENGTH LAB"]', 'Automated Deletion Test Service');
+        await page.click('button:has-text("DEPLOY SERVICE CHANGES")');
+        
+        // Verify creation success
+        await expect(page.locator('text=Service saved successfully').first()).toBeVisible();
+        
+        // Wait for the new service to appear in the list
+        const serviceCard = page.locator('h3:has-text("Automated Deletion Test Service")').locator('..').locator('..');
+        await expect(serviceCard).toBeVisible();
+
+        // 2. Click delete and confirm
+        // Since delete triggers a native confirm(), we must accept it a priori
+        page.once('dialog', dialog => dialog.accept());
+        
+        // find the trash icon inside that card
+        await serviceCard.locator('button.group\\/del').click();
+        
+        // 3. Verify deletion success (cascading cleanup)
+        await expect(page.locator('text=Service deleted').first()).toBeVisible();
+        
+        // Ensure it is gone
+        await expect(page.locator('h3:has-text("Automated Deletion Test Service")')).toBeHidden();
+    });
 });
