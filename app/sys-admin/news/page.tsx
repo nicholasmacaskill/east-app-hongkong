@@ -75,8 +75,10 @@ export default function NewsManagementPage() {
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
+        console.log('>>> handleSubmit triggered');
         e.preventDefault();
         setIsSubmitting(true);
+        console.log('>>> isSubmitting set to true');
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
