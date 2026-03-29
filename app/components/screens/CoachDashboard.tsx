@@ -246,6 +246,12 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                             >
                                 My Schedule
                             </button>
+                            <button
+                                onClick={() => window.location.href = '/admin-ops/drills'}
+                                className="flex-1 md:flex-none px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all text-gray-400 hover:text-white hover:bg-white/5 ml-1"
+                            >
+                                DRILL HUB
+                            </button>
                         </div>
 
                         <div className="hidden md:block h-6 w-px bg-white/10" />
