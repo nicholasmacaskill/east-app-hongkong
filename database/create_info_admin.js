@@ -11,40 +11,45 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-async function createInfoAdmin() {
+async function createOrUpdateAdmin() {
   const email = 'info@easthighperformancecentre.com';
-  const password = 'Hs0ffBZgryeKgeiBw6KYTziou9uN3tm2'; // 32-char high-entropy
+  const password = process.argv[2] === '--new-pass' ? process.argv[3] : 'EastPerformanceHQAdmin2026!!!!';
 
-  console.log(`--- Creating Admin Account: ${email} ---`);
+  console.log(`--- Creating/Updating Admin Account: ${email} ---`);
 
-  // 1. Create User in auth.users
-  const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { role: 'sys-admin' }
-  });
+  // 1. List Users to find the ID
+  const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+  if (listError) {
+    console.error('List users failed:', listError);
+    return;
+  }
 
-  if (authError) {
-    if (authError.message.includes('already registered')) {
-        console.log('User already exists in Auth. Updating password and metadata...');
-        const { data: listData } = await supabase.auth.admin.listUsers();
-        const existingUser = listData.users.find(u => u.email === email);
-        if (existingUser) {
-            const { error: updateError } = await supabase.auth.admin.updateUserById(existingUser.id, {
-                password,
-                user_metadata: { role: 'sys-admin' }
-            });
-            if (updateError) console.error('Update failed:', updateError);
-            else console.log('✅ Auth updated.');
-            await syncProfile(existingUser.id);
-        }
-    } else {
-        console.error('Auth creation failed:', authError);
+  const existingUser = users.find(u => u.email === email);
+
+  if (existingUser) {
+    console.log(`User found with ID: ${existingUser.id}. Updating password...`);
+    const { error: updateError } = await supabase.auth.admin.updateUserById(existingUser.id, {
+      password: password,
+      user_metadata: { role: 'sys-admin' }
+    });
+    if (updateError) console.error('Update failed:', updateError.message);
+    else {
+        console.log('✅ Auth password updated.');
+        await syncProfile(existingUser.id);
     }
   } else {
-    console.log('✅ Auth user created.');
-    await syncProfile(authUser.user.id);
+    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { role: 'sys-admin' }
+      });
+    
+      if (authError) console.error('Auth creation failed:', authError.message);
+      else {
+        console.log('✅ Auth user created.');
+        await syncProfile(authUser.user.id);
+      }
   }
 
   async function syncProfile(userId) {
@@ -59,11 +64,11 @@ async function createInfoAdmin() {
         contact_email: email
       });
 
-    if (profileError) console.error('Profile sync failed:', profileError);
+    if (profileError) console.error('Profile sync failed:', profileError.message);
     else console.log('✅ Profile synced with sys-admin role.');
   }
 
   console.log('--- Operation Complete ---');
 }
 
-createInfoAdmin();
+createOrUpdateAdmin();

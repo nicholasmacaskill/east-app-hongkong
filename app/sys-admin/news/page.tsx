@@ -5,6 +5,7 @@ import { supabase } from '@/app/lib/supabase';
 import { ArrowLeft, Plus, Edit2, Trash2, Calendar, Newspaper, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
+import toast from 'react-hot-toast';
 
 type Announcement = {
     id: string;
@@ -34,8 +35,9 @@ export default function NewsManagementPage() {
         event_date: '',
         image_url: '',
         external_url: '',
-        additional_images: '' // Stored as comma-separated in form, converted to array on save
+        additional_images: ''
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         fetchAnnouncements();
@@ -74,14 +76,31 @@ export default function NewsManagementPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
+            if (!session) {
+                toast.error('Session expired. Please log in again.');
+                return;
+            }
+
+            // Clean and Auto-fix URLs
+            const fixUrl = (url: string) => {
+                const trimmed = url?.trim();
+                if (!trimmed) return null;
+                if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+                return `https://${trimmed}`;
+            };
 
             const payload = {
                 ...formData,
+                image_url: fixUrl(formData.image_url),
+                external_url: fixUrl(formData.external_url),
                 additional_images: formData.additional_images
-                    ? formData.additional_images.split(',').map(s => s.trim()).filter(s => s !== '')
+                    ? formData.additional_images.split(',')
+                        .map(s => s.trim())
+                        .filter(s => s !== '')
+                        .map(s => fixUrl(s))
                     : []
             };
 
@@ -99,7 +118,10 @@ export default function NewsManagementPage() {
                 body: JSON.stringify(body)
             });
 
+            const data = await response.json();
+
             if (response.ok) {
+                toast.success(editingItem ? 'Updated successfully!' : 'Story saved!');
                 setShowModal(false);
                 setEditingItem(null);
                 setFormData({
@@ -113,9 +135,15 @@ export default function NewsManagementPage() {
                     additional_images: ''
                 });
                 fetchAnnouncements();
+            } else {
+                toast.error(data.error || 'Failed to save announcement');
+                console.error('Submit Error Data:', data);
             }
         } catch (error) {
+            toast.error('A network error occurred.');
             console.error('Error:', error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -355,10 +383,10 @@ export default function NewsManagementPage() {
                             <div>
                                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Image URL (Optional)</label>
                                 <input
-                                    type="url"
+                                    type="text"
                                     value={formData.image_url}
                                     onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                                    placeholder="https://..."
+                                    placeholder="Enter image URL..."
                                     className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
                                 />
                             </div>
@@ -366,10 +394,10 @@ export default function NewsManagementPage() {
                             <div>
                                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">External URL (Optional)</label>
                                 <input
-                                    type="url"
+                                    type="text"
                                     value={formData.external_url}
                                     onChange={(e) => setFormData({ ...formData, external_url: e.target.value })}
-                                    placeholder="https://... (e.g. Booking link, Article source)"
+                                    placeholder="Enter source or booking link..."
                                     className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
                                 />
                             </div>
@@ -407,9 +435,10 @@ export default function NewsManagementPage() {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 bg-[#28D160] hover:bg-white text-black px-4 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all"
+                                    disabled={isSubmitting}
+                                    className={`flex-1 bg-[#28D160] hover:bg-white text-black px-4 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                                 >
-                                    {editingItem ? 'Update' : 'Save Story'}
+                                    {isSubmitting ? 'Saving...' : (editingItem ? 'Update' : 'Save Story')}
                                 </button>
                             </div>
                         </form>

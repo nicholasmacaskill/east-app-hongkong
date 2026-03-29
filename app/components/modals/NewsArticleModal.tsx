@@ -10,7 +10,8 @@ interface NewsArticleModalProps {
         image_url?: string;
         external_url?: string;
         additional_images?: string[];
-        start_time: string;
+        start_time?: string;
+        created_at?: string;
     };
     onClose: () => void;
 }
@@ -42,7 +43,8 @@ export default function NewsArticleModal({ item, onClose }: NewsArticleModalProp
         }
     };
 
-    const formattedDate = new Date(item.start_time).toLocaleDateString('en-US', {
+    const displayDate = item.start_time || item.created_at || new Date().toISOString();
+    const formattedDate = new Date(displayDate).toLocaleDateString('en-US', {
         month: 'long',
         day: 'numeric',
         year: 'numeric'
