@@ -4,8 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { ArrowLeft, Plus, Edit2, Trash2, Calendar, Newspaper, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
-import toast from 'react-hot-toast';
 
 type Announcement = {
     id: string;
@@ -15,8 +13,6 @@ type Announcement = {
     published: boolean;
     event_date?: string;
     image_url?: string;
-    external_url?: string;
-    additional_images?: string[];
     created_at: string;
     updated_at: string;
 };
@@ -33,36 +29,23 @@ export default function NewsManagementPage() {
         type: 'news' as 'news' | 'event',
         published: false,
         event_date: '',
-        image_url: '',
-        external_url: '',
-        additional_images: ''
+        image_url: ''
     });
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         fetchAnnouncements();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (session) fetchAnnouncements(session);
-        });
-
-        return () => subscription.unsubscribe();
     }, []);
 
-    const fetchAnnouncements = async (passedSession?: any) => {
+    const fetchAnnouncements = async () => {
         setLoading(true);
         try {
-            const session = passedSession || (await supabase.auth.getSession()).data.session;
-            if (!session) {
-                setLoading(false);
-                return;
-            }
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
 
             const response = await fetch('/api/admin/announcements', {
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`
-                },
-                cache: 'no-store'
+                }
             });
             const data = await response.json();
             if (response.ok) {
@@ -75,54 +58,15 @@ export default function NewsManagementPage() {
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
-        console.log('>>> handleSubmit triggered');
         e.preventDefault();
-        setIsSubmitting(true);
-        console.log('>>> isSubmitting set to true');
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                toast.error('Session expired. Please log in again.');
-                setIsSubmitting(false);
-                return;
-            }
-
-            // Manual field check
-            if (!formData.title.trim()) {
-                toast.error('Headline is required');
-                setIsSubmitting(false);
-                return;
-            }
-            if (!formData.content.trim()) {
-                toast.error('Story content is required');
-                setIsSubmitting(false);
-                return;
-            }
-
-            // Clean and Auto-fix URLs
-            const fixUrl = (url: string | null | undefined) => {
-                const trimmed = url?.trim();
-                if (!trimmed) return null;
-                if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) return trimmed;
-                return `https://${trimmed}`;
-            };
-
-            const payload = {
-                ...formData,
-                image_url: fixUrl(formData.image_url),
-                external_url: fixUrl(formData.external_url),
-                additional_images: formData.additional_images
-                    ? formData.additional_images.split(',')
-                        .map(s => s.trim())
-                        .filter(s => s !== '')
-                        .map(s => fixUrl(s))
-                    : []
-            };
+            if (!session) return;
 
             const method = editingItem ? 'PUT' : 'POST';
             const body = editingItem
-                ? { ...payload, id: editingItem.id }
-                : payload;
+                ? { ...formData, id: editingItem.id }
+                : formData;
 
             const response = await fetch('/api/admin/announcements', {
                 method,
@@ -133,10 +77,7 @@ export default function NewsManagementPage() {
                 body: JSON.stringify(body)
             });
 
-            const data = await response.json();
-
             if (response.ok) {
-                toast.success(editingItem ? 'Updated successfully!' : 'Story saved!');
                 setShowModal(false);
                 setEditingItem(null);
                 setFormData({
@@ -145,20 +86,12 @@ export default function NewsManagementPage() {
                     type: 'news',
                     published: false,
                     event_date: '',
-                    image_url: '',
-                    external_url: '',
-                    additional_images: ''
+                    image_url: ''
                 });
                 fetchAnnouncements();
-            } else {
-                toast.error(data.error || 'Failed to save announcement');
-                console.error('Submit Error Data:', data);
             }
         } catch (error) {
-            toast.error('A network error occurred.');
             console.error('Error:', error);
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -185,22 +118,9 @@ export default function NewsManagementPage() {
     };
 
     const togglePublished = async (item: Announcement) => {
-        const t = toast.loading(`${item.published ? 'Unpublishing' : 'Publishing'}...`);
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                toast.dismiss(t);
-                toast.error('Session expired');
-                return;
-            }
-
-            // Clean and Auto-fix URLs for current item
-            const fixUrl = (url: string | null | undefined) => {
-                const trimmed = url?.trim();
-                if (!trimmed) return null;
-                if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) return trimmed;
-                return `https://${trimmed}`;
-            };
+            if (!session) return;
 
             const response = await fetch('/api/admin/announcements', {
                 method: 'PUT',
@@ -210,23 +130,14 @@ export default function NewsManagementPage() {
                 },
                 body: JSON.stringify({
                     ...item,
-                    image_url: fixUrl(item.image_url),
-                    external_url: fixUrl(item.external_url),
-                    additional_images: item.additional_images?.map(s => fixUrl(s)).filter(Boolean) || [],
                     published: !item.published
                 })
             });
 
-            const data = await response.json();
-
             if (response.ok) {
-                toast.success(item.published ? 'Unpublished' : 'Published live!', { id: t });
                 fetchAnnouncements();
-            } else {
-                toast.error(data.error || 'Failed to update status', { id: t });
             }
         } catch (error) {
-            toast.error('A network error occurred', { id: t });
             console.error('Error:', error);
         }
     };
@@ -238,10 +149,8 @@ export default function NewsManagementPage() {
             content: item.content,
             type: item.type,
             published: item.published,
-            event_date: item.event_date ? safeDate(item.event_date)?.toISOString().split('T')[0] || '' : '',
-            image_url: item.image_url || '',
-            external_url: item.external_url || '',
-            additional_images: item.additional_images?.join(', ') || ''
+            event_date: item.event_date ? new Date(item.event_date).toISOString().split('T')[0] : '',
+            image_url: item.image_url || ''
         });
         setShowModal(true);
     };
@@ -249,12 +158,12 @@ export default function NewsManagementPage() {
     const filtered = announcements.filter(a => filter === 'all' || a.type === filter);
 
     return (
-        <div className="flex flex-col gap-8 pb-20">
+        <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-2">
                 <Link href="/sys-admin" className="self-start text-[10px] text-gray-500 font-bold uppercase tracking-widest hover:text-white mb-4 block transition-colors">← Back to Dashboard</Link>
-                <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+                <div className="flex justify-between items-end">
                     <div>
-                        <h1 className="text-3xl font-black italic uppercase tracking-tighter">News Management (v1.1-DEBUG)</h1>
+                        <h1 className="text-3xl font-black italic uppercase tracking-tighter">News Management</h1>
                         <p className="text-gray-400 max-w-2xl">
                             Create and manage news announcements and events for the public landing page.
                         </p>
@@ -268,13 +177,11 @@ export default function NewsManagementPage() {
                                 type: 'news',
                                 published: false,
                                 event_date: '',
-                                image_url: '',
-                                external_url: '',
-                                additional_images: ''
+                                image_url: ''
                             });
                             setShowModal(true);
                         }}
-                        className="flex items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg w-full md:w-auto justify-center"
+                        className="flex items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg"
                     >
                         <Plus size={14} /> Add Announcement
                     </button>
@@ -288,8 +195,8 @@ export default function NewsManagementPage() {
                         key={tab}
                         onClick={() => setFilter(tab)}
                         className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${filter === tab
-                            ? 'bg-[#28D160] text-black'
-                            : 'bg-[#1e1e1e] text-gray-400 hover:text-white'
+                                ? 'bg-[#28D160] text-black'
+                                : 'bg-[#1e1e1e] text-gray-400 hover:text-white'
                             }`}
                     >
                         {tab}
@@ -314,8 +221,8 @@ export default function NewsManagementPage() {
                                         <Calendar size={16} className="text-blue-400" />
                                     )}
                                     <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${item.type === 'news'
-                                        ? 'bg-[#28D160]/20 text-[#28D160]'
-                                        : 'bg-blue-500/20 text-blue-400'
+                                            ? 'bg-[#28D160]/20 text-[#28D160]'
+                                            : 'bg-blue-500/20 text-blue-400'
                                         }`}>
                                         {item.type}
                                     </span>
@@ -336,7 +243,7 @@ export default function NewsManagementPage() {
 
                             {item.type === 'event' && item.event_date && (
                                 <div className="text-xs text-gray-500">
-                                    📅 {safetoLocaleDateString(item.event_date)}
+                                    📅 {new Date(item.event_date).toLocaleDateString()}
                                 </div>
                             )}
 
@@ -367,7 +274,7 @@ export default function NewsManagementPage() {
                             {editingItem ? 'Edit Announcement' : 'New Announcement'}
                         </h2>
 
-                        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                             <div>
                                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Type</label>
                                 <select
@@ -420,35 +327,12 @@ export default function NewsManagementPage() {
                             <div>
                                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Image URL (Optional)</label>
                                 <input
-                                    type="text"
+                                    type="url"
                                     value={formData.image_url}
                                     onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                                    placeholder="Enter image URL..."
+                                    placeholder="https://..."
                                     className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
                                 />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">External URL (Optional)</label>
-                                <input
-                                    type="text"
-                                    value={formData.external_url}
-                                    onChange={(e) => setFormData({ ...formData, external_url: e.target.value })}
-                                    placeholder="Enter source or booking link..."
-                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Additional Images (Optional)</label>
-                                <textarea
-                                    value={formData.additional_images}
-                                    onChange={(e) => setFormData({ ...formData, additional_images: e.target.value })}
-                                    placeholder="Paste image URLs separated by commas..."
-                                    rows={3}
-                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all resize-none"
-                                />
-                                <p className="text-[10px] text-gray-500 mt-2">Useful for gym schedules or galleries. Enter full URLs separated by commas.</p>
                             </div>
 
                             <div className="flex items-center gap-3">
@@ -472,10 +356,9 @@ export default function NewsManagementPage() {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={isSubmitting}
-                                    className={`flex-1 bg-[#28D160] hover:bg-white text-black px-4 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    className="flex-1 bg-[#28D160] hover:bg-white text-black px-4 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all"
                                 >
-                                    {isSubmitting ? 'Saving...' : (editingItem ? 'Update' : 'Save Story [v1.0.2]')}
+                                    {editingItem ? 'Update' : 'Save Story'}
                                 </button>
                             </div>
                         </form>
