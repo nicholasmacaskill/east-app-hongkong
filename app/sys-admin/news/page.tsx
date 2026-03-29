@@ -81,6 +81,19 @@ export default function NewsManagementPage() {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
                 toast.error('Session expired. Please log in again.');
+                setIsSubmitting(false);
+                return;
+            }
+
+            // Manual field check
+            if (!formData.title.trim()) {
+                toast.error('Headline is required');
+                setIsSubmitting(false);
+                return;
+            }
+            if (!formData.content.trim()) {
+                toast.error('Story content is required');
+                setIsSubmitting(false);
                 return;
             }
 
@@ -352,7 +365,7 @@ export default function NewsManagementPage() {
                             {editingItem ? 'Edit Announcement' : 'New Announcement'}
                         </h2>
 
-                        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
                             <div>
                                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Type</label>
                                 <select
