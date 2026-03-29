@@ -100,10 +100,10 @@ export default function NewsManagementPage() {
             }
 
             // Clean and Auto-fix URLs
-            const fixUrl = (url: string) => {
+            const fixUrl = (url: string | null | undefined) => {
                 const trimmed = url?.trim();
                 if (!trimmed) return null;
-                if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+                if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) return trimmed;
                 return `https://${trimmed}`;
             };
 
@@ -198,7 +198,7 @@ export default function NewsManagementPage() {
             const fixUrl = (url: string | null | undefined) => {
                 const trimmed = url?.trim();
                 if (!trimmed) return null;
-                if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+                if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) return trimmed;
                 return `https://${trimmed}`;
             };
 

@@ -11,9 +11,9 @@ export const announcementSchema = z.object({
     type: z.enum(['news', 'event']),
     published: z.boolean(),
     event_date: z.string().optional().nullable(),
-    image_url: z.string().url("Invalid image URL").optional().nullable().or(z.literal('')),
-    external_url: z.string().url("Invalid external URL").optional().nullable().or(z.literal('')),
-    additional_images: z.array(z.string().url()).optional().nullable().default([]),
+    image_url: z.string().optional().nullable(),
+    external_url: z.string().optional().nullable(),
+    additional_images: z.array(z.string()).optional().nullable().default([]),
 });
 
 // ============================================================================
