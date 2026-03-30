@@ -1,0 +1,75 @@
+[dotenv@17.2.3] injecting env (29) from .env.production -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+=== EXECUTING DEEP SCAN ON LIVE PRODUCTION DATABASE ===
+Live Bookings (Registrations Table Count): 9
+
+Live Profiles Found: 67
+------------------------------------------------------------------
+NAME/EMAIL                         | ROLE       | TIER  | CREDITS 
+------------------------------------------------------------------
+EAST HPC BOOKING                   | player     | indiv |   98600
+Kelvin  Cao                        | player     | indiv |   16000
+Ben MacAskill                      | player     | indiv |   10000
+HQ Admin                           | sys-admin  | indiv |    9999
+Jordan Pang                        | player     | indiv |    1000
+Ayden Au                           | player     | indiv |    1000
+Sidney  Chan                       | player     | indiv |    1000
+Sheldon Yip                        | player     | indiv |    1000
+Adrian Ho                          | player     | indiv |    1000
+Adrian Huen                        | player     | indiv |    1000
+Curtis  Ching Nuyen                | player     | indiv |    1000
+Shunki Fan                         | player     | indiv |    1000
+Auston Chan                        | player     | indiv |    1000
+Pang Cesco Tsz Lok                 | player     | indiv |    1000
+Andre lee                          | player     | indiv |    1000
+Isaac Tham                         | player     | indiv |    1000
+Tristan Chan                       | player     | indiv |    1000
+Scarlet  Chan                      | player     | indiv |    1000
+Fiona Chow                         | player     | indiv |    1000
+Jaden Ng Sung Yan                  | player     | indiv |    1000
+Chang Ho Long                      | player     | indiv |    1000
+Helius Ho                          | player     | indiv |    1000
+David Cheung                       | player     | indiv |    1000
+Cyrus  Mui                         | player     | indiv |    1000
+Aidan Wan                          | player     | indiv |    1000
+Kyler Newland                      | player     | indiv |    1000
+Winnie Cheng                       | player     | indiv |    1000
+Randy Mak                          | player     | indiv |     900
+Chavis Suen                        | player     | indiv |     700
+David  Belluche                    | player     | indiv |     500
+Rick Chu Gmail                     | player     | indiv |     250
+Vincent Ahrens                     | player     | indiv |     100
+Dickson Lee Chin Bok               | player     | indiv |     100
+Augustine Fan                      | parent     | indiv |       0
+nick mac                           | player     | indiv |       0
+yl                                 | parent     | indiv |       0
+Matt Newland                       | parent     | indiv |       0
+nick mac                           | player     | indiv |       0
+Abby Yu                            | parent     | indiv |       0
+CarolChang                         | parent     | indiv |       0
+athlete one                        | player     | indiv |       0
+KO TYLER TSING                     | player     | indiv |       0
+Nic Admin                          | sys-admin  | indiv |       0
+Sys Admin                          | sys-admin  | indiv |       0
+Yeung Man Wui Spark                | player     | indiv |       0
+Jeff Ceccacci                      | player     | indiv |       0
+Roster Player                      | player     | indiv |       0
+Carman Ting                        | parent     | indiv |       0
+Yeung Man Wui Stream               | player     | indiv |       0
+Roster Player                      | player     | indiv |       0
+Roster Player                      | player     | indiv |       0
+Nathan Man                         | player     | indiv |       0
+Carson                             | player     | indiv |       0
+Ryan Wong                          | player     | indiv |       0
+Christie Cheung                    | player     | indiv |       0
+Wong Lok Hin                       | player     | indiv |       0
+Shek Fung                          | parent     | indiv |       0
+Shen Tham                          | parent     | indiv |       0
+Lau Suet Ching                     | parent     | indiv |       0
+Nathan Leung                       | player     | indiv |       0
+Oden Chi Yeung Fung                | player     | indiv |       0
+Angus                              | parent     | indiv |       0
+Chan sze lei                       | parent     | indiv |       0
+Daniel McLellan                    | parent     | indiv |       0
+So Jessie                          | parent     | indiv |       0
+Vincent Lee                        | parent     | indiv |       0
+nich mac                           | player     | indiv |       0

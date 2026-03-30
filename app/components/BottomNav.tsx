@@ -1,5 +1,4 @@
-'use client';
-import { Home, User as UserIcon, Wallet, Activity, MessageSquare } from 'lucide-react';
+import { Home, User as UserIcon, Hexagon, Activity, MessageSquare } from 'lucide-react';
 import type { Tab } from '@/app/types';
 
 interface BottomNavProps {
@@ -16,23 +15,23 @@ export default function BottomNav({ activeTab, setTab }: BottomNavProps) {
         className={`flex flex-col items-center justify-center w-full py-2 transition-colors duration-200 ${isActive ? 'text-white' : 'text-gray-500'}`}
       >
         <Icon size={24} className={isActive ? 'stroke-[3px]' : 'stroke-2'} />
-        <span className="text-xs font-bold font-montserrat mt-1 uppercase tracking-wider">{label}</span>
+        <span className="text-[10px] font-black font-montserrat mt-1 uppercase tracking-tighter italic">{label}</span>
       </button>
     );
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/5 pb-safe pt-2 px-4 z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-black/90 backdrop-blur-2xl border-t border-white/5 pb-safe pt-2 px-4 z-50">
       <div className="flex justify-between items-end max-w-md mx-auto">
         <NavItem tab="home" icon={Home} label="Home" />
         <NavItem tab="profile" icon={UserIcon} label="Profile" />
-        <NavItem tab="qr" icon={Wallet} label="Wallet" />
-        <NavItem tab="schedule" icon={Activity} label="Schedule" />
-        {/* <NavItem tab="community" icon={MessageSquare} label="Community" /> */}
+        <NavItem tab="qr" icon={Hexagon} label="TV" />
+        <NavItem tab="training" icon={Activity} label="Training" />
+        {/* <NavItem tab="community" icon={MessageSquare} label="Feed" /> */}
       </div>
       <div className="flex justify-between items-center max-w-md mx-auto mt-2 px-2 pb-2">
-        {['home', 'profile', 'qr', 'schedule'].map((t) => (
-          <div key={t} className={`h-1 flex-1 rounded-full mx-1 transition-colors duration-300 ${activeTab === t ? 'bg-east-light' : 'bg-gray-800'}`} />
+        {['home', 'profile', 'qr', 'training'].map((t) => (
+          <div key={t} className={`h-1 flex-1 rounded-full mx-1 transition-colors duration-300 ${activeTab === t ? 'bg-east-light shadow-[0_0_10px_rgba(40,209,96,0.5)]' : 'bg-gray-800'}`} />
         ))}
       </div>
     </div>

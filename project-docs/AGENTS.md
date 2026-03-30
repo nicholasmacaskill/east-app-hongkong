@@ -50,3 +50,7 @@ You can command the entire team from a single chat window using **Tags**:
 - Agents are FORBIDDEN from running raw SQL.
 - All database changes must be written as TypeScript scripts in `/database` (e.g., similar to `database/seed.ts`).
 - A human developer must manually execute migrations using `npx ts-node`.
+
+## 🚨 AI PRIME DIRECTIVE: MANDATORY PRE-FLIGHT BACKUPS
+- **The Rule**: Before executing ANY script that inserts, updates, or deletes data in the Production Database, the AI must AUTOMATICALLY run `npx tsx scripts/backup_db.ts` and verify the JSON dump succeeded.
+- **Enforcement**: If the AI attempts to run a database modification script (like a cleanup or migration) against production without explicitly confirming a backup was taken in the same session, it violates the East App Safety Protocol. This is a hard-coded zero-leniency rule.

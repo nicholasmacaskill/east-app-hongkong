@@ -277,7 +277,45 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
 }) {
     const router = useRouter();
     const [view, setView] = useState<'menu' | 'edit'>('menu');
+    const [isDeleting, setIsDeleting] = useState(false);
     const { addToast } = useToast();
+
+    const handleDeleteAccount = async () => {
+        if (profileData.credits > 0) {
+            alert(`You cannot delete your account with ${profileData.credits} credits remaining. Please use them or contact support.`);
+            return;
+        }
+
+        const confirmed = window.confirm("🚨 CRITICAL: Are you absolutely sure? This will permanently delete your account and all history. This cannot be undone.");
+        if (!confirmed) return;
+
+        const doubleConfirmed = window.confirm("Final confirmation: Type 'DELETE' to confirm.");
+        if (!doubleConfirmed) return;
+
+        setIsDeleting(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const response = await fetch('/api/user/delete-account', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${session?.access_token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                addToast("Account deleted successfully.", 'success');
+                onLogout();
+            } else {
+                addToast(result.error || "Deletion failed", 'error');
+            }
+        } catch (err) {
+            addToast("An error occurred during deletion", 'error');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     if (view === 'edit') return <EditProfileScreen onBack={() => setView('menu')} profileData={profileData} setProfileData={setProfileData} onSave={onSave} />;
 
@@ -304,7 +342,24 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
                 <SettingsSectionTitle title="About" />
                 <SettingsMenuItem icon={Shield} label="Privacy Policy" onClick={() => router.push('/privacy')} />
                 <SettingsMenuItem icon={FileText} label="Terms & conditions" onClick={() => router.push('/terms')} />
-                <div className="mt-12 px-2">
+                
+                <div className="mt-8 px-2">
+                    <button 
+                        onClick={handleDeleteAccount}
+                        disabled={isDeleting}
+                        className="flex items-center gap-4 w-full py-4 text-red-500/50 hover:text-red-500 hover:bg-red-500/10 transition-all rounded-lg px-4 border border-red-500/20"
+                    >
+                        <Shield size={20} />
+                        <span className="font-montserrat font-bold text-sm uppercase tracking-widest">
+                            {isDeleting ? 'DELETING...' : 'Delete Account'}
+                        </span>
+                    </button>
+                    {profileData.credits > 0 && (
+                        <p className="text-[10px] text-gray-600 mt-2 px-4 italic">* Account deletion disabled until credits are 0.</p>
+                    )}
+                </div>
+
+                <div className="mt-4 px-2">
                     <button onClick={onLogout} className="flex items-center gap-4 w-full py-4 text-red-500 hover:bg-red-500/10 transition-colors rounded-lg px-4">
                         <LogOut size={20} />
                         <span className="font-montserrat font-bold text-sm">Log Out</span>

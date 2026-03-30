@@ -8,7 +8,7 @@ export * from './stats';
 
 export type UserRole = 'player' | 'parent' | 'coach' | 'admin' | 'sys-admin';
 
-export type Tab = 'home' | 'profile' | 'qr' | 'schedule' | 'community';
+export type Tab = 'home' | 'profile' | 'qr' | 'training' | 'community';
 
 export type ServiceCategory = 'CLASS' | 'PRIVATE' | 'FACILITY' | 'EVENT' | 'NEWS' | 'ADULT' | 'YOUTH' | 'general';
 

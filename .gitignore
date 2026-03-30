@@ -31,3 +31,6 @@ playwright-report/
 .env.production
 .env.preview
 .env*.local
+
+# Local Database Backups
+/backups/

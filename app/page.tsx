@@ -14,7 +14,9 @@ import PlayerProfile from '@/app/components/screens/PlayerProfile';
 import CoachProfile from '@/app/components/screens/CoachProfile';
 import ParentProfile from '@/app/components/screens/ParentProfile';
 import QRScreen from '@/app/components/screens/QRScreen';
-import CoachDashboard from '@/app/components/screens/CoachDashboard'; // NEW DASHBOARD
+import DrillHubScreen from '@/app/components/screens/DrillHubScreen';
+import CoachTVScreen from '@/app/components/screens/CoachTVScreen';
+import CoachDashboard from '@/app/components/screens/CoachDashboard'; 
 import AuthScreen from '@/app/auth/AuthScreen';
 import LandingScreen from '@/app/components/screens/LandingScreen';
 import BottomNav from '@/app/components/BottomNav';
@@ -321,7 +323,7 @@ function AppContent() {
   useEffect(() => {
     const targetTab = searchParams.get('tab');
     const isTab = (t: string): t is Tab => {
-      return ['home', 'profile', 'coach', 'schedule', 'community', 'qr'].includes(t);
+      return ['home', 'profile', 'training', 'community', 'qr'].includes(t);
     };
     if (targetTab && isTab(targetTab)) {
       setActiveTab(targetTab);
@@ -617,19 +619,11 @@ function AppContent() {
             )
           )}
 
-          {activeTab === 'schedule' && (
-            <ScheduleScreen
-              onPreviewClick={(s) => handleClassClick([s], s.description, 'facilities', s.instructor)}
-              refreshKey={refreshKey}
-              currentUserId={currentUserId}
-              parentMode={userProfile.role === 'parent'}
-              myChildren={myChildren}
-            />
+          {activeTab === 'training' && (
+            <DrillHubScreen />
           )}
 
-          {/* ... existing screens ... */}
-
-          {activeTab === 'qr' && <QRScreen credits={userProfile.credits || 0} currentUserId={currentUserId} subscriptionStatus={userProfile.subscription_status} accountStatus={userProfile.account_status} role={userProfile.role} />}
+          {activeTab === 'qr' && <CoachTVScreen />}
         </main>
 
         <BottomNav activeTab={activeTab} setTab={setActiveTab} />

@@ -192,12 +192,21 @@ export async function GET(request: Request) {
         }));
 
         // Combine all data sources and sort by priority, then time
+        const now = new Date();
         const masterSchedule = [
             ...formattedSessions,
             ...formattedAvailability,
             ...formattedFacilityBookings,
             ...formattedFacilityAvailability
-        ].sort((a, b) => {
+        ].filter(item => {
+            // TICKET #12: Remove old service calendar entries that were not used
+            if (item.type === 'session') {
+                const isPast = new Date(item.end_time) < now;
+                const hasNoAttendees = !item.attendees || item.attendees.length === 0;
+                if (isPast && hasNoAttendees) return false;
+            }
+            return true;
+        }).sort((a, b) => {
             // Primary sort: Priority (1 = booked sessions, 2 = coach slots, 3 = facility)
             if (a.priority !== b.priority) {
                 return a.priority - b.priority;
