@@ -96,12 +96,15 @@ export default function DrillHubScreen() {
     if (selectedDrill) {
         const currentStep = drillSteps[currentStepIndex];
         return (
-            <div className="min-h-screen bg-black text-white p-6 animate-fadeIn pb-24 font-montserrat select-none">
-                <div className="flex justify-between items-center mb-10">
-                    <h2 className="text-3vw font-black italic uppercase tracking-tighter text-white opacity-80">{selectedDrill.title}</h2>
+            <div className="min-h-screen bg-black text-white p-6 animate-fadeIn pb-32 font-montserrat select-none">
+                {/* Header Section */}
+                <div className="flex justify-between items-start mb-10 pt-4">
+                    <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white leading-none max-w-[70%]">
+                        {selectedDrill.title}
+                    </h1>
                     <button 
                         onClick={() => setSelectedDrill(null)}
-                        className="text-[10px] font-black italic uppercase tracking-widest text-[#28D160] hover:text-white transition-colors"
+                        className="text-[10px] font-black italic uppercase tracking-widest text-[#28D160] hover:text-white transition-colors border-b border-[#28D160]/20 pb-1"
                     >
                         EXPLORE MORE DRILLS
                     </button>
@@ -110,77 +113,88 @@ export default function DrillHubScreen() {
                 <div className="max-w-md mx-auto">
                     {/* Conducted By Section */}
                     <div className="mb-8">
-                        <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-3 italic">Conducted By</span>
+                        <span className="block text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-4 italic">CONDUCTED BY</span>
                         <div className="flex gap-4">
                             {['BEN', 'LEE', 'WHIT', 'RHETT'].map((name, i) => (
                                 <div key={i} className="flex flex-col items-center gap-2">
-                                    <div className="w-12 h-12 rounded-xl border-2 border-east-light overflow-hidden bg-gray-900 shadow-[0_0_15px_rgba(40,209,96,0.3)]">
+                                    <div className="w-14 h-14 rounded-2xl border-2 border-white/5 overflow-hidden bg-[#121212] shadow-2xl transition-transform hover:scale-110">
                                         <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`} className="w-full h-full object-cover" alt="coach" />
                                     </div>
-                                    <span className="text-[8px] font-black italic uppercase text-white/60 tracking-widest">{name}</span>
+                                    <span className="text-[8px] font-black italic uppercase text-white/40 tracking-widest">{name}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
                     {/* Relevant Tags */}
-                    <div className="mb-10">
-                        <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-3 italic">Relevant Tags</span>
+                    <div className="mb-12">
+                        <span className="block text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-4 italic">RELEVANT TAGS</span>
                         <div className="flex gap-3">
                             {['AGE', 'LEVEL', 'GROUP'].map(tag => (
-                                <div key={tag} className="bg-[#121212] border border-white/10 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest text-white italic">
+                                <div key={tag} className="bg-white border border-white px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest text-black shadow-[0_0_15px_rgba(255,255,255,0.1)]">
                                     {tag}
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Main Drill Card */}
-                    <div className="relative group">
+                    {/* Main Drill Card - HIGH FIDELITY MATCH */}
+                    <div className="relative">
                         {drillSteps.length > 0 ? (
-                            <div className="bg-[#1A1A1A] rounded-[2.5rem] border border-white/10 p-8 shadow-2xl relative">
-                                <h3 className="text-sm font-black italic text-[#28D160] uppercase tracking-tighter mb-1">ANAHEIM DUCKS</h3>
-                                <h2 className="text-lg font-black italic uppercase tracking-tight text-white mb-6">
-                                    STEP {currentStep.step_number}: {currentStep.title}
-                                </h2>
+                            <div className="bg-[#1A1A1A] rounded-[3rem] overflow-hidden border border-white/5 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                                {/* Card Header Area */}
+                                <div className="p-8 pb-4">
+                                    <h3 className="text-sm font-black italic text-[#28D160] uppercase tracking-tighter mb-4">ANAHEIM DUCKS</h3>
+                                    <h2 className="text-xl font-black italic uppercase tracking-tight text-white mb-6 leading-tight">
+                                        STEP {currentStep.step_number}: {currentStep.title}
+                                    </h2>
+                                </div>
 
-                                <div className="aspect-[3/4] bg-white rounded-3xl mb-8 overflow-hidden border-4 border-white/10 relative flex items-center justify-center p-6">
+                                {/* Whiteboard Area */}
+                                <div className="mx-6 mb-8 bg-white rounded-[2.5rem] overflow-hidden flex items-center justify-center p-8 relative shadow-inner aspect-[3/4]">
                                     {currentStep.diagram_url ? (
                                         <img src={currentStep.diagram_url} className="w-full h-full object-contain" alt="diagram" />
                                     ) : (
-                                        <Layers size={120} className="text-gray-200" />
+                                        <div className="text-center">
+                                            <Layers size={80} className="text-gray-100 mx-auto" />
+                                            <p className="mt-4 text-[10px] font-black uppercase text-gray-300 italic">Diagram Pending</p>
+                                        </div>
                                     )}
                                 </div>
 
-                                {/* Step Navigation Arrows */}
-                                <button 
-                                    disabled={currentStepIndex === 0}
-                                    onClick={() => setCurrentStepIndex(currentStepIndex - 1)}
-                                    className="absolute left-[-20px] top-1/2 -translate-y-1/2 w-12 h-12 bg-black/40 backdrop-blur-md rounded-full border border-white/10 flex items-center justify-center disabled:opacity-0 transition-opacity"
-                                >
-                                    <ChevronLeft size={24} className="text-white" />
-                                </button>
-                                <button 
-                                    disabled={currentStepIndex === drillSteps.length - 1}
-                                    onClick={() => setCurrentStepIndex(currentStepIndex + 1)}
-                                    className="absolute right-[-20px] top-1/2 -translate-y-1/2 w-12 h-12 bg-black/40 backdrop-blur-md rounded-full border border-white/10 flex items-center justify-center disabled:opacity-0 transition-opacity"
-                                >
-                                    <ChevronRight size={24} className="text-white" />
-                                </button>
+                                {/* Step Navigation Arrows (Positioned on edges) */}
+                                <div className="absolute top-1/2 -left-4 -translate-y-1/2 z-20">
+                                    <button 
+                                        disabled={currentStepIndex === 0}
+                                        onClick={() => setCurrentStepIndex(currentStepIndex - 1)}
+                                        className="w-10 h-10 bg-black/80 backdrop-blur-xl rounded-full border border-white/10 flex items-center justify-center disabled:opacity-0 transition-opacity shadow-2xl"
+                                    >
+                                        <ChevronLeft size={24} className="text-white" />
+                                    </button>
+                                </div>
+                                <div className="absolute top-1/2 -right-4 -translate-y-1/2 z-20">
+                                    <button 
+                                        disabled={currentStepIndex === drillSteps.length - 1}
+                                        onClick={() => setCurrentStepIndex(currentStepIndex + 1)}
+                                        className="w-10 h-10 bg-black/80 backdrop-blur-xl rounded-full border border-white/10 flex items-center justify-center disabled:opacity-0 transition-opacity shadow-2xl"
+                                    >
+                                        <ChevronRight size={24} className="text-white" />
+                                    </button>
+                                </div>
+                                
+                                {/* Action Bottom Icons (Inside Card Footer) */}
+                                <div className="flex justify-center gap-12 p-8 pt-0 opacity-40">
+                                    <Target size={24} />
+                                    <ArrowRight size={24} className="rotate-45" />
+                                    <Maximize2 size={24} />
+                                </div>
                             </div>
                         ) : (
-                            <div className="bg-[#1A1A1A] rounded-[2.5rem] p-20 text-center border border-white/5 border-dashed">
-                                <Layers size={48} className="mx-auto mb-4 text-gray-700" />
-                                <h3 className="text-sm font-black italic uppercase text-gray-500 tracking-widest">Awaiting Content</h3>
+                            <div className="bg-[#1A1A1A] rounded-[3rem] p-32 text-center border border-white/5 border-dashed">
+                                <Layers size={48} className="mx-auto mb-4 text-gray-800" />
+                                <h3 className="text-xs font-black italic uppercase text-gray-600 tracking-widest">Constructing Sequence</h3>
                             </div>
                         )}
-                    </div>
-
-                    {/* Footer Icons */}
-                    <div className="flex justify-center gap-10 mt-12 opacity-60">
-                        <Target size={24} />
-                        <ArrowRight size={24} className="rotate-45" />
-                        <Maximize2 size={24} />
                     </div>
                 </div>
             </div>
