@@ -96,162 +96,142 @@ export default function DrillHubScreen() {
     if (selectedDrill) {
         const currentStep = drillSteps[currentStepIndex];
         return (
-            <div className="min-h-screen bg-black text-white p-6 animate-fadeIn pb-24">
-                <button 
-                    onClick={() => setSelectedDrill(null)}
-                    className="flex items-center gap-2 text-[10px] font-black italic uppercase tracking-widest text-[#28D160] mb-8 hover:text-white transition-colors"
-                >
-                    <ChevronLeft size={16} /> Explore More Drills
-                </button>
+            <div className="min-h-screen bg-black text-white p-6 animate-fadeIn pb-24 font-montserrat select-none">
+                <div className="flex justify-between items-center mb-10">
+                    <h2 className="text-3vw font-black italic uppercase tracking-tighter text-white opacity-80">{selectedDrill.title}</h2>
+                    <button 
+                        onClick={() => setSelectedDrill(null)}
+                        className="text-[10px] font-black italic uppercase tracking-widest text-[#28D160] hover:text-white transition-colors"
+                    >
+                        EXPLORE MORE DRILLS
+                    </button>
+                </div>
 
-                <div className="max-w-2xl mx-auto">
-                    <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-6">{selectedDrill.title}</h1>
-                    
-                    <div className="flex items-center gap-6 mb-8 pb-8 border-b border-white/10">
-                        <div>
-                            <span className="block text-[8px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">Conducted By</span>
-                            <div className="flex -space-x-2">
-                                <div className="w-10 h-10 rounded-full border-2 border-black overflow-hidden bg-gray-900">
-                                    <img src={selectedDrill.coach?.avatar_url || "https://placehold.co/100"} className="w-full h-full object-cover" alt="coach" />
+                <div className="max-w-md mx-auto">
+                    {/* Conducted By Section */}
+                    <div className="mb-8">
+                        <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-3 italic">Conducted By</span>
+                        <div className="flex gap-4">
+                            {['BEN', 'LEE', 'WHIT', 'RHETT'].map((name, i) => (
+                                <div key={i} className="flex flex-col items-center gap-2">
+                                    <div className="w-12 h-12 rounded-xl border-2 border-east-light overflow-hidden bg-gray-900 shadow-[0_0_15px_rgba(40,209,96,0.3)]">
+                                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`} className="w-full h-full object-cover" alt="coach" />
+                                    </div>
+                                    <span className="text-[8px] font-black italic uppercase text-white/60 tracking-widest">{name}</span>
                                 </div>
-                            </div>
-                        </div>
-                        <div className="flex-1 h-px bg-white/5 mx-4" />
-                        <div>
-                            <span className="block text-[8px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2 text-right">Relevant Tags</span>
-                            <div className="flex gap-2 justify-end">
-                                {[...selectedDrill.age_tags, ...selectedDrill.level_tags].slice(0, 2).map((tag, i) => (
-                                    <span key={i} className="bg-[#28D160]/10 text-[#28D160] border border-[#28D160]/20 px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest">{tag}</span>
-                                ))}
-                            </div>
+                            ))}
                         </div>
                     </div>
 
-                    {drillSteps.length > 0 ? (
-                        <div className="space-y-8">
-                            <div className="bg-[#121212] rounded-[2rem] border border-white/5 p-8 shadow-2xl relative overflow-hidden group">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div>
-                                        <h3 className="text-[10px] font-black italic text-[#28D160] uppercase tracking-widest mb-1">Phase {currentStepIndex + 1} of {drillSteps.length}</h3>
-                                        <h2 className="text-2xl font-black italic uppercase tracking-tight text-white">{currentStep.title}</h2>
-                                    </div>
-                                    <div className="bg-white/5 p-3 rounded-2xl">
-                                        <Layers size={20} className="text-gray-500" />
-                                    </div>
+                    {/* Relevant Tags */}
+                    <div className="mb-10">
+                        <span className="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-3 italic">Relevant Tags</span>
+                        <div className="flex gap-3">
+                            {['AGE', 'LEVEL', 'GROUP'].map(tag => (
+                                <div key={tag} className="bg-[#121212] border border-white/10 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest text-white italic">
+                                    {tag}
                                 </div>
+                            ))}
+                        </div>
+                    </div>
 
-                                <div className="aspect-square bg-white rounded-3xl mb-8 overflow-hidden border-8 border-white/5 relative shadow-inner">
+                    {/* Main Drill Card */}
+                    <div className="relative group">
+                        {drillSteps.length > 0 ? (
+                            <div className="bg-[#1A1A1A] rounded-[2.5rem] border border-white/10 p-8 shadow-2xl relative">
+                                <h3 className="text-sm font-black italic text-[#28D160] uppercase tracking-tighter mb-1">ANAHEIM DUCKS</h3>
+                                <h2 className="text-lg font-black italic uppercase tracking-tight text-white mb-6">
+                                    STEP {currentStep.step_number}: {currentStep.title}
+                                </h2>
+
+                                <div className="aspect-[3/4] bg-white rounded-3xl mb-8 overflow-hidden border-4 border-white/10 relative flex items-center justify-center p-6">
                                     {currentStep.diagram_url ? (
-                                        <img src={currentStep.diagram_url} className="w-full h-full object-contain p-4" alt="diagram" />
+                                        <img src={currentStep.diagram_url} className="w-full h-full object-contain" alt="diagram" />
                                     ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center text-black p-10 text-center">
-                                            <div className="w-px h-20 bg-black/10 absolute top-0 left-1/2" />
-                                            <div className="w-20 h-px bg-black/10 absolute top-1/2 left-0" />
-                                            <div className="w-px h-20 bg-black/10 absolute bottom-0 left-1/2" />
-                                            <div className="w-20 h-px bg-black/10 absolute top-1/2 right-0" />
-                                            <div className="w-4 h-4 rounded-full border border-black/20" />
-                                            <p className="mt-4 font-montserrat font-black italic text-sm uppercase opacity-20">No Diagram Loaded</p>
-                                        </div>
+                                        <Layers size={120} className="text-gray-200" />
                                     )}
                                 </div>
 
-                                <div className="bg-[#1a1a1a] rounded-2xl p-6 border border-white/5">
-                                    <p className="font-montserrat font-bold italic text-sm text-gray-400 leading-relaxed uppercase">
-                                        {currentStep.instruction}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Navigation */}
-                            <div className="flex gap-4">
+                                {/* Step Navigation Arrows */}
                                 <button 
                                     disabled={currentStepIndex === 0}
                                     onClick={() => setCurrentStepIndex(currentStepIndex - 1)}
-                                    className="flex-1 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-20 py-5 rounded-2xl transition-all flex items-center justify-center gap-2"
+                                    className="absolute left-[-20px] top-1/2 -translate-y-1/2 w-12 h-12 bg-black/40 backdrop-blur-md rounded-full border border-white/10 flex items-center justify-center disabled:opacity-0 transition-opacity"
                                 >
-                                    <ChevronLeft size={20} />
+                                    <ChevronLeft size={24} className="text-white" />
                                 </button>
                                 <button 
                                     disabled={currentStepIndex === drillSteps.length - 1}
                                     onClick={() => setCurrentStepIndex(currentStepIndex + 1)}
-                                    className="flex-[2] bg-[#28D160] text-black font-black italic uppercase italic tracking-tighter py-5 rounded-2xl transition-all shadow-xl shadow-[#28D160]/20 flex items-center justify-center gap-2"
+                                    className="absolute right-[-20px] top-1/2 -translate-y-1/2 w-12 h-12 bg-black/40 backdrop-blur-md rounded-full border border-white/10 flex items-center justify-center disabled:opacity-0 transition-opacity"
                                 >
-                                    Next Phase <ChevronRight size={20} />
+                                    <ChevronRight size={24} className="text-white" />
                                 </button>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="py-20 text-center bg-white/5 rounded-[2rem] border border-white/5 border-dashed">
-                            <Layers size={48} className="mx-auto mb-4 text-gray-700" />
-                            <h3 className="text-sm font-black italic uppercase text-gray-500 tracking-widest">Awaiting Sequence Sync</h3>
-                            <p className="text-[10px] uppercase font-bold text-gray-600 mt-2">Steps are currently being finalized by the coaching staff.</p>
-                        </div>
-                    )}
+                        ) : (
+                            <div className="bg-[#1A1A1A] rounded-[2.5rem] p-20 text-center border border-white/5 border-dashed">
+                                <Layers size={48} className="mx-auto mb-4 text-gray-700" />
+                                <h3 className="text-sm font-black italic uppercase text-gray-500 tracking-widest">Awaiting Content</h3>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer Icons */}
+                    <div className="flex justify-center gap-10 mt-12 opacity-60">
+                        <Target size={24} />
+                        <ArrowRight size={24} className="rotate-45" />
+                        <Maximize2 size={24} />
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-black text-white p-6 animate-fadeIn pb-24 font-montserrat select-none">
-            <div className="mb-10 text-center sm:text-left">
-                <h1 className="text-5xl font-black italic uppercase tracking-tighter mb-2">DRILL HUB</h1>
-                <div className="flex gap-3 overflow-x-auto no-scrollbar py-4 -mx-2 px-2 justify-center sm:justify-start">
+        <div className="min-h-screen bg-black text-white animate-fadeIn pb-24 font-montserrat select-none">
+            {/* Header */}
+            <div className="p-6 pt-10">
+                <h1 className="text-5xl font-black italic uppercase tracking-tighter mb-8 brightness-125">DRILL HUB</h1>
+                <div className="flex gap-3 overflow-x-auto no-scrollbar py-2 -mx-2 px-2">
                     {['AGE', 'LEVEL', 'GROUP', 'SKILL'].map(f => (
-                        <button key={f} className="bg-[#121212] border border-white/10 px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest text-gray-500 hover:text-[#28D160] hover:border-[#28D160] transition-all">
+                        <button key={f} className="bg-white border border-white px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest text-black shadow-[0_0_20px_rgba(255,255,255,0.2)]">
                             {f}
                         </button>
                     ))}
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-12 relative">
-                {AGE_GROUPS.map((ageGroup) => {
+            {/* Age Group Bands */}
+            <div className="mt-4">
+                {AGE_GROUPS.map((ageGroup, idx) => {
                     const groupItems = drills.filter(d => d.age_tags?.includes(ageGroup));
-                    if (groupItems.length === 0) return null;
+                    const isEven = idx % 2 === 0;
 
                     return (
-                        <div key={ageGroup} className="relative">
-                            <div className="flex items-center gap-4 mb-6">
-                                <h2 className="text-3xl font-black italic uppercase tracking-tighter text-[#28D160]">{ageGroup}</h2>
-                                <div className="h-px flex-1 bg-gradient-to-r from-[#28D160]/40 to-transparent" />
-                            </div>
-
-                            <div className="flex overflow-x-auto no-scrollbar gap-6 pb-4">
-                                {groupItems.map((drill) => (
+                        <div 
+                            key={ageGroup} 
+                            className={`py-8 px-6 ${isEven ? 'bg-[#15803d]' : 'bg-[#166534]'} border-b border-black/20`}
+                        >
+                            <h2 className="text-xl font-black italic uppercase tracking-tighter text-white/40 mb-6">{ageGroup}</h2>
+                            
+                            <div className="flex overflow-x-auto no-scrollbar gap-4 pb-2">
+                                {(groupItems.length > 0 ? groupItems : Array(4).fill(null)).map((drill, dIdx) => (
                                     <div 
-                                        key={drill.id} 
-                                        onClick={() => handleSelectDrill(drill)}
-                                        className="shrink-0 w-[200px] h-[200px] bg-[#121212] rounded-3xl border-2 border-white/5 relative group cursor-pointer hover:border-[#28D160] transition-all shadow-xl active:scale-95"
+                                        key={drill?.id || dIdx} 
+                                        onClick={() => drill && handleSelectDrill(drill)}
+                                        className={`shrink-0 w-32 h-32 bg-white rounded-2xl border-4 border-black/10 flex items-center justify-center p-4 shadow-xl transition-all active:scale-95 ${drill ? 'cursor-pointer hover:border-east-light' : 'opacity-20'}`}
                                     >
-                                        <div className="absolute inset-0 p-4 flex flex-col justify-end bg-gradient-to-t from-black via-black/20 to-transparent z-10">
-                                            <h3 className="text-sm font-black italic uppercase tracking-tight text-white mb-2 line-clamp-2">{drill.title}</h3>
-                                            <div className="flex gap-1">
-                                                {(drill.skill_tags || []).slice(0, 2).map((s, i) => (
-                                                    <span key={i} className="text-[7px] font-black uppercase text-gray-500 tracking-widest border border-white/10 px-1 py-0.5 rounded italic whitespace-nowrap">{s}</span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div className="w-full h-full p-8 flex items-center justify-center opacity-20 group-hover:opacity-40 transition-opacity">
-                                            <Layers size={80} className="text-white" />
-                                        </div>
-                                        <div className="absolute top-4 right-4 bg-east-light text-black p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all scale-50 group-hover:scale-100 shadow-xl">
-                                            <Plus size={14} strokeWidth={3} />
-                                        </div>
+                                        <img 
+                                            src={drill?.thumbnail_url || "https://png.pngtree.com/png-vector/20220703/ourmid/pngtree-hockey-puck-isolated-on-white-background-png-image_5677093.png"} 
+                                            className="w-full h-full object-contain grayscale brightness-50 contrast-125" 
+                                            alt="drill" 
+                                        />
                                     </div>
                                 ))}
                             </div>
                         </div>
                     );
                 })}
-
-                {drills.length === 0 && !loading && (
-                    <div className="py-32 text-center opacity-30 grayscale">
-                        <ChevronRight size={48} className="mx-auto mb-4" />
-                        <h2 className="text-xl font-black italic uppercase tracking-tighter">Drill Library Initializing</h2>
-                        <p className="text-xs font-bold uppercase mt-2">Connecting to the Global Drill Repository...</p>
-                    </div>
-                )}
             </div>
         </div>
     );
