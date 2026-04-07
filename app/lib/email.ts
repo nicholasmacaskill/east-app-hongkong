@@ -6,10 +6,14 @@ import { getSupabaseAdmin } from './supabaseAdmin';
 // const resend = new Resend(process.env.RESEND_API_KEY); (Lazy init below)
 
 // Helper for Base URL to prevent malformed links
-export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://MISSING-BASE-URL';
+// Force app.eastsportsgroup.com if the environment variable still points to the old dynamic-events domain
+const envBaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+export const BASE_URL = envBaseUrl?.includes('dynamic-events') 
+  ? 'https://app.eastsportsgroup.com' 
+  : (envBaseUrl || 'https://app.eastsportsgroup.com');
 
-if (!process.env.NEXT_PUBLIC_BASE_URL) {
-  console.warn('⚠️ NEXT_PUBLIC_BASE_URL is missing. Email links may be broken.');
+if (!process.env.NEXT_PUBLIC_BASE_URL || envBaseUrl?.includes('dynamic-events')) {
+  console.warn('⚠️ Base URL overridden to https://app.eastsportsgroup.com');
 }
 
 interface EmailParams {
