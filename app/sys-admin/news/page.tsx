@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { ArrowLeft, Plus, Edit2, Trash2, Calendar, Newspaper, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { safeDate, safetoLocaleDateString } from '@/app/lib/dateUtils';
 
 type Announcement = {
     id: string;
@@ -14,6 +13,8 @@ type Announcement = {
     published: boolean;
     event_date?: string;
     image_url?: string;
+    external_url?: string;
+    additional_images?: string[];
     created_at: string;
     updated_at: string;
 };
@@ -24,39 +25,32 @@ export default function NewsManagementPage() {
     const [filter, setFilter] = useState<'all' | 'news' | 'event'>('all');
     const [showModal, setShowModal] = useState(false);
     const [editingItem, setEditingItem] = useState<Announcement | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
     const [formData, setFormData] = useState({
         title: '',
         content: '',
         type: 'news' as 'news' | 'event',
         published: false,
         event_date: '',
-        image_url: ''
+        image_url: '',
+        external_url: '',
+        additional_images: '' // comma-separated URLs, joined on submit
     });
 
     useEffect(() => {
         fetchAnnouncements();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (session) fetchAnnouncements(session);
-        });
-
-        return () => subscription.unsubscribe();
     }, []);
 
-    const fetchAnnouncements = async (passedSession?: any) => {
+    const fetchAnnouncements = async () => {
         setLoading(true);
         try {
-            const session = passedSession || (await supabase.auth.getSession()).data.session;
-            if (!session) {
-                setLoading(false);
-                return;
-            }
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
 
             const response = await fetch('/api/admin/announcements', {
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`
-                },
-                cache: 'no-store'
+                }
             });
             const data = await response.json();
             if (response.ok) {
@@ -74,10 +68,19 @@ export default function NewsManagementPage() {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
 
+            // Parse comma-separated additional_images into an array of valid URLs
+            const additionalImagesArray = formData.additional_images
+                ? formData.additional_images.split(',').map(s => s.trim()).filter(s => s.length > 0)
+                : [];
+
+            const payload = {
+                ...formData,
+                external_url: formData.external_url || null,
+                additional_images: additionalImagesArray,
+                ...(editingItem ? { id: editingItem.id } : {})
+            };
+
             const method = editingItem ? 'PUT' : 'POST';
-            const body = editingItem
-                ? { ...formData, id: editingItem.id }
-                : formData;
 
             const response = await fetch('/api/admin/announcements', {
                 method,
@@ -85,7 +88,7 @@ export default function NewsManagementPage() {
                     'Authorization': `Bearer ${session.access_token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(body)
+                body: JSON.stringify(payload)
             });
 
             if (response.ok) {
@@ -97,7 +100,9 @@ export default function NewsManagementPage() {
                     type: 'news',
                     published: false,
                     event_date: '',
-                    image_url: ''
+                    image_url: '',
+                    external_url: '',
+                    additional_images: ''
                 });
                 fetchAnnouncements();
             }
@@ -107,8 +112,6 @@ export default function NewsManagementPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this announcement?')) return;
-
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
@@ -121,7 +124,11 @@ export default function NewsManagementPage() {
             });
 
             if (response.ok) {
+                setConfirmDeleteId(null);
                 fetchAnnouncements();
+            } else {
+                const err = await response.json();
+                console.error('Delete failed:', err);
             }
         } catch (error) {
             console.error('Error:', error);
@@ -160,8 +167,10 @@ export default function NewsManagementPage() {
             content: item.content,
             type: item.type,
             published: item.published,
-            event_date: item.event_date ? safeDate(item.event_date)?.toISOString().split('T')[0] || '' : '',
-            image_url: item.image_url || ''
+            event_date: item.event_date ? new Date(item.event_date).toISOString().split('T')[0] : '',
+            image_url: item.image_url || '',
+            external_url: item.external_url || '',
+            additional_images: (item.additional_images || []).join(', ')
         });
         setShowModal(true);
     };
@@ -169,10 +178,10 @@ export default function NewsManagementPage() {
     const filtered = announcements.filter(a => filter === 'all' || a.type === filter);
 
     return (
-        <div className="flex flex-col gap-8 pb-20">
+        <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-2">
                 <Link href="/sys-admin" className="self-start text-[10px] text-gray-500 font-bold uppercase tracking-widest hover:text-white mb-4 block transition-colors">← Back to Dashboard</Link>
-                <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+                <div className="flex justify-between items-end">
                     <div>
                         <h1 className="text-3xl font-black italic uppercase tracking-tighter">News Management</h1>
                         <p className="text-gray-400 max-w-2xl">
@@ -188,11 +197,13 @@ export default function NewsManagementPage() {
                                 type: 'news',
                                 published: false,
                                 event_date: '',
-                                image_url: ''
+                                image_url: '',
+                                external_url: '',
+                                additional_images: ''
                             });
                             setShowModal(true);
                         }}
-                        className="flex items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg w-full md:w-auto justify-center"
+                        className="flex items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg"
                     >
                         <Plus size={14} /> Add Announcement
                     </button>
@@ -206,8 +217,8 @@ export default function NewsManagementPage() {
                         key={tab}
                         onClick={() => setFilter(tab)}
                         className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${filter === tab
-                            ? 'bg-[#28D160] text-black'
-                            : 'bg-[#1e1e1e] text-gray-400 hover:text-white'
+                                ? 'bg-[#28D160] text-black'
+                                : 'bg-[#1e1e1e] text-gray-400 hover:text-white'
                             }`}
                     >
                         {tab}
@@ -232,8 +243,8 @@ export default function NewsManagementPage() {
                                         <Calendar size={16} className="text-blue-400" />
                                     )}
                                     <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${item.type === 'news'
-                                        ? 'bg-[#28D160]/20 text-[#28D160]'
-                                        : 'bg-blue-500/20 text-blue-400'
+                                            ? 'bg-[#28D160]/20 text-[#28D160]'
+                                            : 'bg-blue-500/20 text-blue-400'
                                         }`}>
                                         {item.type}
                                     </span>
@@ -254,23 +265,43 @@ export default function NewsManagementPage() {
 
                             {item.type === 'event' && item.event_date && (
                                 <div className="text-xs text-gray-500">
-                                    📅 {safetoLocaleDateString(item.event_date)}
+                                    📅 {new Date(item.event_date).toLocaleDateString()}
                                 </div>
                             )}
 
                             <div className="flex gap-2 mt-auto pt-4 border-t border-white/5">
-                                <button
-                                    onClick={() => openEditModal(item)}
-                                    className="flex-1 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                                >
-                                    <Edit2 size={12} /> Edit
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(item.id)}
-                                    className="flex-1 flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                                >
-                                    <Trash2 size={12} /> Delete
-                                </button>
+                                {confirmDeleteId === item.id ? (
+                                    <>
+                                        <span className="flex-1 text-xs text-gray-400 flex items-center">Are you sure?</span>
+                                        <button
+                                            onClick={() => handleDelete(item.id)}
+                                            className="flex items-center justify-center gap-1 bg-red-500/80 hover:bg-red-500 text-white px-3 py-2 rounded-lg text-xs font-bold transition-all"
+                                        >
+                                            Yes, delete
+                                        </button>
+                                        <button
+                                            onClick={() => setConfirmDeleteId(null)}
+                                            className="flex items-center justify-center gap-1 bg-white/5 hover:bg-white/10 text-white px-3 py-2 rounded-lg text-xs font-bold transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={() => openEditModal(item)}
+                                            className="flex-1 flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-white px-3 py-2 rounded-lg text-xs font-bold transition-all"
+                                        >
+                                            <Edit2 size={12} /> Edit
+                                        </button>
+                                        <button
+                                            onClick={() => setConfirmDeleteId(item.id)}
+                                            className="flex-1 flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-2 rounded-lg text-xs font-bold transition-all"
+                                        >
+                                            <Trash2 size={12} /> Delete
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     ))
@@ -336,7 +367,7 @@ export default function NewsManagementPage() {
                             )}
 
                             <div>
-                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Image URL (Optional)</label>
+                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Cover Image URL (Optional)</label>
                                 <input
                                     type="url"
                                     value={formData.image_url}
@@ -344,6 +375,29 @@ export default function NewsManagementPage() {
                                     placeholder="https://..."
                                     className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">External Link (Optional)</label>
+                                <input
+                                    type="url"
+                                    value={formData.external_url}
+                                    onChange={(e) => setFormData({ ...formData, external_url: e.target.value })}
+                                    placeholder="https://... (e.g. schedule PDF, registration page)"
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Additional Images (Optional)</label>
+                                <textarea
+                                    value={formData.additional_images}
+                                    onChange={(e) => setFormData({ ...formData, additional_images: e.target.value })}
+                                    placeholder="Paste image URLs separated by commas..."
+                                    rows={3}
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all resize-none"
+                                />
+                                <p className="text-[10px] text-gray-600 mt-1">Separate multiple URLs with a comma. These images will appear inside the article.</p>
                             </div>
 
                             <div className="flex items-center gap-3">
