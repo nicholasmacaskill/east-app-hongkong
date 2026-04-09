@@ -37,7 +37,39 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
         }
 
+        // AUTHENTICATION & ROLE CHECK
+        const cookieStore = await cookies();
+        const supabaseAuth = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                cookies: {
+                    getAll() { return cookieStore.getAll() },
+                    setAll(cookiesToSet) {
+                        try {
+                            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
+                        } catch (error) { }
+                    }
+                }
+            }
+        );
+        const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+
+        if (authError || !user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const supabaseAdmin = getSupabaseAdmin();
+
+        const { data: adminProfile } = await supabaseAdmin
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        if (!adminProfile || (adminProfile.role !== 'admin' && adminProfile.role !== 'sys-admin')) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
 
         // 1. Update Auth User (Password / Email / Metadata)
         const authUpdates: any = {};
@@ -103,22 +135,6 @@ export async function POST(request: Request) {
         }
 
         // 4. AUDIT LOGGING
-
-        // Extract Admin ID
-        const cookieStore = await cookies();
-        const supabaseAuth = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            {
-                cookies: {
-                    getAll() { return cookieStore.getAll() },
-                    setAll(cookiesToSet) {
-                        cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-                    }
-                }
-            }
-        );
-        const { data: { user } } = await supabaseAuth.auth.getUser();
 
         if (user) {
             // Fetch admin name
