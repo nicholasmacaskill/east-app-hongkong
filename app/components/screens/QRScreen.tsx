@@ -1,7 +1,8 @@
 'use client';
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { QrCode, User as UserIcon } from 'lucide-react';
+import { User as UserIcon } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 
 export default function QRScreen({ credits, currentUserId, subscriptionStatus, accountStatus, role }: { credits: number, currentUserId: string | null, subscriptionStatus?: string, accountStatus?: string, role?: string }) {
@@ -27,7 +28,16 @@ export default function QRScreen({ credits, currentUserId, subscriptionStatus, a
           <p className="font-bold text-[10px] text-gray-400 uppercase mb-8 tracking-widest">EAST SPORTS GROUP</p>
 
           <div className="relative p-6 border-[1px] border-black/10 rounded-3xl mb-8 bg-gray-50 shadow-inner group">
-            <QrCode size={160} strokeWidth={1.5} className="text-black opacity-90 group-hover:scale-105 transition-transform duration-500" />
+            {currentUserId && (
+              <div className="bg-white p-2 rounded-xl text-black opacity-90 group-hover:scale-105 transition-transform duration-500">
+                <QRCodeSVG
+                  value={JSON.stringify({ type: 'athlete_wallet', userId: currentUserId })}
+                  size={144}
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+            )}
             <div className="absolute -top-3 -left-3 w-8 h-8 border-t-4 border-l-4 border-east-dark rounded-tl-xl" />
             <div className="absolute -top-3 -right-3 w-8 h-8 border-t-4 border-r-4 border-east-dark rounded-tr-xl" />
             <div className="absolute -bottom-3 -left-3 w-8 h-8 border-b-4 border-l-4 border-east-dark rounded-bl-xl" />
