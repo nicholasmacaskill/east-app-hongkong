@@ -2,8 +2,9 @@ import { supabase } from '@/app/lib/supabase';
 import { MOCK_SESSIONS } from '@/app/mocking/sessions';
 import { Session } from '@/app/types/index';
 
-// IMPORTANT: This flag must be read from NEXT_PUBLIC_... for client-side components to work.
-const isMockMode = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true';
+// IMPORTANT: Mock mode is now disabled by default to ensure Test and Staging 
+// environments pull real data from their respective Supabase databases.
+const isMockMode = process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true' && !process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 // --- Real Data Fetcher (Calls API for secure filtering) ---
 async function fetchSessionsReal(): Promise<Session[]> {

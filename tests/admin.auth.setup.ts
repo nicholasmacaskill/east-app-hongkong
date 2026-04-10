@@ -60,7 +60,9 @@ setup('authenticate as admin', async ({ page }) => {
     await page.goto('/');
 
     // Select ADMIN PORTAL
-    await page.click('button:has-text("ADMIN PORTAL")');
+    const adminButton = page.locator('button:has-text("ADMIN PORTAL")');
+    await adminButton.scrollIntoViewIfNeeded();
+    await adminButton.click();
 
     // Enter Credentials
     await page.fill('input[name="email"]', email);
