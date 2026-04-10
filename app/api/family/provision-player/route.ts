@@ -98,24 +98,36 @@ export async function POST(request: Request) {
                 .eq('id', authUser.user.id);
         }
 
-        // 5. Send password reset email
-        const { error: resetError } = await supabaseAdmin.auth.admin.generateLink({
+        // 5. Generate and harden the password reset link
+        const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
             type: 'recovery',
             email
         });
 
-        if (!resetError) {
+        if (!linkError && linkData?.properties?.action_link) {
+            let resetLink = linkData.properties.action_link;
+            
+            // Domain Hardening
+            if (resetLink.includes('dynevents.com') || resetLink.includes('dynamic-events')) {
+                resetLink = resetLink.replace(/https:\/\/[^/]+\.(dynevents\.com|dynamic-events\.com)/, 'https://app.eastsportsgroup.com');
+            }
+
             try {
                 await sendEmail({
                     to: email,
                     subject: 'Welcome to EAST - Set Your Password',
                     html: `
-            <h1>Welcome to EAST!</h1>
-            <p>Your parent has created an account for you.</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p>Please check your email for a password reset link to set your own password.</p>
-            ${initialCredits > 0 ? `<p>You've been credited with <strong>${initialCredits} credits</strong> to get started!</p>` : ''}
-          `
+                        <div style="font-family: sans-serif; color: #ffffff;">
+                            <h1 style="color: #28D160; font-style: italic;">Welcome to EAST!</h1>
+                            <p>Your account has been created by your parent.</p>
+                            <p style="margin: 20px 0;"><strong>Username:</strong> ${email}</p>
+                            <p>Click the button below to set your password and start training:</p>
+                            <div style="text-align: center; margin: 30px 0;">
+                                <a href="${resetLink}" style="background-color: #28D160; color: #000; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: 900; text-transform: uppercase;">Set My Password</a>
+                            </div>
+                            <p style="color: #666; font-size: 14px;">This link will expire soon. If it doesn't work, please request a new reset from the login screen.</p>
+                        </div>
+                    `
                 });
             } catch (emailErr) {
                 console.error('Email send failed:', emailErr);
