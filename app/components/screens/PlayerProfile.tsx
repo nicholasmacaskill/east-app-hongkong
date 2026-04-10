@@ -64,71 +64,54 @@ export interface PlayerProfileProps {
 export default function PlayerProfile({ onOpenSettings, profileData, stats: initialStats, isReadOnly = false, onRefresh, onShowHistory }: PlayerProfileProps) {
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<'streaks' | 'full_stats'>('streaks');
-  const [stats, setStats] = useState<PlayerStats | null>(initialStats || null);
+  const [categoryStats, setCategoryStats] = useState<Record<string, any>>({});
   const [uploading, setUploading] = useState(false);
 
   // Removed gallery state and refs
   const avatarInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Determine sport from bio or props
-  const sport = profileData?.bio?.toUpperCase().includes('GOLF') ? 'GOLF' :
-    profileData?.bio?.toUpperCase().includes('HOCKEY') ? 'HOCKEY' :
-      profileData?.bio?.toUpperCase().includes('HYROX') ? 'HYROX' : 'GENERAL';
-
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchAllStats = async () => {
       if (!profileData?.id) return;
 
       try {
-        // Fetch from players_stats first (Modern flexible approach)
         const { data: psData, error: psError } = await supabase
           .from('players_stats')
           .select('*')
-          .eq('player_id', profileData.id)
-          .eq('category', sport)
-          .single();
+          .eq('player_id', profileData.id);
 
-        if (psData) {
-          // If using JSONB stats column
-          const finalStats = psData.stats || psData; // Support both flat and JSONB
-          setStats(finalStats);
-          return;
-        }
-
-        // Fallback for Golf if handled separately
-        if (sport === 'GOLF') {
+        if (psData && psData.length > 0) {
+          const statsMap: Record<string, any> = {};
+          psData.forEach(row => {
+            statsMap[row.category] = row.stats || row;
+          });
+          setCategoryStats(statsMap);
+        } else {
+          // Fallback check for golf_stats table if needed, though modern approach uses players_stats
           const { data: gData } = await supabase
             .from('golf_stats')
             .select('*')
             .eq('player_id', profileData.id)
             .single();
+          
           if (gData) {
-            setStats({
-              age: 31, // Placeholder as age isn't in golf_stats
-              season: 2026,
-              team: profileData.team || 'INDEPENDENT',
-              average_score: gData.average_score || 0,
-              longest_drive: gData.driver_distance || 0,
-              handicap: gData.handicap || 0,
-              closest_to_pin: gData.closest_to_pin || 0,
-              league_wins: gData.league_wins || 0,
-              tournament_wins: gData.tournament_wins || 0
+            setCategoryStats({
+              GOLF: {
+                handicap: gData.handicap || 0,
+                longest_drive: gData.driver_distance || 0,
+                closest_to_pin: gData.closest_to_pin || 0,
+                average_score: gData.average_score || 0
+              }
             });
-            return;
           }
-        }
-
-        // Default mock if nothing found
-        if (!initialStats) {
-          setStats({});
         }
       } catch (err) {
         console.error('Error fetching player stats:', err);
       }
     };
 
-    fetchStats();
-  }, [profileData?.id, sport, initialStats]);
+    fetchAllStats();
+  }, [profileData?.id, initialStats]);
 
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -302,26 +285,33 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
           {/* PERFORMANCE AREA */}
           <div className="w-full mt-4">
-            <div className="flex flex-col gap-6 animate-fadeIn">
-              {STAT_FIELDS[sport] && stats && Object.keys(stats).filter(k => stats[k] !== '' && stats[k] !== null).length > 0 ? (
-                <div className="flex flex-col gap-3">
-                  <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest text-center">{sport} PERFORMANCE</h3>
-                  <div className="bg-gradient-to-r from-[#28D160]/50 to-[#1a8e41]/50 rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-                    <div className="grid grid-cols-2">
-                      {STAT_FIELDS[sport].map((field: any, index: number) => {
-                        const val = stats?.[field.key];
-                        if (val === undefined || val === null || val === '') return null;
+            <div className="flex flex-col gap-10 animate-fadeIn">
+              {Object.keys(STAT_FIELDS).some(cat => categoryStats[cat] && Object.keys(categoryStats[cat]).filter(k => categoryStats[cat][k] !== '' && categoryStats[cat][k] !== null).length > 0) ? (
+                Object.keys(STAT_FIELDS).map((cat) => {
+                  const stats = categoryStats[cat];
+                  if (!stats || Object.keys(stats).filter(k => stats[k] !== '' && stats[k] !== null).length === 0) return null;
 
-                        return (
-                          <div key={field.key} className={`flex flex-col items-center justify-center p-4 gap-1 hover:bg-white/5 transition-colors border-white/10 ${index % 2 === 0 ? 'border-r' : ''} border-b`}>
-                            <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{field.label}</span>
-                            <span className="font-black text-lg text-white italic">{val} <span className="text-[10px] text-white/50 not-italic">{field.unit}</span></span>
-                          </div>
-                        );
-                      })}
+                  return (
+                    <div key={cat} className="flex flex-col gap-3">
+                      <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest text-center">{cat} PERFORMANCE</h3>
+                      <div className="bg-gradient-to-r from-[#28D160]/50 to-[#1a8e41]/50 rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+                        <div className="grid grid-cols-2">
+                          {STAT_FIELDS[cat].map((field: any, index: number) => {
+                            const val = stats[field.key];
+                            if (val === undefined || val === null || val === '') return null;
+
+                            return (
+                              <div key={field.key} className={`flex flex-col items-center justify-center p-4 gap-1 hover:bg-white/5 transition-colors border-white/10 ${index % 2 === 0 ? 'border-r' : ''} border-b last:border-b-0`}>
+                                <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{field.label}</span>
+                                <span className="font-black text-lg text-white italic">{val} <span className="text-[10px] text-white/50 not-italic">{field.unit}</span></span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  );
+                })
               ) : (
                 <div className="text-center p-8 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-sm shadow-2xl">
                   <Award size={32} className="mx-auto text-white/20 mb-3" />
