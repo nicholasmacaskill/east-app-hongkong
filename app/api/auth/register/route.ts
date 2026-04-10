@@ -77,9 +77,11 @@ export async function POST(request: Request) {
         }
 
         // Construct the verification URL
-        // Supabase generateLink returns the full properties including the hashed_token.
-        // Actually, the 'action_link' in properties is the one we want.
-        const verificationLink = linkData.properties.action_link;
+        // Force the new domain if Supabase is still returning the legacy Site URL
+        let verificationLink = linkData.properties.action_link;
+        if (verificationLink.includes('dynevents.com') || verificationLink.includes('dynamic-events')) {
+            verificationLink = verificationLink.replace(/https:\/\/[^/]+\.(dynevents\.com|dynamic-events\.com)/, 'https://app.eastsportsgroup.com');
+        }
 
         // 3. Send the branded email via Resend
         const emailResult = await sendEmail({

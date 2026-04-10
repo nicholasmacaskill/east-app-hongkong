@@ -27,7 +27,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to generate reset link: ' + (linkError?.message || 'Unknown') }, { status: 500 });
         }
 
-        const resetLink = linkData.properties.action_link;
+        let resetLink = linkData.properties.action_link;
+        if (resetLink.includes('dynevents.com') || resetLink.includes('dynamic-events')) {
+            resetLink = resetLink.replace(/https:\/\/[^/]+\.(dynevents\.com|dynamic-events\.com)/, 'https://app.eastsportsgroup.com');
+        }
 
         // 2. Send Email via Resend
         const emailResult = await sendEmail({
