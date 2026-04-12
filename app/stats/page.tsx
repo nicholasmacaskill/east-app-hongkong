@@ -27,12 +27,19 @@ const STAT_FIELDS = {
     hockey: [
         { key: 'react_targets', label: 'React Targets' },
         { key: 'classic_targets', label: 'Classic Targets' }
+    ],
+    league: [
+        { key: 'goals_season', label: 'Goals' },
+        { key: 'assists_season', label: 'Assists' },
+        { key: 'points', label: 'Points' },
+        { key: 'gp', label: 'GP' }
     ]
 };
 
 export default function LeaderboardPage() {
-    const [sport, setSport] = useState<'hockey' | 'golf' | 'hyrox'>('golf');
+    const [sport, setSport] = useState<'hockey' | 'golf' | 'hyrox' | 'league'>('golf');
     const [activeFilter, setActiveFilter] = useState<string>('handicap');
+    const [activeDivision, setActiveDivision] = useState<string>('All');
     const [entries, setEntries] = useState<any[]>([]);
     const [currentUserStats, setCurrentUserStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -41,6 +48,7 @@ export default function LeaderboardPage() {
     useEffect(() => {
         // Set default filter when sport changes
         setActiveFilter(STAT_FIELDS[sport][0].key);
+        setActiveDivision('All');
     }, [sport]);
 
     useEffect(() => {
@@ -53,7 +61,7 @@ export default function LeaderboardPage() {
 
     useEffect(() => {
         fetchLeaderboard();
-    }, [sport, activeFilter]);
+    }, [sport, activeFilter, activeDivision]);
 
     const fetchLeaderboard = async () => {
         setLoading(true);
@@ -66,15 +74,31 @@ export default function LeaderboardPage() {
                 setCurrentUserId(userId);
             }
 
-            const { data, error } = await supabase
+            // Map UI sport to database category
+            const categoryMap: Record<string, string> = {
+                hockey: 'HOCKEY',
+                golf: 'GOLF',
+                hyrox: 'HYROX',
+                league: 'season_2024'
+            };
+
+            const dbCategory = categoryMap[sport] || sport.toUpperCase();
+
+            let query = supabase
                 .from('players_stats')
                 .select(`
                     stats,
                     player_id,
                     profiles!players_stats_player_id_fkey(id, first_name, last_name, team, avatar_url)
                 `)
-                .eq('category', sport)
+                .eq('category', dbCategory)
                 .not('stats->' + activeFilter, 'is', null);
+
+            if (sport === 'golf' && activeDivision !== 'All') {
+                query = query.eq('stats->>division', activeDivision);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
 
@@ -175,7 +199,8 @@ export default function LeaderboardPage() {
                         {[
                             { id: 'hockey', icon: <Shield size={14} />, label: 'Hockey' },
                             { id: 'golf', icon: <Flag size={14} />, label: 'Golf' },
-                            { id: 'hyrox', icon: <Activity size={14} />, label: 'Hyrox' }
+                            { id: 'hyrox', icon: <Activity size={14} />, label: 'Hyrox' },
+                            { id: 'league', icon: <Trophy size={14} />, label: 'League' }
                         ].map(item => (
                             <button
                                 key={item.id}
@@ -189,6 +214,32 @@ export default function LeaderboardPage() {
                             </button>
                         ))}
                     </div>
+
+                    {/* GOLF DIVISION SELECTOR */}
+                    {sport === 'golf' && (
+                        <div className="flex justify-center mt-6">
+                            <div className="relative inline-block border border-white/20 rounded-full px-4 py-1.5 bg-black hover:border-east-light hover:shadow-[0_0_15px_rgba(40,209,96,0.2)] transition-all">
+                                <select 
+                                    value={activeDivision}
+                                    onChange={(e) => setActiveDivision(e.target.value)}
+                                    className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none appearance-none pr-8 cursor-pointer text-center w-full min-w-[200px]"
+                                >
+                                    <option value="All">All Divisions Global</option>
+                                    <option value="Pro Men">Pro Men</option>
+                                    <option value="Rec Men">Rec Men</option>
+                                    <option value="Pro Women">Pro Women</option>
+                                    <option value="Rec Women">Rec Women</option>
+                                    <option value="Doubles Men">Doubles Men</option>
+                                    <option value="Doubles Women">Doubles Women</option>
+                                    <option value="Mixed Doubles">Mixed Doubles</option>
+                                    <option value="Parent - Child">Parent - Child</option>
+                                </select>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    <svg className="w-3 h-3 text-east-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* STAT CATEGORY FILTERS */}
                     <div className="flex justify-start sm:justify-center gap-2 mt-8 mb-10 overflow-x-auto no-scrollbar pb-4 px-2 -mx-4 sm:mx-0 flex-nowrap sm:flex-wrap">

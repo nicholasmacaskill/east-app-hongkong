@@ -9,7 +9,14 @@ import { formatHK } from '@/app/lib/dateUtils';
 const STAT_FIELDS = {
     golf: [
         { key: 'season', label: 'Season', type: 'number', unit: '' },
-        { key: 'division', label: 'Division', type: 'text', unit: '' },
+        { 
+            key: 'division', 
+            label: 'Division', 
+            type: 'dropdown', 
+            options: ['Pro Men', 'Rec Men', 'Pro Women', 'Rec Women', 'Doubles Men', 'Doubles Women', 'Mixed Doubles', 'Parent - Child'],
+            unit: '' 
+        },
+        { key: 'handicap', label: 'Handicap', type: 'number', unit: '' },
         { key: 'handicap', label: 'Handicap', type: 'number', unit: '' },
         { key: 'longest_drive', label: 'Longest Drive', type: 'number', unit: 'yds' },
         { key: 'closest_to_pin', label: 'Closest to Pin', type: 'number', unit: 'ft' },
@@ -252,6 +259,17 @@ export default function StatsManagementPage() {
                                                 onChange={e => updateStat(field.key, e.target.value, 'number')}
                                                 className="w-full bg-black border border-white/20 p-3 rounded-lg text-xl font-black text-center focus:border-east-light outline-none"
                                             />
+                                        ) : field.type === 'dropdown' ? (
+                                            <select
+                                                value={stats[field.key] || ''}
+                                                onChange={e => updateStat(field.key, e.target.value, 'text')}
+                                                className="w-full bg-black border border-white/20 p-3 rounded-lg text-lg focus:border-east-light outline-none appearance-none"
+                                            >
+                                                <option value="" disabled>Select Division</option>
+                                                {(field as any).options?.map((opt: string) => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
                                         ) : (
                                             <input
                                                 type="text"
