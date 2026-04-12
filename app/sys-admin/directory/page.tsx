@@ -42,6 +42,8 @@ export default function DirectoryPage() {
     // Edit User State
     const [showEditForm, setShowEditForm] = useState(false);
     const [editingUser, setEditingUser] = useState<any>(null);
+    const [creditNote, setCreditNote] = useState('');
+    const [initialCredits, setInitialCredits] = useState(0);
 
     const [showAvailability, setShowAvailability] = useState(false);
     const [selectedCoach, setSelectedCoach] = useState<any>(null);
@@ -157,6 +159,8 @@ export default function DirectoryPage() {
             membershipHistory: profile.membership_history || [],
             avatar_url: profile.avatar_url || ''
         });
+        setInitialCredits(profile.credits || 0);
+        setCreditNote('');
 
         if (profile.role === 'coach') {
             const { data } = await supabase
@@ -290,6 +294,7 @@ export default function DirectoryPage() {
                     lastName: editingUser.last_name,
                     email: editingUser.email,
                     credits: parseInt(editingUser.credits),
+                    creditNote: creditNote, // Pass the note
                     team: editingUser.team,
                     position: editingUser.position,
                     username: editingUser.username,
@@ -683,6 +688,17 @@ export default function DirectoryPage() {
                                             value={editingUser.credits}
                                             onChange={e => setEditingUser({ ...editingUser, credits: e.target.value })}
                                             className="w-full bg-black/50 border border-[#28D160]/30 p-2 rounded-lg text-white font-bold text-sm outline-none focus:border-[#28D160]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-gray-500 uppercase">Reason for Adjustment</label>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g. Booking refund, Cash top-up"
+                                            value={creditNote}
+                                            disabled={parseInt(editingUser.credits) === initialCredits}
+                                            onChange={e => setCreditNote(e.target.value)}
+                                            className={`w-full bg-black/50 border p-2 rounded-lg text-white text-sm outline-none transition-all ${parseInt(editingUser.credits) !== initialCredits ? 'border-amber-500/50 focus:border-amber-500' : 'border-white/5 opacity-50'}`}
                                         />
                                     </div>
                                     <div>

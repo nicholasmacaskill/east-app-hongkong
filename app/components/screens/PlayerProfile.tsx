@@ -13,24 +13,11 @@ const Card = ({ children, className = "" }: { children: React.ReactNode, classNa
 
 const STAT_FIELDS: Record<string, any[]> = {
   GOLF: [
-    { key: 'season', label: 'Season', type: 'number', unit: '' },
-    { key: 'division', label: 'Division', type: 'text', unit: '' },
-    { key: 'round_1', label: 'Round 1 Score', type: 'number', unit: '' },
-    { key: 'round_2', label: 'Round 2 Score', type: 'number', unit: '' },
-    { key: 'round_3', label: 'Round 3 Score', type: 'number', unit: '' },
-    { key: 'round_4', label: 'Round 4 Score', type: 'number', unit: '' },
-    { key: 'round_5', label: 'Round 5 Score', type: 'number', unit: '' },
-    { key: 'round_6', label: 'Round 6 Score', type: 'number', unit: '' },
-    { key: 'round_7', label: 'Round 7 Score', type: 'number', unit: '' },
-    { key: 'round_8', label: 'Round 8 Score', type: 'number', unit: '' },
-    { key: 'round_9', label: 'Round 9 Score', type: 'number', unit: '' },
-    { key: 'round_10', label: 'Round 10 Score', type: 'number', unit: '' },
-    { key: 'round_11', label: 'Round 11 Score', type: 'number', unit: '' },
-    { key: 'round_12', label: 'Round 12 Score', type: 'number', unit: '' },
     { key: 'handicap', label: 'Handicap', type: 'number', unit: '' },
     { key: 'longest_drive', label: 'Longest Drive', type: 'number', unit: 'yds' },
     { key: 'closest_to_pin', label: 'Closest to Pin', type: 'number', unit: 'ft' },
-    { key: 'average_score', label: 'Average Score', type: 'number', unit: '' }
+    { key: 'tournament_wins', label: 'Tournament Wins', type: 'number', unit: '' },
+    { key: 'league_wins', label: 'League Wins', type: 'number', unit: '' }
   ],
   HYROX: [
     { key: 'run_1km', label: '1KM Run Time', type: 'time', unit: 'mm:ss' },
@@ -47,6 +34,12 @@ const STAT_FIELDS: Record<string, any[]> = {
     { key: 'react_targets', label: 'React Targets', type: 'time', unit: 'mm:ss' },
     { key: 'classic_targets', label: 'Classic Targets', type: 'number', unit: '' },
     { key: 'total_pucks_shot', label: 'Total Pucks Shot', type: 'number', unit: '' }
+  ],
+  EAGL: [
+    { key: 'season', label: 'Season', type: 'number', unit: '' },
+    { key: 'division', label: 'Division', type: 'text', unit: '' },
+    { key: 'week', label: 'Week', type: 'number', unit: '' },
+    { key: 'score', label: 'Score', type: 'number', unit: '' }
   ]
 };
 

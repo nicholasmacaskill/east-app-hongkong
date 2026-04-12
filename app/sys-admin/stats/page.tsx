@@ -6,37 +6,15 @@ import { useToast } from '@/app/components/ui/Toast';
 import { formatHK } from '@/app/lib/dateUtils';
 
 // Field configurations for each sport — synced with PlayerProfile.tsx display
-const STAT_FIELDS = {
-    golf: [
-        { key: 'season', label: 'Season', type: 'number', unit: '' },
-        { 
-            key: 'division', 
-            label: 'Division', 
-            type: 'dropdown', 
-            options: ['Pro Men', 'Rec Men', 'Pro Women', 'Rec Women', 'Doubles Men', 'Doubles Women', 'Mixed Doubles', 'Parent - Child'],
-            unit: '' 
-        },
-        { key: 'handicap', label: 'Handicap', type: 'number', unit: '' },
+const STAT_FIELDS: Record<string, any[]> = {
+    GOLF: [
         { key: 'handicap', label: 'Handicap', type: 'number', unit: '' },
         { key: 'longest_drive', label: 'Longest Drive', type: 'number', unit: 'yds' },
         { key: 'closest_to_pin', label: 'Closest to Pin', type: 'number', unit: 'ft' },
-        { key: 'league_wins', label: 'League Wins', type: 'number', unit: '' },
         { key: 'tournament_wins', label: 'Tournament Wins', type: 'number', unit: '' },
-        { key: 'round_1', label: 'Round 1 Score', type: 'number', unit: '' },
-        { key: 'round_2', label: 'Round 2 Score', type: 'number', unit: '' },
-        { key: 'round_3', label: 'Round 3 Score', type: 'number', unit: '' },
-        { key: 'round_4', label: 'Round 4 Score', type: 'number', unit: '' },
-        { key: 'round_5', label: 'Round 5 Score', type: 'number', unit: '' },
-        { key: 'round_6', label: 'Round 6 Score', type: 'number', unit: '' },
-        { key: 'round_7', label: 'Round 7 Score', type: 'number', unit: '' },
-        { key: 'round_8', label: 'Round 8 Score', type: 'number', unit: '' },
-        { key: 'round_9', label: 'Round 9 Score', type: 'number', unit: '' },
-        { key: 'round_10', label: 'Round 10 Score', type: 'number', unit: '' },
-        { key: 'round_11', label: 'Round 11 Score', type: 'number', unit: '' },
-        { key: 'round_12', label: 'Round 12 Score', type: 'number', unit: '' },
-        { key: 'average_score', label: 'Average Score', type: 'number', unit: '' }
+        { key: 'league_wins', label: 'League Wins', type: 'number', unit: '' }
     ],
-    hyrox: [
+    HYROX: [
         { key: 'run_1km', label: '1KM Run Time', type: 'time', unit: 'mm:ss' },
         { key: 'ski_erg_1000m', label: 'Ski Erg: 1,000m', type: 'time', unit: 'mm:ss' },
         { key: 'sled_push_50m', label: 'Sled Push: 50m', type: 'time', unit: 'mm:ss' },
@@ -47,15 +25,27 @@ const STAT_FIELDS = {
         { key: 'sandbag_lunges_100m', label: 'Sandbag Lunges: 100m', type: 'time', unit: 'mm:ss' },
         { key: 'wall_balls_100', label: 'Wall Balls: 100 reps', type: 'time', unit: 'mm:ss' }
     ],
-    hockey: [
+    HOCKEY: [
         { key: 'react_targets', label: 'React Targets', type: 'time', unit: 'mm:ss' },
         { key: 'classic_targets', label: 'Classic Targets', type: 'number', unit: '' },
         { key: 'total_pucks_shot', label: 'Total Pucks Shot', type: 'number', unit: '' }
+    ],
+    EAGL: [
+        { key: 'season', label: 'Season', type: 'number', unit: '' },
+        { 
+            key: 'division', 
+            label: 'Division', 
+            type: 'dropdown', 
+            options: ['Pro Men', 'Rec Men', 'Pro Women', 'Rec Women', 'Doubles Men', 'Doubles Women', 'Mixed Doubles', 'Parent - Child'],
+            unit: '' 
+        },
+        { key: 'week', label: 'Week', type: 'number', unit: '' },
+        { key: 'score', label: 'Score', type: 'number', unit: '' }
     ]
 };
 
 export default function StatsManagementPage() {
-    const [selectedSport, setSelectedSport] = useState<'golf' | 'hyrox' | 'hockey'>('golf');
+    const [selectedSport, setSelectedSport] = useState<string>('GOLF');
     const [players, setPlayers] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
@@ -94,8 +84,9 @@ export default function StatsManagementPage() {
                 setStats(data.stats);
             } else {
                 // Initialize empty stats for this sport
+                const fields = STAT_FIELDS[selectedSport as keyof typeof STAT_FIELDS] || [];
                 const emptyStats: Record<string, any> = {};
-                STAT_FIELDS[selectedSport].forEach(field => {
+                fields.forEach((field: any) => {
                     emptyStats[field.key] = field.type === 'number' ? 0 : '';
                 });
                 setStats(emptyStats);
@@ -115,7 +106,8 @@ export default function StatsManagementPage() {
         if (!selectedPlayer) return;
 
         // Validate all time fields
-        const timeFields = STAT_FIELDS[selectedSport].filter(f => f.type === 'time');
+        const fields = STAT_FIELDS[selectedSport as keyof typeof STAT_FIELDS] || [];
+        const timeFields = fields.filter((f: any) => f.type === 'time');
         for (const field of timeFields) {
             const value = stats[field.key];
             if (value && !isValidTime(value)) {
@@ -128,7 +120,7 @@ export default function StatsManagementPage() {
 
         const payload = {
             player_id: selectedPlayer.id,
-            category: selectedSport,
+            category: selectedSport.toUpperCase(),
             stats: stats,
             verified: true,
             updated_at: new Date().toISOString()
@@ -162,9 +154,10 @@ export default function StatsManagementPage() {
             {/* Sport Selector */}
             <div className="flex gap-3 mb-8">
                 {[
-                    { id: 'golf', label: 'Golf', icon: '⛳' },
-                    { id: 'hyrox', label: 'HYROX', icon: '🏃' },
-                    { id: 'hockey', label: 'Hockey', icon: '🏒' }
+                    { id: 'GOLF', label: 'Golf', icon: '⛳' },
+                    { id: 'HYROX', label: 'HYROX', icon: '🏃' },
+                    { id: 'HOCKEY', label: 'Hockey', icon: '🏒' },
+                    { id: 'EAGL', label: 'EAGL', icon: '🦅' }
                 ].map(sport => (
                     <button
                         key={sport.id}
@@ -238,7 +231,7 @@ export default function StatsManagementPage() {
 
                             {/* Dynamic Fields */}
                             <div className="grid grid-cols-2 gap-4 mb-8 max-h-[500px] overflow-y-auto pr-2">
-                                {STAT_FIELDS[selectedSport].map(field => (
+                                {(STAT_FIELDS[selectedSport as keyof typeof STAT_FIELDS] || []).map((field: any) => (
                                     <div key={field.key} className={field.key === 'course_name' ? 'col-span-2' : ''}>
                                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">
                                             {field.label} {field.unit && `(${field.unit})`}

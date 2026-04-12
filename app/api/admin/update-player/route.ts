@@ -23,6 +23,7 @@ interface UpdateRequest {
     membershipExpires?: string;
     accountStatus?: string;
     avatarUrl?: string;
+    creditNote?: string;
 }
 
 export async function POST(request: Request) {
@@ -30,7 +31,8 @@ export async function POST(request: Request) {
         const {
             userId, firstName, lastName, email, password, credits,
             team, position, role, parentId, mobile, bio,
-            membershipStart, membershipExpires, accountStatus, avatarUrl
+            membershipStart, membershipExpires, accountStatus, avatarUrl,
+            creditNote
         } = await request.json() as UpdateRequest;
 
         if (!userId) {
@@ -108,6 +110,19 @@ export async function POST(request: Request) {
         if (avatarUrl !== undefined) profileUpdates.avatar_url = avatarUrl;
 
         if (Object.keys(profileUpdates).length > 0) {
+            // DETECT CREDIT CHANGE FOR TRANSACTION LOGGING
+            let creditDelta = 0;
+            let initialCredits = 0;
+            if (credits !== undefined) {
+                const { data: oldProfile } = await supabaseAdmin
+                    .from('profiles')
+                    .select('credits')
+                    .eq('id', userId)
+                    .single();
+                initialCredits = oldProfile?.credits || 0;
+                creditDelta = credits - initialCredits;
+            }
+
             const { error: profileError } = await supabaseAdmin
                 .from('profiles')
                 .update(profileUpdates)
@@ -116,6 +131,16 @@ export async function POST(request: Request) {
             if (profileError) {
                 console.error('Profile update error:', profileError);
                 return NextResponse.json({ error: 'Failed to update profile: ' + profileError.message }, { status: 500 });
+            }
+
+            // LOG CREDIT TRANSACTION IF DELTA EXISTS
+            if (creditDelta !== 0) {
+                await supabaseAdmin.from('transactions').insert({
+                    user_id: userId,
+                    amount: creditDelta,
+                    type: 'transfer',
+                    description: creditNote || `Profile update adjustment by admin`
+                });
             }
 
             // 3. Sync player_relationships if parentId/role changed
