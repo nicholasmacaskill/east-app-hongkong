@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { sendWhatsAppNotification } from '@/app/lib/whatsapp';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         const supabase = getSupabaseAdmin();
