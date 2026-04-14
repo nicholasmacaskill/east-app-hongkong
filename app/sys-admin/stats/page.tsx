@@ -31,7 +31,13 @@ const STAT_FIELDS: Record<string, any[]> = {
         { key: 'total_pucks_shot', label: 'Total Pucks Shot', type: 'number', unit: '' }
     ],
     EAGL: [
-        { key: 'season', label: 'Season', type: 'number', unit: '' },
+        { 
+            key: 'season', 
+            label: 'Season', 
+            type: 'dropdown', 
+            options: ['1', '2', '3', '4', '5'],
+            unit: '' 
+        },
         { 
             key: 'division', 
             label: 'Division', 
@@ -39,7 +45,13 @@ const STAT_FIELDS: Record<string, any[]> = {
             options: ['Pro Men', 'Rec Men', 'Pro Women', 'Rec Women', 'Doubles Men', 'Doubles Women', 'Mixed Doubles', 'Parent - Child'],
             unit: '' 
         },
-        { key: 'week', label: 'Week', type: 'number', unit: '' },
+        { 
+            key: 'week', 
+            label: 'Week', 
+            type: 'dropdown', 
+            options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+            unit: '' 
+        },
         { key: 'score', label: 'Score', type: 'number', unit: '' }
     ]
 };
