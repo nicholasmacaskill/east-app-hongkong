@@ -26,11 +26,13 @@ const STAT_FIELDS = {
     ],
     hockey: [
         { key: 'react_targets', label: 'React Targets' },
-        { key: 'classic_targets', label: 'Classic Targets' }
+        { key: 'classic_targets', label: 'Classic Targets' },
+        { key: 'total_pucks_shot', label: 'Total Pucks Shot' }
     ],
     HOCKEY: [
         { key: 'react_targets', label: 'React Targets' },
-        { key: 'classic_targets', label: 'Classic Targets' }
+        { key: 'classic_targets', label: 'Classic Targets' },
+        { key: 'total_pucks_shot', label: 'Total Pucks Shot' }
     ],
     EAGL: [
         { key: 'score', label: 'League Score' }
@@ -41,8 +43,8 @@ export default function LeaderboardPage() {
     const [sport, setSport] = useState<'HOCKEY' | 'GOLF' | 'HYROX' | 'EAGL'>('GOLF');
     const [activeFilter, setActiveFilter] = useState<string>('handicap');
     const [activeDivision, setActiveDivision] = useState<string>('All');
-    const [activeSeason, setActiveSeason] = useState<number | 'All'>(1);
-    const [activeWeek, setActiveWeek] = useState<number | 'All'>(1);
+    const [activeSeason, setActiveSeason] = useState<number | 'All'>('All');
+    const [activeWeek, setActiveWeek] = useState<number | 'All'>('All');
     const [entries, setEntries] = useState<any[]>([]);
     const [currentUserStats, setCurrentUserStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
