@@ -5,35 +5,47 @@ import { Search, Save, CheckCircle } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
 import { formatHK } from '@/app/lib/dateUtils';
 
-// Field configurations for each sport
-const STAT_FIELDS = {
-    golf: [
+// Field configurations for each sport — synced with PlayerProfile.tsx display
+const STAT_FIELDS: Record<string, any[]> = {
+    GOLF: [
         { key: 'handicap', label: 'Handicap', type: 'number', unit: '' },
-
         { key: 'longest_drive', label: 'Longest Drive', type: 'number', unit: 'yds' },
         { key: 'closest_to_pin', label: 'Closest to Pin', type: 'number', unit: 'ft' },
-        { key: 'league_wins', label: 'League Wins', type: 'number', unit: '' },
-        { key: 'tournament_wins', label: 'Tournament Wins', type: 'number', unit: '' }
+        { key: 'tournament_wins', label: 'Tournament Wins', type: 'number', unit: '' },
+        { key: 'league_wins', label: 'League Wins', type: 'number', unit: '' }
     ],
-    hyrox: [
+    HYROX: [
         { key: 'run_1km', label: '1KM Run Time', type: 'time', unit: 'mm:ss' },
         { key: 'ski_erg_1000m', label: 'Ski Erg: 1,000m', type: 'time', unit: 'mm:ss' },
         { key: 'sled_push_50m', label: 'Sled Push: 50m', type: 'time', unit: 'mm:ss' },
         { key: 'sled_pull_50m', label: 'Sled Pull: 50m', type: 'time', unit: 'mm:ss' },
         { key: 'burpee_broad_jumps_80m', label: 'Burpee Broad Jumps: 80m', type: 'time', unit: 'mm:ss' },
         { key: 'row_1000m', label: 'Row: 1,000m', type: 'time', unit: 'mm:ss' },
-        { key: 'farmers_carry_200m', label: 'Farmer\'s Carry: 200m', type: 'time', unit: 'mm:ss' },
+        { key: 'farmers_carry_200m', label: "Farmer's Carry: 200m", type: 'time', unit: 'mm:ss' },
         { key: 'sandbag_lunges_100m', label: 'Sandbag Lunges: 100m', type: 'time', unit: 'mm:ss' },
         { key: 'wall_balls_100', label: 'Wall Balls: 100 reps', type: 'time', unit: 'mm:ss' }
     ],
-    hockey: [
+    HOCKEY: [
         { key: 'react_targets', label: 'React Targets', type: 'time', unit: 'mm:ss' },
-        { key: 'classic_targets', label: 'Classic Targets', type: 'number', unit: '' }
+        { key: 'classic_targets', label: 'Classic Targets', type: 'number', unit: '' },
+        { key: 'total_pucks_shot', label: 'Total Pucks Shot', type: 'number', unit: '' }
+    ],
+    EAGL: [
+        { key: 'season', label: 'Season', type: 'number', unit: '' },
+        { 
+            key: 'division', 
+            label: 'Division', 
+            type: 'dropdown', 
+            options: ['Pro Men', 'Rec Men', 'Pro Women', 'Rec Women', 'Doubles Men', 'Doubles Women', 'Mixed Doubles', 'Parent - Child'],
+            unit: '' 
+        },
+        { key: 'week', label: 'Week', type: 'number', unit: '' },
+        { key: 'score', label: 'Score', type: 'number', unit: '' }
     ]
 };
 
 export default function StatsManagementPage() {
-    const [selectedSport, setSelectedSport] = useState<'golf' | 'hyrox' | 'hockey'>('golf');
+    const [selectedSport, setSelectedSport] = useState<string>('GOLF');
     const [players, setPlayers] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
@@ -72,8 +84,9 @@ export default function StatsManagementPage() {
                 setStats(data.stats);
             } else {
                 // Initialize empty stats for this sport
+                const fields = STAT_FIELDS[selectedSport as keyof typeof STAT_FIELDS] || [];
                 const emptyStats: Record<string, any> = {};
-                STAT_FIELDS[selectedSport].forEach(field => {
+                fields.forEach((field: any) => {
                     emptyStats[field.key] = field.type === 'number' ? 0 : '';
                 });
                 setStats(emptyStats);
@@ -93,7 +106,8 @@ export default function StatsManagementPage() {
         if (!selectedPlayer) return;
 
         // Validate all time fields
-        const timeFields = STAT_FIELDS[selectedSport].filter(f => f.type === 'time');
+        const fields = STAT_FIELDS[selectedSport as keyof typeof STAT_FIELDS] || [];
+        const timeFields = fields.filter((f: any) => f.type === 'time');
         for (const field of timeFields) {
             const value = stats[field.key];
             if (value && !isValidTime(value)) {
@@ -105,23 +119,30 @@ export default function StatsManagementPage() {
         setIsSaving(true);
 
         const payload = {
-            player_id: selectedPlayer.id,
-            category: selectedSport,
+            playerId: selectedPlayer.id,
+            category: selectedSport.toUpperCase(),
             stats: stats,
-            verified: true,
-            updated_at: new Date().toISOString()
+            verified: true
         };
 
-        const { error } = await supabase
-            .from('players_stats')
-            .upsert(payload, { onConflict: 'player_id,category' });
+        try {
+            const res = await fetch('/api/admin/player-stats', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-        setIsSaving(false);
-        if (error) {
-            addToast('Error saving stats: ' + error.message, 'error');
-        } else {
-            setLastSaved(formatHK(new Date(), 'h:mm:ss a'));
-            addToast('Stats saved successfully!', 'success');
+            setIsSaving(false);
+            if (!res.ok) {
+                const data = await res.json();
+                addToast('Error saving stats: ' + (data.error || res.statusText), 'error');
+            } else {
+                setLastSaved(formatHK(new Date(), 'h:mm:ss a'));
+                addToast('Stats saved successfully!', 'success');
+            }
+        } catch (err: any) {
+            setIsSaving(false);
+            addToast('Error saving stats: ' + err.message, 'error');
         }
     };
 
@@ -140,9 +161,10 @@ export default function StatsManagementPage() {
             {/* Sport Selector */}
             <div className="flex gap-3 mb-8">
                 {[
-                    { id: 'golf', label: 'Golf', icon: '⛳' },
-                    { id: 'hyrox', label: 'HYROX', icon: '🏃' },
-                    { id: 'hockey', label: 'Hockey', icon: '🏒' }
+                    { id: 'GOLF', label: 'Golf', icon: '⛳' },
+                    { id: 'HYROX', label: 'HYROX', icon: '🏃' },
+                    { id: 'HOCKEY', label: 'Hockey', icon: '🏒' },
+                    { id: 'EAGL', label: 'EAGL', icon: '🦅' }
                 ].map(sport => (
                     <button
                         key={sport.id}
@@ -216,7 +238,7 @@ export default function StatsManagementPage() {
 
                             {/* Dynamic Fields */}
                             <div className="grid grid-cols-2 gap-4 mb-8 max-h-[500px] overflow-y-auto pr-2">
-                                {STAT_FIELDS[selectedSport].map(field => (
+                                {(STAT_FIELDS[selectedSport as keyof typeof STAT_FIELDS] || []).map((field: any) => (
                                     <div key={field.key} className={field.key === 'course_name' ? 'col-span-2' : ''}>
                                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">
                                             {field.label} {field.unit && `(${field.unit})`}
@@ -237,6 +259,17 @@ export default function StatsManagementPage() {
                                                 onChange={e => updateStat(field.key, e.target.value, 'number')}
                                                 className="w-full bg-black border border-white/20 p-3 rounded-lg text-xl font-black text-center focus:border-east-light outline-none"
                                             />
+                                        ) : field.type === 'dropdown' ? (
+                                            <select
+                                                value={stats[field.key] || ''}
+                                                onChange={e => updateStat(field.key, e.target.value, 'text')}
+                                                className="w-full bg-black border border-white/20 p-3 rounded-lg text-lg focus:border-east-light outline-none appearance-none"
+                                            >
+                                                <option value="" disabled>Select Division</option>
+                                                {(field as any).options?.map((opt: string) => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
                                         ) : (
                                             <input
                                                 type="text"

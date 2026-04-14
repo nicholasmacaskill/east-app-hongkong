@@ -6,14 +6,14 @@ import { supabase } from '@/app/lib/supabase';
 
 // Field configurations matching CMS
 const STAT_FIELDS = {
-    golf: [
+    GOLF: [
         { key: 'handicap', label: 'Handicap' },
         { key: 'longest_drive', label: 'Longest Drive' },
         { key: 'closest_to_pin', label: 'Closest to Pin' },
-        { key: 'league_wins', label: 'League Wins' },
-        { key: 'tournament_wins', label: 'Tournament Wins' }
+        { key: 'tournament_wins', label: 'Tournament Wins' },
+        { key: 'league_wins', label: 'League Wins' }
     ],
-    hyrox: [
+    HYROX: [
         { key: 'run_1km', label: '1KM Run' },
         { key: 'ski_erg_1000m', label: 'Ski Erg' },
         { key: 'sled_push_50m', label: 'Sled Push' },
@@ -27,12 +27,22 @@ const STAT_FIELDS = {
     hockey: [
         { key: 'react_targets', label: 'React Targets' },
         { key: 'classic_targets', label: 'Classic Targets' }
+    ],
+    HOCKEY: [
+        { key: 'react_targets', label: 'React Targets' },
+        { key: 'classic_targets', label: 'Classic Targets' }
+    ],
+    EAGL: [
+        { key: 'score', label: 'League Score' }
     ]
 };
 
 export default function LeaderboardPage() {
-    const [sport, setSport] = useState<'hockey' | 'golf' | 'hyrox'>('golf');
+    const [sport, setSport] = useState<'HOCKEY' | 'GOLF' | 'HYROX' | 'EAGL'>('GOLF');
     const [activeFilter, setActiveFilter] = useState<string>('handicap');
+    const [activeDivision, setActiveDivision] = useState<string>('All');
+    const [activeSeason, setActiveSeason] = useState<number>(1);
+    const [activeWeek, setActiveWeek] = useState<number>(1);
     const [entries, setEntries] = useState<any[]>([]);
     const [currentUserStats, setCurrentUserStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -40,7 +50,13 @@ export default function LeaderboardPage() {
 
     useEffect(() => {
         // Set default filter when sport changes
-        setActiveFilter(STAT_FIELDS[sport][0].key);
+        const fields = STAT_FIELDS[sport as keyof typeof STAT_FIELDS] || [];
+        setActiveFilter(fields[0]?.key || '');
+        setActiveDivision('All');
+        if (sport === 'EAGL') {
+            setActiveSeason(1);
+            setActiveWeek(1);
+        }
     }, [sport]);
 
     useEffect(() => {
@@ -53,7 +69,7 @@ export default function LeaderboardPage() {
 
     useEffect(() => {
         fetchLeaderboard();
-    }, [sport, activeFilter]);
+    }, [sport, activeFilter, activeDivision, activeSeason, activeWeek]);
 
     const fetchLeaderboard = async () => {
         setLoading(true);
@@ -66,15 +82,36 @@ export default function LeaderboardPage() {
                 setCurrentUserId(userId);
             }
 
-            const { data, error } = await supabase
+            // Map UI sport to database category
+            const categoryMap: Record<string, string> = {
+                hockey: 'HOCKEY',
+                golf: 'GOLF',
+                hyrox: 'HYROX',
+                league: 'season_2024'
+            };
+
+            const dbCategory = categoryMap[sport] || sport.toUpperCase();
+
+            let query = supabase
                 .from('players_stats')
                 .select(`
                     stats,
                     player_id,
                     profiles!players_stats_player_id_fkey(id, first_name, last_name, team, avatar_url)
                 `)
-                .eq('category', sport)
+                .eq('category', dbCategory)
                 .not('stats->' + activeFilter, 'is', null);
+
+            // Triple-Filtering logic for EAGL or Golf
+            if (activeDivision !== 'All') {
+                query = query.eq('stats->>division', activeDivision);
+            }
+            if (sport === 'EAGL') {
+                query = query.eq('stats->>season', activeSeason.toString());
+                query = query.eq('stats->>week', activeWeek.toString());
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
 
@@ -103,8 +140,8 @@ export default function LeaderboardPage() {
                     return aSeconds - bSeconds;
                 }
 
-                // For golf scores, lower is better
-                if (sport === 'golf' && (activeFilter === 'handicap' || activeFilter === 'round_score')) {
+                // For golf/EAGL scores, lower is better
+                if ((sport === 'GOLF' || sport === 'EAGL') && (activeFilter === 'handicap' || activeFilter === 'score' || activeFilter.includes('round'))) {
                     return (parseFloat(aVal) || 999) - (parseFloat(bVal) || 999);
                 }
 
@@ -149,9 +186,9 @@ export default function LeaderboardPage() {
             {/* Background Layer */}
             <div className="fixed inset-0 z-0 opacity-20 transition-all duration-700 grayscale">
                 <img
-                    src={sport === 'hockey'
+                    src={sport === 'HOCKEY'
                         ? "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=1200"
-                        : sport === 'golf'
+                        : sport === 'GOLF'
                             ? "https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?auto=format&fit=crop&q=80&w=1200"
                             : "https://images.unsplash.com/photo-1594882645126-14020914d58d?auto=format&fit=crop&q=80&w=1200"
                     }
@@ -173,9 +210,10 @@ export default function LeaderboardPage() {
                     {/* SPORT SELECTOR */}
                     <div className="flex justify-center gap-2 sm:gap-3 mt-8 flex-wrap">
                         {[
-                            { id: 'hockey', icon: <Shield size={14} />, label: 'Hockey' },
-                            { id: 'golf', icon: <Flag size={14} />, label: 'Golf' },
-                            { id: 'hyrox', icon: <Activity size={14} />, label: 'Hyrox' }
+                            { id: 'HOCKEY', icon: <Shield size={14} />, label: 'Hockey' },
+                            { id: 'GOLF', icon: <Flag size={14} />, label: 'Golf' },
+                            { id: 'HYROX', icon: <Activity size={14} />, label: 'Hyrox' },
+                            { id: 'EAGL', icon: <Trophy size={14} />, label: 'EAGL' }
                         ].map(item => (
                             <button
                                 key={item.id}
@@ -190,9 +228,64 @@ export default function LeaderboardPage() {
                         ))}
                     </div>
 
+                    {/* DIVISION / SEASON / WEEK SELECTORS */}
+                    {(sport === 'GOLF' || sport === 'EAGL') && (
+                        <div className="flex flex-col gap-3 items-center mt-6">
+                            <div className="flex flex-wrap justify-center gap-2">
+                                {/* Division Selector */}
+                                <div className="relative inline-block border border-white/20 rounded-full px-4 py-1.5 bg-black hover:border-east-light transition-all">
+                                    <select 
+                                        value={activeDivision}
+                                        onChange={(e) => setActiveDivision(e.target.value)}
+                                        className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none appearance-none pr-8 cursor-pointer text-center min-w-[150px]"
+                                    >
+                                        <option value="All">All Divisions Global</option>
+                                        <option value="Pro Men">Pro Men</option>
+                                        <option value="Rec Men">Rec Men</option>
+                                        <option value="Pro Women">Pro Women</option>
+                                        <option value="Rec Women">Rec Women</option>
+                                        <option value="Doubles Men">Doubles Men</option>
+                                        <option value="Doubles Women">Doubles Women</option>
+                                        <option value="Mixed Doubles">Mixed Doubles</option>
+                                        <option value="Parent - Child">Parent - Child</option>
+                                    </select>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                        <svg className="w-3 h-3 text-east-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+                                </div>
+
+                                {sport === 'EAGL' && (
+                                    <>
+                                        {/* Season Input */}
+                                        <div className="flex bg-black border border-white/20 rounded-full px-4 py-1.5 hover:border-east-light transition-all items-center gap-2">
+                                            <span className="text-[9px] font-black text-gray-500 uppercase">S</span>
+                                            <input 
+                                                type="number"
+                                                value={activeSeason}
+                                                onChange={(e) => setActiveSeason(parseInt(e.target.value) || 1)}
+                                                className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none w-10 text-center"
+                                            />
+                                        </div>
+
+                                        {/* Week Input */}
+                                        <div className="flex bg-black border border-white/20 rounded-full px-4 py-1.5 hover:border-east-light transition-all items-center gap-2">
+                                            <span className="text-[9px] font-black text-gray-500 uppercase">W</span>
+                                            <input 
+                                                type="number"
+                                                value={activeWeek}
+                                                onChange={(e) => setActiveWeek(parseInt(e.target.value) || 1)}
+                                                className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none w-10 text-center"
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* STAT CATEGORY FILTERS */}
                     <div className="flex justify-start sm:justify-center gap-2 mt-8 mb-10 overflow-x-auto no-scrollbar pb-4 px-2 -mx-4 sm:mx-0 flex-nowrap sm:flex-wrap">
-                        {STAT_FIELDS[sport].map(field => (
+                        {(STAT_FIELDS[sport as keyof typeof STAT_FIELDS] || []).map(field => (
                             <button
                                 key={field.key}
                                 onClick={() => setActiveFilter(field.key)}

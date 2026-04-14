@@ -99,7 +99,7 @@ export default function AdminLayout({
     return (
         <div className="min-h-screen bg-black text-white font-montserrat">
             <header className="bg-[#1e1e1e] border-b border-white/10 py-5 px-6 sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
+                <div className="max-w-none mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <img src="/east-logo-transparent.png" alt="EAST Logo" className="h-14 w-auto object-contain" />
                         <div className="bg-[#28D160] text-black text-[10px] font-bold px-2 py-1 rounded uppercase">
@@ -126,7 +126,7 @@ export default function AdminLayout({
                     </div>
                 </div>
             </header>
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full overflow-x-hidden">
+            <main className="max-w-none mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full overflow-x-hidden">
                 {children}
             </main>
         </div>

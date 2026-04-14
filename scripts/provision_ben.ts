@@ -74,6 +74,8 @@ async function run() {
   await provisionBen('PRODUCTION', '.env.production');
   console.log('');
   await provisionBen('STAGING', '.env.staging');
+  console.log('');
+  await provisionBen('TEST', '.env.test.latest');
   console.log(`\n--- Done ---`);
   console.log(`Email:    ${BEN_EMAIL}`);
   console.log(`Password: ${BEN_PASSWORD}`);

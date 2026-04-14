@@ -101,6 +101,10 @@ export async function DELETE(request: Request) {
         // Get name for audit
         const { data: service } = await supabase.from('session_types').select('title').eq('id', id).single();
 
+        // TICKET #12: Clear out all calendar entries when a service is deleted
+        const { error: sessionsError } = await supabase.from('sessions').delete().eq('session_type_id', id);
+        if (sessionsError) console.error("Failed to clean up associated sessions:", sessionsError);
+
         const { error } = await supabase.from('session_types').delete().eq('id', id);
         if (error) throw error;
 
