@@ -41,8 +41,8 @@ export default function LeaderboardPage() {
     const [sport, setSport] = useState<'HOCKEY' | 'GOLF' | 'HYROX' | 'EAGL'>('GOLF');
     const [activeFilter, setActiveFilter] = useState<string>('handicap');
     const [activeDivision, setActiveDivision] = useState<string>('All');
-    const [activeSeason, setActiveSeason] = useState<number>(1);
-    const [activeWeek, setActiveWeek] = useState<number>(1);
+    const [activeSeason, setActiveSeason] = useState<number | 'All'>(1);
+    const [activeWeek, setActiveWeek] = useState<number | 'All'>(1);
     const [entries, setEntries] = useState<any[]>([]);
     const [currentUserStats, setCurrentUserStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -107,8 +107,12 @@ export default function LeaderboardPage() {
                 query = query.eq('stats->>division', activeDivision);
             }
             if (sport === 'EAGL') {
-                query = query.eq('stats->>season', activeSeason.toString());
-                query = query.eq('stats->>week', activeWeek.toString());
+                if (activeSeason !== 'All') {
+                    query = query.eq('stats->>season', activeSeason.toString());
+                }
+                if (activeWeek !== 'All') {
+                    query = query.eq('stats->>week', activeWeek.toString());
+                }
             }
 
             const { data, error } = await query;
@@ -261,7 +265,7 @@ export default function LeaderboardPage() {
                                             <span className="text-[9px] font-black text-gray-500 uppercase">S</span>
                                             <select 
                                                 value={activeSeason}
-                                                onChange={(e) => setActiveSeason(e.target.value === 'All' ? ('All' as any) : parseInt(e.target.value))}
+                                                onChange={(e) => setActiveSeason(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
                                                 className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none appearance-none pr-6 cursor-pointer text-center w-12"
                                             >
                                                 <option value="All">All</option>
@@ -274,7 +278,7 @@ export default function LeaderboardPage() {
                                             <span className="text-[9px] font-black text-gray-500 uppercase">W</span>
                                             <select 
                                                 value={activeWeek}
-                                                onChange={(e) => setActiveWeek(e.target.value === 'All' ? ('All' as any) : parseInt(e.target.value))}
+                                                onChange={(e) => setActiveWeek(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
                                                 className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none appearance-none pr-6 cursor-pointer text-center w-12"
                                             >
                                                 <option value="All">All</option>
