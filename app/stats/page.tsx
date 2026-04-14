@@ -26,11 +26,13 @@ const STAT_FIELDS = {
     ],
     hockey: [
         { key: 'react_targets', label: 'React Targets' },
-        { key: 'classic_targets', label: 'Classic Targets' }
+        { key: 'classic_targets', label: 'Classic Targets' },
+        { key: 'total_pucks_shot', label: 'Total Pucks Shot' }
     ],
     HOCKEY: [
         { key: 'react_targets', label: 'React Targets' },
-        { key: 'classic_targets', label: 'Classic Targets' }
+        { key: 'classic_targets', label: 'Classic Targets' },
+        { key: 'total_pucks_shot', label: 'Total Pucks Shot' }
     ],
     EAGL: [
         { key: 'score', label: 'League Score' }
