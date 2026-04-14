@@ -43,8 +43,8 @@ export default function LeaderboardPage() {
     const [sport, setSport] = useState<'HOCKEY' | 'GOLF' | 'HYROX' | 'EAGL'>('GOLF');
     const [activeFilter, setActiveFilter] = useState<string>('handicap');
     const [activeDivision, setActiveDivision] = useState<string>('All');
-    const [activeSeason, setActiveSeason] = useState<number | 'All'>(1);
-    const [activeWeek, setActiveWeek] = useState<number | 'All'>(1);
+    const [activeSeason, setActiveSeason] = useState<number | 'All'>('All');
+    const [activeWeek, setActiveWeek] = useState<number | 'All'>('All');
     const [entries, setEntries] = useState<any[]>([]);
     const [currentUserStats, setCurrentUserStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
