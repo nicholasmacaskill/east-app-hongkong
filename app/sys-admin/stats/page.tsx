@@ -119,23 +119,30 @@ export default function StatsManagementPage() {
         setIsSaving(true);
 
         const payload = {
-            player_id: selectedPlayer.id,
+            playerId: selectedPlayer.id,
             category: selectedSport.toUpperCase(),
             stats: stats,
-            verified: true,
-            updated_at: new Date().toISOString()
+            verified: true
         };
 
-        const { error } = await supabase
-            .from('players_stats')
-            .upsert(payload, { onConflict: 'player_id,category' });
+        try {
+            const res = await fetch('/api/admin/player-stats', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-        setIsSaving(false);
-        if (error) {
-            addToast('Error saving stats: ' + error.message, 'error');
-        } else {
-            setLastSaved(formatHK(new Date(), 'h:mm:ss a'));
-            addToast('Stats saved successfully!', 'success');
+            setIsSaving(false);
+            if (!res.ok) {
+                const data = await res.json();
+                addToast('Error saving stats: ' + (data.error || res.statusText), 'error');
+            } else {
+                setLastSaved(formatHK(new Date(), 'h:mm:ss a'));
+                addToast('Stats saved successfully!', 'success');
+            }
+        } catch (err: any) {
+            setIsSaving(false);
+            addToast('Error saving stats: ' + err.message, 'error');
         }
     };
 

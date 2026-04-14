@@ -26,6 +26,8 @@ export async function POST(request: Request) {
                 .from('players_stats')
                 .update({
                     stats: stats,
+                    verified: true,
+                    is_verified: true,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', existing.id);
@@ -39,7 +41,8 @@ export async function POST(request: Request) {
                     player_id: playerId,
                     category: category,
                     stats: stats,
-                    verified: false
+                    verified: true,
+                    is_verified: true
                 });
 
             if (error) throw error;
