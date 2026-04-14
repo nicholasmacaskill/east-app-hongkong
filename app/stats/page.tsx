@@ -257,25 +257,29 @@ export default function LeaderboardPage() {
                                 {sport === 'EAGL' && (
                                     <>
                                         {/* Season Input */}
-                                        <div className="flex bg-black border border-white/20 rounded-full px-4 py-1.5 hover:border-east-light transition-all items-center gap-2">
+                                        <div className="relative inline-block border border-white/20 rounded-full px-4 py-1.5 bg-black hover:border-east-light transition-all flex items-center gap-2">
                                             <span className="text-[9px] font-black text-gray-500 uppercase">S</span>
-                                            <input 
-                                                type="number"
+                                            <select 
                                                 value={activeSeason}
-                                                onChange={(e) => setActiveSeason(parseInt(e.target.value) || 1)}
-                                                className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none w-10 text-center"
-                                            />
+                                                onChange={(e) => setActiveSeason(e.target.value === 'All' ? ('All' as any) : parseInt(e.target.value))}
+                                                className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none appearance-none pr-6 cursor-pointer text-center w-12"
+                                            >
+                                                <option value="All">All</option>
+                                                {[1, 2, 3, 4, 5].map(v => <option key={v} value={v}>{v}</option>)}
+                                            </select>
                                         </div>
 
                                         {/* Week Input */}
-                                        <div className="flex bg-black border border-white/20 rounded-full px-4 py-1.5 hover:border-east-light transition-all items-center gap-2">
+                                        <div className="relative inline-block border border-white/20 rounded-full px-4 py-1.5 bg-black hover:border-east-light transition-all flex items-center gap-2">
                                             <span className="text-[9px] font-black text-gray-500 uppercase">W</span>
-                                            <input 
-                                                type="number"
+                                            <select 
                                                 value={activeWeek}
-                                                onChange={(e) => setActiveWeek(parseInt(e.target.value) || 1)}
-                                                className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none w-10 text-center"
-                                            />
+                                                onChange={(e) => setActiveWeek(e.target.value === 'All' ? ('All' as any) : parseInt(e.target.value))}
+                                                className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none appearance-none pr-6 cursor-pointer text-center w-12"
+                                            >
+                                                <option value="All">All</option>
+                                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(v => <option key={v} value={v}>{v}</option>)}
+                                            </select>
                                         </div>
                                     </>
                                 )}
