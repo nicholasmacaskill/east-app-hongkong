@@ -21,9 +21,10 @@ const renderDetailsSummary = (log: any) => {
     }
 
     if (log.action === 'CREDIT_ADJUSTMENT' || log.action === 'UPDATE_CREDITS') {
-        const { amount, newCredits } = log.details || {};
+        const { amount, newCredits, description } = log.details || {};
         const verb = amount > 0 ? 'added' : 'removed';
-        return `Admin ${adminName || 'Unknown'} ${verb} ${Math.abs(amount)} credits to ${targetName || 'user'} (New: ${newCredits})`;
+        const reasonStr = description ? ` [Reason: ${description}]` : '';
+        return `Admin ${adminName || 'Unknown'} ${verb} ${Math.abs(amount)} credits to ${targetName || 'user'} (New: ${newCredits})${reasonStr}`;
     }
 
     if (log.action === 'ANNOUNCEMENT_CREATED' && log.target_type === 'service') {
