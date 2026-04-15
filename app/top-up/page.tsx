@@ -17,34 +17,39 @@ export default function TopUpPage() {
         {
             id: getStripePriceId('TOPUP_STARTER'),
             credits: 500,
+            bonus: 0,
             price: 'HKD $500',
             label: 'Starter',
             color: 'bg-gray-800'
         },
         {
             id: getStripePriceId('TOPUP_STANDARD'),
-            credits: 1000,
+            credits: 1200,
+            bonus: 200,
             price: 'HKD $1,000',
             label: 'Standard',
             color: 'bg-gray-800'
         },
         {
             id: getStripePriceId('TOPUP_PRO'),
-            credits: 2500,
+            credits: 3000,
+            bonus: 500,
             price: 'HKD $2,500',
             label: 'Pro',
             color: 'bg-east-blue/20 border-east-blue'
         },
         {
             id: getStripePriceId('TOPUP_ELITE'),
-            credits: 5000,
+            credits: 6000,
+            bonus: 1000,
             price: 'HKD $5,000',
             label: 'Elite',
             color: 'bg-gray-800'
         },
         {
             id: getStripePriceId('TOPUP_ULTIMATE'),
-            credits: 10000,
+            credits: 12000,
+            bonus: 2000,
             price: 'HKD $10,000',
             label: 'Ultimate',
             color: 'bg-east-light text-black',
@@ -111,7 +116,6 @@ export default function TopUpPage() {
                     >
                         <div className="flex justify-between items-start mb-4">
                             <div>
-
                                 <div className="flex items-baseline gap-1">
                                     <span className={`font-montserrat font-black text-4xl italic tracking-tighter ${opt.highlight ? 'text-black' : 'text-white'}`}>
                                         {opt.credits.toLocaleString()}
@@ -120,6 +124,12 @@ export default function TopUpPage() {
                                         CREDITS
                                     </span>
                                 </div>
+                                {opt.bonus > 0 && (
+                                    <div className={`mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${opt.highlight ? 'bg-black/15 text-black' : 'bg-east-light/10 text-east-light'}`}>
+                                        <span>⚡</span>
+                                        <span>+{opt.bonus.toLocaleString()} Free Bonus</span>
+                                    </div>
+                                )}
                             </div>
                             {opt.highlight && (
                                 <div className="bg-black text-east-light p-2 rounded-full">
