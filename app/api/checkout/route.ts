@@ -40,11 +40,11 @@ export async function POST(request: Request) {
     // We can still use a map for internal credit logic if needed, 
     // or just pass it from the frontend.
     const TOPUP_MAP: Record<string, number> = {
-      [getStripePriceId('TOPUP_STARTER')]: 500,
-      [getStripePriceId('TOPUP_STANDARD')]: 1000,
-      [getStripePriceId('TOPUP_PRO')]: 2500,
-      [getStripePriceId('TOPUP_ELITE')]: 5000,
-      [getStripePriceId('TOPUP_ULTIMATE')]: 10000,
+      [getStripePriceId('TOPUP_STARTER')]: 500,     // HKD $500   → 500 credits  (no bonus)
+      [getStripePriceId('TOPUP_STANDARD')]: 1200,   // HKD $1,000 → 1,200 credits (+200 bonus)
+      [getStripePriceId('TOPUP_PRO')]: 3000,        // HKD $2,500 → 3,000 credits (+500 bonus)
+      [getStripePriceId('TOPUP_ELITE')]: 6000,      // HKD $5,000 → 6,000 credits (+1,000 bonus)
+      [getStripePriceId('TOPUP_ULTIMATE')]: 12000,  // HKD $10,000 → 12,000 credits (+2,000 bonus)
       [getStripePriceId('TOPUP')]: 1200
     };
 

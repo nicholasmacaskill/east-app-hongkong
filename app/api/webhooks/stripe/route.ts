@@ -4,14 +4,11 @@ import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from '@/app/lib/email';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
-import { checkRateLimit, paymentRateLimit, getClientIdentifier } from '@/app/lib/rateLimit';
-
-// 1. Setup Stripe
-// 1. Setup Stripe
-import { getStripeSecretKey, getStripeWebhookSecret, getStripePriceId } from '@/app/lib/stripe-config';
 
 // 1. Setup Stripe
 // Webhook secrets and Stripe clients are resolved dynamically in the handler
+import { getStripeSecretKey, getStripeWebhookSecret, getStripePriceId } from '@/app/lib/stripe-config';
+
 
 // 2. Setup Supabase Admin (Bypass RLS)
 // Initialize Admin Client lazily inside handler
@@ -48,12 +45,10 @@ populatePlanDetails();
 
 export async function POST(request: Request) {
     try {
-        // 0. Check Rate Limit
-        const identifier = getClientIdentifier(request);
-        const rateLimitResult = await checkRateLimit(identifier, paymentRateLimit);
-        if (!rateLimitResult.success) {
-            return rateLimitResult.response;
-        }
+        // NOTE: Rate limiting deliberately omitted from this endpoint.
+        // Stripe webhooks are authenticated via HMAC signature below.
+        // Applying rate limiting here causes Stripe retries to receive 429s,
+        // which Stripe treats as failures and will disable the webhook endpoint.
 
         const body = await request.text();
 
