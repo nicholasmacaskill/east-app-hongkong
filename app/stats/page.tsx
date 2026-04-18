@@ -25,12 +25,12 @@ const STAT_FIELDS = {
         { key: 'wall_balls_100', label: 'Wall Balls' }
     ],
     hockey: [
-        { key: 'react_targets', label: 'React Targets' },
+        { key: 'react_targets', label: 'React Targets (mm:ss.ms)' },
         { key: 'classic_targets', label: 'Classic Targets' },
         { key: 'total_pucks_shot', label: 'Total Pucks Shot' }
     ],
     HOCKEY: [
-        { key: 'react_targets', label: 'React Targets' },
+        { key: 'react_targets', label: 'React Targets (mm:ss.ms)' },
         { key: 'classic_targets', label: 'Classic Targets' },
         { key: 'total_pucks_shot', label: 'Total Pucks Shot' }
     ],
@@ -183,8 +183,11 @@ export default function LeaderboardPage() {
 
     const timeToSeconds = (time: string): number => {
         if (!time || !time.includes(':')) return 999999;
-        const [mins, secs] = time.split(':').map(Number);
-        return (mins * 60) + secs;
+        const [minPart, secPart] = time.split(':');
+        const mins = parseInt(minPart) || 0;
+        // Handle optional milliseconds: ss or ss.ms
+        const [secs, ms] = (secPart || '0').split('.');
+        return (mins * 60) + (parseInt(secs) || 0) + ((parseInt(ms) || 0) / 1000);
     };
 
     return (

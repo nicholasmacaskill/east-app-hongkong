@@ -26,7 +26,7 @@ const STAT_FIELDS: Record<string, any[]> = {
         { key: 'wall_balls_100', label: 'Wall Balls: 100 reps', type: 'time', unit: 'mm:ss' }
     ],
     HOCKEY: [
-        { key: 'react_targets', label: 'React Targets', type: 'time', unit: 'mm:ss' },
+        { key: 'react_targets', label: 'React Targets', type: 'time-ms', unit: 'mm:ss.ms' },
         { key: 'classic_targets', label: 'Classic Targets', type: 'number', unit: '' },
         { key: 'total_pucks_shot', label: 'Total Pucks Shot', type: 'number', unit: '' }
     ],
@@ -107,9 +107,14 @@ export default function StatsManagementPage() {
         fetchStats();
     }, [selectedPlayer, selectedSport]);
 
-    // Validate time format (mm:ss)
-    const isValidTime = (time: string): boolean => {
+    // Validate time format (mm:ss or mm:ss.ms)
+    const isValidTime = (time: string, withMs = false): boolean => {
         if (!time || time === '') return true; // Allow empty
+        if (withMs) {
+            // Accepts mm:ss.ms e.g. 03:45.250 or 03:45.25
+            const timeRegex = /^([0-5]?[0-9]):([0-5][0-9])(\.\d{1,3})?$/;
+            return timeRegex.test(time);
+        }
         const timeRegex = /^([0-5]?[0-9]):([0-5][0-9])$/;
         return timeRegex.test(time);
     };
@@ -119,11 +124,13 @@ export default function StatsManagementPage() {
 
         // Validate all time fields
         const fields = STAT_FIELDS[selectedSport as keyof typeof STAT_FIELDS] || [];
-        const timeFields = fields.filter((f: any) => f.type === 'time');
+        const timeFields = fields.filter((f: any) => f.type === 'time' || f.type === 'time-ms');
         for (const field of timeFields) {
             const value = stats[field.key];
-            if (value && !isValidTime(value)) {
-                addToast(`Invalid time format for ${field.label}. Use mm:ss (e.g., 05:30)`, 'error');
+            const withMs = field.type === 'time-ms';
+            if (value && !isValidTime(value, withMs)) {
+                const example = withMs ? '03:45.250' : '05:30';
+                addToast(`Invalid time format for ${field.label}. Use ${field.unit} (e.g., ${example})`, 'error');
                 return;
             }
         }
@@ -255,11 +262,11 @@ export default function StatsManagementPage() {
                                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">
                                             {field.label} {field.unit && `(${field.unit})`}
                                         </label>
-                                        {field.type === 'time' ? (
+                                        {(field.type === 'time' || field.type === 'time-ms') ? (
                                             <input
                                                 type="text"
-                                                placeholder="mm:ss"
-                                                pattern="[0-9]{2}:[0-9]{2}"
+                                                placeholder={field.type === 'time-ms' ? 'mm:ss.ms' : 'mm:ss'}
+                                                pattern={field.type === 'time-ms' ? '[0-9]{2}:[0-9]{2}\\.[0-9]{1,3}' : '[0-9]{2}:[0-9]{2}'}
                                                 value={stats[field.key] || ''}
                                                 onChange={e => updateStat(field.key, e.target.value, 'text')}
                                                 className="w-full bg-black border border-white/20 p-3 rounded-lg text-xl font-black text-center focus:border-east-light outline-none"
