@@ -31,7 +31,7 @@ const STAT_FIELDS: Record<string, any[]> = {
     { key: 'wall_balls_100', label: 'Wall Balls: 100 reps', type: 'time', unit: 'mm:ss' }
   ],
   HOCKEY: [
-    { key: 'react_targets', label: 'React Targets', type: 'time', unit: 'mm:ss' },
+    { key: 'react_targets', label: 'React Targets', type: 'time', unit: 'mm:ss.ms' },
     { key: 'classic_targets', label: 'Classic Targets', type: 'number', unit: '' },
     { key: 'total_pucks_shot', label: 'Total Pucks Shot', type: 'number', unit: '' }
   ],
