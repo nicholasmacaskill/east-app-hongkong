@@ -9,6 +9,12 @@ const renderDetailsSummary = (log: any) => {
     const { adminName, targetName } = log.details || {};
 
     if (log.action === 'UPDATE_PLAYER' || log.action === 'UPDATE_COACH') {
+        const { creditDelta, creditNote } = log.details || {};
+        if (creditDelta !== undefined && creditDelta !== 0) {
+            const verb = creditDelta > 0 ? 'added' : 'deducted';
+            const reasonStr = creditNote ? ` — Reason: "${creditNote}"` : ' — No reason provided';
+            return `Admin ${adminName || 'Unknown'} ${verb} ${Math.abs(creditDelta)} credits ${creditDelta > 0 ? 'to' : 'from'} ${targetName || 'user'}${reasonStr}`;
+        }
         return `Admin ${adminName || 'Unknown'} updated ${targetName || 'user'}`;
     }
 

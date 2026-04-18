@@ -108,20 +108,19 @@ export async function POST(request: Request) {
         if (membershipExpires !== undefined) profileUpdates.membership_expires = membershipExpires;
         if (accountStatus !== undefined) profileUpdates.account_status = accountStatus;
         if (avatarUrl !== undefined) profileUpdates.avatar_url = avatarUrl;
+        // DETECT CREDIT CHANGE FOR TRANSACTION + AUDIT LOGGING
+        let creditDelta = 0;
+        if (credits !== undefined) {
+            const { data: oldProfile } = await supabaseAdmin
+                .from('profiles')
+                .select('credits')
+                .eq('id', userId)
+                .single();
+            const initialCredits = oldProfile?.credits || 0;
+            creditDelta = credits - initialCredits;
+        }
 
         if (Object.keys(profileUpdates).length > 0) {
-            // DETECT CREDIT CHANGE FOR TRANSACTION LOGGING
-            let creditDelta = 0;
-            let initialCredits = 0;
-            if (credits !== undefined) {
-                const { data: oldProfile } = await supabaseAdmin
-                    .from('profiles')
-                    .select('credits')
-                    .eq('id', userId)
-                    .single();
-                initialCredits = oldProfile?.credits || 0;
-                creditDelta = credits - initialCredits;
-            }
 
             const { error: profileError } = await supabaseAdmin
                 .from('profiles')
@@ -188,7 +187,9 @@ export async function POST(request: Request) {
                 userId,
                 {
                     authUpdates: safeAuthUpdates,
-                    profileUpdates: profileUpdates
+                    profileUpdates: profileUpdates,
+                    creditDelta: creditDelta !== 0 ? creditDelta : undefined,
+                    creditNote: creditDelta !== 0 ? (creditNote || 'No reason provided') : undefined
                 },
                 adminName,
                 targetName
