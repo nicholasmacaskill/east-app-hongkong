@@ -24,24 +24,24 @@ export default function TopUpPage() {
         },
         {
             id: getStripePriceId('TOPUP_STANDARD'),
-            credits: 1200,
-            bonus: 200,
+            credits: 1050,
+            bonus: 50,
             price: 'HKD $1,000',
             label: 'Standard',
             color: 'bg-gray-800'
         },
         {
             id: getStripePriceId('TOPUP_PRO'),
-            credits: 3000,
-            bonus: 500,
+            credits: 2750,
+            bonus: 250,
             price: 'HKD $2,500',
             label: 'Pro',
             color: 'bg-east-blue/20 border-east-blue'
         },
         {
             id: getStripePriceId('TOPUP_ELITE'),
-            credits: 6000,
-            bonus: 1000,
+            credits: 5750,
+            bonus: 750,
             price: 'HKD $5,000',
             label: 'Elite',
             color: 'bg-gray-800'

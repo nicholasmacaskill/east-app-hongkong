@@ -41,11 +41,11 @@ export async function POST(request: Request) {
     // or just pass it from the frontend.
     const TOPUP_MAP: Record<string, number> = {
       [getStripePriceId('TOPUP_STARTER')]: 500,     // HKD $500   → 500 credits  (no bonus)
-      [getStripePriceId('TOPUP_STANDARD')]: 1200,   // HKD $1,000 → 1,200 credits (+200 bonus)
-      [getStripePriceId('TOPUP_PRO')]: 3000,        // HKD $2,500 → 3,000 credits (+500 bonus)
-      [getStripePriceId('TOPUP_ELITE')]: 6000,      // HKD $5,000 → 6,000 credits (+1,000 bonus)
+      [getStripePriceId('TOPUP_STANDARD')]: 1050,   // HKD $1,000 → 1,050 credits (+50 bonus)
+      [getStripePriceId('TOPUP_PRO')]: 2750,        // HKD $2,500 → 2,750 credits (+250 bonus)
+      [getStripePriceId('TOPUP_ELITE')]: 5750,      // HKD $5,000 → 5,750 credits (+750 bonus)
       [getStripePriceId('TOPUP_ULTIMATE')]: 12000,  // HKD $10,000 → 12,000 credits (+2,000 bonus)
-      [getStripePriceId('TOPUP')]: 1200
+      [getStripePriceId('TOPUP')]: 1050
     };
 
     const topUpAmount = TOPUP_MAP[priceId] || 0;
