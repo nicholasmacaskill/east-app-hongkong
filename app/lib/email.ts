@@ -6,14 +6,15 @@ import { getSupabaseAdmin } from './supabaseAdmin';
 // const resend = new Resend(process.env.RESEND_API_KEY); (Lazy init below)
 
 // Helper for Base URL to prevent malformed links
-// Force app.eastsportsgroup.com if the environment variable still points to the old dynamic-events domain
-const envBaseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-export const BASE_URL = envBaseUrl?.includes('dynamic-events') 
-  ? 'https://app.eastsportsgroup.com' 
-  : (envBaseUrl || 'https://app.eastsportsgroup.com');
+// Trim whitespace to avoid broken links from env var mismatches (e.g. accidental newlines)
+const envBaseUrl = process.env.NEXT_PUBLIC_BASE_URL?.trim();
 
-if (!process.env.NEXT_PUBLIC_BASE_URL || envBaseUrl?.includes('dynamic-events')) {
-  console.warn('⚠️ Base URL overridden to https://app.eastsportsgroup.com');
+export const BASE_URL = envBaseUrl?.includes('dynamic-events') || !envBaseUrl
+  ? 'https://app.eastsportsgroup.com' 
+  : envBaseUrl;
+
+if (!envBaseUrl || envBaseUrl.includes('dynamic-events')) {
+  console.warn(`⚠️ Base URL resolved to ${BASE_URL} (Check NEXT_PUBLIC_BASE_URL in Vercel)`);
 }
 
 interface EmailParams {

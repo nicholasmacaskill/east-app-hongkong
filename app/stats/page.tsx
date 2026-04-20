@@ -170,8 +170,8 @@ export default function LeaderboardPage() {
                 setCurrentUserStats(null);
             }
 
-            // Set visible entries (top 10)
-            setEntries(sorted.slice(0, 10));
+            // Set visible entries (top 100)
+            setEntries(sorted.slice(0, 100));
         } catch (error) {
             console.error('Failed to fetch leaderboard:', error);
             setEntries([]);
@@ -380,8 +380,8 @@ export default function LeaderboardPage() {
                                     </div>
                                 ))}
 
-                                {/* Personal Stats Section (if not in top 10) */}
-                                {currentUserStats && currentUserStats.rank > 10 && (
+                                {/* Personal Stats Section (if not in top 100) */}
+                                {currentUserStats && currentUserStats.rank > 100 && (
                                     <>
                                         <div className="flex items-center gap-4 py-4">
                                             <div className="flex-1 h-px bg-white/10" />
