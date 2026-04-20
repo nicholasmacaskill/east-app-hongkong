@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Footer from '../components/Footer';
 import type { IDetectedBarcode } from '@yudiel/react-qr-scanner';
@@ -20,33 +20,73 @@ const QrScanner = dynamic(
   }
 );
 
+interface MemberProfile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  credits: number;
+}
+
+interface PaymentRequest {
+  amount: number;
+  reason: string;
+  data: any;
+}
+
+interface ChargeRequest {
+  targetUserId: string;
+  member: MemberProfile;
+}
+
 export default function CheckIn() {
   const [activeTab, setActiveTab] = useState('check-in');
   const [scanned, setScanned] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [paymentRequest, setPaymentRequest] = useState<{ amount: number, reason: string, data: any } | null>(null);
-  const [lastScanMessage, setLastScanMessage] = useState("");
+  const [paymentRequest, setPaymentRequest] = useState<PaymentRequest | null>(null);
+  const [chargeRequest, setChargeRequest] = useState<ChargeRequest | null>(null);
+  const [chargeAmount, setChargeAmount] = useState<number>(10);
+  const [chargeReason, setChargeReason] = useState<string>('Admin QR Charge');
+  const [lastScanMessage, setLastScanMessage] = useState('');
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+
+  // Fetch current user's role on mount to know if admin flow is available
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.role) setCurrentUserRole(data.role);
+        });
+    });
+  }, []);
 
   // Expose for automated testing
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      (window as any).simulateScan = (val: string) => handleScan([{
-        rawValue: val,
-        format: 'qr_code',
-        cornerPoints: [] as any
-      } as any]);
+      (window as any).simulateScan = (val: string) =>
+        handleScan([
+          {
+            rawValue: val,
+            format: 'qr_code',
+            cornerPoints: [] as any,
+          } as any,
+        ]);
     }
   }, []);
 
-  // Helper to get current User ID (mocked or from Supabase auth if we were inside a component that fetched it)
-  // For client-side safety, we should ideally fetch the user here.
-  // BUT the API endpoints will need the USER ID. 
-  // Let's assume we can get it from supabase.auth.getUser() inside the handler.
-  const { supabase } = require('@/app/lib/supabase'); // Or import at top
+  const getAuthToken = async (): Promise<string | null> => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token ?? null;
+  };
 
-  const handleScan = async (detectedCodes: IDetectedBarcode[]) => {
-    if (processing || scanned || paymentRequest) return; // Prevent double scan
+  const handleScan = useCallback(async (detectedCodes: IDetectedBarcode[]) => {
+    if (processing || scanned || paymentRequest || chargeRequest) return;
 
     if (detectedCodes && detectedCodes.length > 0) {
       const raw = detectedCodes[0].rawValue;
@@ -59,17 +99,25 @@ export default function CheckIn() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-          setError("You must be logged in.");
+          setError('You must be logged in.');
           return;
         }
 
-        // 1. CHECK-IN
+        // ── 1. GYM CHECK-IN QR ──────────────────────────────────
         if (payload.type === 'check-in') {
           setProcessing(true);
+          const token = await getAuthToken();
           const res = await fetch('/api/check-in', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id, locationId: payload.location, timestamp: payload.timestamp })
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              userId: user.id,
+              locationId: payload.location,
+              timestamp: payload.timestamp,
+            }),
           });
           const data = await res.json();
           setProcessing(false);
@@ -78,48 +126,85 @@ export default function CheckIn() {
             setLastScanMessage(`Checked in at ${payload.location}`);
             setScanned(true);
           } else {
-            setError(data.error || "Check-In failed");
+            setError(data.error || 'Check-In failed');
           }
         }
 
-        // 2. PAYMENT
+        // ── 2. PAYMENT QR (gym-generated, member self-pays) ─────
         else if (payload.type === 'pay') {
-          // Pause scanner, show modal
           setPaymentRequest({
             amount: payload.amount,
             reason: payload.reason,
-            data: payload // Keep raw payload for the confirmation step
+            data: payload,
+          });
+        }
+
+        // ── 3. MEMBER WALLET QR (admin charges a member) ────────
+        else if (payload.type === 'athlete_wallet') {
+          const isAdmin =
+            currentUserRole === 'sys-admin' || currentUserRole === 'admin';
+
+          if (!isAdmin) {
+            setError('Only admins can scan member wallet QR codes.');
+            return;
+          }
+
+          setProcessing(true);
+
+          // Look up the member so we can show their name + balance in the modal
+          const { data: memberProfile, error: profileErr } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, avatar_url, credits')
+            .eq('id', payload.userId)
+            .single();
+
+          setProcessing(false);
+
+          if (profileErr || !memberProfile) {
+            setError('Member not found. QR may be invalid.');
+            return;
+          }
+
+          setChargeAmount(10);
+          setChargeReason('Admin QR Charge');
+          setChargeRequest({
+            targetUserId: payload.userId,
+            member: memberProfile as MemberProfile,
           });
         }
 
         else {
-          setError("Unknown QR Code type.");
+          setError('Unknown QR Code type.');
         }
-
       } catch (e) {
-        console.error("Parse error", e);
-        setError("Invalid QR Code format.");
+        console.error('Parse error', e);
+        setError('Invalid QR Code format.');
       }
     }
-  };
+  }, [processing, scanned, paymentRequest, chargeRequest, currentUserRole]);
 
+  // ── CONFIRM PAYMENT (member self-pays via gym QR) ──────────────
   const confirmPayment = async () => {
     if (!paymentRequest) return;
     setProcessing(true);
-    setPaymentRequest(null); // Hide modal
+    setPaymentRequest(null);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not logged in");
+      if (!user) throw new Error('Not logged in');
+      const token = await getAuthToken();
 
       const res = await fetch('/api/sessions/pay-via-qr', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           userId: user.id,
           amount: paymentRequest.amount,
-          reason: paymentRequest.reason
-        })
+          reason: paymentRequest.reason,
+        }),
       });
       const data = await res.json();
 
@@ -127,19 +212,70 @@ export default function CheckIn() {
         setLastScanMessage(`Paid ${paymentRequest.amount} credits.`);
         setScanned(true);
       } else {
-        setError(data.error || "Payment failed");
+        setError(data.error || 'Payment failed');
       }
     } catch (e: any) {
-      setError(e.message || "Payment Error");
+      setError(e.message || 'Payment Error');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // ── CONFIRM CHARGE (admin charges a member) ─────────────────────
+  const confirmCharge = async () => {
+    if (!chargeRequest) return;
+    if (!chargeAmount || chargeAmount <= 0) {
+      setError('Enter a valid amount to charge.');
+      return;
+    }
+
+    setProcessing(true);
+    const pendingCharge = chargeRequest;
+    setChargeRequest(null);
+
+    try {
+      const token = await getAuthToken();
+
+      const res = await fetch('/api/admin/charge-via-qr', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          targetUserId: pendingCharge.targetUserId,
+          amount: chargeAmount,
+          reason: chargeReason || 'Admin QR Charge',
+        }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        const name = `${pendingCharge.member.first_name || ''} ${pendingCharge.member.last_name || ''}`.trim();
+        setLastScanMessage(
+          `Charged ${chargeAmount} credits from ${name || 'member'}. New balance: ${data.newBalance}`
+        );
+        setScanned(true);
+      } else {
+        setError(data.error || 'Charge failed');
+      }
+    } catch (e: any) {
+      setError(e.message || 'Charge Error');
     } finally {
       setProcessing(false);
     }
   };
 
   const handleError = (err: unknown) => {
-    const message = err instanceof Error ? err.message : String(err);
-    // Ignore some common camera noise errors if needed, but log them
     console.error(err);
+  };
+
+  const resetScanner = () => {
+    setScanned(false);
+    setError(null);
+    setPaymentRequest(null);
+    setChargeRequest(null);
+    setLastScanMessage('');
   };
 
   return (
@@ -151,7 +287,8 @@ export default function CheckIn() {
           <h2 className="text-2xl font-bold mb-6 text-center">Check-In / Pay</h2>
 
           <div className="qr-code-wrapper mb-4 bg-white p-4 rounded-lg min-h-[300px] flex items-center justify-center relative">
-            {!scanned && !processing && (
+            {/* Live camera scanner */}
+            {!scanned && !processing && !paymentRequest && !chargeRequest && (
               <div className="w-full max-w-[300px] aspect-square mx-auto relative overflow-hidden rounded-lg">
                 <QrScanner
                   onScan={handleScan}
@@ -162,7 +299,7 @@ export default function CheckIn() {
               </div>
             )}
 
-            {/* Processing State */}
+            {/* Processing Spinner */}
             {processing && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 z-20">
                 <div className="w-12 h-12 border-4 border-[#28D160] border-t-transparent rounded-full animate-spin mb-4" />
@@ -170,7 +307,7 @@ export default function CheckIn() {
               </div>
             )}
 
-            {/* Payment Confirmation Modal */}
+            {/* ── Self-Pay Confirmation Modal ── */}
             {paymentRequest && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-30 p-6 text-center animate-fadeIn">
                 <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-2">Confirm Payment</p>
@@ -186,6 +323,7 @@ export default function CheckIn() {
                     Cancel
                   </button>
                   <button
+                    id="confirm-payment-btn"
                     onClick={confirmPayment}
                     className="flex-1 py-3 bg-[#28D160] rounded-lg text-black font-bold text-xs uppercase hover:shadow-lg"
                   >
@@ -195,14 +333,90 @@ export default function CheckIn() {
               </div>
             )}
 
+            {/* ── Admin: Charge Member Modal ── */}
+            {chargeRequest && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white z-30 p-6 text-center animate-fadeIn overflow-y-auto">
+                {/* Member identity */}
+                <div className="mb-4">
+                  {chargeRequest.member.avatar_url ? (
+                    <img
+                      src={chargeRequest.member.avatar_url}
+                      alt="member"
+                      className="w-14 h-14 rounded-full object-cover mx-auto mb-2 border-2 border-[#28D160]"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-2">
+                      <span className="text-gray-500 text-lg font-black">
+                        {(chargeRequest.member.first_name?.[0] || '?').toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <p className="text-black font-black text-lg">
+                    {chargeRequest.member.first_name} {chargeRequest.member.last_name}
+                  </p>
+                  <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">
+                    Balance: {chargeRequest.member.credits} credits
+                  </p>
+                </div>
+
+                <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-4">Charge Member</p>
+
+                {/* Amount input */}
+                <div className="w-full mb-3 text-left">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    Credits to Charge
+                  </label>
+                  <input
+                    id="charge-amount-input"
+                    type="number"
+                    min={1}
+                    value={chargeAmount}
+                    onChange={(e) => setChargeAmount(Number(e.target.value))}
+                    className="w-full border border-gray-200 rounded-lg p-3 text-black font-black text-2xl text-center focus:outline-none focus:border-[#28D160]"
+                  />
+                </div>
+
+                {/* Reason input */}
+                <div className="w-full mb-6 text-left">
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">
+                    Reason
+                  </label>
+                  <input
+                    id="charge-reason-input"
+                    type="text"
+                    value={chargeReason}
+                    onChange={(e) => setChargeReason(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg p-3 text-black text-sm focus:outline-none focus:border-[#28D160]"
+                    placeholder="e.g. Drop-in session, Equipment hire..."
+                  />
+                </div>
+
+                <div className="flex gap-2 w-full">
+                  <button
+                    onClick={() => { setChargeRequest(null); setScanned(false); }}
+                    className="flex-1 py-3 border border-gray-200 rounded-lg text-black font-bold text-xs uppercase hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    id="confirm-charge-btn"
+                    onClick={confirmCharge}
+                    className="flex-1 py-3 bg-[#28D160] rounded-lg text-black font-bold text-xs uppercase hover:shadow-lg"
+                  >
+                    Charge {chargeAmount} Credits
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Success State */}
-            {scanned && !paymentRequest && !processing && (
+            {scanned && !paymentRequest && !chargeRequest && !processing && (
               <div className="w-full max-w-[300px] aspect-square mx-auto flex flex-col items-center justify-center bg-green-50 rounded-lg animate-fadeIn text-center p-4">
                 <span className="text-6xl mb-4">✅</span>
                 <p className="text-green-800 font-bold text-lg mb-2">Success!</p>
                 <p className="text-green-600 text-sm mb-4">{lastScanMessage}</p>
                 <button
-                  onClick={() => setScanned(false)}
+                  onClick={resetScanner}
                   className="bg-[#28D160] px-6 py-2 rounded-full text-black font-bold text-xs uppercase"
                 >
                   Scan Again
@@ -213,13 +427,16 @@ export default function CheckIn() {
 
           {error && (
             <p className="text-red-500 text-center mb-4 text-xs font-bold bg-red-500/10 p-2 rounded">
-              {error}
+              {error}{' '}
+              <button onClick={() => setError(null)} className="underline ml-1">Dismiss</button>
             </p>
           )}
 
-          {!scanned && !paymentRequest && (
+          {!scanned && !paymentRequest && !chargeRequest && (
             <p className="text-center mb-4 font-bold text-sm uppercase tracking-widest opacity-50">
-              Scan a QR code to check in or pay
+              {currentUserRole === 'sys-admin' || currentUserRole === 'admin'
+                ? 'Scan a member QR to charge, or a gym QR to check in'
+                : 'Scan a QR code to check in or pay'}
             </p>
           )}
         </div>
