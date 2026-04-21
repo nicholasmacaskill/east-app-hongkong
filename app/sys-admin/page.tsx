@@ -114,6 +114,32 @@ export default function AdminDashboard() {
                     </div>
                 </Link>
 
+                {/* Check-In Scanner Card */}
+                <Link href="/check-in" className="group">
+                    <div className="bg-[#1e1e1e] border border-[#28D160]/30 rounded-2xl p-6 hover:bg-[#28D160]/5 transition-colors relative overflow-hidden h-full shadow-[0_0_15px_rgba(40,209,96,0.1)]">
+                        <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-30 transition-opacity">
+                            <QrCode size={120} />
+                        </div>
+
+                        <div className="relative z-10 flex flex-col h-full gap-4">
+                            <div className="w-12 h-12 rounded-full bg-[#28D160] flex items-center justify-center text-black">
+                                <QrCode size={24} />
+                            </div>
+
+                            <div>
+                                <h2 className="text-xl font-black italic uppercase mb-2 text-[#28D160]">Launch Scanner</h2>
+                                <p className="text-gray-400 text-sm leading-relaxed">
+                                    Open the camera to scan athlete wallets for facility entry or to charge their account directly.
+                                </p>
+                            </div>
+
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-black uppercase tracking-wider group-hover:text-white transition-colors">
+                                Open Camera <ArrowRight size={14} />
+                            </div>
+                        </div>
+                    </div>
+                </Link>
+
                 {/* News Management Card */}
                 <Link href="/sys-admin/news" className="group">
                     <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">

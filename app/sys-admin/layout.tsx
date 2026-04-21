@@ -112,7 +112,8 @@ export default function AdminLayout({
                         <div className="hidden md:flex items-center gap-6 mr-6 border-r border-white/10 pr-6">
                             <AdminNavLink href="/sys-admin" icon={Home} label="Dashboard" />
                             <AdminNavLink href="/sys-admin/schedule" icon={Calendar} label="Schedule" />
-                            <AdminNavLink href="/sys-admin/qr" icon={QrCode} label="Check-In" />
+                            <AdminNavLink href="/check-in" icon={QrCode} label="Scanner" />
+                            <AdminNavLink href="/sys-admin/qr" icon={QrCode} label="QR Gen" />
                             <AdminNavLink href="/sys-admin/news" icon={Newspaper} label="News" />
                             <AdminNavLink href="/sys-admin/bookings" icon={CreditCard} label="Booking Logs" />
                             <AdminNavLink href="/sys-admin/audit" icon={Shield} label="Audit Logs" />
@@ -182,11 +183,18 @@ function MobileMenu() {
                             <Calendar size={16} /> Schedule
                         </Link>
                         <Link
+                            href="/check-in"
+                            onClick={() => setIsOpen(false)}
+                            className="px-6 py-4 hover:bg-[#28D160]/10 flex items-center gap-4 text-xs font-black uppercase tracking-wider text-[#28D160] hover:text-[#32e86e] transition-colors"
+                        >
+                            <QrCode size={16} /> Scanner
+                        </Link>
+                        <Link
                             href="/sys-admin/qr"
                             onClick={() => setIsOpen(false)}
                             className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors"
                         >
-                            <QrCode size={16} /> Check-In
+                            <QrCode size={16} /> QR Gen
                         </Link>
                         <Link
                             href="/sys-admin/news"
