@@ -141,6 +141,14 @@ export default function CheckIn() {
       else setError('Unknown QR Code type.');
     } catch (e: any) { 
       console.error("[SCAN] Parse error:", e);
+      // Silently ignore browser-native barcode detection noise.
+      // "The string did not match the expected pattern" is a DOMException thrown
+      // by the browser's BarcodeDetector API when it reads a partial/non-QR frame.
+      // This is normal scanner behaviour and should NOT surface to the user.
+      const msg = e?.message || '';
+      if (msg.includes('did not match the expected pattern') || msg.includes('No MultiFormat Readers')) {
+        return;
+      }
       setError('Invalid QR Code format.'); 
     }
   }, [processing, scanned, paymentRequest, chargeRequest, isAdmin]);
