@@ -24,8 +24,16 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Install Dependencies
+      - name: Install Node Modules
         run: npm install
+
+      - name: 🛡️ Jira Lite Clearance Gate
+        env:
+          LIVE_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          LIVE_SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          node scripts/verify-ticket-clearance.js || exit 1
 
       - name: Build Application
         run: npm run build

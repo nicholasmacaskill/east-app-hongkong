@@ -1,4 +1,8 @@
--- Atomic function for QR payments and credit deductions
+-- Drop all variations to be safe
+DROP FUNCTION IF EXISTS public.deduct_credits(uuid, integer, text);
+DROP FUNCTION IF EXISTS public.deduct_credits(integer, text, uuid);
+
+-- Create the correct function with explicit signature
 CREATE OR REPLACE FUNCTION public.deduct_credits(
     p_user_id uuid,
     p_amount integer,
@@ -12,7 +16,7 @@ DECLARE
     v_current_credits integer;
     v_new_balance integer;
 BEGIN
-    -- 1. Get current credits with lock
+    -- 1. Get current credits with LOCK
     SELECT credits INTO v_current_credits FROM public.profiles WHERE id = p_user_id FOR UPDATE;
     
     IF v_current_credits IS NULL THEN
@@ -27,12 +31,9 @@ BEGIN
     v_new_balance := v_current_credits - p_amount;
     UPDATE public.profiles SET credits = v_new_balance WHERE id = p_user_id;
 
-    -- 3. Log transaction (assumes transactions table exists)
-    -- Check if transactions table exists before inserting
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'transactions') THEN
-        INSERT INTO public.transactions (user_id, amount, type, description)
-        VALUES (p_user_id, -p_amount, 'purchase', p_reason);
-    END IF;
+    -- 3. Log transaction
+    INSERT INTO public.transactions (user_id, amount, type, description)
+    VALUES (p_user_id, -p_amount, 'topup', p_reason);
 
     RETURN json_build_object(
         'success', true, 
@@ -42,6 +43,7 @@ BEGIN
 END;
 $$;
 
--- Permissions
+-- Standard Permissions
 GRANT EXECUTE ON FUNCTION public.deduct_credits(uuid, integer, text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.deduct_credits(uuid, integer, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.deduct_credits(uuid, integer, text) TO anon;

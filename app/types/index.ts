@@ -116,4 +116,15 @@ export interface Availability {
     category?: string;
 }
 
+export interface Transaction {
+    id: string;
+    user_id: string;
+    amount: number;
+    type: 'topup' | 'membership' | 'transfer' | 'booking' | 'refund' | 'purchase' | 'manual' | 'checkin';
+    stripe_session_id?: string;
+    description?: string;
+    created_at?: string;
+    profiles?: UserProfileData;
+}
+
 export type ScheduleItem = Session | Availability;

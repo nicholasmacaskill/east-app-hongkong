@@ -162,11 +162,14 @@ export default function AdminTransactionsPage() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${t.type === 'membership' ? 'bg-blue-500/20 text-blue-400' :
+                                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                            t.type === 'membership' ? 'bg-blue-500/20 text-blue-400' :
                                             t.type === 'manual' ? 'bg-purple-500/20 text-purple-400' :
-                                                t.type === 'refund' ? 'bg-red-500/20 text-red-400' :
-                                                    'bg-green-500/20 text-green-400'
-                                            }`}>
+                                            t.type === 'refund' ? 'bg-red-500/20 text-red-400' :
+                                            t.type === 'purchase' ? 'bg-yellow-500/20 text-yellow-400' :
+                                            t.type === 'checkin' ? 'bg-blue-900/40 text-blue-300' :
+                                            'bg-green-500/20 text-green-400'
+                                        }`}>
                                             {t.type}
                                         </span>
                                     </td>

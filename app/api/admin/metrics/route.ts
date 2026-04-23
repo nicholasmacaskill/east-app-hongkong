@@ -43,19 +43,14 @@ export async function GET(request: Request) {
 
         if (profilesError) throw profilesError;
 
-        // Exclude Admins, Coaches, Test Accounts, and Deleted Users from all calculations
+        // Process all active profiles. We removed the "metric purity filter" because 
+        // Admin accounts should be able to view their own testing and staging data on the dashboard.
         const customerProfiles = profiles.filter(p => {
-            const role = p.role || '';
-            const email = (p.contact_email || '').toLowerCase();
             const status = (p.account_status || '').toLowerCase();
-
-            const isInternalRole = ['admin', 'sys-admin', 'coach'].includes(role);
-            const isTestAccount = email.includes('test') || email.includes('demo') || email.includes('example');
             const isDeleted = status === 'deleted';
-
-            return !isInternalRole && !isTestAccount && !isDeleted;
+            return !isDeleted;
         });
-        console.log(`Fetched ${profiles.length} profiles, ${customerProfiles.length} customer profiles`);
+        console.log(`Fetched ${profiles.length} profiles, ${customerProfiles.length} active (non-deleted) profiles`);
 
         // Fetch Registrations with Sessions
         const { data: registrations, error: registrationsError } = await supabaseAdmin
