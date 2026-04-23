@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User as UserIcon, ShoppingBag, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { User as UserIcon, ShoppingBag, ArrowLeft, CheckCircle2, ScanLine } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
@@ -149,7 +149,7 @@ export default function QRScreen({ credits, currentUserId, subscriptionStatus, a
             );
           })()}
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 mb-2">
             <button
               onClick={() => router.push('/top-up')}
               className="flex-1 bg-east-light text-black font-montserrat font-black italic text-sm py-4 rounded-2xl uppercase tracking-wider shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
@@ -163,6 +163,13 @@ export default function QRScreen({ credits, currentUserId, subscriptionStatus, a
               <ShoppingBag size={16} /> Shop
             </button>
           </div>
+          {/* Scan & Pay — customer scans an admin-displayed Quick Pay QR at the front desk */}
+          <button
+            onClick={() => router.push('/check-in')}
+            className="w-full bg-white border-2 border-black text-black font-montserrat font-black italic text-sm py-3.5 rounded-2xl uppercase tracking-wider hover:bg-black hover:text-white active:scale-95 transition-all flex items-center justify-center gap-2"
+          >
+            <ScanLine size={16} /> Scan &amp; Pay
+          </button>
         </div>
 
         <button
