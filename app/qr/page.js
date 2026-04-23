@@ -1,34 +1,21 @@
 'use client';
-import { useState } from 'react';
-import Header from '../components/Header';
-import Footer from '../components/Footer';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function QRCode() {
-  const [activeTab, setActiveTab] = useState('qr');
+/**
+ * Legacy /qr route — redirects to the Wallet tab on the main app.
+ * Ticket #19: replaced by QRScreen component in the bottom-nav wallet tab.
+ */
+export default function QRRedirect() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/?tab=qr');
+  }, [router]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white">
-      <Header />
-      
-      <main className="flex-1 flex flex-col items-center justify-center p-4">
-        <div className="qr-container text-center">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">BEN MACASKILL</h1>
-            <div className="text-xl mb-4">POINTS: 1510</div>
-            <div className="text-sm">MEMBER SINCE: 10 Dec 2024</div>
-          </div>
-          
-          <div className="qr-code-wrapper bg-white p-6 rounded-lg shadow-lg">
-            <img
-              src="/qr-code.png"
-              alt="QR Code"
-              className="w-64 h-64"
-            />
-          </div>
-        </div>
-      </main>
-
-      <Footer activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="flex h-screen items-center justify-center bg-black text-white">
+      <p className="font-bold text-xs uppercase tracking-widest animate-pulse">Loading Wallet...</p>
     </div>
   );
 }

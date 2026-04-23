@@ -2,7 +2,7 @@
 'use client';
 import React, { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { ArrowLeft, CheckCircle, CreditCard, Building } from 'lucide-react';
+import { ArrowLeft, CheckCircle, CreditCard, Building, QrCode } from 'lucide-react';
 import Link from 'next/link';
 import ClientOnly from '@/app/components/ClientOnly';
 
@@ -41,6 +41,11 @@ export default function QRGenerator() {
                 <p className="text-gray-400 max-w-xl">
                     Generate active QR codes for gym operations. Print these or display them on a tablet at the front desk.
                 </p>
+                <div className="mt-6 flex flex-wrap gap-4">
+                     <Link href="/check-in" className="inline-flex items-center gap-2 bg-[#28D160] text-black px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-[#32e86e] transition-colors shadow-[0_0_15px_rgba(40,209,96,0.3)]">
+                         <QrCode size={16} /> Launch Admin Scanner
+                     </Link>
+                </div>
             </header>
 
             <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-2 gap-12">
