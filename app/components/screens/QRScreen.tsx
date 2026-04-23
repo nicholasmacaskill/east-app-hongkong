@@ -21,6 +21,17 @@ export default function QRScreen({ credits, currentUserId, subscriptionStatus, a
   const [loadingShop, setLoadingShop] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [qrValue, setQrValue] = useState('');
+
+  // Generate static QR value
+  useEffect(() => {
+    if (!currentUserId) return;
+    
+    setQrValue(JSON.stringify({
+      type: 'athlete_wallet',
+      userId: currentUserId
+    }));
+  }, [currentUserId]);
 
   const fetchShopItems = async () => {
     setLoadingShop(true);
@@ -97,7 +108,7 @@ export default function QRScreen({ credits, currentUserId, subscriptionStatus, a
           {currentUserId && (
             <div className="bg-white p-2 rounded-xl text-black opacity-90 group-hover:scale-105 transition-transform duration-500">
               <QRCodeSVG
-                value={JSON.stringify({ type: 'athlete_wallet', userId: currentUserId })}
+                value={qrValue}
                 size={144}
                 level="H"
                 includeMargin={true}

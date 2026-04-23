@@ -101,6 +101,8 @@ export default function CheckIn() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setError('You must be logged in.'); return; }
 
+      // ── Identity Verification ──────────────────
+
       // ── Gym check-in QR ──────────────────────────────────────────
       if (payload.type === 'check-in') {
         setProcessing(true);
@@ -121,7 +123,7 @@ export default function CheckIn() {
         setPaymentRequest({ amount: payload.amount, reason: payload.reason, data: payload });
       }
 
-      // ── Member wallet QR — admin shop charge ─────────────────────
+      // ── Member wallet QR — admin check-in or shop charge ──────────
       else if (payload.type === 'athlete_wallet') {
         if (!isAdmin) { setError('Only admins can scan member wallet QR codes.'); return; }
         setProcessing(true);
@@ -137,7 +139,10 @@ export default function CheckIn() {
       }
 
       else setError('Unknown QR Code type.');
-    } catch { setError('Invalid QR Code format.'); }
+    } catch (e: any) { 
+      console.error("[SCAN] Parse error:", e);
+      setError('Invalid QR Code format.'); 
+    }
   }, [processing, scanned, paymentRequest, chargeRequest, isAdmin]);
 
   // ── Self-pay confirm ──────────────────────────────────────────────────────
@@ -183,6 +188,28 @@ export default function CheckIn() {
         setLastScanMessage(`${amount} credits charged from ${name}. New balance: ${data.newBalance}`);
         setScanned(true);
       } else setError(data.error || 'Charge failed');
+    } catch (e: any) { setError(e.message); }
+    finally { setProcessing(false); }
+  };
+
+  // ── Admin entry ONLY (no charge) ───────────────────────────────────────────
+  const confirmEntry = async () => {
+    if (!chargeRequest) return;
+    setProcessing(true);
+    const req = chargeRequest; setChargeRequest(null);
+    try {
+      const token = await getAuthToken();
+      const res = await fetch('/api/admin/check-in-athlete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ userId: req.targetUserId, locationId: 'Front Desk' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const name = `${req.member.first_name || ''} ${req.member.last_name || ''}`.trim();
+        setLastScanMessage(`${name} checked in successfully (no charge).`);
+        setScanned(true);
+      } else setError(data.error || 'Check-in failed');
     } catch (e: any) { setError(e.message); }
     finally { setProcessing(false); }
   };
@@ -267,28 +294,45 @@ export default function CheckIn() {
               {chargeRequest && (
                 <div className="flex flex-col animate-fadeIn">
                   {/* Member identity card */}
-                  <div className="w-full bg-black rounded-2xl p-3 flex items-center gap-3 mb-4 border border-white/5">
+                  <div className="w-full bg-black rounded-2xl p-3 flex items-center gap-3 mb-6 border border-white/5">
                     {chargeRequest.member.avatar_url ? (
                       <img src={chargeRequest.member.avatar_url} alt="member"
-                        className="w-10 h-10 rounded-full object-cover border-2 border-[#28D160] flex-shrink-0" />
+                        className="w-12 h-12 rounded-full object-cover border-2 border-[#28D160] flex-shrink-0" />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-[#28D160]/10 border border-[#28D160]/30 flex items-center justify-center flex-shrink-0">
-                        <span className="text-[#28D160] font-black">
+                      <div className="w-12 h-12 rounded-full bg-[#28D160]/10 border border-[#28D160]/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-[#28D160] font-black text-lg">
                           {(chargeRequest.member.first_name?.[0] || '?').toUpperCase()}
                         </span>
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="font-montserrat font-black italic text-white text-sm leading-tight truncate">
+                      <p className="font-montserrat font-black italic text-white text-base leading-tight truncate">
                         {chargeRequest.member.first_name} {chargeRequest.member.last_name}
                       </p>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">
-                        {chargeRequest.member.credits} credits
+                        {chargeRequest.member.credits} credits available
                       </p>
                     </div>
                   </div>
 
-                  {/* Mode toggle: shop items vs custom */}
+                  {/* Primary Choice: Entry vs Shop */}
+                  {!selectedItem && !customMode && (
+                    <div className="flex flex-col gap-3 py-2">
+                       <button
+                        onClick={confirmEntry}
+                        className="w-full py-4 rounded-2xl bg-white text-black font-montserrat font-black italic text-sm uppercase tracking-wide hover:bg-gray-200 active:scale-95 transition-all flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle2 size={18} /> Check-In Only
+                      </button>
+                      <div className="flex items-center gap-2 my-2">
+                        <div className="flex-1 h-[1px] bg-white/10" />
+                        <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">or charge for item</span>
+                        <div className="flex-1 h-[1px] bg-white/10" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Mode toggle: shop items vs custom (only shown if charging) */}
                   <div className="flex p-1 bg-black rounded-xl mb-4 border border-white/10">
                     <button
                       onClick={() => setCustomMode(false)}
@@ -304,9 +348,9 @@ export default function CheckIn() {
 
                   {/* ── Shop item grid ── */}
                   {!customMode && (
-                    <div className="grid grid-cols-2 gap-2 mb-4 max-h-44 overflow-y-auto">
+                    <div className="grid grid-cols-2 gap-2 mb-4 max-h-44 overflow-y-auto pr-1">
                       {shopItems.length === 0 && (
-                        <p className="col-span-2 text-center text-gray-600 text-xs py-4">No items configured. Add items in Admin → Shop.</p>
+                        <p className="col-span-2 text-center text-gray-600 text-xs py-4">No items configured.</p>
                       )}
                       {shopItems.map(item => (
                         <button
@@ -321,9 +365,9 @@ export default function CheckIn() {
                           <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded tracking-widest ${CAT_COLOR[item.category] || CAT_COLOR.general}`}>
                             {item.category}
                           </span>
-                          <p className="text-white text-xs font-bold mt-1.5 leading-snug">{item.name}</p>
-                          <p className="font-montserrat font-black italic text-[#28D160] text-lg mt-1">
-                            {item.price_credits}<span className="text-gray-600 text-[10px] ml-0.5 not-italic font-bold">cr</span>
+                          <p className="text-white text-[11px] font-bold mt-1.5 leading-snug truncate">{item.name}</p>
+                          <p className="font-montserrat font-black italic text-[#28D160] text-base mt-1">
+                            {item.price_credits}<span className="text-gray-600 text-[8px] ml-0.5 not-italic font-bold">cr</span>
                           </p>
                         </button>
                       ))}
@@ -334,7 +378,7 @@ export default function CheckIn() {
                   {customMode && (
                     <div className="flex flex-col gap-3 mb-4">
                       <div>
-                        <label className="block text-[9px] font-black uppercase tracking-widest text-gray-600 mb-1.5">Credits to Charge</label>
+                        <label className="block text-[9px] font-black uppercase tracking-widest text-gray-600 mb-1.5">Credits</label>
                         <input
                           id="charge-amount-input"
                           type="number" min={1} value={customAmount}
@@ -343,13 +387,12 @@ export default function CheckIn() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[9px] font-black uppercase tracking-widest text-gray-600 mb-1.5">Reason</label>
                         <input
                           id="charge-reason-input"
                           type="text" value={customReason}
                           onChange={e => setCustomReason(e.target.value)}
-                          placeholder="e.g. Equipment hire..."
-                          className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#28D160] transition-colors placeholder:text-gray-700"
+                          placeholder="Reason (optional)"
+                          className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-[#28D160] transition-colors placeholder:text-gray-700"
                         />
                       </div>
                     </div>
@@ -357,31 +400,32 @@ export default function CheckIn() {
 
                   {/* Summary + confirm */}
                   {(selectedItem || customMode) && (
-                    <div className="bg-black border border-white/5 rounded-xl px-4 py-3 mb-4 text-sm text-center">
+                    <div className="bg-black border border-white/5 rounded-xl px-4 py-2.5 mb-4 text-xs text-center">
                       <span className="text-gray-500">Charging </span>
                       <span className="font-montserrat font-black italic text-[#28D160]">
                         {customMode ? customAmount : selectedItem?.price_credits} cr
                       </span>
                       <span className="text-gray-500"> for </span>
                       <span className="font-bold text-white">
-                        {customMode ? (customReason || '—') : selectedItem?.name}
+                        {customMode ? (customReason || 'Manual') : selectedItem?.name}
                       </span>
                     </div>
                   )}
 
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     <button onClick={() => { setChargeRequest(null); reset(); }}
                       className="flex-1 py-3.5 rounded-2xl border border-white/10 text-gray-400 font-bold text-xs uppercase tracking-widest hover:border-white/30 transition-colors">
                       Cancel
                     </button>
-                    <button
-                      id="confirm-charge-btn"
-                      onClick={confirmCharge}
-                      disabled={!customMode && !selectedItem}
-                      className="flex-1 py-3.5 rounded-2xl bg-[#28D160] text-black font-montserrat font-black italic text-sm uppercase tracking-wide hover:bg-[#32e86e] active:scale-95 transition-all disabled:opacity-30 disabled:pointer-events-none"
-                    >
-                      Charge {customMode ? customAmount : (selectedItem?.price_credits ?? '—')} cr
-                    </button>
+                    {(selectedItem || customMode) && (
+                      <button
+                        id="confirm-charge-btn"
+                        onClick={confirmCharge}
+                        className="flex-1 py-3.5 rounded-2xl bg-[#28D160] text-black font-montserrat font-black italic text-sm uppercase tracking-wide hover:bg-[#32e86e] active:scale-95 transition-all"
+                      >
+                        Charge
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
