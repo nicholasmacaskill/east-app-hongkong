@@ -289,17 +289,22 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                       <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest text-center">{cat} PERFORMANCE</h3>
                       <div className="bg-gradient-to-r from-[#28D160]/50 to-[#1a8e41]/50 rounded-2xl overflow-hidden shadow-2xl border border-white/10">
                         <div className="grid grid-cols-2">
-                          {STAT_FIELDS[cat].map((field: any, index: number) => {
-                            const val = stats[field.key];
-                            if (val === undefined || val === null || val === '') return null;
+                          {(() => {
+                            const activeFields = STAT_FIELDS[cat].filter((field: any) => {
+                                const val = stats[field.key];
+                                return val !== undefined && val !== null && val !== '';
+                            });
 
-                            return (
-                              <div key={field.key} className={`flex flex-col items-center justify-center p-4 gap-1 hover:bg-white/5 transition-colors border-white/10 ${index % 2 === 0 ? 'border-r' : ''} border-b last:border-b-0`}>
-                                <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{field.label}</span>
-                                <span className="font-black text-lg text-white italic">{val} <span className="text-[10px] text-white/50 not-italic">{field.unit}</span></span>
-                              </div>
-                            );
-                          })}
+                            return activeFields.map((field: any, index: number) => {
+                                const val = stats[field.key];
+                                return (
+                                  <div key={field.key} className={`flex flex-col items-center justify-center p-4 gap-1 hover:bg-white/5 transition-colors border-white/10 ${index % 2 === 0 ? 'border-r' : ''} border-b last:border-b-0`}>
+                                    <span className="font-black text-[8px] tracking-wider text-white/80 uppercase text-center">{field.label}</span>
+                                    <span className="font-black text-lg text-white italic">{val} <span className="text-[10px] text-white/50 not-italic">{field.unit}</span></span>
+                                  </div>
+                                );
+                            });
+                          })()}
                         </div>
                       </div>
                     </div>
