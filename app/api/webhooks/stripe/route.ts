@@ -73,7 +73,7 @@ export async function POST(request: Request) {
 
         if (!secretKey || !webhookSecret) {
           console.error(`❌ CRITICAL ERROR: Missing Stripe configuration for current mode.`);
-          return NextResponse.json({ error: 'Configuration Error' }, { status: 500 });
+          return NextResponse.json({ error: 'Configuration Error - returning 200 to stop retries' }, { status: 200 });
         }
 
         // 2. Setup Headers & Signature
@@ -100,11 +100,11 @@ export async function POST(request: Request) {
         } catch (err: any) {
             console.error(`❌ Webhook Signature Error (ERR_STRIPE_SIGNATURE_MISMATCH): ${err.message}`);
             return NextResponse.json({
-                error: `Webhook Error: ${err.message}`,
+                error: `Webhook Error: ${err.message} - returning 200 to stop retries`,
                 isTest,
                 receivedUrl: request.url,
                 bodyLength: body.length
-            }, { status: 400 });
+            }, { status: 200 });
         }
 
         // 4. Processing Handlers
@@ -174,7 +174,7 @@ export async function POST(request: Request) {
 
                     if (profileError || !profile) {
                         console.error(`❌ [STRIPE WEBHOOK] User not found: ${userId}`);
-                        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+                        return NextResponse.json({ error: 'User not found, ignoring event to prevent retries' }, { status: 200 });
                     }
 
                     if (customerEmail && profile.contact_email !== customerEmail) {
@@ -248,7 +248,7 @@ export async function POST(request: Request) {
 
                 if (!creditAmount || creditAmount <= 0 || !targetUserId) {
                     console.error(`❌ CRITICAL: Invalid metadata for session ${session.id}`);
-                    return NextResponse.json({ error: 'Invalid metadata' }, { status: 400 });
+                    return NextResponse.json({ error: 'Invalid metadata - returning 200 to stop retries' }, { status: 200 });
                 }
 
                 // SEC: Verify target user exists
@@ -260,7 +260,7 @@ export async function POST(request: Request) {
 
                 if (targetError || !targetProfile) {
                     console.error(`❌ [STRIPE WEBHOOK] Target User not found for top-up: ${targetUserId}`);
-                    return NextResponse.json({ error: 'Target User not found' }, { status: 404 });
+                    return NextResponse.json({ error: 'Target User not found, ignoring event' }, { status: 200 });
                 }
 
                 await addCreditsOnly(targetUserId, creditAmount, 'topup', session.id, `Top-up purchase: ${creditAmount} credits`);
@@ -410,8 +410,12 @@ export async function POST(request: Request) {
                 .single();
 
             if (error) {
+                if (error.code === 'PGRST116') {
+                    console.warn(`[STRIPE WEBHOOK] Ignored status update: customer '${customerId}' not found in DB.`);
+                    return NextResponse.json({ received: true });
+                }
                 console.error(`❌ DB Error updating subscription status: ${error.message}`);
-                return NextResponse.json({ error: error.message }, { status: 500 });
+                return NextResponse.json({ error: error.message + ' - returning 200 to stop retries' }, { status: 200 });
             }
             console.log(`✅ DB Success: Updated subscription_status to '${status}'`);
 
@@ -444,10 +448,10 @@ export async function POST(request: Request) {
         console.error(`🔥 UNHANDLED ERROR IN WEBHOOK: ${err.message}`);
         console.error(err.stack);
         return NextResponse.json({
-            error: 'Internal Server Error',
+            error: 'Internal Server Error - returning 200 to stop retries',
             message: err.message,
             stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-        }, { status: 500 });
+        }, { status: 200 });
     }
 }
 
