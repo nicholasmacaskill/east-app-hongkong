@@ -5,7 +5,7 @@ import { supabase } from '@/app/lib/supabase';
 import {
     X, ChevronLeft, ChevronRight, Edit2, ToggleLeft, ToggleRight,
     User as UserIcon, Bell, CreditCard, FileText, HelpCircle, Shield, LogOut, UserCog,
-    ChevronDown, Save, Camera
+    ChevronDown, Save, Camera, Target
 } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
 import { compressImage } from '@/app/lib/image-utils';
@@ -304,6 +304,8 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
                 <SettingsSectionTitle title="About" />
                 <SettingsMenuItem icon={Shield} label="Privacy Policy" onClick={() => router.push('/privacy')} />
                 <SettingsMenuItem icon={FileText} label="Terms & conditions" onClick={() => router.push('/terms')} />
+                <SettingsSectionTitle title="Training" />
+                <SettingsMenuItem icon={Target} label="Drill Hub" onClick={() => { onClose(); router.push('/drill-hub'); }} />
                 <div className="mt-12 px-2">
                     <button onClick={onLogout} className="flex items-center gap-4 w-full py-4 text-red-500 hover:bg-red-500/10 transition-colors rounded-lg px-4">
                         <LogOut size={20} />

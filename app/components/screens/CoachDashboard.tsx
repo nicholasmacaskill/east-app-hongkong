@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send } from 'lucide-react';
 import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 import { safeFetch } from '@/app/lib/apiUtils';
+import SessionPlanModal from '@/app/components/modals/SessionPlanModal';
 
 interface Attendee {
     id: string;
@@ -39,6 +40,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
     const [noteContent, setNoteContent] = useState('');
     const [savingNote, setSavingNote] = useState(false);
     const [existingNotes, setExistingNotes] = useState<any[]>([]);
+    const [selectedSessionForPlan, setSelectedSessionForPlan] = useState<MasterSession | null>(null);
 
     const toggleDate = (date: string) => {
         setExpandedDates(prev =>
@@ -263,8 +265,11 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
             </div>
 
             {/* QUICK ACTIONS BAR */}
-            <div className="bg-[#121212] px-6 py-2 border-b border-white/5 flex justify-end gap-4 overflow-x-auto no-scrollbar">
-                <div className="flex items-center gap-2">
+            <div className="bg-[#121212] px-6 py-2 border-b border-white/5 flex justify-between items-center overflow-x-auto no-scrollbar">
+                <button onClick={() => { window.location.href = '/admin-ops/drills'; }} className="text-[9px] font-black uppercase text-black hover:text-black transition-colors flex items-center gap-1 bg-east-light hover:bg-white px-3 py-1.5 rounded-full border border-east-light/50 shadow-[0_0_10px_rgba(40,209,96,0.2)] whitespace-nowrap">
+                    <Layers size={12} /> Manage Drill Hub
+                </button>
+                <div className="flex items-center gap-2 ml-auto">
                     <button onClick={expandAll} className="text-[9px] font-black uppercase text-gray-500 hover:text-east-light transition-colors flex items-center gap-1">
                         <ChevronDown size={12} /> Expand All
                     </button>
@@ -324,7 +329,17 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                                         <h3 className={`font-bold text-sm uppercase tracking-wide ${session.type === 'slot' ? 'text-gray-500' : 'text-white'}`}>{session.title}</h3>
                                                         {getStatusBadge(session)}
                                                     </div>
-                                                    <span className="text-[9px] font-bold text-gray-500 uppercase border border-white/10 px-1.5 py-0.5 rounded">{session.category}</span>
+                                                    <div className="flex flex-col items-end gap-2">
+                                                        <span className="text-[9px] font-bold text-gray-500 uppercase border border-white/10 px-1.5 py-0.5 rounded">{session.category}</span>
+                                                        {session.type !== 'slot' && (
+                                                            <button 
+                                                                onClick={(e) => { e.stopPropagation(); setSelectedSessionForPlan(session); }} 
+                                                                className="text-[9px] font-black uppercase text-[#28D160] hover:text-white transition-colors flex items-center gap-1 bg-[#28D160]/10 hover:bg-[#28D160]/20 px-2 py-1 rounded"
+                                                            >
+                                                                <Layers size={10} /> Build Plan
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
 
                                                 <div className="flex items-center gap-2 mb-3">
@@ -460,6 +475,14 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* SESSION PLAN MODAL */}
+            {selectedSessionForPlan && (
+                <SessionPlanModal 
+                    sessionData={selectedSessionForPlan} 
+                    onClose={() => setSelectedSessionForPlan(null)} 
+                />
             )}
         </div>
     );

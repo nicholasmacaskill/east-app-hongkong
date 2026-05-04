@@ -1,7 +1,7 @@
 // app/components/modals/ClassModal.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
-import { X, Share2, Send, CreditCard, AlertCircle, Check, ChevronLeft } from 'lucide-react';
+import { X, Share2, Send, CreditCard, AlertCircle, Check, ChevronLeft, Layers } from 'lucide-react';
 import { Session } from '@/app/types/index';
 import { supabase } from '@/app/lib/supabase';
 import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
@@ -61,6 +61,7 @@ export default function ClassModal({
     const [isLoadingCapacity, setIsLoadingCapacity] = useState(false);
     const [showPenaltyWarning, setShowPenaltyWarning] = useState(false);
     const [penaltyData, setPenaltyData] = useState<{ percentage: number; amount: number; message: string }>({ percentage: 0, amount: 0, message: '' });
+    const [hasTrainingPlan, setHasTrainingPlan] = useState(false);
 
     // NEW: Manual Coach Hierarchy Flow
     const [viewMode, setViewMode] = useState<'COACH_SELECT' | 'SESSION_SELECT' | 'SERVICE_SELECT'>('SESSION_SELECT');
@@ -461,6 +462,18 @@ export default function ClassModal({
                 }
             };
             fetchCapacity();
+            
+            // Also check for Training Plan
+            const checkPlan = async () => {
+                const { count } = await supabase
+                    .from('session_drills')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('session_id', selectedSessionId);
+                setHasTrainingPlan((count || 0) > 0);
+            };
+            checkPlan();
+        } else {
+            setHasTrainingPlan(false);
         }
     }, [selectedSessionId]);
 
@@ -674,6 +687,30 @@ export default function ClassModal({
                                                     );
                                                 })}
                                             </div>
+                                        </div>
+                                    )}
+
+                                    {/* TRAINING PLAN BUTTON */}
+                                    {hasTrainingPlan && (
+                                        <div className="mb-6 animate-fadeIn">
+                                            <button 
+                                                onClick={() => {
+                                                    onClose();
+                                                    window.location.href = `/drill-hub?session_id=${selectedSessionId}`;
+                                                }}
+                                                className="w-full bg-[#28D160]/10 border border-[#28D160]/50 hover:bg-[#28D160] text-black py-3 px-4 rounded-xl flex items-center justify-between group transition-all shadow-md hover:shadow-[0_0_15px_rgba(40,209,96,0.5)] hover:scale-[1.02]"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-[#28D160] flex items-center justify-center text-black shadow-inner">
+                                                        <Layers size={16} />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <span className="block text-[9px] font-black uppercase tracking-widest text-[#28D160] group-hover:text-black/70 transition-colors">Pre-Session Review</span>
+                                                        <span className="block text-sm font-black italic uppercase text-gray-800 group-hover:text-black transition-colors leading-none mt-0.5">View Training Plan</span>
+                                                    </div>
+                                                </div>
+                                                <ChevronLeft className="rotate-180 text-[#28D160] group-hover:text-black transition-colors" size={20} />
+                                            </button>
                                         </div>
                                     )}
 

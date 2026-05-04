@@ -6,7 +6,9 @@ import { defineConfig, devices } from '@playwright/test';
  */
 import dotenv from 'dotenv';
 import path from 'path';
-dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+// Test DB only — uses .env.test (staging Supabase, test-branch-east.vercel.app)
+dotenv.config({ path: path.resolve(__dirname, '.env.test') });
+
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -28,7 +30,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000',
+    baseURL: 'https://test-branch-east.vercel.app',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -96,7 +98,9 @@ export default defineConfig({
         'tests/debug-overflow.spec.ts',
         'tests/verification-schedule-wipe.spec.ts',
         'tests/leaderboard-cms.spec.ts',
-        'tests/parent-photo-editability.spec.ts'
+        'tests/parent-photo-editability.spec.ts',
+        'tests/ticket-19-qr-wallet.spec.ts',
+        'tests/drill-hub-e2e.spec.ts'
       ],
     },
 
@@ -138,11 +142,5 @@ export default defineConfig({
     // },
   ],
 
-  /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  // No webServer — tests always run against https://test-branch-east.vercel.app
 });
