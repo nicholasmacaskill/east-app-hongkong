@@ -1,8 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
-import { X, Layers, Plus, Check, Search, Save } from 'lucide-react';
-import { safeFetch } from '@/app/lib/apiUtils';
+import { X, Layers, Plus, Search, Save } from 'lucide-react';
 
 export default function SessionPlanModal({ sessionData, onClose }: { sessionData: any, onClose: () => void }) {
     const [allDrills, setAllDrills] = useState<any[]>([]);
