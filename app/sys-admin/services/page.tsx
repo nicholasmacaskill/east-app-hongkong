@@ -37,8 +37,8 @@ export default function ManageServicesPage() {
         serviceTitle: '',
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
-        startHour: 8,
-        endHour: 20,
+        startTime: '08:00',
+        endTime: '20:00',
         daysOfWeek: [0, 1, 2, 3, 4, 5, 6], // All days
         durationMinutes: 60,
         coachId: ''
@@ -362,9 +362,9 @@ export default function ManageServicesPage() {
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5 flex items-center gap-1"><Clock size={10} /> Hours (0-23)</label>
                                     <div className="flex gap-2">
-                                        <input type="number" min="0" max="23" value={generatorConfig.startHour} onChange={e => setGeneratorConfig({ ...generatorConfig, startHour: parseInt(e.target.value) })} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white text-center outline-none focus:border-[#28D160]" />
-                                        <span className="text-gray-500 self-center">-</span>
-                                        <input type="number" min="0" max="24" value={generatorConfig.endHour} onChange={e => setGeneratorConfig({ ...generatorConfig, endHour: parseInt(e.target.value) })} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white text-center outline-none focus:border-[#28D160]" />
+                                        <input type="time" step="1800" value={generatorConfig.startTime} onChange={e => setGeneratorConfig({ ...generatorConfig, startTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-white text-center outline-none focus:border-[#28D160] dark-calendar-picker" style={{ colorScheme: 'dark' }} />
+                                        <span className="text-gray-500 self-center">/</span>
+                                        <input type="time" step="1800" value={generatorConfig.endTime} onChange={e => setGeneratorConfig({ ...generatorConfig, endTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-white text-center outline-none focus:border-[#28D160] dark-calendar-picker" style={{ colorScheme: 'dark' }} />
                                     </div>
                                 </div>
                                 <div>

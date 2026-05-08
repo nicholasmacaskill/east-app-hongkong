@@ -12,6 +12,8 @@ export async function POST(request: Request) {
             endDate,
             startHour,
             endHour,
+            startTime,
+            endTime,
             daysOfWeek,
             durationMinutes = 60,
             coachId
@@ -72,8 +74,12 @@ export async function POST(request: Request) {
             }
 
             // Iterate intervals based on durationMinutes
-            const dayStartStr = `${hkDateStr} ${String(startHour).padStart(2, '0')}:00:00`;
-            const dayEndStr = `${hkDateStr} ${String(endHour).padStart(2, '0')}:00:00`;
+            // Support legacy startHour/endHour or new startTime/endTime
+            const actualStartTime = startTime || `${String(startHour).padStart(2, '0')}:00`;
+            const actualEndTime = endTime || `${String(endHour).padStart(2, '0')}:00`;
+
+            const dayStartStr = `${hkDateStr} ${actualStartTime}:00`;
+            const dayEndStr = `${hkDateStr} ${actualEndTime}:00`;
 
             let slotStart = fromZonedTime(dayStartStr, APP_TIMEZONE);
             const dayEnd = fromZonedTime(dayEndStr, APP_TIMEZONE);
