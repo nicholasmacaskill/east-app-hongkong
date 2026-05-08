@@ -359,24 +359,26 @@ export default function AdminOpsServicesPage() {
                                 </div>
                             </div>
 
+                            {/* Time & Duration */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-600 uppercase block mb-2 px-1 text-center">Operational Range</label>
-                                    <div className="flex gap-2">
-                                        <input type="time" step="1800" value={generatorConfig.startTime} onChange={e => setGeneratorConfig({ ...generatorConfig, startTime: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 px-2 text-xs text-white text-center font-bold outline-none focus:border-[#28D160] dark-calendar-picker" style={{ colorScheme: 'dark' }} />
-                                        <span className="text-gray-800 self-center">/</span>
-                                        <input type="time" step="1800" value={generatorConfig.endTime} onChange={e => setGeneratorConfig({ ...generatorConfig, endTime: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 px-2 text-xs text-white text-center font-bold outline-none focus:border-[#28D160] dark-calendar-picker" style={{ colorScheme: 'dark' }} />
-                                    </div>
+                                    <label className="text-[10px] font-black text-gray-600 uppercase block mb-2 px-1 text-center">Start Time</label>
+                                    <input type="time" step="1800" value={generatorConfig.startTime} onChange={e => setGeneratorConfig({ ...generatorConfig, startTime: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 px-2 text-xs text-white text-center font-bold outline-none focus:border-[#28D160] dark-calendar-picker" style={{ colorScheme: 'dark' }} />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-600 uppercase block mb-2 px-1 text-center">Unit Duration</label>
-                                    <select value={generatorConfig.durationMinutes} onChange={e => setGeneratorConfig({ ...generatorConfig, durationMinutes: parseInt(e.target.value) })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-xs text-white font-bold text-center outline-none focus:border-[#28D160] appearance-none cursor-pointer">
-                                        <option value="30">30 MIN</option>
-                                        <option value="60">60 MIN</option>
-                                        <option value="90">90 MIN</option>
-                                        <option value="120">120 MIN</option>
-                                    </select>
+                                    <label className="text-[10px] font-black text-gray-600 uppercase block mb-2 px-1 text-center">End Time</label>
+                                    <input type="time" step="1800" value={generatorConfig.endTime} onChange={e => setGeneratorConfig({ ...generatorConfig, endTime: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 px-2 text-xs text-white text-center font-bold outline-none focus:border-[#28D160] dark-calendar-picker" style={{ colorScheme: 'dark' }} />
                                 </div>
+                            </div>
+                            
+                            <div>
+                                <label className="text-[10px] font-black text-gray-600 uppercase block mb-2 px-1 text-center">Unit Duration</label>
+                                <select value={generatorConfig.durationMinutes} onChange={e => setGeneratorConfig({ ...generatorConfig, durationMinutes: parseInt(e.target.value) })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-xs text-white font-bold text-center outline-none focus:border-[#28D160] appearance-none cursor-pointer">
+                                    <option value="30">30 MIN</option>
+                                    <option value="60">60 MIN</option>
+                                    <option value="90">90 MIN</option>
+                                    <option value="120">120 MIN</option>
+                                </select>
                             </div>
 
                             <div>

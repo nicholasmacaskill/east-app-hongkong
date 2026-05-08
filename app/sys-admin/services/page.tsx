@@ -357,25 +357,26 @@ export default function ManageServicesPage() {
                                 </div>
                             </div>
 
-                            {/* Time */}
+                            {/* Time & Duration */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5 flex items-center gap-1"><Clock size={10} /> Hours (0-23)</label>
-                                    <div className="flex gap-2">
-                                        <input type="time" step="1800" value={generatorConfig.startTime} onChange={e => setGeneratorConfig({ ...generatorConfig, startTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-white text-center outline-none focus:border-[#28D160] dark-calendar-picker" style={{ colorScheme: 'dark' }} />
-                                        <span className="text-gray-500 self-center">/</span>
-                                        <input type="time" step="1800" value={generatorConfig.endTime} onChange={e => setGeneratorConfig({ ...generatorConfig, endTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-white text-center outline-none focus:border-[#28D160] dark-calendar-picker" style={{ colorScheme: 'dark' }} />
-                                    </div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5 flex items-center gap-1"><Clock size={10} /> Start Time</label>
+                                    <input type="time" step="1800" value={generatorConfig.startTime} onChange={e => setGeneratorConfig({ ...generatorConfig, startTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-white text-center outline-none focus:border-[#28D160] dark-calendar-picker" style={{ colorScheme: 'dark' }} />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Slot Duration</label>
-                                    <select value={generatorConfig.durationMinutes} onChange={e => setGeneratorConfig({ ...generatorConfig, durationMinutes: parseInt(e.target.value) })} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160]">
-                                        <option value="30">30 Minutes</option>
-                                        <option value="60">60 Minutes</option>
-                                        <option value="90">90 Minutes</option>
-                                        <option value="120">2 Hours</option>
-                                    </select>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5 flex items-center gap-1"><Clock size={10} /> End Time</label>
+                                    <input type="time" step="1800" value={generatorConfig.endTime} onChange={e => setGeneratorConfig({ ...generatorConfig, endTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-white text-center outline-none focus:border-[#28D160] dark-calendar-picker" style={{ colorScheme: 'dark' }} />
                                 </div>
+                            </div>
+                            
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Slot Duration</label>
+                                <select value={generatorConfig.durationMinutes} onChange={e => setGeneratorConfig({ ...generatorConfig, durationMinutes: parseInt(e.target.value) })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-white text-center outline-none focus:border-[#28D160] appearance-none cursor-pointer">
+                                    <option value="30">30 Minutes</option>
+                                    <option value="60">60 Minutes</option>
+                                    <option value="90">90 Minutes</option>
+                                    <option value="120">120 Minutes</option>
+                                </select>
                             </div>
 
                             {/* Days Selection */}
