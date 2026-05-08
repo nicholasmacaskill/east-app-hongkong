@@ -258,19 +258,20 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                 </div>
               </div>
 
-              {/* 3. COLORED BANNER */}
-              <div className="w-full bg-gradient-to-r from-[#28D160] to-[#1a8e41] py-4 px-2 grid grid-cols-3 gap-1 shadow-lg border-y border-white/10 relative z-30 mb-8 mt-4 rounded-xl">
-                <div className="flex flex-col items-center justify-center border-r border-black/10">
-                  <div className="font-black italic text-[9px] text-black tracking-widest uppercase mb-0.5">AGE</div>
-                  <span className="text-[9px] text-black/60 font-black italic lowercase leading-none">soon</span>
+              {/* 3. METADATA BANNER */}
+              <div className="w-full bg-black/60 backdrop-blur-xl py-5 px-2 grid grid-cols-3 gap-1 shadow-2xl border-y border-white/5 relative z-30 mb-8 mt-4 rounded-xl group hover:border-[#28D160]/30 transition-colors">
+                <div className="absolute inset-0 bg-gradient-to-r from-[#28D160]/5 via-transparent to-[#28D160]/5 opacity-50 rounded-xl" />
+                <div className="flex flex-col items-center justify-center border-r border-white/10 relative z-10">
+                  <div className="font-black italic text-[9px] text-[#28D160] tracking-widest uppercase mb-1">AGE</div>
+                  <span className="text-[10px] text-white font-black italic lowercase leading-none drop-shadow-md">soon</span>
                 </div>
-                <div className="flex flex-col items-center justify-center border-r border-black/10">
-                  <div className="font-black italic text-[9px] text-black tracking-widest uppercase mb-0.5">SEASON</div>
-                  <span className="text-[9px] text-black/60 font-black italic lowercase leading-none">soon</span>
+                <div className="flex flex-col items-center justify-center border-r border-white/10 relative z-10">
+                  <div className="font-black italic text-[9px] text-[#28D160] tracking-widest uppercase mb-1">SEASON</div>
+                  <span className="text-[10px] text-white font-black italic lowercase leading-none drop-shadow-md">soon</span>
                 </div>
-                <div className="flex flex-col items-center justify-center">
-                  <div className="font-black italic text-[9px] text-black tracking-widest uppercase mb-0.5">TEAM</div>
-                  <span className="text-[9px] text-black/60 font-black italic lowercase leading-none">soon</span>
+                <div className="flex flex-col items-center justify-center relative z-10">
+                  <div className="font-black italic text-[9px] text-[#28D160] tracking-widest uppercase mb-1">TEAM</div>
+                  <span className="text-[10px] text-white font-black italic lowercase leading-none drop-shadow-md">soon</span>
                 </div>
               </div>
             </div>

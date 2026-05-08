@@ -12,3 +12,4 @@ This checklist is **MANDATORY** for all future tasks. You must reference this fi
 - [ ] **UI Data Flow**: Does the frontend component send the correct parameters to the API?
 - [ ] **Regression Audit**: Does this change break other screens (Dashboards, Master Schedules)?
 - [ ] **Empty States**: Does the UI handle cases where no data is returned?
+- [ ] **CEO Review Video**: For formal ticket items, has a video of the feature working on the `test` branch been recorded and sent to the CEO? (Not required for minor one-off requests).

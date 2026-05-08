@@ -11,7 +11,9 @@
 
 ### 1. Agent A: Antigravity (The Executor & QA)
 - **Role:** Handles UI implementation, frontend verification, and terminal commands.
-- **Workflow:** Builds components, runs `npm run build`, fixes type errors.
+- **Workflow:** 
+  - Builds components, runs `npm run build`, fixes type errors.
+  - **Recording:** Generates recorded video demonstrations of completed ticket items on the `test` branch for CEO review.
 
 ### 2. Agent B: The Architect (CLI/IDE)
 - **Role:** Handles high-density reasoning, backend logic, and file generation.

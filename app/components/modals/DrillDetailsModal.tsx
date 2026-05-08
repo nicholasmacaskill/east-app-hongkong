@@ -1,0 +1,278 @@
+import React, { useRef, useState, useEffect } from 'react';
+import { X, Play, PenTool, Eraser, Download, Trash2, Video } from 'lucide-react';
+
+interface Drill {
+    id: string;
+    title: string;
+    description: string;
+    difficulty: string;
+    duration: string;
+    category: string;
+    video_url: string;
+    image_url: string;
+}
+
+interface DrillDetailsModalProps {
+    drill: Drill;
+    onClose: () => void;
+    isCoach: boolean;
+}
+
+export default function DrillDetailsModal({ drill, onClose, isCoach }: DrillDetailsModalProps) {
+    const [activeTab, setActiveTab] = useState<'video' | 'whiteboard'>('video');
+    const [isPlaying, setIsPlaying] = useState(false);
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    // Whiteboard State
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [color, setColor] = useState('#28D160');
+    const [lineWidth, setLineWidth] = useState(3);
+    const [isEraser, setIsEraser] = useState(false);
+
+    useEffect(() => {
+        if (activeTab === 'whiteboard' && canvasRef.current) {
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                // Initial canvas setup if needed
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+            }
+        }
+    }, [activeTab]);
+
+    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        if (!isCoach) return; // Only coaches can draw
+        
+        setIsDrawing(true);
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (!canvas || !ctx) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        
+        ctx.beginPath();
+        ctx.moveTo(clientX - rect.left, clientY - rect.top);
+    };
+
+    const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        if (!isDrawing || !isCoach) return;
+
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (!canvas || !ctx) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+        ctx.lineTo(clientX - rect.left, clientY - rect.top);
+        ctx.strokeStyle = isEraser ? '#ffffff' : color;
+        ctx.lineWidth = isEraser ? 20 : lineWidth;
+        
+        if (isEraser) {
+             ctx.globalCompositeOperation = 'destination-out';
+        } else {
+             ctx.globalCompositeOperation = 'source-over';
+        }
+        
+        ctx.stroke();
+    };
+
+    const stopDrawing = () => {
+        if (!isCoach) return;
+        setIsDrawing(false);
+    };
+
+    const clearCanvas = () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (canvas && ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    };
+
+    const togglePlay = () => {
+        if (videoRef.current) {
+            if (isPlaying) {
+                videoRef.current.pause();
+            } else {
+                videoRef.current.play();
+            }
+            setIsPlaying(!isPlaying);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#050505]/95 backdrop-blur-2xl animate-fadeIn font-montserrat">
+            {/* Ambient Glows */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-east-light/5 blur-[120px] rounded-full" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-east-light/3 blur-[100px] rounded-full" />
+            </div>
+
+            <div className="bg-[#0a0a0a] border border-white/10 rounded-[3rem] w-full max-w-5xl overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.8)] relative flex flex-col h-[90vh] max-h-[900px] z-10">
+                
+                {/* Header */}
+                <div className="flex justify-between items-center p-10 border-b border-white/5 bg-gradient-to-r from-black via-black/80 to-transparent relative z-20">
+                    <div>
+                        <div className="flex gap-3 mb-3">
+                            <div className="px-3 py-1 bg-east-light/10 text-east-light rounded-full text-[9px] font-black uppercase tracking-widest border border-east-light/20">
+                                {drill.category}
+                            </div>
+                            <div className="px-3 py-1 bg-white/5 text-gray-400 rounded-full text-[9px] font-black uppercase tracking-widest border border-white/10">
+                                {drill.difficulty}
+                            </div>
+                        </div>
+                        <h2 className="text-white font-black italic text-4xl uppercase tracking-tighter leading-none drop-shadow-2xl brightness-125">{drill.title}</h2>
+                    </div>
+                    <button onClick={onClose} className="p-5 bg-white/5 rounded-2xl hover:bg-white/10 transition-all duration-300 border border-white/5 hover:border-east-light/50 group shadow-xl active:scale-90">
+                        <X size={24} className="text-gray-400 group-hover:text-white transition-colors" />
+                    </button>
+                </div>
+
+                {/* Body Content */}
+                <div className="flex flex-1 overflow-hidden relative">
+                    {/* Left Sidebar (Details) */}
+                    <div className="w-1/3 min-w-[320px] border-r border-white/5 bg-black/40 p-10 flex flex-col gap-10 overflow-y-auto no-scrollbar relative z-10 backdrop-blur-md">
+                        <div className="space-y-6">
+                            <div>
+                                <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] mb-4 italic opacity-80">Mission Briefing</h3>
+                                <p className="text-sm text-gray-400 font-medium leading-relaxed italic">
+                                    {drill.description || "No tactical details provided for this sequence."}
+                                </p>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 gap-4">
+                                <div className="bg-white/5 rounded-2xl p-6 border border-white/5 shadow-xl group hover:border-white/20 transition-all duration-500">
+                                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-2 italic">Duration</span>
+                                    <span className="text-xl text-white font-black italic group-hover:text-east-light transition-colors">{drill.duration || '00:00'}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Tabs */}
+                        <div className="mt-auto flex flex-col gap-4 pt-10 border-t border-white/5">
+                            <button 
+                                onClick={() => setActiveTab('video')}
+                                className={`group py-5 px-6 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 relative overflow-hidden flex items-center justify-between ${activeTab === 'video' ? 'bg-white text-black shadow-[0_20px_40px_rgba(255,255,255,0.15)]' : 'bg-white/5 text-gray-500 border border-white/5 hover:border-white/20 hover:text-white'}`}
+                            >
+                                <span className="relative z-10">Analysis Stream</span>
+                                <Video size={18} className={activeTab === 'video' ? 'text-black' : 'text-gray-600'} />
+                                {activeTab === 'video' && <div className="absolute inset-0 bg-gradient-to-r from-white to-gray-200" />}
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('whiteboard')}
+                                className={`group py-5 px-6 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 relative overflow-hidden flex items-center justify-between ${activeTab === 'whiteboard' ? 'bg-east-light text-black shadow-[0_20px_40px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border border-white/5 hover:border-white/20 hover:text-white'}`}
+                            >
+                                <span className="relative z-10">Tactical Board</span>
+                                <PenTool size={18} className={activeTab === 'whiteboard' ? 'text-black' : 'text-gray-600'} />
+                                {activeTab === 'whiteboard' && <div className="absolute inset-0 bg-gradient-to-r from-east-light to-[#20a34b]" />}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Main Content Area */}
+                    <div className="flex-1 bg-black relative flex items-center justify-center overflow-hidden">
+                        
+                        {activeTab === 'video' && (
+                            <div className="w-full h-full relative group">
+                                {drill.video_url ? (
+                                    <>
+                                        <video 
+                                            ref={videoRef}
+                                            src={drill.video_url} 
+                                            className="w-full h-full object-contain"
+                                            controls={false}
+                                            onClick={togglePlay}
+                                        />
+                                        {!isPlaying && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-black/60 pointer-events-none backdrop-blur-[2px]">
+                                                <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center pl-2 shadow-[0_30px_60px_rgba(255,255,255,0.2)] animate-pulse">
+                                                    <Play fill="black" size={40} className="text-black" />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="w-full h-full relative">
+                                        <img src={drill.image_url} className="w-full h-full object-cover opacity-50" alt="Thumbnail" />
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
+                                            <Video size={48} className="text-gray-600 mb-4" />
+                                            <span className="text-gray-400 font-black italic uppercase tracking-widest">No Video Uploaded</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'whiteboard' && (
+                            <div className="w-full h-full relative flex flex-col">
+                                {/* Whiteboard Toolbar */}
+                                {isCoach && (
+                                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-black/80 backdrop-blur-md border border-white/10 rounded-full px-6 py-2 flex items-center gap-4 shadow-xl">
+                                        <div className="flex gap-2 border-r border-white/10 pr-4">
+                                            {['#28D160', '#ff3b30', '#007aff', '#ffffff'].map(c => (
+                                                <button 
+                                                    key={c} 
+                                                    onClick={() => {setColor(c); setIsEraser(false);}}
+                                                    className={`w-6 h-6 rounded-full border-2 ${color === c && !isEraser ? 'border-white scale-110' : 'border-transparent'}`}
+                                                    style={{ backgroundColor: c }}
+                                                />
+                                            ))}
+                                        </div>
+                                        <button 
+                                            onClick={() => setIsEraser(!isEraser)}
+                                            className={`p-2 rounded-full transition-colors ${isEraser ? 'bg-white/20 text-white' : 'text-gray-400 hover:text-white'}`}
+                                        >
+                                            <Eraser size={18} />
+                                        </button>
+                                        <button onClick={clearCanvas} className="p-2 text-red-400 hover:bg-red-500/10 rounded-full transition-colors">
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
+                                )}
+                                
+                                {/* Rink Background image pattern */}
+                                <div className="absolute inset-0 opacity-20 pointer-events-none flex items-center justify-center" style={{ backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
+                                    {/* Placeholder Rink SVG */}
+                                    <svg viewBox="0 0 800 400" className="w-full h-full max-w-[90%] opacity-30">
+                                        <rect x="50" y="20" width="700" height="360" rx="100" fill="none" stroke="white" strokeWidth="4"/>
+                                        <line x1="400" y1="20" x2="400" y2="380" stroke="#ff3b30" strokeWidth="4"/>
+                                        <line x1="250" y1="20" x2="250" y2="380" stroke="#007aff" strokeWidth="4"/>
+                                        <line x1="550" y1="20" x2="550" y2="380" stroke="#007aff" strokeWidth="4"/>
+                                        <circle cx="400" cy="200" r="60" fill="none" stroke="#007aff" strokeWidth="4"/>
+                                        <circle cx="400" cy="200" r="4" fill="#007aff"/>
+                                    </svg>
+                                </div>
+
+                                <canvas 
+                                    ref={canvasRef}
+                                    width={800}
+                                    height={600}
+                                    className={`w-full h-full relative z-20 ${isCoach ? 'cursor-crosshair' : 'cursor-default'}`}
+                                    onMouseDown={startDrawing}
+                                    onMouseMove={draw}
+                                    onMouseUp={stopDrawing}
+                                    onMouseOut={stopDrawing}
+                                    onTouchStart={startDrawing}
+                                    onTouchMove={draw}
+                                    onTouchEnd={stopDrawing}
+                                />
+                                
+                                {!isCoach && (
+                                    <div className="absolute bottom-4 right-4 z-30 bg-black/60 backdrop-blur-md px-4 py-2 rounded-lg border border-white/10">
+                                        <span className="text-[10px] font-black italic text-gray-400 uppercase tracking-widest">Read Only Mode</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

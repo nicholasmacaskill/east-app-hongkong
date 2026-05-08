@@ -1,11 +1,13 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/app/components/ui/Toast';
-import { Camera, Edit2, Play, Plus, ChevronRight, Award, Trophy, Users, Calendar, Video, Upload } from 'lucide-react';
+import { Camera, Edit2, Play, Plus, ChevronRight, Award, Trophy, Users, Calendar, Video, Upload, Layers } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useGallery } from '@/app/hooks/useGallery';
 import Lightbox from '@/app/components/ui/Lightbox';
 import ClassModal from '@/app/components/modals/ClassModal';
+import CreateDrillModal from '@/app/components/modals/CreateDrillModal';
+import DrillDetailsModal from '@/app/components/modals/DrillDetailsModal';
 import { Session } from '@/app/types';
 import { compressImage } from '@/app/lib/image-utils';
 import { formatHK } from '@/app/lib/dateUtils';
@@ -23,6 +25,41 @@ const DRILL_FILTERS = {
     type: ['SHOOTING', 'DEFENSE', 'PASSING']
 };
 
+const MOCK_DRILLS = [
+    {
+        id: 1,
+        title: "Power Slapshot Mastery",
+        difficulty: "PRO",
+        duration: "12 MIN",
+        category: "SHOOTING",
+        image: "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 2,
+        title: "Defensive Zone Breakouts",
+        difficulty: "U15",
+        duration: "8 MIN",
+        category: "DEFENSE",
+        image: "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 3,
+        title: "High-Speed Puck Control",
+        difficulty: "U12",
+        duration: "15 MIN",
+        category: "PASSING",
+        image: "https://images.unsplash.com/photo-1518407613690-d9fc996e74bc?auto=format&fit=crop&q=80&w=800"
+    },
+    {
+        id: 4,
+        title: "Goalie Screen Deflection",
+        difficulty: "PRO",
+        duration: "10 MIN",
+        category: "SHOOTING",
+        image: "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=800"
+    }
+];
+
 export default function CoachProfile({ onOpenSettings, profileData, isPublic = false, currentUserId }: { onOpenSettings: () => void, profileData: any, isPublic?: boolean, currentUserId?: string | null }) {
     const { addToast } = useToast();
     const [activeTab, setActiveTab] = useState<'profile' | 'sessions' | 'drills'>('profile');
@@ -36,6 +73,28 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
     const [selectedSession, setSelectedSession] = useState<Session | null>(null);
     const [bookedSessionIds, setBookedSessionIds] = useState<number[]>([]);
     const [refreshKey, setRefreshKey] = useState(0); // to trigger refetches
+    
+    // Drills State
+    const [showCreateDrill, setShowCreateDrill] = useState(false);
+    const [selectedDrill, setSelectedDrill] = useState<any | null>(null);
+    const [drills, setDrills] = useState<any[]>([]);
+    const [drillsLoading, setDrillsLoading] = useState(false);
+
+    const fetchDrills = async () => {
+        if (!profileData?.id) return;
+        setDrillsLoading(true);
+        const { data, error } = await supabase.from('drills').select('*').eq('coach_id', profileData.id).order('created_at', { ascending: false });
+        if (!error && data) {
+            setDrills(data);
+        }
+        setDrillsLoading(false);
+    };
+
+    useEffect(() => {
+        if (activeTab === 'drills') {
+            fetchDrills();
+        }
+    }, [activeTab, profileData?.id]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
@@ -363,15 +422,17 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                         </div>
                     </div>
 
-                    {/* 3. COLORED BANNER */}
-                    <div className="w-full bg-gradient-to-r from-east-light to-east-dark py-4 px-8 flex justify-between items-center shadow-lg border-y border-white/10 relative z-30">
-                        <div className="text-center">
-                            <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">SPECIALTY</div>
-                            <div className="font-black text-xl text-white mt-0.5 italic uppercase">HOCKEY IQ</div>
+                    {/* 3. METADATA BANNER */}
+                    <div className="w-full bg-black/60 backdrop-blur-xl py-5 px-8 flex justify-between items-center shadow-2xl border-y border-white/5 relative z-30 group hover:border-east-light/30 transition-colors">
+                        <div className="absolute inset-0 bg-gradient-to-r from-east-light/5 via-transparent to-east-light/5 opacity-50" />
+                        <div className="text-center relative z-10">
+                            <div className="font-black italic text-[9px] text-east-light tracking-widest uppercase mb-1">SPECIALTY</div>
+                            <div className="font-black text-xl text-white italic uppercase drop-shadow-md">HOCKEY IQ</div>
                         </div>
-                        <div className="text-center">
-                            <div className="font-black italic text-[10px] text-black/60 tracking-widest uppercase">TEAM</div>
-                            <div className="font-black text-xl text-white mt-0.5 italic uppercase">{profileData.team || 'EAST ELITE'}</div>
+                        <div className="w-px h-8 bg-white/10 relative z-10" />
+                        <div className="text-center relative z-10">
+                            <div className="font-black italic text-[9px] text-east-light tracking-widest uppercase mb-1">TEAM</div>
+                            <div className="font-black text-xl text-white italic uppercase drop-shadow-md">{profileData.team || 'EAST ELITE'}</div>
                         </div>
                     </div>
                 </div>
@@ -524,37 +585,108 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                     {/* DRILLS TAB */}
                     {activeTab === 'drills' && (
                         <div className="flex flex-col gap-6 animate-fadeIn">
+                            {/* Filter Pills */}
                             <div className="flex flex-wrap gap-2 px-2">
                                 {DRILL_FILTERS.type.map((type, i) => (
-                                    <button key={i} className={`px-4 py-1.5 rounded-full text-[10px] font-black italic uppercase transition-all ${i === 0 ? 'bg-east-light text-black shadow-lg shadow-east-light/20' : 'bg-white/5 text-gray-400 border border-white/10'}`}>
+                                    <button key={i} className={`px-4 py-1.5 rounded-full text-[10px] font-black italic uppercase transition-all border ${i === 0 ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-black/40 text-gray-400 border-white/10 hover:border-white/30 hover:text-white backdrop-blur-md'}`}>
                                         {type}
                                     </button>
                                 ))}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
-                                {[1, 2, 3, 4].map(i => (
-                                    <div key={i} onClick={() => addToast("Viewing Drill Details...", 'info')} className="aspect-square bg-[#1e1e1e] border border-white/10 rounded-2xl p-4 flex flex-col justify-between group hover:border-east-light transition-all shadow-xl hover:-translate-y-1 active:scale-95 duration-200 cursor-pointer">
-                                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-east-light/30 transition-colors">
-                                            <Video size={20} className="text-gray-500 group-hover:text-east-light" />
+                            {/* Rich Drills Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 px-2">
+                                {drillsLoading ? (
+                                    <div className="col-span-2 text-center py-20">
+                                        <div className="w-8 h-8 border-4 border-east-light border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                                        <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.3em]">Syncing Library</p>
+                                    </div>
+                                ) : drills.length === 0 ? (
+                                    <div className="col-span-2 text-center py-20 border border-dashed border-white/5 rounded-[3rem] bg-white/[0.02]">
+                                        <Layers className="mx-auto mb-4 text-gray-800" size={40} />
+                                        <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.3em]">No Drills Published</p>
+                                    </div>
+                                ) : drills.map(drill => (
+                                    <div key={drill.id} onClick={() => setSelectedDrill(drill)} className="relative overflow-hidden rounded-[2.5rem] border border-white/5 group cursor-pointer shadow-2xl bg-[#0a0a0a] h-64 active:scale-[0.98] transition-all duration-500 hover:border-east-light/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:-translate-y-1">
+                                        {/* Background Image */}
+                                        <img src={drill.image_url || drill.image} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-1000" alt={drill.title} />
+                                        
+                                        {/* Dark Gradient Overlay */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                                        
+                                        {/* Glow Overlay */}
+                                        <div className="absolute inset-0 bg-east-light/0 group-hover:bg-east-light/5 transition-colors duration-700" />
+
+                                        {/* Play Button Overlay */}
+                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-10 scale-75 group-hover:scale-100">
+                                            <div className="w-16 h-16 rounded-[1.5rem] bg-white flex items-center justify-center pl-1 shadow-[0_0_40px_rgba(255,255,255,0.2)]">
+                                                <Play fill="black" size={24} className="text-black" />
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h4 className="font-black italic text-xs text-white uppercase leading-tight line-clamp-2">Power Slapshot<br />Mastery</h4>
-                                            <p className="text-[8px] font-bold text-east-light uppercase tracking-widest mt-1">Difficulty: PRO</p>
+
+                                        {/* Badges Top */}
+                                        <div className="absolute top-6 left-6 flex gap-2 z-10 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
+                                            <span className="px-3 py-1 bg-east-light/10 backdrop-blur-md rounded-full text-[8px] font-black text-east-light uppercase tracking-widest border border-east-light/20">
+                                                {drill.difficulty}
+                                            </span>
+                                            {drill.duration && (
+                                                <span className="px-3 py-1 bg-white/5 backdrop-blur-md rounded-full text-[8px] font-black text-gray-300 uppercase tracking-widest border border-white/10">
+                                                    {drill.duration}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Content Bottom */}
+                                        <div className="absolute bottom-6 left-8 right-8 z-10">
+                                            <h4 className="font-black italic text-2xl text-white uppercase leading-tight line-clamp-2 drop-shadow-2xl group-hover:text-east-light transition-colors duration-500">
+                                                {drill.title}
+                                            </h4>
+                                            <div className="flex items-center gap-3 mt-3 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-75">
+                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                                                    {drill.category}
+                                                </p>
+                                                <div className="w-1 h-1 bg-east-light rounded-full" />
+                                                <p className="text-[10px] font-black text-east-light uppercase tracking-[0.2em] italic">
+                                                    Tactical Analysis
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
+                            
                             {!isPublic && (
-                                <button onClick={() => addToast("Feature Coming Soon", 'info')} className="w-full py-4 bg-east-light text-black font-black italic text-xs rounded-2xl uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
-                                    CREATE NEW DRILL
+                                <button onClick={() => setShowCreateDrill(true)} className="group relative overflow-hidden w-full bg-[#111] border border-white/5 hover:border-east-light/50 text-white font-black italic text-sm py-6 rounded-[2rem] transition-all duration-700 active:scale-[0.98] shadow-2xl mt-4">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-east-light/0 via-east-light/5 to-east-light/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                    <span className="relative z-10 uppercase tracking-[0.3em] flex items-center justify-center gap-3 drop-shadow-md group-hover:text-east-light transition-colors">
+                                        <Plus size={20} className="group-hover:rotate-90 transition-transform duration-700" /> PUBLISH NEW DRILL
+                                    </span>
                                 </button>
                             )}
                         </div>
                     )}
-
                 </div>
             </div>
+
+            {/* Modals */}
+            {showCreateDrill && (
+                <CreateDrillModal 
+                    coachId={profileData.id} 
+                    onClose={() => setShowCreateDrill(false)} 
+                    onSuccess={() => {
+                        setShowCreateDrill(false);
+                        fetchDrills();
+                    }}
+                />
+            )}
+
+            {selectedDrill && (
+                <DrillDetailsModal 
+                    drill={selectedDrill} 
+                    onClose={() => setSelectedDrill(null)} 
+                    isCoach={!isPublic}
+                />
+            )}
 
             {/* LIGHTBOX OVERLAY */}
             <Lightbox

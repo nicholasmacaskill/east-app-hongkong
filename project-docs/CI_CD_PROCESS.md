@@ -23,6 +23,9 @@ git push origin test
 🔗 **Test Link**: [https://test-branch-east.vercel.app](https://test-branch-east.vercel.app)
 *(This uses **Stripe Test Mode**—it's safe to buy things with test cards here.)*
 
+**🎥 MANDATORY: CEO Video Review**
+Once the code is on the `test` branch, if this is a formal ticket item, you **MUST** record a video of the feature working and send it to the CEO for approval. He does not have time for manual review, so the video is the primary verification. (Minor one-off requests do not require a video).
+
 ### Step 3: Go LIVE (Main Branch)
 Once stakeholders approve, push the changes to the **Main Branch** to go live.
 ```bash
