@@ -37,10 +37,10 @@ interface Drill {
 interface DrillStep {
     id: string;
     drill_id: string;
-    step_number: number;
+    step_order: number;
     title: string;
-    instruction: string;
-    diagram_url?: string;
+    description: string;
+    image_url?: string;
     video_url?: string;
 }
 
@@ -56,6 +56,7 @@ export default function DrillHubScreen() {
     const [drillSteps, setDrillSteps] = useState<DrillStep[]>([]);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [activeAgeFilter, setActiveAgeFilter] = useState<string | null>(null);
+    const [activeSkillFilter, setActiveSkillFilter] = useState<string | null>(null);
     const [isSessionPlanMode, setIsSessionPlanMode] = useState(false);
 
     useEffect(() => {
@@ -113,7 +114,7 @@ export default function DrillHubScreen() {
             .from('coach_drill_steps')
             .select('*')
             .eq('drill_id', drillId)
-            .order('step_number', { ascending: true });
+            .order('step_order', { ascending: true });
 
         if (!error && data) {
             setDrillSteps(data);
@@ -126,9 +127,11 @@ export default function DrillHubScreen() {
         fetchDrillSteps(drill.id);
     };
 
-    const filteredDrills = activeAgeFilter 
-        ? drills.filter(d => d.age_tags?.includes(activeAgeFilter))
-        : drills;
+    const filteredDrills = drills.filter(d => {
+        const matchesAge = !activeAgeFilter || d.age_tags?.includes(activeAgeFilter);
+        const matchesSkill = !activeSkillFilter || activeSkillFilter === 'ALL' || d.skill_tags?.some(s => s.toUpperCase() === activeSkillFilter.toUpperCase());
+        return matchesAge && matchesSkill;
+    });
 
     if (selectedDrill) {
         const currentStep = drillSteps[currentStepIndex];
@@ -185,15 +188,15 @@ export default function DrillHubScreen() {
                                         <div className="flex-1 h-[1px] bg-white/5" />
                                     </div>
                                     <h2 className="text-2xl font-black italic uppercase tracking-tight text-white mb-6 leading-tight flex items-start gap-4">
-                                        <span className="text-east-light opacity-50 font-black italic text-4xl leading-none">{currentStep.step_number}</span>
+                                        <span className="text-east-light opacity-50 font-black italic text-4xl leading-none">{currentStep.step_order}</span>
                                         <span className="pt-1">{currentStep.title}</span>
                                     </h2>
                                 </div>
 
                                 {/* Whiteboard Area */}
                                 <div className="mx-8 mb-10 bg-white rounded-[3rem] overflow-hidden flex items-center justify-center p-10 relative shadow-[inset_0_0_60px_rgba(0,0,0,0.1)] aspect-[3/4]">
-                                    {currentStep.diagram_url ? (
-                                        <img src={currentStep.diagram_url} className="w-full h-full object-contain" alt="diagram" />
+                                    {currentStep.image_url ? (
+                                        <img src={currentStep.image_url} className="w-full h-full object-contain" alt="diagram" />
                                     ) : (
                                         <div className="text-center opacity-20">
                                             <Layers size={100} className="text-gray-900 mx-auto" />
@@ -204,7 +207,7 @@ export default function DrillHubScreen() {
                                     {/* Glass Overlay for Instruction */}
                                     <div className="absolute bottom-6 left-6 right-6 p-6 bg-black/80 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-2xl">
                                         <p className="text-[11px] font-bold text-gray-300 leading-relaxed italic">
-                                            {currentStep.instruction}
+                                            {currentStep.description}
                                         </p>
                                     </div>
                                 </div>
@@ -277,10 +280,11 @@ export default function DrillHubScreen() {
 
                 {!isSessionPlanMode && (
                     <div className="flex gap-4 overflow-x-auto no-scrollbar py-2 -mx-4 px-4">
-                        {['ALL', 'SHOOTING', 'PASSING', 'DEFENSE', 'SKATING', 'GOALIE'].map((f, i) => (
+                        {['ALL', 'SHOOTING', 'PASSING', 'DEFENSE', 'SKATING', 'GOALIE'].map((f) => (
                             <button 
                                 key={f} 
-                                className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 border backdrop-blur-md shadow-2xl active:scale-95 ${i === 0 ? 'bg-east-light text-black border-east-light shadow-[0_0_25px_rgba(40,209,96,0.4)]' : 'bg-[#111] text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
+                                onClick={() => setActiveSkillFilter(f)}
+                                className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 border backdrop-blur-md shadow-2xl active:scale-95 ${(activeSkillFilter === f || (!activeSkillFilter && f === 'ALL')) ? 'bg-east-light text-black border-east-light shadow-[0_0_25px_rgba(40,209,96,0.4)]' : 'bg-[#111] text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
                             >
                                 {f}
                             </button>
