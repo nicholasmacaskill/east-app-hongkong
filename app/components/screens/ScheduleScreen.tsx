@@ -319,12 +319,35 @@ export default function ScheduleScreen({
                       </div>
                       <div className="bg-white/5 p-3 flex justify-between items-center border-t border-white/5">
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded-full bg-gray-800" />
-                          <span className="text-[9px] font-black italic text-gray-400 uppercase tracking-widest">
-                            {event.instructor?.replace(/\s+/g, ' ').trim()}
-                          </span>
+                          {(event as any).hasDrills && (
+                            <div className="flex items-center gap-2 px-3 py-1 bg-east-light/10 border border-east-light/30 rounded-lg animate-pulse shadow-[0_0_15px_rgba(40,209,96,0.2)]">
+                              <div className="w-1.5 h-1.5 bg-east-light rounded-full" />
+                              <span className="text-[9px] font-black italic text-east-light uppercase tracking-widest">Evolution Ready</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2 ml-2">
+                            <div className="w-4 h-4 rounded-full bg-gray-800" />
+                            <span className="text-[9px] font-black italic text-gray-400 uppercase tracking-widest">
+                              {event.instructor?.replace(/\s+/g, ' ').trim()}
+                            </span>
+                          </div>
                         </div>
-                        <button className="bg-white text-black text-[9px] font-black italic px-4 py-1.5 rounded-full hover:bg-east-light transition-colors">DETAILS</button>
+                        
+                        {(event as any).hasDrills ? (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.location.href = `/drill-hub?session_id=${event.id}`;
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-east-light text-black rounded-xl font-black text-[9px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg"
+                          >
+                            <Activity size={12} />
+                            VIEW PLAN
+                          </button>
+                        ) : (
+                          <button className="bg-white/5 border border-white/5 text-gray-500 text-[9px] font-black italic px-4 py-2 rounded-xl hover:bg-white/10 transition-colors">DETAILS</button>
+                        )}
+                      </div>
                       </div>
                     </div>
                   </div>

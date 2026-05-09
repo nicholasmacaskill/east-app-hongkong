@@ -41,7 +41,8 @@ export async function GET(request: Request) {
       user_id,
       status,
       sessions (
-        id, title, start_time, end_time, instructor, category, description, credit_cost, image_url, status
+        id, title, start_time, end_time, instructor, category, description, credit_cost, image_url, status,
+        session_drills (id)
       ),
       profiles!registrations_user_id_fkey (
         id, first_name, last_name, role
@@ -62,11 +63,16 @@ export async function GET(request: Request) {
 
     const profiles = reg.profiles;
     const attendee = Array.isArray(profiles) ? profiles[0] : profiles;
+    
+    // Check if drills exist
+    const hasDrills = reg.sessions.session_drills && reg.sessions.session_drills.length > 0;
+
     return {
       ...reg.sessions,
-      attendee: attendee // Attach attendee info safely
+      attendee: attendee, // Attach attendee info safely
+      hasDrills: hasDrills
     };
-  }).filter((s: { id: number } | null) => s && s.id);
+  }).filter((s: any) => s && s.id);
 
   // Sort by date (earliest first)
   schedule.sort((a: { start_time: string }, b: { start_time: string }) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
