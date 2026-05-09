@@ -340,7 +340,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                 {drills.map(drill => (
                                     <div 
                                         key={drill.id} 
-                                        onClick={() => setSelectedDrill(drill)}
+                                        onClick={() => window.location.href = `/drill-hub?drill_id=${drill.id}`}
                                         className="relative overflow-hidden rounded-[2.5rem] border border-white/5 group cursor-pointer shadow-2xl bg-[#111] h-64 active:scale-[0.98] transition-all duration-500 hover:border-east-light/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
                                     >
                                         <img 

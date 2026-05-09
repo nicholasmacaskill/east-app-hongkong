@@ -69,28 +69,46 @@ export default function DrillHubScreen() {
     const [userRole, setUserRole] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'visual' | 'tactical' | 'analysis'>('visual');
     const [isDrawing, setIsDrawing] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [color, setColor] = useState('#28D160');
+    const [isEraser, setIsEraser] = useState(false);
+    const [savingTactics, setSavingTactics] = useState(false);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'visual' | 'tactical' | 'analysis'>('visual');
+    const [isDrawing, setIsDrawing] = useState(false);
     const [color, setColor] = useState('#28D160');
     const [isEraser, setIsEraser] = useState(false);
     const [savingTactics, setSavingTactics] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    useEffect(() => {
-        const checkUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-                if (profile) setUserRole(profile.role);
-            }
-        };
         checkUser();
 
+        const drillIdParam = searchParams.get('drill_id');
         if (sessionId) {
             setIsSessionPlanMode(true);
             fetchSessionPlan(sessionId);
+        } else if (drillIdParam) {
+            fetchSingleDrill(drillIdParam);
         } else {
             fetchDrills();
         }
-    }, [sessionId, activeSkillFilter]);
+    }, [sessionId, activeSkillFilter, searchParams]);
+
+    const fetchSingleDrill = async (id: string) => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('coach_drills')
+            .select('*, coach:profiles(first_name, last_name, avatar_url)')
+            .eq('id', id)
+            .single();
+
+        if (!error && data) {
+            setSelectedDrill(data);
+            fetchDrillSteps(data.id);
+        }
+        setLoading(false);
+    };
 
     const fetchSessionPlan = async (sid: string) => {
         setLoading(true);
@@ -244,40 +262,38 @@ export default function DrillHubScreen() {
                 </div>
 
                 {/* Top Navigation Bar */}
-                <div className="relative z-20 flex justify-between items-center px-12 py-10 backdrop-blur-md bg-black/20 border-b border-white/5">
+                <div className="relative z-30 flex justify-between items-center px-12 py-10 backdrop-blur-md bg-black/20 border-b border-white/5">
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-3">
                             <button 
-                                onClick={() => setSelectedDrill(null)}
+                                onClick={() => {
+                                    if (window.history.length > 1) window.history.back();
+                                    else setSelectedDrill(null);
+                                }}
                                 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-east-light transition-all group"
                             >
-                                <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Hub
+                                <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back
                             </button>
                             <span className="w-1 h-1 bg-white/20 rounded-full" />
-                            <span className="text-[10px] font-black tracking-[0.4em] text-east-light uppercase italic">Tactical Sequence</span>
+                            <span className="text-[10px] font-black tracking-[0.4em] text-east-light uppercase italic">
+                                {isEditing ? 'Studio Mode' : 'Tactical Sequence'}
+                            </span>
                         </div>
                         <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white leading-tight brightness-125">
                             {selectedDrill.title}
                         </h1>
                     </div>
                     
-                    <div className="flex items-center gap-8">
-                        {/* Single Tactical Lead */}
-                        <div className="flex items-center gap-4 bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
-                            <div className="text-right">
-                                <span className="block text-[8px] font-black uppercase text-gray-500 tracking-widest mb-0.5">Tactical Lead</span>
-                                <span className="block text-[11px] font-black italic uppercase text-white tracking-widest">
-                                    {selectedDrill.coach?.first_name || 'Coach'} {selectedDrill.coach?.last_name || ''}
-                                </span>
-                            </div>
-                            <div className="w-10 h-10 rounded-xl border border-east-light/30 overflow-hidden shadow-2xl">
-                                <img 
-                                    src={selectedDrill.coach?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedDrill.coach?.first_name || 'Coach'}`} 
-                                    className="w-full h-full object-cover" 
-                                    alt="coach" 
-                                />
-                            </div>
-                        </div>
+                    <div className="flex items-center gap-6">
+                        {(userRole === 'coach' || userRole === 'admin') && (
+                            <button 
+                                onClick={() => setIsEditing(!isEditing)}
+                                className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border ${isEditing ? 'bg-white text-black border-white' : 'bg-white/5 text-[#28D160] border-[#28D160]/20 hover:bg-[#28D160]/10'}`}
+                            >
+                                <Plus size={14} className={isEditing ? 'rotate-45 transition-transform' : ''} />
+                                {isEditing ? 'CLOSE STUDIO' : 'EDIT DRILL'}
+                            </button>
+                        )}
 
                         <button 
                             onClick={() => setSelectedDrill(null)}
@@ -424,9 +440,23 @@ export default function DrillHubScreen() {
 
                                 <div className="space-y-6">
                                     <span className="block text-[10px] font-black uppercase tracking-[0.4em] text-east-light italic">Tactical Briefing</span>
-                                    <p className="text-lg text-gray-300 font-medium leading-relaxed italic border-l-2 border-east-light/30 pl-8 py-2 bg-gradient-to-r from-east-light/5 to-transparent rounded-r-3xl">
-                                        {currentStep.instruction}
-                                    </p>
+                                    {isEditing ? (
+                                        <textarea 
+                                            value={currentStep.instruction}
+                                            onChange={(e) => {
+                                                const newSteps = [...drillSteps];
+                                                newSteps[currentStepIndex].instruction = e.target.value;
+                                                setDrillSteps(newSteps);
+                                                // Auto-save logic could go here
+                                                supabase.from('coach_drill_steps').update({ instruction: e.target.value }).eq('id', currentStep.id).then();
+                                            }}
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 text-lg text-white font-medium italic outline-none focus:border-[#28D160] transition-all min-h-[150px]"
+                                        />
+                                    ) : (
+                                        <p className="text-lg text-gray-300 font-medium leading-relaxed italic border-l-2 border-east-light/30 pl-8 py-2 bg-gradient-to-r from-east-light/5 to-transparent rounded-r-3xl">
+                                            {currentStep.instruction}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="flex flex-col gap-4 pt-4">
@@ -460,15 +490,49 @@ export default function DrillHubScreen() {
                 {/* Horizontal Step Thumbnails / Progress Bar at bottom */}
                 <div className="relative z-20 h-24 bg-black/40 backdrop-blur-3xl border-t border-white/5 flex items-center px-12 gap-4 overflow-x-auto no-scrollbar">
                     {drillSteps.map((s, i) => (
-                        <button 
-                            key={i}
-                            onClick={() => setCurrentStepIndex(i)}
-                            className={`shrink-0 h-12 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 flex items-center gap-3 border ${currentStepIndex === i ? 'bg-east-light text-black border-east-light shadow-[0_0_20px_rgba(40,209,96,0.3)] scale-105' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
-                        >
-                            <span className={currentStepIndex === i ? 'text-black' : 'text-east-light opacity-50'}>0{s.step_number}</span>
-                            {s.title}
-                        </button>
+                        <div key={i} className="relative group/step">
+                            <button 
+                                onClick={() => setCurrentStepIndex(i)}
+                                className={`shrink-0 h-12 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 flex items-center gap-3 border ${currentStepIndex === i ? 'bg-east-light text-black border-east-light shadow-[0_0_20px_rgba(40,209,96,0.3)] scale-105' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
+                            >
+                                <span className={currentStepIndex === i ? 'text-black' : 'text-east-light opacity-50'}>0{s.step_number}</span>
+                                {s.title}
+                            </button>
+                            {isEditing && (
+                                <button 
+                                    onClick={async () => {
+                                        if (drillSteps.length <= 1) return;
+                                        await supabase.from('coach_drill_steps').delete().eq('id', s.id);
+                                        const newSteps = drillSteps.filter((_, idx) => idx !== i);
+                                        setDrillSteps(newSteps);
+                                        setCurrentStepIndex(Math.max(0, i - 1));
+                                    }}
+                                    className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover/step:opacity-100 transition-opacity shadow-xl"
+                                >
+                                    <X size={10} />
+                                </button>
+                            )}
+                        </div>
                     ))}
+                    {isEditing && (
+                        <button 
+                            onClick={async () => {
+                                const { data } = await supabase.from('coach_drill_steps').insert({
+                                    drill_id: selectedDrill.id,
+                                    step_number: drillSteps.length + 1,
+                                    title: 'New Slide',
+                                    instruction: 'Add coaching instruction here...'
+                                }).select().single();
+                                if (data) {
+                                    setDrillSteps([...drillSteps, data]);
+                                    setCurrentStepIndex(drillSteps.length);
+                                }
+                            }}
+                            className="shrink-0 w-12 h-12 bg-white/5 border border-dashed border-white/20 rounded-xl flex items-center justify-center text-gray-500 hover:text-east-light hover:border-east-light transition-all"
+                        >
+                            <Plus size={20} />
+                        </button>
+                    )}
                 </div>
             </div>
         );
