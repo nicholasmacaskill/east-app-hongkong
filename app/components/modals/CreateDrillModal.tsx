@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef } from 'react';
-import { X, Upload, Image as ImageIcon, Loader2, Plus, Trash2, ChevronLeft, ChevronRight, GripVertical } from 'lucide-react';
+import { X, Upload, Image as ImageIcon, Loader2, Plus, Trash2, ChevronLeft, ChevronRight, GripVertical, Video, PenTool, Eraser, Save, Layers } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
 
@@ -8,6 +8,9 @@ interface DrillStep {
     title: string;
     description: string;
     image_url?: string;
+    video_url?: string;
+    tactical_data?: string;
+    media_type: 'image' | 'video' | 'tactical';
 }
 
 interface CreateDrillModalProps {
@@ -34,12 +37,20 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
     const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
 
     // Steps
-    const [steps, setSteps] = useState<DrillStep[]>([{ title: '', description: '' }]);
+    const [steps, setSteps] = useState<DrillStep[]>([{ title: '', description: '', media_type: 'image' }]);
     const [activeStepIndex, setActiveStepIndex] = useState(0);
     const [stepImageFiles, setStepImageFiles] = useState<Record<number, File>>({});
+    const [stepVideoFiles, setStepVideoFiles] = useState<Record<number, File>>({});
+    
+    // Drawing state
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [drawColor, setDrawColor] = useState('#28D160');
+    const [isEraser, setIsEraser] = useState(false);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     
     const thumbnailInputRef = useRef<HTMLInputElement>(null);
     const stepImageRefs = useRef<Record<number, HTMLInputElement | null>>({});
+    const stepVideoRefs = useRef<Record<number, HTMLInputElement | null>>({});
 
     const toggleAge = (age: string) => {
         setSelectedAges(prev => prev.includes(age) ? prev.filter(a => a !== age) : [...prev, age]);
@@ -56,13 +67,20 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
         const file = e.target.files?.[0];
         if (!file) return;
         setStepImageFiles(prev => ({ ...prev, [idx]: file }));
-        // Update step with local preview
         const url = URL.createObjectURL(file);
         setSteps(prev => prev.map((s, i) => i === idx ? { ...s, image_url: url } : s));
     };
 
+    const handleStepVideoSelect = (idx: number, e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setStepVideoFiles(prev => ({ ...prev, [idx]: file }));
+        const url = URL.createObjectURL(file);
+        setSteps(prev => prev.map((s, i) => i === idx ? { ...s, video_url: url } : s));
+    };
+
     const addStep = () => {
-        setSteps(prev => [...prev, { title: '', description: '' }]);
+        setSteps(prev => [...prev, { title: '', description: '', media_type: 'image' }]);
         setActiveStepIndex(steps.length);
     };
 
@@ -77,8 +95,56 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
         setActiveStepIndex(Math.max(0, idx - 1));
     };
 
-    const updateStep = (idx: number, field: keyof DrillStep, value: string) => {
+    const updateStep = (idx: number, field: keyof DrillStep, value: any) => {
         setSteps(prev => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s));
+    };
+
+    // --- Drawing Logic ---
+    const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+        setIsDrawing(true);
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (!canvas || !ctx) return;
+        const rect = canvas.getBoundingClientRect();
+        const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+        ctx.beginPath();
+        ctx.moveTo(clientX - rect.left, clientY - rect.top);
+    };
+
+    const draw = (e: React.MouseEvent | React.TouchEvent) => {
+        if (!isDrawing) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (!canvas || !ctx) return;
+        const rect = canvas.getBoundingClientRect();
+        const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+        ctx.lineTo(clientX - rect.left, clientY - rect.top);
+        ctx.strokeStyle = isEraser ? '#111' : drawColor;
+        ctx.lineWidth = isEraser ? 30 : 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+    };
+
+    const stopDrawing = () => {
+        setIsDrawing(false);
+        // Save to step state immediately
+        const canvas = canvasRef.current;
+        if (canvas) {
+            const dataUrl = canvas.toDataURL();
+            updateStep(activeStepIndex, 'tactical_data', dataUrl);
+        }
+    };
+
+    const clearCanvas = () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (canvas && ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            updateStep(activeStepIndex, 'tactical_data', undefined);
+        }
     };
 
     const canProceedToSteps = title.trim().length > 0;
@@ -118,18 +184,34 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
 
             if (drillErr) throw new Error(`Failed to create drill: ${drillErr.message}`);
 
-            // 3. Upload step images and insert steps
+            // 3. Upload step media and insert steps
             const validSteps = steps.filter(s => s.title.trim() || s.description.trim());
             for (let i = 0; i < validSteps.length; i++) {
-                let stepImageUrl: string | undefined;
-                const stepFile = stepImageFiles[steps.indexOf(validSteps[i])];
-                if (stepFile) {
-                    const ext = stepFile.name.split('.').pop();
-                    const fileName = `drill-step-${drillData.id}-${i}-${Date.now()}.${ext}`;
-                    const { error: sImgErr } = await supabase.storage.from('uploads').upload(fileName, stepFile);
+                const originalIdx = steps.indexOf(validSteps[i]);
+                let stepImageUrl: string | undefined = validSteps[i].image_url;
+                let stepVideoUrl: string | undefined = validSteps[i].video_url;
+
+                // Handle Image Upload
+                const imageFile = stepImageFiles[originalIdx];
+                if (imageFile) {
+                    const ext = imageFile.name.split('.').pop();
+                    const fileName = `drill-step-img-${drillData.id}-${i}-${Date.now()}.${ext}`;
+                    const { error: sImgErr } = await supabase.storage.from('uploads').upload(fileName, imageFile);
                     if (!sImgErr) {
                         const { data: sImgData } = supabase.storage.from('uploads').getPublicUrl(fileName);
                         stepImageUrl = sImgData.publicUrl;
+                    }
+                }
+
+                // Handle Video Upload
+                const videoFile = stepVideoFiles[originalIdx];
+                if (videoFile) {
+                    const ext = videoFile.name.split('.').pop();
+                    const fileName = `drill-step-vid-${drillData.id}-${i}-${Date.now()}.${ext}`;
+                    const { error: sVidErr } = await supabase.storage.from('uploads').upload(fileName, videoFile);
+                    if (!sVidErr) {
+                        const { data: sVidData } = supabase.storage.from('uploads').getPublicUrl(fileName);
+                        stepVideoUrl = sVidData.publicUrl;
                     }
                 }
 
@@ -139,6 +221,8 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                     title: validSteps[i].title.trim() || `Step ${i + 1}`,
                     instruction: validSteps[i].description.trim(),
                     diagram_url: stepImageUrl,
+                    video_url: stepVideoUrl,
+                    tactical_data: validSteps[i].tactical_data
                 });
             }
 
@@ -323,33 +407,92 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                                 />
                             </div>
 
-                            {/* Step diagram/image */}
-                            <div>
-                                <label className="block text-[9px] font-black text-east-light uppercase tracking-[0.3em] mb-2">Diagram / Image <span className="text-gray-600 normal-case">(optional)</span></label>
-                                <div
-                                    onClick={() => stepImageRefs.current[activeStepIndex]?.click()}
-                                    className="relative h-28 rounded-2xl overflow-hidden border-2 border-dashed border-white/10 hover:border-east-light/40 cursor-pointer group transition-all bg-black/30"
-                                >
-                                    {activeStep.image_url ? (
-                                        <>
-                                            <img src={activeStep.image_url} className="w-full h-full object-cover opacity-50 group-hover:opacity-70 transition-opacity" alt="diagram" />
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                                <span className="text-[9px] font-black text-white uppercase tracking-widest bg-black/60 px-3 py-1.5 rounded-full">Change Image</span>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center h-full gap-1.5">
-                                            <ImageIcon size={22} className="text-gray-700 group-hover:text-east-light transition-colors" />
-                                            <span className="text-[10px] font-black uppercase text-gray-700 group-hover:text-gray-500 tracking-widest">Upload Diagram</span>
+                            {/* Step media selector */}
+                            <div className="space-y-4">
+                                <label className="block text-[9px] font-black text-east-light uppercase tracking-[0.3em] mb-2">Visual Content</label>
+                                
+                                <div className="flex gap-2 p-1 bg-black/40 rounded-2xl border border-white/5">
+                                    {[
+                                        { id: 'image', label: 'Photo', icon: ImageIcon },
+                                        { id: 'video', label: 'Video', icon: Video },
+                                        { id: 'tactical', label: 'Draw', icon: PenTool }
+                                    ].map(tab => (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => updateStep(activeStepIndex, 'media_type', tab.id)}
+                                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${activeStep.media_type === tab.id ? 'bg-white/10 text-white shadow-xl' : 'text-gray-600 hover:text-gray-400'}`}
+                                        >
+                                            <tab.icon size={14} /> {tab.label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="relative h-44 rounded-2xl overflow-hidden border-2 border-dashed border-white/10 bg-black/30">
+                                    {activeStep.media_type === 'image' && (
+                                        <div onClick={() => stepImageRefs.current[activeStepIndex]?.click()} className="w-full h-full cursor-pointer flex flex-col items-center justify-center group">
+                                            {activeStep.image_url ? (
+                                                <img src={activeStep.image_url} className="w-full h-full object-cover opacity-60 group-hover:opacity-80" alt="step" />
+                                            ) : (
+                                                <>
+                                                    <ImageIcon size={28} className="text-gray-700 group-hover:text-east-light" />
+                                                    <span className="text-[10px] font-black uppercase text-gray-700 tracking-widest mt-2">Upload Photo</span>
+                                                </>
+                                            )}
+                                            <input ref={el => { stepImageRefs.current[activeStepIndex] = el; }} type="file" accept="image/*" className="hidden" onChange={e => handleStepImageSelect(activeStepIndex, e)} />
                                         </div>
                                     )}
-                                    <input
-                                        ref={el => { stepImageRefs.current[activeStepIndex] = el; }}
-                                        type="file"
-                                        accept="image/*"
-                                        className="hidden"
-                                        onChange={e => handleStepImageSelect(activeStepIndex, e)}
-                                    />
+
+                                    {activeStep.media_type === 'video' && (
+                                        <div onClick={() => stepVideoRefs.current[activeStepIndex]?.click()} className="w-full h-full cursor-pointer flex flex-col items-center justify-center group">
+                                            {activeStep.video_url ? (
+                                                <video src={activeStep.video_url} className="w-full h-full object-cover opacity-60" />
+                                            ) : (
+                                                <>
+                                                    <Video size={28} className="text-gray-700 group-hover:text-east-light" />
+                                                    <span className="text-[10px] font-black uppercase text-gray-700 tracking-widest mt-2">Upload Video</span>
+                                                </>
+                                            )}
+                                            <input ref={el => { stepVideoRefs.current[activeStepIndex] = el; }} type="file" accept="video/*" className="hidden" onChange={e => handleStepVideoSelect(activeStepIndex, e)} />
+                                        </div>
+                                    )}
+
+                                    {activeStep.media_type === 'tactical' && (
+                                        <div className="w-full h-full relative">
+                                            {/* Drawing tools overlay */}
+                                            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-30 bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full flex items-center gap-3 border border-white/10 scale-75 origin-top">
+                                                {['#28D160', '#ff3b30', '#007aff', '#ffffff'].map(c => (
+                                                    <button key={c} onClick={() => {setDrawColor(c); setIsEraser(false);}} className={`w-4 h-4 rounded-full border ${drawColor === c && !isEraser ? 'border-white scale-110' : 'border-transparent opacity-50'}`} style={{ backgroundColor: c }} />
+                                                ))}
+                                                <button onClick={() => setIsEraser(!isEraser)} className={`p-1.5 rounded-full transition-colors ${isEraser ? 'bg-white/20 text-white' : 'text-gray-500'}`}><Eraser size={14} /></button>
+                                                <button onClick={clearCanvas} className="p-1.5 text-red-500/50"><Trash2 size={14} /></button>
+                                            </div>
+
+                                            {/* Rink Background */}
+                                            <div className="absolute inset-0 opacity-10 pointer-events-none flex items-center justify-center">
+                                                <svg viewBox="0 0 800 400" className="w-[80%] h-auto">
+                                                    <rect x="50" y="20" width="700" height="360" rx="100" fill="none" stroke="white" strokeWidth="4"/>
+                                                    <line x1="400" y1="20" x2="400" y2="380" stroke="#ff3b30" strokeWidth="4"/>
+                                                    <line x1="250" y1="20" x2="250" y2="380" stroke="#007aff" strokeWidth="4"/>
+                                                    <line x1="550" y1="20" x2="550" y2="380" stroke="#007aff" strokeWidth="4"/>
+                                                    <circle cx="400" cy="200" r="60" fill="none" stroke="#007aff" strokeWidth="4"/>
+                                                </svg>
+                                            </div>
+
+                                            <canvas 
+                                                ref={canvasRef}
+                                                width={800}
+                                                height={450}
+                                                className="w-full h-full relative z-20 cursor-crosshair"
+                                                onMouseDown={startDrawing}
+                                                onMouseMove={draw}
+                                                onMouseUp={stopDrawing}
+                                                onMouseOut={stopDrawing}
+                                                onTouchStart={startDrawing}
+                                                onTouchMove={draw}
+                                                onTouchEnd={stopDrawing}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
