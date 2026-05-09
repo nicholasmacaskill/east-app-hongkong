@@ -287,9 +287,19 @@ export default function DrillHubScreen() {
 
     const filteredDrills = drills.filter(d => {
         const matchesAge = !activeAgeFilter || d.age_tags?.includes(activeAgeFilter);
-        const matchesSkill = !activeSkillFilter || activeSkillFilter === 'ALL' || 
-            d.skill_tags?.some(s => s.toUpperCase().includes(activeSkillFilter.toUpperCase())) ||
-            (d.skill_tags?.length === 0 && activeSkillFilter === 'ALL');
+        
+        // Robust Skill Filtering
+        let matchesSkill = false;
+        if (!activeSkillFilter || activeSkillFilter === 'ALL') {
+            matchesSkill = true;
+        } else if (Array.isArray(d.skill_tags)) {
+            matchesSkill = d.skill_tags.some(s => 
+                typeof s === 'string' && s.toUpperCase().includes(activeSkillFilter.toUpperCase())
+            );
+        } else if (typeof d.skill_tags === 'string') {
+            matchesSkill = (d.skill_tags as string).toUpperCase().includes(activeSkillFilter.toUpperCase());
+        }
+
         return matchesAge && matchesSkill;
     });
 
