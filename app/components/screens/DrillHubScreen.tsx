@@ -15,7 +15,14 @@ import {
     Search,
     X,
     Maximize2,
-    Plus
+    Plus,
+    Video,
+    PenTool,
+    Eraser,
+    Trash2,
+    Upload,
+    Save,
+    Loader2
 } from 'lucide-react';
 
 interface Drill {
@@ -42,6 +49,7 @@ interface DrillStep {
     instruction: string;
     diagram_url?: string;
     video_url?: string;
+    tactical_data?: string;
 }
 
 const AGE_GROUPS = ['10-12', '12-16', '16-20', '20-24', '24+'];
@@ -58,8 +66,24 @@ export default function DrillHubScreen() {
     const [activeAgeFilter, setActiveAgeFilter] = useState<string | null>(null);
     const [activeSkillFilter, setActiveSkillFilter] = useState<string | null>(null);
     const [isSessionPlanMode, setIsSessionPlanMode] = useState(false);
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'visual' | 'tactical' | 'analysis'>('visual');
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [color, setColor] = useState('#28D160');
+    const [isEraser, setIsEraser] = useState(false);
+    const [savingTactics, setSavingTactics] = useState(false);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
+        const checkUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+                if (profile) setUserRole(profile.role);
+            }
+        };
+        checkUser();
+
         if (sessionId) {
             setIsSessionPlanMode(true);
             fetchSessionPlan(sessionId);
@@ -131,7 +155,77 @@ export default function DrillHubScreen() {
     const handleSelectDrill = (drill: Drill) => {
         setSelectedDrill(drill);
         fetchDrillSteps(drill.id);
+        setActiveTab('visual');
     };
+
+    // --- Drawing Board Logic ---
+    const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+        if (userRole !== 'coach' && userRole !== 'admin') return;
+        setIsDrawing(true);
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (!canvas || !ctx) return;
+        const rect = canvas.getBoundingClientRect();
+        const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+        ctx.beginPath();
+        ctx.moveTo(clientX - rect.left, clientY - rect.top);
+    };
+
+    const draw = (e: React.MouseEvent | React.TouchEvent) => {
+        if (!isDrawing || (userRole !== 'coach' && userRole !== 'admin')) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (!canvas || !ctx) return;
+        const rect = canvas.getBoundingClientRect();
+        const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+        ctx.lineTo(clientX - rect.left, clientY - rect.top);
+        ctx.strokeStyle = isEraser ? '#050505' : color;
+        ctx.lineWidth = isEraser ? 30 : 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+    };
+
+    const stopDrawing = () => setIsDrawing(false);
+
+    const clearCanvas = () => {
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    const saveTactics = async () => {
+        const canvas = canvasRef.current;
+        if (!canvas || !selectedDrill || drillSteps.length === 0) return;
+        setSavingTactics(true);
+        try {
+            const dataUrl = canvas.toDataURL();
+            const stepId = drillSteps[currentStepIndex].id;
+            await supabase.from('coach_drill_steps').update({ tactical_data: dataUrl }).eq('id', stepId);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setSavingTactics(false);
+        }
+    };
+
+    // Load tactics when step changes
+    useEffect(() => {
+        if (activeTab === 'tactical' && canvasRef.current && drillSteps[currentStepIndex]?.tactical_data) {
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            img.onload = () => {
+                ctx?.clearRect(0, 0, canvas.width, canvas.height);
+                ctx?.drawImage(img, 0, 0);
+            };
+            img.src = drillSteps[currentStepIndex].tactical_data;
+        } else if (activeTab === 'tactical' && canvasRef.current) {
+            clearCanvas();
+        }
+    }, [currentStepIndex, activeTab, drillSteps]);
 
     const filteredDrills = drills.filter(d => {
         const matchesAge = !activeAgeFilter || d.age_tags?.includes(activeAgeFilter);
@@ -203,16 +297,67 @@ export default function DrillHubScreen() {
                             <div className="relative w-full h-full flex items-center justify-center group">
                                 {/* Diagram Container */}
                                 <div className="relative w-full max-w-4xl aspect-video rounded-[3rem] overflow-hidden border border-white/10 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm shadow-[0_40px_100px_rgba(0,0,0,0.6)] flex items-center justify-center p-10">
-                                    {currentStep.diagram_url ? (
-                                        <img 
-                                            src={currentStep.diagram_url} 
-                                            className="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-fadeIn" 
-                                            alt="diagram" 
-                                        />
+                                    {activeTab === 'visual' ? (
+                                        currentStep.diagram_url ? (
+                                            <img 
+                                                src={currentStep.diagram_url} 
+                                                className="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-fadeIn" 
+                                                alt="diagram" 
+                                            />
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-6 opacity-20">
+                                                <Layers size={120} className="text-white" />
+                                                <span className="text-sm font-black uppercase tracking-[0.4em] italic">Awaiting Visuals</span>
+                                            </div>
+                                        )
+                                    ) : activeTab === 'tactical' ? (
+                                        <div className="relative w-full h-full bg-[#050505] flex items-center justify-center rounded-[2rem] overflow-hidden">
+                                            {/* Rink Background */}
+                                            <div className="absolute inset-0 opacity-10 pointer-events-none flex items-center justify-center p-8">
+                                                <svg viewBox="0 0 800 400" className="w-full h-full">
+                                                    <rect x="50" y="20" width="700" height="360" rx="100" fill="none" stroke="white" strokeWidth="2"/>
+                                                    <line x1="400" y1="20" x2="400" y2="380" stroke="#ff3b30" strokeWidth="2"/>
+                                                    <line x1="250" y1="20" x2="250" y2="380" stroke="#007aff" strokeWidth="2"/>
+                                                    <line x1="550" y1="20" x2="550" y2="380" stroke="#007aff" strokeWidth="2"/>
+                                                    <circle cx="400" cy="200" r="60" fill="none" stroke="#007aff" strokeWidth="2"/>
+                                                </svg>
+                                            </div>
+                                            
+                                            {/* Tools Overlay */}
+                                            {(userRole === 'coach' || userRole === 'admin') && (
+                                                <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full px-6 py-2 flex items-center gap-4 shadow-2xl">
+                                                    <div className="flex gap-2 border-r border-white/10 pr-4">
+                                                        {['#28D160', '#ff3b30', '#007aff', '#ffffff'].map(c => (
+                                                            <button key={c} onClick={() => {setColor(c); setIsEraser(false);}} className={`w-5 h-5 rounded-full border-2 ${color === c && !isEraser ? 'border-white scale-110' : 'border-transparent opacity-50'}`} style={{ backgroundColor: c }} />
+                                                        ))}
+                                                    </div>
+                                                    <button onClick={() => setIsEraser(!isEraser)} className={`p-2 rounded-full transition-colors ${isEraser ? 'bg-white/20 text-white' : 'text-gray-500 hover:text-white'}`}><Eraser size={16} /></button>
+                                                    <button onClick={clearCanvas} className="p-2 text-red-500/50 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                                                    <button onClick={saveTactics} disabled={savingTactics} className="ml-2 flex items-center gap-2 px-4 py-1.5 bg-[#28D160] text-black rounded-full font-black text-[9px] uppercase tracking-widest hover:bg-white transition-all">
+                                                        {savingTactics ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+                                                        SAVE
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            <canvas 
+                                                ref={canvasRef}
+                                                width={800}
+                                                height={450}
+                                                className={`w-full h-full relative z-20 ${userRole === 'coach' ? 'cursor-crosshair' : 'cursor-default'}`}
+                                                onMouseDown={startDrawing}
+                                                onMouseMove={draw}
+                                                onMouseUp={stopDrawing}
+                                                onMouseOut={stopDrawing}
+                                                onTouchStart={startDrawing}
+                                                onTouchMove={draw}
+                                                onTouchEnd={stopDrawing}
+                                            />
+                                        </div>
                                     ) : (
                                         <div className="flex flex-col items-center gap-6 opacity-20">
-                                            <Layers size={120} className="text-white" />
-                                            <span className="text-sm font-black uppercase tracking-[0.4em] italic">Awaiting Visuals</span>
+                                            <Video size={120} className="text-white" />
+                                            <span className="text-sm font-black uppercase tracking-[0.4em] italic">Analysis Stream</span>
                                         </div>
                                     )}
 
@@ -284,14 +429,28 @@ export default function DrillHubScreen() {
                                     </p>
                                 </div>
 
-                                <div className="flex gap-4 pt-10">
-                                    <div className="flex-1 bg-white/5 rounded-3xl p-6 border border-white/5 hover:border-white/20 transition-all group">
-                                        <span className="block text-[9px] font-black uppercase text-gray-500 tracking-widest mb-2 italic">Sequence Completion</span>
-                                        <div className="flex items-end gap-2">
-                                            <span className="text-3xl font-black italic text-white group-hover:text-east-light transition-colors">{Math.round(((currentStepIndex + 1) / drillSteps.length) * 100)}%</span>
-                                            <span className="text-[10px] font-bold text-gray-600 mb-1.5 uppercase">Syncing...</span>
-                                        </div>
-                                    </div>
+                                <div className="flex flex-col gap-4 pt-4">
+                                    <button 
+                                        onClick={() => setActiveTab('tactical')}
+                                        className={`w-full py-5 px-8 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'tactical' ? 'bg-[#28D160] text-black border-[#28D160] shadow-[0_20px_40px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
+                                    >
+                                        <span>Tactical Board</span>
+                                        <PenTool size={18} />
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveTab('analysis')}
+                                        className={`w-full py-5 px-8 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'analysis' ? 'bg-white text-black border-white shadow-[0_20px_40px_rgba(255,255,255,0.15)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
+                                    >
+                                        <span>Analysis Stream</span>
+                                        <Video size={18} />
+                                    </button>
+                                    <button 
+                                        onClick={() => setActiveTab('visual')}
+                                        className={`w-full py-5 px-8 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'visual' ? 'bg-white/10 text-white border-white/20' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
+                                    >
+                                        <span>Visual Guide</span>
+                                        <Layers size={18} />
+                                    </button>
                                 </div>
                             </div>
                         )}
