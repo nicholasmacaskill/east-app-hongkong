@@ -22,7 +22,9 @@ import {
     Trash2,
     Upload,
     Save,
-    Loader2
+    Loader2,
+    Calendar,
+    ArrowRight
 } from 'lucide-react';
 
 interface Drill {
