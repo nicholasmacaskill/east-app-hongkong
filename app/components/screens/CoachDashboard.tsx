@@ -7,6 +7,8 @@ import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, Ch
 import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 import { safeFetch } from '@/app/lib/apiUtils';
 import SessionPlanModal from '@/app/components/modals/SessionPlanModal';
+import CreateDrillModal from '@/app/components/modals/CreateDrillModal';
+import DrillDetailsModal from '@/app/components/modals/DrillDetailsModal';
 
 interface Attendee {
     id: string;
@@ -31,7 +33,7 @@ interface MasterSession {
 export default function CoachDashboard({ currentUserId, userName, userLastName }: { currentUserId: string, userName: string, userLastName?: string }) {
     const [allSessions, setAllSessions] = useState<MasterSession[]>([]);
     const [filteredSessions, setFilteredSessions] = useState<MasterSession[]>([]);
-    const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view'>('master_view');
+    const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view' | 'drill_hub'>('master_view');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [expandedDates, setExpandedDates] = useState<string[]>([]);
@@ -41,6 +43,12 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
     const [savingNote, setSavingNote] = useState(false);
     const [existingNotes, setExistingNotes] = useState<any[]>([]);
     const [selectedSessionForPlan, setSelectedSessionForPlan] = useState<MasterSession | null>(null);
+    
+    // Drill Hub States
+    const [drills, setDrills] = useState<any[]>([]);
+    const [drillsLoading, setDrillsLoading] = useState(false);
+    const [showCreateDrill, setShowCreateDrill] = useState(false);
+    const [selectedDrill, setSelectedDrill] = useState<any | null>(null);
 
     const toggleDate = (date: string) => {
         setExpandedDates(prev =>
@@ -76,9 +84,25 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
         }
     };
 
+    const fetchDrills = async () => {
+        if (!currentUserId) return;
+        setDrillsLoading(true);
+        const { data, error } = await supabase
+            .from('coach_drills')
+            .select('*')
+            .eq('coach_id', currentUserId)
+            .order('created_at', { ascending: false });
+        
+        if (!error && data) {
+            setDrills(data);
+        }
+        setDrillsLoading(false);
+    };
+
     useEffect(() => {
         fetchSchedule();
-    }, []);
+        fetchDrills();
+    }, [currentUserId]);
 
     // Filter Logic
     useEffect(() => {
@@ -248,6 +272,12 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                             >
                                 My Schedule
                             </button>
+                            <button
+                                onClick={() => setViewMode('drill_hub')}
+                                className={`flex-1 md:flex-none px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${viewMode === 'drill_hub' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                Drill Hub
+                            </button>
                         </div>
 
                         <div className="hidden md:block h-6 w-px bg-white/10" />
@@ -266,7 +296,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
 
             {/* QUICK ACTIONS BAR */}
             <div className="bg-[#121212] px-6 py-2 border-b border-white/5 flex justify-between items-center overflow-x-auto no-scrollbar">
-                <button onClick={() => { window.location.href = '/admin-ops/drills'; }} className="text-[9px] font-black uppercase text-black hover:text-black transition-colors flex items-center gap-1 bg-east-light hover:bg-white px-3 py-1.5 rounded-full border border-east-light/50 shadow-[0_0_10px_rgba(40,209,96,0.2)] whitespace-nowrap">
+                <button onClick={() => setViewMode('drill_hub')} className="text-[9px] font-black uppercase text-black hover:text-black transition-colors flex items-center gap-1 bg-east-light hover:bg-white px-3 py-1.5 rounded-full border border-east-light/50 shadow-[0_0_10px_rgba(40,209,96,0.2)] whitespace-nowrap">
                     <Layers size={12} /> Manage Drill Hub
                 </button>
                 <div className="flex items-center gap-2 ml-auto">
@@ -283,134 +313,178 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
             {/* MAIN TIMELINE */}
             <div className="max-w-3xl mx-auto p-6 space-y-8 pb-24">
 
-                {Object.keys(groupedSessions).length === 0 && (
-                    <div className="text-center py-20 opacity-50">
-                        <Calendar size={48} className="mx-auto mb-4" />
-                        <h2 className="text-xl font-bold uppercase">No Scheduled {viewMode === 'my_schedule' ? 'Personal' : ''} Sessions</h2>
-                        <p className="text-sm">The schedule is clear.</p>
-                    </div>
-                )}
-
-                {Object.entries(groupedSessions).map(([date, daySessions]) => {
-                    const isExpanded = expandedDates.includes(date);
-                    return (
-                        <div key={date} className="animate-fadeIn">
-                            {/* Date Header (Clickable Accordion) */}
-                            <button
-                                onClick={() => toggleDate(date)}
-                                className="w-full flex items-center gap-4 mb-4 sticky top-20 z-40 py-2 bg-[#0a0a0a]/50 backdrop-blur-xl group/header"
+                {viewMode === 'drill_hub' ? (
+                    <div className="animate-fadeIn space-y-8">
+                        <div className="flex justify-between items-center px-2">
+                            <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white brightness-125">My Drills</h2>
+                            <button 
+                                onClick={() => setShowCreateDrill(true)}
+                                className="px-6 py-2 bg-east-light text-black rounded-full text-[10px] font-black uppercase italic hover:bg-white transition-all shadow-[0_0_20px_rgba(40,209,96,0.3)] active:scale-95"
                             >
-                                <div className={`p-1.5 rounded-lg border transition-all ${isExpanded ? 'bg-east-light border-east-light text-black' : 'bg-white/5 border-white/10 text-gray-500 group-hover/header:border-east-light'}`}>
-                                    {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                </div>
-                                <h2 className={`text-2xl font-black italic uppercase transition-colors ${isExpanded ? 'text-white' : 'text-white/30 group-hover/header:text-white/50'}`}>{date}</h2>
-                                <div className={`h-px flex-1 transition-all ${isExpanded ? 'bg-east-light/30' : 'bg-white/10'}`} />
-                                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{daySessions.length} {daySessions.length === 1 ? 'ITEM' : 'ITEMS'}</span>
+                                + Publish New
                             </button>
+                        </div>
 
-                            {/* Sessions Grid (Conditional) */}
-                            {isExpanded && (
-                                <div className="space-y-3 animate-slideDown">
-                                    {daySessions.map(session => (
-                                        <div key={session.id} className={`bg-[#121212] rounded-r-xl p-4 flex gap-4 ${getStatusColor(session)} shadow-lg hover:bg-[#1a1a1a] transition-colors group relative overflow-hidden`}>
-
-                                            {/* Time Column */}
-                                            <div className="flex flex-col items-center justify-center min-w-[60px] border-r border-white/5 pr-4">
-                                                <span className="text-lg font-black italic leading-none">{formatHK(session.start_time, 'h:mma').toLowerCase()}</span>
-                                                <span className="text-[9px] font-bold text-gray-600 uppercase mt-1">
-                                                    {Math.round(((safeDate(session.end_time)?.getTime() || 0) - (safeDate(session.start_time)?.getTime() || 0)) / 60000)} MIN
+                        {drillsLoading ? (
+                            <div className="py-20 text-center">
+                                <RefreshCw className="animate-spin mx-auto mb-4 text-east-light" size={32} />
+                                <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Loading Library...</p>
+                            </div>
+                        ) : drills.length === 0 ? (
+                            <div className="py-20 text-center border border-dashed border-white/10 rounded-[2rem] bg-white/[0.02]">
+                                <Layers className="mx-auto mb-4 text-gray-800" size={48} />
+                                <p className="text-[10px] font-black uppercase text-gray-600 tracking-widest">No drills created yet</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-2">
+                                {drills.map(drill => (
+                                    <div 
+                                        key={drill.id} 
+                                        onClick={() => setSelectedDrill(drill)}
+                                        className="relative overflow-hidden rounded-[2.5rem] border border-white/5 group cursor-pointer shadow-2xl bg-[#111] h-64 active:scale-[0.98] transition-all duration-500 hover:border-east-light/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+                                    >
+                                        <img 
+                                            src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"} 
+                                            className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-1000" 
+                                            alt={drill.title} 
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-10">
+                                            <div className="w-16 h-16 rounded-[1.5rem] bg-white flex items-center justify-center pl-1">
+                                                <Play fill="black" size={24} className="text-black" />
+                                            </div>
+                                        </div>
+                                        <div className="absolute bottom-6 left-8 right-8 z-10">
+                                            <h4 className="font-black italic text-2xl text-white uppercase leading-tight line-clamp-2 group-hover:text-east-light transition-colors">
+                                                {drill.title}
+                                            </h4>
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                                                    {drill.skill_tags?.[0] || 'Fundamentals'}
                                                 </span>
                                             </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <>
+                        {Object.keys(groupedSessions).length === 0 && (
+                            <div className="text-center py-20 opacity-50">
+                                <Calendar size={48} className="mx-auto mb-4" />
+                                <h2 className="text-xl font-bold uppercase">No Scheduled {viewMode === 'my_schedule' ? 'Personal' : ''} Sessions</h2>
+                                <p className="text-sm">The schedule is clear.</p>
+                            </div>
+                        )}
 
-                                            {/* Info Column */}
-                                            <div className="flex-1">
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <h3 className={`font-bold text-sm uppercase tracking-wide ${session.type === 'slot' ? 'text-gray-500' : 'text-white'}`}>{session.title}</h3>
-                                                        {getStatusBadge(session)}
+                        {Object.entries(groupedSessions).map(([date, daySessions]) => {
+                            const isExpanded = expandedDates.includes(date);
+                            return (
+                                <div key={date} className="animate-fadeIn mb-8">
+                                    <button
+                                        onClick={() => toggleDate(date)}
+                                        className="w-full flex items-center gap-4 mb-4 sticky top-20 z-40 py-2 bg-[#0a0a0a]/50 backdrop-blur-xl group/header"
+                                    >
+                                        <div className={`p-1.5 rounded-lg border transition-all ${isExpanded ? 'bg-east-light border-east-light text-black' : 'bg-white/5 border-white/10 text-gray-500 group-hover/header:border-east-light'}`}>
+                                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                        </div>
+                                        <h2 className={`text-2xl font-black italic uppercase transition-colors ${isExpanded ? 'text-white' : 'text-white/30 group-hover/header:text-white/50'}`}>{date}</h2>
+                                        <div className={`h-px flex-1 transition-all ${isExpanded ? 'bg-east-light/30' : 'bg-white/10'}`} />
+                                        <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">{daySessions.length} {daySessions.length === 1 ? 'ITEM' : 'ITEMS'}</span>
+                                    </button>
+
+                                    {isExpanded && (
+                                        <div className="space-y-3 animate-slideDown">
+                                            {daySessions.map(session => (
+                                                <div key={session.id} className={`bg-[#121212] rounded-r-xl p-4 flex gap-4 ${getStatusColor(session)} shadow-lg hover:bg-[#1a1a1a] transition-colors group relative overflow-hidden`}>
+                                                    <div className="flex flex-col items-center justify-center min-w-[60px] border-r border-white/5 pr-4">
+                                                        <span className="text-lg font-black italic leading-none">{formatHK(session.start_time, 'h:mma').toLowerCase()}</span>
+                                                        <span className="text-[9px] font-bold text-gray-600 uppercase mt-1">
+                                                            {Math.round(((safeDate(session.end_time)?.getTime() || 0) - (safeDate(session.start_time)?.getTime() || 0)) / 60000)} MIN
+                                                        </span>
                                                     </div>
-                                                    <div className="flex flex-col items-end gap-2">
-                                                        <span className="text-[9px] font-bold text-gray-500 uppercase border border-white/10 px-1.5 py-0.5 rounded">{session.category}</span>
-                                                        {session.type !== 'slot' && (
-                                                            <button 
-                                                                onClick={(e) => { e.stopPropagation(); setSelectedSessionForPlan(session); }} 
-                                                                className="text-[9px] font-black uppercase text-[#28D160] hover:text-white transition-colors flex items-center gap-1 bg-[#28D160]/10 hover:bg-[#28D160]/20 px-2 py-1 rounded"
-                                                            >
-                                                                <Layers size={10} /> Build Plan
-                                                            </button>
+
+                                                    <div className="flex-1">
+                                                        <div className="flex justify-between items-start mb-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <h3 className={`font-bold text-sm uppercase tracking-wide ${session.type === 'slot' ? 'text-gray-500' : 'text-white'}`}>{session.title}</h3>
+                                                                {getStatusBadge(session)}
+                                                            </div>
+                                                            <div className="flex flex-col items-end gap-2">
+                                                                <span className="text-[9px] font-bold text-gray-500 uppercase border border-white/10 px-1.5 py-0.5 rounded">{session.category}</span>
+                                                                {session.type !== 'slot' && (
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); setSelectedSessionForPlan(session); }} 
+                                                                        className="text-[9px] font-black uppercase text-[#28D160] hover:text-white transition-colors flex items-center gap-1 bg-[#28D160]/10 hover:bg-[#28D160]/20 px-2 py-1 rounded"
+                                                                    >
+                                                                        <Layers size={10} /> Build Plan
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <span className={`text-[10px] font-bold uppercase ${(session.instructor?.toLowerCase() || '').includes(userName?.toLowerCase() || '') ? 'text-east-light' : 'text-gray-500'}`}>
+                                                                {session.instructor}
+                                                            </span>
+                                                        </div>
+
+                                                        {session.attendees.length > 0 ? (
+                                                            <div className="bg-black/40 rounded-lg p-2 border border-white/5">
+                                                                <div className="flex items-center gap-2 mb-1.5 opacity-50">
+                                                                    <UsersIcon size={10} />
+                                                                    <span className="text-[9px] font-bold uppercase tracking-widest">Attending ({session.attendees.length})</span>
+                                                                </div>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {session.attendees.map(a => {
+                                                                        const key = `${session.id}-${a.id}`;
+                                                                        const isPresent = attendance[key];
+
+                                                                        const toggleAttendance = async (sessionId: any, attendeeId: string) => {
+                                                                            const k = `${sessionId}-${attendeeId}`;
+                                                                            const newState = !attendance[k];
+                                                                            setAttendance(prev => ({ ...prev, [k]: newState }));
+                                                                        };
+
+                                                                        return (
+                                                                            <div key={a.id} className="flex items-center gap-2">
+                                                                                <div
+                                                                                    onClick={() => a.status !== 'cancelled' && toggleAttendance(session.id, a.id)}
+                                                                                    className={`flex items-center gap-1.5 px-2 py-1 rounded select-none transition-all ${a.status === 'cancelled' ? 'bg-red-500/10 text-red-500/50 border border-red-500/10 cursor-not-allowed opacity-50' : isPresent ? 'bg-east-light text-black border border-east-light shadow-[0_0_10px_rgba(40,209,96,0.3)] cursor-pointer' : 'bg-white/10 text-white/50 border border-white/5 hover:bg-white/20 cursor-pointer'}`}
+                                                                                >
+                                                                                    <div className={`w-1.5 h-1.5 rounded-full ${a.status === 'cancelled' ? 'bg-red-500' : isPresent ? 'bg-black animate-pulse' : 'bg-gray-600'}`} />
+                                                                                    <span className={`text-[10px] font-black uppercase text-inherit ${a.status === 'cancelled' ? 'line-through decoration-red-500/50' : ''}`}>{a.name}</span>
+                                                                                </div>
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); openNoteModal(a); }}
+                                                                                    className="p-1.5 rounded bg-white/5 hover:bg-east-light hover:text-black text-gray-400 transition-all border border-white/5"
+                                                                                >
+                                                                                    <FileText size={12} />
+                                                                                </button>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            session.type !== 'slot' && (
+                                                                <div className="text-[10px] font-bold text-gray-700 italic flex items-center gap-1 uppercase">
+                                                                    <AlertCircle size={10} /> No registered athletes
+                                                                </div>
+                                                            )
                                                         )}
                                                     </div>
                                                 </div>
-
-                                                <div className="flex items-center gap-2 mb-3">
-                                                    <span className={`text-[10px] font-bold uppercase ${(session.instructor?.toLowerCase() || '').includes(userName?.toLowerCase() || '') ? 'text-east-light' : 'text-gray-500'}`}>
-                                                        {session.instructor}
-                                                    </span>
-                                                </div>
-
-                                                {/* Attendees Section */}
-                                                {session.attendees.length > 0 ? (
-                                                    <div className="bg-black/40 rounded-lg p-2 border border-white/5">
-                                                        <div className="flex items-center gap-2 mb-1.5 opacity-50">
-                                                            <Users size={10} />
-                                                            <span className="text-[9px] font-bold uppercase tracking-widest">Attending ({session.attendees.length})</span>
-                                                        </div>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {session.attendees.map(a => {
-                                                                const key = `${session.id}-${a.id}`;
-                                                                const isPresent = attendance[key];
-
-                                                                const toggleAttendance = async (sessionId: any, attendeeId: string) => {
-                                                                    const k = `${sessionId}-${attendeeId}`;
-                                                                    const newState = !attendance[k];
-                                                                    setAttendance(prev => ({ ...prev, [k]: newState }));
-                                                                };
-
-                                                                return (
-                                                                    <div
-                                                                        key={a.id}
-                                                                        className="flex items-center gap-2"
-                                                                    >
-                                                                        <div
-                                                                            onClick={() => a.status !== 'cancelled' && toggleAttendance(session.id, a.id)}
-                                                                            className={`flex items-center gap-1.5 px-2 py-1 rounded select-none transition-all ${a.status === 'cancelled' ? 'bg-red-500/10 text-red-500/50 border border-red-500/10 cursor-not-allowed opacity-50' : isPresent ? 'bg-east-light text-black border border-east-light shadow-[0_0_10px_rgba(40,209,96,0.3)] cursor-pointer' : 'bg-white/10 text-white/50 border border-white/5 hover:bg-white/20 cursor-pointer'}`}
-                                                                        >
-                                                                            <div className={`w-1.5 h-1.5 rounded-full ${a.status === 'cancelled' ? 'bg-red-500' : isPresent ? 'bg-black animate-pulse' : 'bg-gray-600'}`} />
-                                                                            <span className={`text-[10px] font-black uppercase text-inherit ${a.status === 'cancelled' ? 'line-through decoration-red-500/50' : ''}`}>{a.name}</span>
-                                                                            {a.status === 'cancelled' ? (
-                                                                                <span className="text-[8px] font-black ml-1 uppercase">Cancelled</span>
-                                                                            ) : isPresent && (
-                                                                                <span className="text-[8px] font-black ml-1 uppercase opacity-70">Present</span>
-                                                                            )}
-                                                                        </div>
-                                                                        <button
-                                                                            onClick={(e) => { e.stopPropagation(); openNoteModal(a); }}
-                                                                            className="p-1.5 rounded bg-white/5 hover:bg-east-light hover:text-black text-gray-400 transition-all border border-white/5"
-                                                                            title="Private Note"
-                                                                        >
-                                                                            <FileText size={12} />
-                                                                        </button>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    session.type !== 'slot' && (
-                                                        <div className="text-[10px] font-bold text-gray-700 italic flex items-center gap-1 uppercase">
-                                                            <AlertCircle size={10} /> No registered athletes
-                                                        </div>
-                                                    )
-                                                )}
-                                            </div>
-
+                                            ))}
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    );
-                })}
+                            );
+                        })}
+                    </>
+                )}
 
             </div>
 
@@ -475,6 +549,26 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* DRILL MODALS */}
+            {showCreateDrill && (
+                <CreateDrillModal 
+                    coachId={currentUserId} 
+                    onClose={() => setShowCreateDrill(false)} 
+                    onSuccess={() => {
+                        setShowCreateDrill(false);
+                        fetchDrills();
+                    }}
+                />
+            )}
+
+            {selectedDrill && (
+                <DrillDetailsModal 
+                    drill={selectedDrill} 
+                    onClose={() => setSelectedDrill(null)} 
+                    isCoach={true}
+                />
             )}
 
             {/* SESSION PLAN MODAL */}
