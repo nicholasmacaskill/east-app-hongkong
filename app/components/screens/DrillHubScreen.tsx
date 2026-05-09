@@ -88,7 +88,7 @@ export default function DrillHubScreen() {
         if (sessionId) {
             setIsSessionPlanMode(true);
             fetchSessionPlan(sessionId);
-        } else if (drillIdParam) {
+        } else if (drillIdParam && !activeSkillFilter) { // Only auto-open if no filter is being manipulated
             fetchSingleDrill(drillIdParam);
         } else {
             fetchDrills();
@@ -267,8 +267,10 @@ export default function DrillHubScreen() {
                         <div className="flex items-center gap-3">
                             <button 
                                 onClick={() => {
-                                    if (window.history.length > 1) window.history.back();
-                                    else setSelectedDrill(null);
+                                    // Clear URL param
+                                    window.history.replaceState({}, '', window.location.pathname);
+                                    setSelectedDrill(null);
+                                    if (window.history.length > 1 && !drillIdParam) window.history.back();
                                 }}
                                 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-east-light transition-all group"
                             >
@@ -296,7 +298,10 @@ export default function DrillHubScreen() {
                         )}
 
                         <button 
-                            onClick={() => setSelectedDrill(null)}
+                            onClick={() => {
+                                window.history.replaceState({}, '', window.location.pathname);
+                                setSelectedDrill(null);
+                            }}
                             className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-east-light/50 transition-all group active:scale-90"
                         >
                             <X size={20} className="text-gray-400 group-hover:text-white" />
