@@ -66,7 +66,7 @@ export default function DrillHubScreen() {
         } else {
             fetchDrills();
         }
-    }, [sessionId]);
+    }, [sessionId, activeSkillFilter]);
 
     const fetchSessionPlan = async (sid: string) => {
         setLoading(true);
@@ -97,11 +97,17 @@ export default function DrillHubScreen() {
 
     const fetchDrills = async () => {
         setLoading(true);
-        const { data, error } = await supabase
+        let query = supabase
             .from('coach_drills')
             .select('*, coach:profiles(first_name, last_name, avatar_url)')
             .eq('status', 'published')
             .order('created_at', { ascending: false });
+
+        if (activeSkillFilter && activeSkillFilter !== 'ALL') {
+            query = query.contains('skill_tags', [activeSkillFilter]);
+        }
+
+        const { data, error } = await query;
 
         if (!error && data) {
             setDrills(data);
@@ -136,129 +142,174 @@ export default function DrillHubScreen() {
     if (selectedDrill) {
         const currentStep = drillSteps[currentStepIndex];
         return (
-            <div className="min-h-screen bg-[#050505] text-white p-6 animate-fadeIn pb-32 font-montserrat select-none overflow-hidden relative">
+            <div className="min-h-screen bg-[#050505] text-white animate-fadeIn font-montserrat select-none overflow-hidden relative flex flex-col">
                 {/* Ambient Background Glows */}
-                <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
-                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-east-light/5 blur-[120px] rounded-full" />
-                    <div className="absolute bottom-[10%] right-[-5%] w-[30%] h-[30%] bg-east-light/3 blur-[100px] rounded-full" />
+                <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+                    <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-east-light/10 blur-[150px] rounded-full animate-pulse" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-east-light/5 blur-[120px] rounded-full" />
                 </div>
 
-                {/* Header Section */}
-                <div className="relative z-10 flex justify-between items-start mb-12 pt-8">
-                    <div className="flex flex-col gap-2">
-                        <span className="text-[10px] font-black tracking-[0.4em] text-east-light uppercase italic">Detailed Instruction</span>
-                        <h1 className="text-5xl font-black italic uppercase tracking-tighter text-white leading-[0.9] max-w-[80%] brightness-125">
+                {/* Top Navigation Bar */}
+                <div className="relative z-20 flex justify-between items-center px-12 py-10 backdrop-blur-md bg-black/20 border-b border-white/5">
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-3">
+                            <button 
+                                onClick={() => setSelectedDrill(null)}
+                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-east-light transition-all group"
+                            >
+                                <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Hub
+                            </button>
+                            <span className="w-1 h-1 bg-white/20 rounded-full" />
+                            <span className="text-[10px] font-black tracking-[0.4em] text-east-light uppercase italic">Tactical Sequence</span>
+                        </div>
+                        <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white leading-tight brightness-125">
                             {selectedDrill.title}
                         </h1>
                     </div>
-                    <button 
-                        onClick={() => setSelectedDrill(null)}
-                        className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-east-light/50 transition-all duration-300 group shadow-xl active:scale-90"
-                    >
-                        <X size={24} className="text-gray-400 group-hover:text-white transition-colors" />
-                    </button>
-                </div>
-
-                <div className="max-w-xl mx-auto relative z-10">
-                    <div className="mb-10">
-                        <span className="block text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-5 italic">Tactical Lead</span>
-                        <div className="flex gap-4">
-                            <div className="flex flex-col items-center gap-3">
-                                <div className="w-16 h-16 rounded-[1.5rem] border-2 border-white/5 overflow-hidden bg-gradient-to-br from-[#1a1a1a] to-black shadow-2xl transition-all duration-500 hover:scale-110 hover:border-east-light/50 group">
-                                    <img 
-                                        src={selectedDrill.coach?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedDrill.coach?.first_name || 'Coach'}`} 
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                                        alt="coach" 
-                                    />
-                                </div>
-                                <span className="text-[9px] font-black italic uppercase text-white/40 tracking-widest">
+                    
+                    <div className="flex items-center gap-8">
+                        {/* Single Tactical Lead */}
+                        <div className="flex items-center gap-4 bg-white/5 px-6 py-3 rounded-2xl border border-white/5">
+                            <div className="text-right">
+                                <span className="block text-[8px] font-black uppercase text-gray-500 tracking-widest mb-0.5">Tactical Lead</span>
+                                <span className="block text-[11px] font-black italic uppercase text-white tracking-widest">
                                     {selectedDrill.coach?.first_name || 'Coach'} {selectedDrill.coach?.last_name || ''}
                                 </span>
                             </div>
+                            <div className="w-10 h-10 rounded-xl border border-east-light/30 overflow-hidden shadow-2xl">
+                                <img 
+                                    src={selectedDrill.coach?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedDrill.coach?.first_name || 'Coach'}`} 
+                                    className="w-full h-full object-cover" 
+                                    alt="coach" 
+                                />
+                            </div>
                         </div>
+
+                        <button 
+                            onClick={() => setSelectedDrill(null)}
+                            className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-east-light/50 transition-all group active:scale-90"
+                        >
+                            <X size={20} className="text-gray-400 group-hover:text-white" />
+                        </button>
                     </div>
+                </div>
 
-                    {/* Main Drill Card */}
-                    <div className="relative">
+                {/* Main Cinematic Content */}
+                <div className="flex-1 relative z-10 flex flex-col md:flex-row overflow-hidden">
+                    
+                    {/* Left: Diagram Area (Large) */}
+                    <div className="flex-[1.5] relative bg-black/40 flex items-center justify-center p-12 overflow-hidden border-r border-white/5">
                         {drillSteps.length > 0 ? (
-                            <div className="bg-[#111] rounded-[4rem] overflow-hidden border border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.8)] relative">
-                                {/* Card Header Area */}
-                                <div className="p-10 pb-6">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="px-3 py-1 bg-east-light/10 border border-east-light/20 rounded-full">
-                                            <span className="text-[9px] font-black italic text-east-light uppercase tracking-widest">Active Sequence</span>
-                                        </div>
-                                        <div className="flex-1 h-[1px] bg-white/5" />
-                                    </div>
-                                    <h2 className="text-2xl font-black italic uppercase tracking-tight text-white mb-6 leading-tight flex items-start gap-4">
-                                        <span className="text-east-light opacity-50 font-black italic text-4xl leading-none">{currentStep.step_number}</span>
-                                        <span className="pt-1">{currentStep.title}</span>
-                                    </h2>
-                                </div>
-
-                                {/* Whiteboard Area */}
-                                <div className="mx-8 mb-10 bg-white rounded-[3rem] overflow-hidden flex items-center justify-center p-10 relative shadow-[inset_0_0_60px_rgba(0,0,0,0.1)] aspect-[3/4]">
+                            <div className="relative w-full h-full flex items-center justify-center group">
+                                {/* Diagram Container */}
+                                <div className="relative w-full max-w-4xl aspect-video rounded-[3rem] overflow-hidden border border-white/10 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm shadow-[0_40px_100px_rgba(0,0,0,0.6)] flex items-center justify-center p-10">
                                     {currentStep.diagram_url ? (
-                                        <img src={currentStep.diagram_url} className="w-full h-full object-contain" alt="diagram" />
+                                        <img 
+                                            src={currentStep.diagram_url} 
+                                            className="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-fadeIn" 
+                                            alt="diagram" 
+                                        />
                                     ) : (
-                                        <div className="text-center opacity-20">
-                                            <Layers size={100} className="text-gray-900 mx-auto" />
-                                            <p className="mt-4 text-[12px] font-black uppercase text-gray-900 italic tracking-[0.2em]">Visualizing Strategy</p>
+                                        <div className="flex flex-col items-center gap-6 opacity-20">
+                                            <Layers size={120} className="text-white" />
+                                            <span className="text-sm font-black uppercase tracking-[0.4em] italic">Awaiting Visuals</span>
                                         </div>
                                     )}
-                                    
-                                    {/* Glass Overlay for Instruction */}
-                                    <div className="absolute bottom-6 left-6 right-6 p-6 bg-black/80 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-2xl">
-                                        <p className="text-[11px] font-bold text-gray-300 leading-relaxed italic">
-                                            {currentStep.instruction}
-                                        </p>
+
+                                    {/* Progress Ring Overlay (Top Right) */}
+                                    <div className="absolute top-8 right-8 w-16 h-16 flex items-center justify-center">
+                                        <svg className="w-full h-full -rotate-90">
+                                            <circle cx="32" cy="32" r="28" fill="none" stroke="white" strokeWidth="2" className="opacity-10" />
+                                            <circle 
+                                                cx="32" 
+                                                cy="32" 
+                                                r="28" 
+                                                fill="none" 
+                                                stroke="#28D160" 
+                                                strokeWidth="3" 
+                                                strokeDasharray="176" 
+                                                strokeDashoffset={176 - (176 * ((currentStepIndex + 1) / drillSteps.length))}
+                                                className="transition-all duration-700 ease-out drop-shadow-[0_0_8px_#28D160]"
+                                            />
+                                        </svg>
+                                        <span className="absolute text-[10px] font-black italic">{currentStepIndex + 1}/{drillSteps.length}</span>
                                     </div>
                                 </div>
 
-                                {/* Step Navigation */}
-                                <div className="absolute top-[60%] -left-6 -translate-y-1/2 z-20">
-                                    <button 
-                                        disabled={currentStepIndex === 0}
-                                        onClick={() => setCurrentStepIndex(currentStepIndex - 1)}
-                                        className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center disabled:opacity-0 transition-all shadow-[0_10px_30px_rgba(255,255,255,0.2)] active:scale-90"
-                                    >
-                                        <ChevronLeft size={32} />
-                                    </button>
-                                </div>
-                                <div className="absolute top-[60%] -right-6 -translate-y-1/2 z-20">
-                                    <button 
-                                        disabled={currentStepIndex === drillSteps.length - 1}
-                                        onClick={() => setCurrentStepIndex(currentStepIndex + 1)}
-                                        className="w-14 h-14 bg-white text-black rounded-full flex items-center justify-center disabled:opacity-0 transition-all shadow-[0_10px_30px_rgba(255,255,255,0.2)] active:scale-90"
-                                    >
-                                        <ChevronRight size={32} />
-                                    </button>
-                                </div>
-                                
-                                {/* Action Footer */}
-                                <div className="flex justify-between items-center p-10 pt-0">
-                                    <div className="flex gap-6 opacity-30">
-                                        <Target size={24} />
-                                        <Maximize2 size={24} />
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-1.5 w-12 bg-white/5 rounded-full overflow-hidden">
-                                            <div 
-                                                className="h-full bg-east-light transition-all duration-500" 
-                                                style={{ width: `${((currentStepIndex + 1) / drillSteps.length) * 100}%` }}
-                                            />
-                                        </div>
-                                        <span className="text-[10px] font-black italic text-gray-500">{currentStepIndex + 1}/{drillSteps.length}</span>
-                                    </div>
-                                </div>
+                                {/* Floating Nav Buttons */}
+                                <button 
+                                    disabled={currentStepIndex === 0}
+                                    onClick={() => setCurrentStepIndex(currentStepIndex - 1)}
+                                    className="absolute left-4 w-16 h-16 bg-white/5 hover:bg-white text-white hover:text-black rounded-full flex items-center justify-center border border-white/10 transition-all shadow-2xl disabled:opacity-0 active:scale-90 backdrop-blur-xl z-20"
+                                >
+                                    <ChevronLeft size={32} />
+                                </button>
+                                <button 
+                                    disabled={currentStepIndex === drillSteps.length - 1}
+                                    onClick={() => setCurrentStepIndex(currentStepIndex + 1)}
+                                    className="absolute right-4 w-16 h-16 bg-white text-black rounded-full flex items-center justify-center transition-all shadow-[0_0_30px_#28D16066] disabled:opacity-0 active:scale-90 z-20"
+                                >
+                                    <ChevronRight size={32} />
+                                </button>
                             </div>
                         ) : (
-                            <div className="bg-[#111] rounded-[4rem] p-32 text-center border border-white/10 border-dashed relative">
-                                <Layers size={64} className="mx-auto mb-6 text-gray-800 animate-pulse" />
-                                <h3 className="text-sm font-black italic uppercase text-gray-600 tracking-[0.3em]">Constructing Playbook</h3>
+                            <div className="flex flex-col items-center gap-8 text-center py-40">
+                                <div className="relative">
+                                    <Layers size={80} className="text-east-light animate-pulse opacity-40" />
+                                    <div className="absolute inset-0 bg-east-light/20 blur-3xl rounded-full" />
+                                </div>
+                                <h3 className="text-xl font-black italic uppercase text-gray-600 tracking-[0.5em]">Constructing Playbook</h3>
                             </div>
                         )}
                     </div>
+
+                    {/* Right: Instruction Sidebar */}
+                    <div className="flex-1 min-w-[400px] bg-black/60 backdrop-blur-2xl p-12 flex flex-col justify-center gap-12 border-l border-white/5">
+                        {drillSteps.length > 0 && (
+                            <div className="space-y-12 animate-slideInRight">
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-4">
+                                        <span className="text-6xl font-black italic text-east-light opacity-50 tracking-tighter leading-none">0{currentStep.step_number}</span>
+                                        <div className="h-[2px] flex-1 bg-gradient-to-r from-east-light/30 to-transparent" />
+                                    </div>
+                                    <h2 className="text-4xl font-black italic uppercase tracking-tight text-white leading-tight">
+                                        {currentStep.title}
+                                    </h2>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <span className="block text-[10px] font-black uppercase tracking-[0.4em] text-east-light italic">Tactical Briefing</span>
+                                    <p className="text-lg text-gray-300 font-medium leading-relaxed italic border-l-2 border-east-light/30 pl-8 py-2 bg-gradient-to-r from-east-light/5 to-transparent rounded-r-3xl">
+                                        {currentStep.instruction}
+                                    </p>
+                                </div>
+
+                                <div className="flex gap-4 pt-10">
+                                    <div className="flex-1 bg-white/5 rounded-3xl p-6 border border-white/5 hover:border-white/20 transition-all group">
+                                        <span className="block text-[9px] font-black uppercase text-gray-500 tracking-widest mb-2 italic">Sequence Completion</span>
+                                        <div className="flex items-end gap-2">
+                                            <span className="text-3xl font-black italic text-white group-hover:text-east-light transition-colors">{Math.round(((currentStepIndex + 1) / drillSteps.length) * 100)}%</span>
+                                            <span className="text-[10px] font-bold text-gray-600 mb-1.5 uppercase">Syncing...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Horizontal Step Thumbnails / Progress Bar at bottom */}
+                <div className="relative z-20 h-24 bg-black/40 backdrop-blur-3xl border-t border-white/5 flex items-center px-12 gap-4 overflow-x-auto no-scrollbar">
+                    {drillSteps.map((s, i) => (
+                        <button 
+                            key={i}
+                            onClick={() => setCurrentStepIndex(i)}
+                            className={`shrink-0 h-12 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500 flex items-center gap-3 border ${currentStepIndex === i ? 'bg-east-light text-black border-east-light shadow-[0_0_20px_rgba(40,209,96,0.3)] scale-105' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
+                        >
+                            <span className={currentStepIndex === i ? 'text-black' : 'text-east-light opacity-50'}>0{s.step_number}</span>
+                            {s.title}
+                        </button>
+                    ))}
                 </div>
             </div>
         );
