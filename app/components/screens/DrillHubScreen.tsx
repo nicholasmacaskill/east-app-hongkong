@@ -400,7 +400,7 @@ export default function DrillHubScreen() {
                                                 ref={canvasRef}
                                                 width={800}
                                                 height={450}
-                                                className={`w-full h-full relative z-20 ${userRole === 'coach' ? 'cursor-crosshair' : 'cursor-default'}`}
+                                                className={`w-full h-full relative z-20 ${userRole === 'coach' || userRole === 'admin' ? 'cursor-crosshair' : 'cursor-default'}`}
                                                 onMouseDown={startDrawing}
                                                 onMouseMove={draw}
                                                 onMouseUp={stopDrawing}
@@ -409,6 +409,41 @@ export default function DrillHubScreen() {
                                                 onTouchMove={draw}
                                                 onTouchEnd={stopDrawing}
                                             />
+                                            
+                                            {(userRole === 'coach' || userRole === 'admin') && (
+                                                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-black/80 backdrop-blur-2xl p-3 rounded-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                                                    {['#28D160', '#FF3B3B', '#3B82F6', '#FFFFFF'].map(c => (
+                                                        <button 
+                                                            key={c}
+                                                            onClick={() => { setColor(c); setIsEraser(false); }}
+                                                            className={`w-8 h-8 rounded-full border-2 transition-all ${color === c && !isEraser ? 'scale-125 border-white shadow-[0_0_15px_rgba(255,255,255,0.5)]' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                                                            style={{ backgroundColor: c }}
+                                                        />
+                                                    ))}
+                                                    <div className="w-[1px] h-6 bg-white/10 mx-1" />
+                                                    <button 
+                                                        onClick={() => setIsEraser(!isEraser)}
+                                                        className={`p-2 rounded-xl transition-all ${isEraser ? 'bg-white text-black scale-110' : 'bg-white/5 text-gray-400 hover:text-white'}`}
+                                                    >
+                                                        <Eraser size={18} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={clearCanvas}
+                                                        className="p-2 rounded-xl bg-white/5 text-gray-400 hover:text-red-400 transition-all"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                    <div className="w-[1px] h-6 bg-white/10 mx-1" />
+                                                    <button 
+                                                        onClick={saveTactics}
+                                                        disabled={savingTactics}
+                                                        className="px-4 py-2 bg-east-light text-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+                                                    >
+                                                        {savingTactics ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                                        SAVE
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="flex flex-col items-center gap-6 opacity-20">
