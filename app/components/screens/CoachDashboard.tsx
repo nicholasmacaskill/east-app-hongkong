@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send } from 'lucide-react';
+import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send, Play } from 'lucide-react';
 import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 import { safeFetch } from '@/app/lib/apiUtils';
 import SessionPlanModal from '@/app/components/modals/SessionPlanModal';
