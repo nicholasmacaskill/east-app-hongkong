@@ -72,7 +72,10 @@ export default function DrillHubScreen() {
     const [color, setColor] = useState('#28D160');
     const [isEraser, setIsEraser] = useState(false);
     const [savingTactics, setSavingTactics] = useState(false);
+    const [uploadingMedia, setUploadingMedia] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const imageInputRef = useRef<HTMLInputElement>(null);
+    const videoInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const checkUser = async () => {
@@ -210,6 +213,38 @@ export default function DrillHubScreen() {
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
         if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    const handleMediaReplace = async (type: 'image' | 'video', file: File) => {
+        if (!selectedDrill || drillSteps.length === 0) return;
+        setUploadingMedia(true);
+        try {
+            const stepId = drillSteps[currentStepIndex].id;
+            const ext = file.name.split('.').pop();
+            const fileName = `drill-replace-${type}-${stepId}-${Date.now()}.${ext}`;
+            
+            const { error: uploadErr } = await supabase.storage.from('uploads').upload(fileName, file);
+            if (uploadErr) throw uploadErr;
+
+            const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(fileName);
+            
+            const updateData = type === 'image' ? { diagram_url: publicUrl } : { video_url: publicUrl };
+            const { error: dbErr } = await supabase.from('coach_drill_steps').update(updateData).eq('id', stepId);
+            if (dbErr) throw dbErr;
+
+            // Update local state
+            const newSteps = [...drillSteps];
+            if (type === 'image') newSteps[currentStepIndex].diagram_url = publicUrl;
+            else newSteps[currentStepIndex].video_url = publicUrl;
+            setDrillSteps(newSteps);
+            
+            alert(`${type.toUpperCase()} updated successfully!`);
+        } catch (e: any) {
+            console.error(e);
+            alert(`Failed to update ${type}: ${e.message}`);
+        } finally {
+            setUploadingMedia(false);
+        }
     };
 
     const saveTactics = async () => {
@@ -476,16 +511,52 @@ export default function DrillHubScreen() {
                                         onClick={() => setActiveTab('analysis')}
                                         className={`w-full py-5 px-8 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'analysis' ? 'bg-white text-black border-white shadow-[0_20px_40px_rgba(255,255,255,0.15)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
                                     >
-                                        <span>Analysis Stream</span>
+                                        <div className="flex items-center gap-3">
+                                            <span>Analysis Stream</span>
+                                            {isEditing && (
+                                                <div 
+                                                    onClick={(e) => { e.stopPropagation(); videoInputRef.current?.click(); }}
+                                                    className="p-1.5 bg-east-light/20 text-east-light rounded-lg hover:bg-east-light hover:text-black transition-all"
+                                                >
+                                                    {uploadingMedia ? <Loader2 className="animate-spin" size={12} /> : <Upload size={12} />}
+                                                </div>
+                                            )}
+                                        </div>
                                         <Video size={18} />
                                     </button>
                                     <button 
                                         onClick={() => setActiveTab('visual')}
                                         className={`w-full py-5 px-8 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'visual' ? 'bg-white/10 text-white border-white/20' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
                                     >
-                                        <span>Visual Guide</span>
+                                        <div className="flex items-center gap-3">
+                                            <span>Visual Guide</span>
+                                            {isEditing && (
+                                                <div 
+                                                    onClick={(e) => { e.stopPropagation(); imageInputRef.current?.click(); }}
+                                                    className="p-1.5 bg-east-light/20 text-east-light rounded-lg hover:bg-east-light hover:text-black transition-all"
+                                                >
+                                                    {uploadingMedia ? <Loader2 className="animate-spin" size={12} /> : <Upload size={12} />}
+                                                </div>
+                                            )}
+                                        </div>
                                         <Layers size={18} />
                                     </button>
+
+                                    {/* Hidden Inputs */}
+                                    <input 
+                                        type="file" 
+                                        ref={imageInputRef} 
+                                        className="hidden" 
+                                        accept="image/*" 
+                                        onChange={(e) => e.target.files?.[0] && handleMediaReplace('image', e.target.files[0])} 
+                                    />
+                                    <input 
+                                        type="file" 
+                                        ref={videoInputRef} 
+                                        className="hidden" 
+                                        accept="video/*" 
+                                        onChange={(e) => e.target.files?.[0] && handleMediaReplace('video', e.target.files[0])} 
+                                    />
                                 </div>
                             </div>
                         )}
@@ -582,7 +653,7 @@ export default function DrillHubScreen() {
                             <p className="text-xs font-black uppercase">No plan found.</p>
                         </div>
                     )}
-                    {drills.map((drill, idx) => (
+                    {filteredDrills.map((drill, idx) => (
                         <div 
                             key={drill.id} 
                             onClick={() => handleSelectDrill(drill)}
