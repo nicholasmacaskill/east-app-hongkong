@@ -145,10 +145,8 @@ export default function DrillHubScreen() {
             .eq('status', 'published')
             .order('created_at', { ascending: false });
 
-        if (activeSkillFilter && activeSkillFilter !== 'ALL') {
-            query = query.contains('skill_tags', [activeSkillFilter]);
-        }
-
+        // Removed DB-level filtering here to allow for instantaneous local filtering and better tag matching
+        
         const { data, error } = await query;
 
         if (!error && data) {
@@ -247,7 +245,9 @@ export default function DrillHubScreen() {
 
     const filteredDrills = drills.filter(d => {
         const matchesAge = !activeAgeFilter || d.age_tags?.includes(activeAgeFilter);
-        const matchesSkill = !activeSkillFilter || activeSkillFilter === 'ALL' || d.skill_tags?.some(s => s.toUpperCase() === activeSkillFilter.toUpperCase());
+        const matchesSkill = !activeSkillFilter || activeSkillFilter === 'ALL' || 
+            d.skill_tags?.some(s => s.toUpperCase().includes(activeSkillFilter.toUpperCase())) ||
+            (d.skill_tags?.length === 0 && activeSkillFilter === 'ALL');
         return matchesAge && matchesSkill;
     });
 
@@ -562,7 +562,7 @@ export default function DrillHubScreen() {
 
                 {!isSessionPlanMode && (
                     <div className="flex gap-4 overflow-x-auto no-scrollbar py-2 -mx-4 px-4">
-                        {['ALL', 'SHOOTING', 'PASSING', 'DEFENSE', 'SKATING', 'GOALIE'].map((f) => (
+                        {['ALL', 'SHOOTING', 'PASSING', 'DEFENSE', 'SKATING', 'STICKHANDLING', 'GOALIE'].map((f) => (
                             <button 
                                 key={f} 
                                 onClick={() => setActiveSkillFilter(f)}
