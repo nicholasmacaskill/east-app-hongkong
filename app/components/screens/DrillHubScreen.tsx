@@ -98,6 +98,13 @@ export default function DrillHubScreen() {
         }
     }, [sessionId, activeSkillFilter, searchParams]);
 
+    // Security Guard: Ensure isEditing can NEVER be true for athletes/parents
+    useEffect(() => {
+        if (userRole && !['coach', 'admin', 'sys-admin'].includes(userRole)) {
+            setIsEditing(false);
+        }
+    }, [userRole]);
+
     const fetchSingleDrill = async (id: string) => {
         setLoading(true);
         const { data, error } = await supabase
@@ -322,7 +329,7 @@ export default function DrillHubScreen() {
                     </div>
                     
                     <div className="flex items-center gap-6">
-                        {(userRole === 'coach' || userRole === 'admin') && (
+                        {(userRole === 'coach' || userRole === 'admin' || userRole === 'sys-admin') && (
                             <button 
                                 onClick={() => setIsEditing(!isEditing)}
                                 className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border ${isEditing ? 'bg-white text-black border-white' : 'bg-white/5 text-[#28D160] border-[#28D160]/20 hover:bg-[#28D160]/10'}`}
@@ -515,7 +522,7 @@ export default function DrillHubScreen() {
 
                                 <div className="space-y-6">
                                     <span className="block text-[10px] font-black uppercase tracking-[0.4em] text-east-light italic">Tactical Briefing</span>
-                                    {isEditing ? (
+                                    {isEditing && (userRole === 'coach' || userRole === 'admin' || userRole === 'sys-admin') ? (
                                         <textarea 
                                             value={currentStep.instruction}
                                             onChange={(e) => {
@@ -609,7 +616,7 @@ export default function DrillHubScreen() {
                                 <span className={currentStepIndex === i ? 'text-black' : 'text-east-light opacity-50'}>0{s.step_number}</span>
                                 {s.title}
                             </button>
-                            {isEditing && (
+                            {(isEditing && (userRole === 'coach' || userRole === 'admin' || userRole === 'sys-admin')) && (
                                 <button 
                                     onClick={async () => {
                                         if (drillSteps.length <= 1) return;
@@ -625,7 +632,7 @@ export default function DrillHubScreen() {
                             )}
                         </div>
                     ))}
-                    {isEditing && (
+                    {(isEditing && (userRole === 'coach' || userRole === 'admin' || userRole === 'sys-admin')) && (
                         <button 
                             onClick={async () => {
                                 const { data } = await supabase.from('coach_drill_steps').insert({
