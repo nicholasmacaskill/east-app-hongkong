@@ -186,7 +186,7 @@ export default function DrillHubScreen() {
 
     // --- Drawing Board Logic ---
     const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
-        if (userRole !== 'coach' && userRole !== 'admin') return;
+        if (userRole !== 'coach' && userRole !== 'admin' && userRole !== 'sys-admin') return;
         setIsDrawing(true);
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
@@ -199,7 +199,7 @@ export default function DrillHubScreen() {
     };
 
     const draw = (e: React.MouseEvent | React.TouchEvent) => {
-        if (!isDrawing || (userRole !== 'coach' && userRole !== 'admin')) return;
+        if (!isDrawing || (userRole !== 'coach' && userRole !== 'admin' && userRole !== 'sys-admin')) return;
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
         if (!canvas || !ctx) return;
@@ -396,22 +396,7 @@ export default function DrillHubScreen() {
                                                 </svg>
                                             </div>
                                             
-                                            {/* Tools Overlay */}
-                                            {(userRole === 'coach' || userRole === 'admin') && (
-                                                <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full px-6 py-2 flex items-center gap-4 shadow-2xl">
-                                                    <div className="flex gap-2 border-r border-white/10 pr-4">
-                                                        {['#28D160', '#ff3b30', '#007aff', '#ffffff'].map(c => (
-                                                            <button key={c} onClick={() => {setColor(c); setIsEraser(false);}} className={`w-5 h-5 rounded-full border-2 ${color === c && !isEraser ? 'border-white scale-110' : 'border-transparent opacity-50'}`} style={{ backgroundColor: c }} />
-                                                        ))}
-                                                    </div>
-                                                    <button onClick={() => setIsEraser(!isEraser)} className={`p-2 rounded-full transition-colors ${isEraser ? 'bg-white/20 text-white' : 'text-gray-500 hover:text-white'}`}><Eraser size={16} /></button>
-                                                    <button onClick={clearCanvas} className="p-2 text-red-500/50 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
-                                                    <button onClick={saveTactics} disabled={savingTactics} className="ml-2 flex items-center gap-2 px-4 py-1.5 bg-[#28D160] text-black rounded-full font-black text-[9px] uppercase tracking-widest hover:bg-white transition-all">
-                                                        {savingTactics ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-                                                        SAVE
-                                                    </button>
-                                                </div>
-                                            )}
+
 
                                             <canvas 
                                                 ref={canvasRef}
