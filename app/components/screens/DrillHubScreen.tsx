@@ -68,20 +68,20 @@ export default function DrillHubScreen() {
     const [isSessionPlanMode, setIsSessionPlanMode] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'visual' | 'tactical' | 'analysis'>('visual');
-    const [isDrawing, setIsDrawing] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [color, setColor] = useState('#28D160');
     const [isEraser, setIsEraser] = useState(false);
     const [savingTactics, setSavingTactics] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [userRole, setUserRole] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'visual' | 'tactical' | 'analysis'>('visual');
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [color, setColor] = useState('#28D160');
-    const [isEraser, setIsEraser] = useState(false);
-    const [savingTactics, setSavingTactics] = useState(false);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
 
+    useEffect(() => {
+        const checkUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+                if (profile) setUserRole(profile.role);
+            }
+        };
         checkUser();
 
         const drillIdParam = searchParams.get('drill_id');
