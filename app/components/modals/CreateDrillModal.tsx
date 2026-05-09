@@ -135,10 +135,10 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
 
                 await supabase.from('coach_drill_steps').insert({
                     drill_id: drillData.id,
-                    step_order: i + 1,
+                    step_number: i + 1,
                     title: validSteps[i].title.trim() || `Step ${i + 1}`,
-                    description: validSteps[i].description.trim(),
-                    image_url: stepImageUrl,
+                    instruction: validSteps[i].description.trim(),
+                    diagram_url: stepImageUrl,
                 });
             }
 

@@ -86,12 +86,12 @@ For developers and system administrators, please refer to the specific guides be
 
 | Service | Environment | Status | Configuration |
 | :--- | :--- | :--- | :--- |
-| **Frontend** | Akamai VPS | 🟢 **Production** | `eastapp.booking.dynevents.com` |
+| **Frontend** | Vercel | 🟢 **Production** | `app.eastsportsgroup.com` |
 | **Database** | Supabase | 🟢 **Production** | Hosted (Singapore Region) |
 | **Payments** | Stripe | 🟢 **Live Mode** | Processing real cards (HKD) |
 | **Webhooks** | Stripe | 🟢 **Active** | `checkout` & `invoice` events enabled |
 | **Emails** | Resend | 🟢 **Active** | Sending via `eastsportsgroup.com` |
-| **Deployment** | GitHub Actions | 🟢 **Automated** | Auto-deploy to Singapore VPS |
+| **Deployment** | Vercel Integration | 🟢 **Automated** | Auto-deploy on Push to Main/Test |
 
 ---
 

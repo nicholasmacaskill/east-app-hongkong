@@ -37,10 +37,10 @@ interface Drill {
 interface DrillStep {
     id: string;
     drill_id: string;
-    step_order: number;
+    step_number: number;
     title: string;
-    description: string;
-    image_url?: string;
+    instruction: string;
+    diagram_url?: string;
     video_url?: string;
 }
 
@@ -114,7 +114,7 @@ export default function DrillHubScreen() {
             .from('coach_drill_steps')
             .select('*')
             .eq('drill_id', drillId)
-            .order('step_order', { ascending: true });
+            .order('step_number', { ascending: true });
 
         if (!error && data) {
             setDrillSteps(data);
@@ -160,18 +160,21 @@ export default function DrillHubScreen() {
                 </div>
 
                 <div className="max-w-xl mx-auto relative z-10">
-                    {/* Conducted By Section */}
                     <div className="mb-10">
-                        <span className="block text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-5 italic">Tactical Leads</span>
+                        <span className="block text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-5 italic">Tactical Lead</span>
                         <div className="flex gap-4">
-                            {['BEN', 'LEE', 'WHIT', 'RHETT'].map((name, i) => (
-                                <div key={i} className="flex flex-col items-center gap-3">
-                                    <div className="w-16 h-16 rounded-[1.5rem] border-2 border-white/5 overflow-hidden bg-gradient-to-br from-[#1a1a1a] to-black shadow-2xl transition-all duration-500 hover:scale-110 hover:border-east-light/50 group">
-                                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="coach" />
-                                    </div>
-                                    <span className="text-[9px] font-black italic uppercase text-white/40 tracking-widest">{name}</span>
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="w-16 h-16 rounded-[1.5rem] border-2 border-white/5 overflow-hidden bg-gradient-to-br from-[#1a1a1a] to-black shadow-2xl transition-all duration-500 hover:scale-110 hover:border-east-light/50 group">
+                                    <img 
+                                        src={selectedDrill.coach?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedDrill.coach?.first_name || 'Coach'}`} 
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                                        alt="coach" 
+                                    />
                                 </div>
-                            ))}
+                                <span className="text-[9px] font-black italic uppercase text-white/40 tracking-widest">
+                                    {selectedDrill.coach?.first_name || 'Coach'} {selectedDrill.coach?.last_name || ''}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -188,15 +191,15 @@ export default function DrillHubScreen() {
                                         <div className="flex-1 h-[1px] bg-white/5" />
                                     </div>
                                     <h2 className="text-2xl font-black italic uppercase tracking-tight text-white mb-6 leading-tight flex items-start gap-4">
-                                        <span className="text-east-light opacity-50 font-black italic text-4xl leading-none">{currentStep.step_order}</span>
+                                        <span className="text-east-light opacity-50 font-black italic text-4xl leading-none">{currentStep.step_number}</span>
                                         <span className="pt-1">{currentStep.title}</span>
                                     </h2>
                                 </div>
 
                                 {/* Whiteboard Area */}
                                 <div className="mx-8 mb-10 bg-white rounded-[3rem] overflow-hidden flex items-center justify-center p-10 relative shadow-[inset_0_0_60px_rgba(0,0,0,0.1)] aspect-[3/4]">
-                                    {currentStep.image_url ? (
-                                        <img src={currentStep.image_url} className="w-full h-full object-contain" alt="diagram" />
+                                    {currentStep.diagram_url ? (
+                                        <img src={currentStep.diagram_url} className="w-full h-full object-contain" alt="diagram" />
                                     ) : (
                                         <div className="text-center opacity-20">
                                             <Layers size={100} className="text-gray-900 mx-auto" />
@@ -207,7 +210,7 @@ export default function DrillHubScreen() {
                                     {/* Glass Overlay for Instruction */}
                                     <div className="absolute bottom-6 left-6 right-6 p-6 bg-black/80 backdrop-blur-xl rounded-[2rem] border border-white/10 shadow-2xl">
                                         <p className="text-[11px] font-bold text-gray-300 leading-relaxed italic">
-                                            {currentStep.description}
+                                            {currentStep.instruction}
                                         </p>
                                     </div>
                                 </div>
@@ -346,10 +349,10 @@ export default function DrillHubScreen() {
                                             <div className="absolute inset-0 bg-[#0a0a0a]">
                                                 <img 
                                                     src={drill?.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"} 
-                                                    className="w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-1000" 
+                                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000" 
                                                     alt="drill" 
                                                 />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/40 to-transparent" />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/20 to-transparent" />
                                             </div>
 
                                             {/* Glow Overlay */}
