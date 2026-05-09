@@ -73,6 +73,9 @@ export default function DrillHubScreen() {
     const [isEraser, setIsEraser] = useState(false);
     const [savingTactics, setSavingTactics] = useState(false);
     const [uploadingMedia, setUploadingMedia] = useState(false);
+    const [sessions, setSessions] = useState<any[]>([]);
+    const [showSessionPicker, setShowSessionPicker] = useState(false);
+    const [schedulingDrill, setSchedulingDrill] = useState(false);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
@@ -222,6 +225,52 @@ export default function DrillHubScreen() {
         if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
     };
 
+    const fetchSessions = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+            .from('sessions')
+            .select('*')
+            .eq('coach_id', user.id)
+            .gte('start_time', new Date().toISOString())
+            .order('start_time', { ascending: true });
+        
+        if (!error && data) setSessions(data);
+    };
+
+    const handleAddToSession = async (sessionId: string) => {
+        if (!selectedDrill) return;
+        setSchedulingDrill(true);
+        try {
+            // Get current max order
+            const { data: currentDrills } = await supabase
+                .from('session_drills')
+                .select('order_index')
+                .eq('session_id', sessionId)
+                .order('order_index', { ascending: false })
+                .limit(1);
+            
+            const nextOrder = currentDrills && currentDrills.length > 0 ? currentDrills[0].order_index + 1 : 0;
+
+            const { error } = await supabase
+                .from('session_drills')
+                .insert({
+                    session_id: sessionId,
+                    drill_id: selectedDrill.id,
+                    order_index: nextOrder
+                });
+
+            if (error) throw error;
+            alert('Drill scheduled successfully!');
+            setShowSessionPicker(false);
+        } catch (e: any) {
+            alert(`Failed to schedule: ${e.message}`);
+        } finally {
+            setSchedulingDrill(false);
+        }
+    };
+
     const handleMediaReplace = async (type: 'image' | 'video', file: File) => {
         if (!selectedDrill || drillSteps.length === 0) return;
         setUploadingMedia(true);
@@ -285,23 +334,26 @@ export default function DrillHubScreen() {
         }
     }, [currentStepIndex, activeTab, drillSteps]);
 
-    const filteredDrills = drills.filter(d => {
-        const matchesAge = !activeAgeFilter || d.age_tags?.includes(activeAgeFilter);
-        
-        // Robust Skill Filtering
-        let matchesSkill = false;
-        if (!activeSkillFilter || activeSkillFilter === 'ALL') {
-            matchesSkill = true;
-        } else if (Array.isArray(d.skill_tags)) {
-            matchesSkill = d.skill_tags.some(s => 
-                typeof s === 'string' && s.toUpperCase().includes(activeSkillFilter.toUpperCase())
-            );
-        } else if (typeof d.skill_tags === 'string') {
-            matchesSkill = (d.skill_tags as string).toUpperCase().includes(activeSkillFilter.toUpperCase());
-        }
+    const filteredDrills = React.useMemo(() => {
+        if (!drills) return [];
+        return drills.filter(d => {
+            const matchesAge = !activeAgeFilter || d.age_tags?.includes(activeAgeFilter);
+            
+            // Robust Skill Filtering
+            let matchesSkill = false;
+            if (!activeSkillFilter || activeSkillFilter === 'ALL') {
+                matchesSkill = true;
+            } else if (Array.isArray(d.skill_tags)) {
+                matchesSkill = d.skill_tags.some(s => 
+                    typeof s === 'string' && s.toUpperCase().includes(activeSkillFilter.toUpperCase())
+                );
+            } else if (typeof d.skill_tags === 'string') {
+                matchesSkill = (d.skill_tags as string).toUpperCase().includes(activeSkillFilter.toUpperCase());
+            }
 
-        return matchesAge && matchesSkill;
-    });
+            return matchesAge && matchesSkill;
+        });
+    }, [drills, activeAgeFilter, activeSkillFilter]);
 
     if (selectedDrill) {
         const currentStep = drillSteps[currentStepIndex];
@@ -340,13 +392,25 @@ export default function DrillHubScreen() {
                     
                     <div className="flex items-center gap-6">
                         {(userRole === 'coach' || userRole === 'admin' || userRole === 'sys-admin') && (
-                            <button 
-                                onClick={() => setIsEditing(!isEditing)}
-                                className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border ${isEditing ? 'bg-white text-black border-white' : 'bg-white/5 text-[#28D160] border-[#28D160]/20 hover:bg-[#28D160]/10'}`}
-                            >
-                                <Plus size={14} className={isEditing ? 'rotate-45 transition-transform' : ''} />
-                                {isEditing ? 'CLOSE STUDIO' : 'EDIT DRILL'}
-                            </button>
+                            <>
+                                <button 
+                                    onClick={() => {
+                                        fetchSessions();
+                                        setShowSessionPicker(true);
+                                    }}
+                                    className="px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border bg-east-light text-black border-east-light hover:shadow-[0_0_20px_#28D16066]"
+                                >
+                                    <Calendar size={14} />
+                                    SCHEDULE
+                                </button>
+                                <button 
+                                    onClick={() => setIsEditing(!isEditing)}
+                                    className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border ${isEditing ? 'bg-white text-black border-white' : 'bg-white/5 text-[#28D160] border-[#28D160]/20 hover:bg-[#28D160]/10'}`}
+                                >
+                                    <Plus size={14} className={isEditing ? 'rotate-45 transition-transform' : ''} />
+                                    {isEditing ? 'CLOSE STUDIO' : 'EDIT DRILL'}
+                                </button>
+                            </>
                         )}
 
                         <button 
@@ -362,14 +426,14 @@ export default function DrillHubScreen() {
                 </div>
 
                 {/* Main Cinematic Content */}
-                <div className="flex-1 relative z-10 flex flex-col md:flex-row overflow-hidden">
+                <div className="flex-1 relative z-10 flex flex-col lg:flex-row overflow-hidden overflow-y-auto lg:overflow-hidden">
                     
                     {/* Left: Diagram Area (Large) */}
-                    <div className="flex-[1.5] relative bg-black/40 flex items-center justify-center p-12 overflow-hidden border-r border-white/5">
+                    <div className="w-full lg:flex-1 relative bg-[#050505] flex items-center justify-center min-h-[300px] lg:min-h-0 border-b lg:border-b-0 border-white/5">
                         {drillSteps.length > 0 ? (
-                            <div className="relative w-full h-full flex items-center justify-center group">
+                            <div className="w-full h-full relative flex items-center justify-center p-4 lg:p-12">
                                 {/* Diagram Container */}
-                                <div className="relative w-full max-w-4xl aspect-video rounded-[3rem] overflow-hidden border border-white/10 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm shadow-[0_40px_100px_rgba(0,0,0,0.6)] flex items-center justify-center p-10">
+                                <div className="relative w-full max-w-[800px] aspect-video bg-[#0a0a0a] rounded-[2rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] border border-white/5 overflow-hidden group flex items-center justify-center p-10">
                                     {activeTab === 'visual' ? (
                                         currentStep.diagram_url ? (
                                             <img 
@@ -502,7 +566,7 @@ export default function DrillHubScreen() {
                     </div>
 
                     {/* Right: Instruction Sidebar */}
-                    <div className="flex-1 min-w-[400px] bg-black/60 backdrop-blur-2xl p-12 flex flex-col justify-center gap-12 border-l border-white/5">
+                    <div className="w-full lg:w-[400px] lg:min-w-[400px] bg-black/60 backdrop-blur-2xl p-8 lg:p-12 flex flex-col justify-center gap-8 lg:gap-12 border-t lg:border-t-0 lg:border-l border-white/5">
                         {drillSteps.length > 0 && (
                             <div className="space-y-12 animate-slideInRight">
                                 <div className="space-y-4">
@@ -779,6 +843,39 @@ export default function DrillHubScreen() {
                             </div>
                         );
                     })}
+                </div>
+            )}
+            {/* Session Picker Modal */}
+            {showSessionPicker && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl animate-fadeIn">
+                    <div className="w-full max-w-lg bg-[#0a0a0a] border border-white/10 rounded-[3rem] p-10 space-y-8 shadow-[0_50px_100px_rgba(0,0,0,0.8)]">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-3xl font-black italic uppercase tracking-tighter">Schedule Drill</h2>
+                            <button onClick={() => setShowSessionPicker(false)} className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="space-y-4 max-h-[400px] overflow-y-auto no-scrollbar pr-2">
+                            {sessions.length === 0 ? (
+                                <p className="text-gray-500 font-medium italic">No upcoming sessions found...</p>
+                            ) : (
+                                sessions.map(s => (
+                                    <button 
+                                        key={s.id}
+                                        onClick={() => handleAddToSession(s.id)}
+                                        disabled={schedulingDrill}
+                                        className="w-full p-6 rounded-2xl bg-white/5 border border-white/5 hover:border-east-light hover:bg-east-light/5 text-left transition-all group flex justify-between items-center"
+                                    >
+                                        <div>
+                                            <p className="font-black uppercase tracking-widest text-xs text-east-light mb-1">{s.title}</p>
+                                            <p className="text-lg font-medium italic text-gray-300">{new Date(s.start_time).toLocaleDateString()} @ {new Date(s.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                        </div>
+                                        <ArrowRight size={20} className="text-gray-600 group-hover:translate-x-2 group-hover:text-east-light transition-all" />
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
