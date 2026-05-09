@@ -1,194 +1,34 @@
-# Deploy Test Mode to Singapore VPS (Zero-CPU Build Mode)
+name: 🚀 Deploy to Vercel (Test)
 
 on:
   push:
     branches:
       - test
 
-concurrency:
-  group: deploy-test
-  cancel-in-progress: true
-
 jobs:
-  build:
-    name: 🏗️ Build Standalone (Test)
+  deploy:
     runs-on: ubuntu-latest
-    environment: test
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
 
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Build Application
-        run: |
-          if [ -z "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ] || [ "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" == "https://placeholder.supabase.co" ]; then
-            echo "❌ ERROR: NEXT_PUBLIC_SUPABASE_URL is missing in the GitHub environment secrets!"
-            exit 1
-          fi
-          if [ -z "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" ]; then
-            echo "❌ ERROR: NEXT_PUBLIC_SUPABASE_ANON_KEY is missing in the GitHub environment secrets!"
-            exit 1
-          fi
-          if [ -z "${{ secrets.STRIPE_SECRET_KEY_TEST }}" ]; then
-            echo "❌ ERROR: STRIPE_SECRET_KEY_TEST is missing in the GitHub environment secrets!"
-            exit 1
-          fi
-          if [ -z "${{ secrets.RESEND_API_KEY }}" ]; then
-            echo "⚠️  WARNING: RESEND_API_KEY is missing. Emails will fail."
-          fi
-          rm -rf .next
-          npm run build
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
         env:
-          NODE_ENV: production
-          NEXT_PUBLIC_STRIPE_MODE: test
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          STRIPE_SECRET_KEY_TEST: ${{ secrets.STRIPE_SECRET_KEY_TEST }}
-          DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST || secrets.DATABASE_URL }}
-          NEXT_TELEMETRY_DISABLED: 1
-          SENTRY_IGNORE_CONFIG: 1
+          VERCEL_ORG_ID: team_dHuuSP1b4oQVAiWNVn2Rvgg8
+          VERCEL_PROJECT_ID: prj_MjBg7CY0uxNIKJxwtkws9Kf1tKOA
 
-      - name: Prepare Standalone Bundle
-        run: |
-          # Standard Cleanup
-          rm -rf deploy_bundle
-          mkdir -p deploy_bundle
-          
-          # Standard Standalone Copy
-          cp -r .next/standalone/. deploy_bundle/
-          
-          # Standard Static Copy
-          mkdir -p deploy_bundle/.next/static
-          cp -r .next/static/. deploy_bundle/.next/static/
-          
-          # Public Mirror (Fallback)
-          cp -r public/. deploy_bundle/public/
-          mkdir -p deploy_bundle/public/_next/static
-          cp -r .next/static/. deploy_bundle/public/_next/static/
-          
-          # Cleanup any potential /next (no dot) interference
-          rm -rf deploy_bundle/next
-          
-          echo "📦 DEPLOY BUNDLE STRUCTURE (Standard):"
-          find deploy_bundle -maxdepth 4
-          
-          cp ecosystem.config.js deploy_bundle/
-          tar -czf bundle-test.tar.gz -C deploy_bundle .
-
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-bundle-test
-          path: bundle-test.tar.gz
-          retention-days: 1
-
-  deploy-test:
-    name: 🚀 Deploy to VPS (Test Sync)
-    needs: build
-    runs-on: ubuntu-latest
-    environment: test
-    steps:
-      - name: Download Build Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-bundle-test
-
-      - name: Upload Bundle to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: dyn1.dynevents.com
-          username: nicholas
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 60022
-          source: "bundle-test.tar.gz"
-          target: "/var/www/test.eastapp.booking.dynevents.com"
-
-      - name: Finalize & Restart on VPS
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
         env:
-          SUDO_PASS: ${{ secrets.SUDO_PASSWORD }}
-          STRIPE_SECRET_KEY_TEST: ${{ secrets.STRIPE_SECRET_KEY_TEST }}
-          STRIPE_WEBHOOK_SECRET_TEST: ${{ secrets.STRIPE_WEBHOOK_SECRET_TEST }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          DATABASE_URL_TEST: ${{ secrets.DATABASE_URL_TEST || secrets.DATABASE_URL }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-        with:
-          host: dyn1.dynevents.com
-          username: nicholas
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 60022
-          envs: SUDO_PASS,STRIPE_SECRET_KEY_TEST,STRIPE_WEBHOOK_SECRET_TEST,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,DATABASE_URL_TEST,RESEND_API_KEY
-          script: |
-            cd /var/www/test.eastapp.booking.dynevents.com
-            echo "📍 CURRENT DIRECTORY: $(pwd)"
-            
-            echo "🧹 Purging old deployment (preserving new bundle)..."
-            # IMPORTANT: do NOT delete bundle-test.tar.gz here - it was just uploaded
-            find . -maxdepth 1 ! -name 'bundle-test.tar.gz' ! -name '.' -exec rm -rf {} +
-            
-            echo "📦 Extracting fresh bundle..."
-            tar -xzf bundle-test.tar.gz
-            mv server.js server-v4.js
-            
-            echo "🕒 DEPLOYED AT: $(date)" > DEPLOYED_AT.txt
-            
-            echo "🔄 Restarting application (Nuclear Reset Port 3001)..."
-            # Force kill anything on 3001 to bypass zombies
-            fuser -k 3001/tcp || true
-            pm2 delete EastAppTest || true
-            pm2 start ecosystem.config.js --only EastAppTest
-            pm2 save
-            
-            echo "🔐 Setting permissions..."
-            sudo chown -R www-data:www-data /var/www/test.eastapp.booking.dynevents.com
-            sudo chmod -R 755 /var/www/test.eastapp.booking.dynevents.com
-            
-            echo "🔄 Refreshing Nginx..."
-            sudo systemctl restart nginx || sudo service nginx restart
-            
-            echo "🔗 Standard Links Only..."
-            rm -rf next
-            ln -s .next next
-            
-            echo "📝 Creating .env.test..."
-            write_env() {
-              printf '%s=%q\n' "$1" "$2" >> .env.test
-            }
-            echo "NODE_ENV=production" > .env.test
-            echo "NEXT_PUBLIC_STRIPE_MODE=test" >> .env.test
-            write_env "STRIPE_SECRET_KEY" "$STRIPE_SECRET_KEY_TEST"
-            write_env "STRIPE_WEBHOOK_SECRET" "$STRIPE_WEBHOOK_SECRET_TEST"
-            write_env "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY_TEST"
-            write_env "NEXT_PUBLIC_SUPABASE_URL" "$NEXT_PUBLIC_SUPABASE_URL"
-            write_env "NEXT_PUBLIC_SUPABASE_ANON_KEY" "$NEXT_PUBLIC_SUPABASE_ANON_KEY"
-            write_env "SUPABASE_SERVICE_ROLE_KEY" "$SUPABASE_SERVICE_ROLE_KEY"
-            write_env "DATABASE_URL" "$DATABASE_URL_TEST"
-            write_env "RESEND_API_KEY" "$RESEND_API_KEY"
-            
-            echo "🚀 Restarting EastAppTest (Minimal CPU Impact)..."
-            echo "$SUDO_PASS" | sudo -S pm2 delete EastAppTest || true
-            echo "$SUDO_PASS" | sudo -S pm2 start ecosystem.config.js --only EastAppTest --update-env
-            echo "$SUDO_PASS" | sudo -S pm2 save
-            
-            echo "✅ ZERO-CPU TEST DEPLOY COMPLETE!"
+          VERCEL_ORG_ID: team_dHuuSP1b4oQVAiWNVn2Rvgg8
+          VERCEL_PROJECT_ID: prj_MjBg7CY0uxNIKJxwtkws9Kf1tKOA
 
-      - name: 🔍 Agentic Verification (Post-Deploy)
+      - name: Deploy Project Artifacts to Vercel
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          NEXT_PUBLIC_BASE_URL: https://test.eastapp.booking.dynevents.com
-        run: |
-          echo "🏁 Deployment verified! Installing verification agent..."
-          npm install @supabase/supabase-js --no-package-lock
-          node "$GITHUB_WORKSPACE/scripts/deploy-verify.js"
+          VERCEL_ORG_ID: team_dHuuSP1b4oQVAiWNVn2Rvgg8
+          VERCEL_PROJECT_ID: prj_MjBg7CY0uxNIKJxwtkws9Kf1tKOA
