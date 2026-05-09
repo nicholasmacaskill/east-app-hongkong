@@ -1,15 +1,20 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { X, Play, PenTool, Eraser, Download, Trash2, Video } from 'lucide-react';
+import { X, Play, PenTool, Eraser, Trash2, Video, Upload, Loader2 } from 'lucide-react';
+import { supabase } from '@/app/lib/supabase';
 
 interface Drill {
     id: string;
     title: string;
-    description: string;
-    difficulty: string;
-    duration: string;
-    category: string;
-    video_url: string;
-    image_url: string;
+    description?: string;
+    difficulty?: string;
+    duration?: string;
+    category?: string;
+    skill_tags?: string[];
+    level_tags?: string[];
+    video_url?: string;
+    image_url?: string;
+    thumbnail_url?: string;
+    coach_id?: string;
 }
 
 interface DrillDetailsModalProps {
@@ -21,7 +26,11 @@ interface DrillDetailsModalProps {
 export default function DrillDetailsModal({ drill, onClose, isCoach }: DrillDetailsModalProps) {
     const [activeTab, setActiveTab] = useState<'video' | 'whiteboard'>('video');
     const [isPlaying, setIsPlaying] = useState(false);
+    const [videoUrl, setVideoUrl] = useState(drill.video_url || '');
+    const [uploading, setUploading] = useState(false);
+    const videoInputRef = useRef<HTMLInputElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
+    const coverImage = drill.thumbnail_url || drill.image_url || '';
 
     // Whiteboard State
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -106,6 +115,26 @@ export default function DrillDetailsModal({ drill, onClose, isCoach }: DrillDeta
         }
     };
 
+    const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploading(true);
+        try {
+            const ext = file.name.split('.').pop();
+            const fileName = `drill-video-${drill.id}-${Date.now()}.${ext}`;
+            const { error: uploadErr } = await supabase.storage.from('uploads').upload(fileName, file);
+            if (uploadErr) throw new Error(uploadErr.message);
+            const { data } = supabase.storage.from('uploads').getPublicUrl(fileName);
+            const url = data.publicUrl;
+            await supabase.from('coach_drills').update({ video_url: url }).eq('id', drill.id);
+            setVideoUrl(url);
+        } catch (err: any) {
+            console.error('Video upload failed:', err.message);
+        } finally {
+            setUploading(false);
+        }
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#050505]/95 backdrop-blur-2xl animate-fadeIn font-montserrat">
             {/* Ambient Glows */}
@@ -180,11 +209,11 @@ export default function DrillDetailsModal({ drill, onClose, isCoach }: DrillDeta
                         
                         {activeTab === 'video' && (
                             <div className="w-full h-full relative group">
-                                {drill.video_url ? (
+                                {videoUrl ? (
                                     <>
                                         <video 
                                             ref={videoRef}
-                                            src={drill.video_url} 
+                                            src={videoUrl} 
                                             className="w-full h-full object-contain"
                                             controls={false}
                                             onClick={togglePlay}
@@ -199,10 +228,29 @@ export default function DrillDetailsModal({ drill, onClose, isCoach }: DrillDeta
                                     </>
                                 ) : (
                                     <div className="w-full h-full relative">
-                                        <img src={drill.image_url} className="w-full h-full object-cover opacity-50" alt="Thumbnail" />
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
-                                            <Video size={48} className="text-gray-600 mb-4" />
-                                            <span className="text-gray-400 font-black italic uppercase tracking-widest">No Video Uploaded</span>
+                                        {coverImage && <img src={coverImage} className="w-full h-full object-cover opacity-30" alt="Thumbnail" />}
+                                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 gap-6">
+                                            <Video size={48} className="text-gray-600" />
+                                            <span className="text-gray-500 font-black italic uppercase tracking-widest text-sm">No Video Uploaded</span>
+                                            {isCoach && (
+                                                <>
+                                                    <button
+                                                        onClick={() => videoInputRef.current?.click()}
+                                                        disabled={uploading}
+                                                        className="flex items-center gap-2 px-6 py-3 bg-east-light text-black font-black italic uppercase tracking-widest text-xs rounded-xl hover:bg-white transition-all shadow-[0_0_20px_rgba(40,209,96,0.3)] disabled:opacity-50 active:scale-95"
+                                                    >
+                                                        {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                                                        {uploading ? 'Uploading...' : 'Upload Analysis Video'}
+                                                    </button>
+                                                    <input
+                                                        ref={videoInputRef}
+                                                        type="file"
+                                                        accept="video/*"
+                                                        className="hidden"
+                                                        onChange={handleVideoUpload}
+                                                    />
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 )}
