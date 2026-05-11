@@ -15,7 +15,12 @@ import {
     Upload,
     Save,
     Loader2,
-    Calendar
+    Calendar,
+    X,
+    Plus,
+    Video,
+    Eraser,
+    Trash2
 } from 'lucide-react';
 
 interface Drill {
