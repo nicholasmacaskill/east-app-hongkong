@@ -348,7 +348,6 @@ export default function ScheduleScreen({
                           <button className="bg-white/5 border border-white/5 text-gray-500 text-[9px] font-black italic px-4 py-2 rounded-xl hover:bg-white/10 transition-colors">DETAILS</button>
                         )}
                       </div>
-                      </div>
                     </div>
                   </div>
                 </div>

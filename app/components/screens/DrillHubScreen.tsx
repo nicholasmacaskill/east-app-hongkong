@@ -12,19 +12,10 @@ import {
     Target, 
     Users as UsersIcon,
     ArrowRight,
-    Search,
-    X,
-    Maximize2,
-    Plus,
-    Video,
-    PenTool,
-    Eraser,
-    Trash2,
     Upload,
     Save,
     Loader2,
-    Calendar,
-    ArrowRight
+    Calendar
 } from 'lucide-react';
 
 interface Drill {
