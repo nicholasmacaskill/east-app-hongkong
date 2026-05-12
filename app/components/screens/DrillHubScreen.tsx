@@ -387,9 +387,9 @@ export default function DrillHubScreen() {
                         <div className="flex items-center gap-3">
                             <button 
                                 onClick={() => {
-                                    // Clear URL param
                                     window.history.replaceState({}, '', window.location.pathname);
                                     setSelectedDrill(null);
+                                    setShowSessionPicker(false);
                                     if (window.history.length > 1 && !drillIdParam) window.history.back();
                                 }}
                                 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-east-light transition-all group"
@@ -873,7 +873,12 @@ export default function DrillHubScreen() {
                             </button>
                         </div>
                         <div className="space-y-4 max-h-[400px] overflow-y-auto no-scrollbar pr-2">
-                            {sessions.length === 0 ? (
+                            {schedulingDrill ? (
+                                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                                    <Loader2 className="w-12 h-12 text-east-light animate-spin" />
+                                    <p className="text-gray-500 font-bold italic uppercase tracking-widest text-xs">Fetching sessions...</p>
+                                </div>
+                            ) : sessions.length === 0 ? (
                                 <p className="text-gray-500 font-medium italic">No upcoming sessions found...</p>
                             ) : (
                                 sessions.map(s => (
