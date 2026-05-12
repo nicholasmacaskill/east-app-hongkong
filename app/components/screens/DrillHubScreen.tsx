@@ -449,13 +449,15 @@ export default function DrillHubScreen() {
                                         </div>
                                     </div>
                                 )}
-                                <button 
-                                    onClick={() => setIsEditing(!isEditing)}
-                                    className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border ${isEditing ? 'bg-white text-black border-white' : 'bg-white/5 text-[#28D160] border-[#28D160]/20 hover:bg-[#28D160]/10'}`}
-                                >
-                                    <Plus size={14} className={isEditing ? 'rotate-45 transition-transform' : ''} />
-                                    {isEditing ? 'CLOSE STUDIO' : 'EDIT DRILL'}
-                                </button>
+                                {(userRole === 'sys-admin' || (selectedDrill && currentUser?.id === selectedDrill.coach_id)) && (
+                                    <button 
+                                        onClick={() => setIsEditing(!isEditing)}
+                                        className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border ${isEditing ? 'bg-white text-black border-white' : 'bg-white/5 text-[#28D160] border-[#28D160]/20 hover:bg-[#28D160]/10'}`}
+                                    >
+                                        {isEditing ? <Save size={14} /> : <Plus size={14} />}
+                                        {isEditing ? 'SAVE DRILL' : 'EDIT DRILL'}
+                                    </button>
+                                )}
                             </>
                         )}
 
