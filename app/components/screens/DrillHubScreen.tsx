@@ -76,6 +76,7 @@ export default function DrillHubScreen() {
     const [sessions, setSessions] = useState<any[]>([]);
     const [showSessionPicker, setShowSessionPicker] = useState(false);
     const [schedulingDrill, setSchedulingDrill] = useState(false);
+    const [isScheduled, setIsScheduled] = useState(false);
     const [isDrawing, setIsDrawing] = useState(false);
     const drillIdParam = searchParams.get('drill_id');
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -280,6 +281,7 @@ export default function DrillHubScreen() {
                 });
 
             if (error) throw error;
+            setIsScheduled(true);
             alert('Drill scheduled successfully!');
             setShowSessionPicker(false);
         } catch (e: any) {
@@ -404,7 +406,7 @@ export default function DrillHubScreen() {
                             </span>
                             
                             {/* NEW: SCHEDULED BADGE */}
-                            {isSessionPlanMode && (
+                            {(isSessionPlanMode || isScheduled) && (
                                 <>
                                     <span className="w-1 h-1 bg-white/20 rounded-full" />
                                     <div className="flex items-center gap-2 px-3 py-1 bg-[#28D160]/10 border border-[#28D160]/30 rounded-full animate-bounce-subtle">
