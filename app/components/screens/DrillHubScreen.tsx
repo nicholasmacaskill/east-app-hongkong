@@ -399,10 +399,7 @@ export default function DrillHubScreen() {
                         {(userRole === 'coach' || userRole === 'admin' || userRole === 'sys-admin') && (
                             <>
                                 <button 
-                                    onClick={() => {
-                                        fetchSessions();
-                                        setShowSessionPicker(true);
-                                    }}
+                                    onClick={handleScheduleClick}
                                     className="px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border bg-east-light text-black border-east-light hover:shadow-[0_0_20px_#28D16066]"
                                 >
                                     <Calendar size={14} />
