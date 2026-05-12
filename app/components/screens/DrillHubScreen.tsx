@@ -59,6 +59,7 @@ export default function DrillHubScreen() {
 
     const [drills, setDrills] = useState<Drill[]>([]);
     const [loading, setLoading] = useState(true);
+    const [currentUser, setCurrentUser] = useState<any>(null);
     const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
     const [drillSteps, setDrillSteps] = useState<DrillStep[]>([]);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -85,6 +86,7 @@ export default function DrillHubScreen() {
         const checkUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
+                setCurrentUser(user);
                 const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
                 if (profile) setUserRole(profile.role);
             }
@@ -460,7 +462,7 @@ export default function DrillHubScreen() {
                                         </div>
                                     </div>
                                 )}
-                                {(userRole === 'sys-admin' || (selectedDrill && user?.id === selectedDrill.coach_id)) && (
+                                {(userRole === 'sys-admin' || (selectedDrill && currentUser?.id === selectedDrill.coach_id)) && (
                                     <button 
                                         onClick={() => setIsEditing(!isEditing)}
                                         className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border ${isEditing ? 'bg-white text-black border-white' : 'bg-white/5 text-[#28D160] border-[#28D160]/20 hover:bg-[#28D160]/10'}`}
