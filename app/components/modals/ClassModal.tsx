@@ -62,6 +62,7 @@ export default function ClassModal({
     const [showPenaltyWarning, setShowPenaltyWarning] = useState(false);
     const [penaltyData, setPenaltyData] = useState<{ percentage: number; amount: number; message: string }>({ percentage: 0, amount: 0, message: '' });
     const [hasTrainingPlan, setHasTrainingPlan] = useState(false);
+    const [planDrills, setPlanDrills] = useState<any[]>([]);
 
     // NEW: Manual Coach Hierarchy Flow
     const [viewMode, setViewMode] = useState<'COACH_SELECT' | 'SESSION_SELECT' | 'SERVICE_SELECT'>('SESSION_SELECT');
@@ -465,11 +466,14 @@ export default function ClassModal({
             
             // Also check for Training Plan
             const checkPlan = async () => {
-                const { count } = await supabase
+                const { data, count } = await supabase
                     .from('session_drills')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('session_id', selectedSessionId);
+                    .select('*, coach_drills(id, title, image_url, category)', { count: 'exact' })
+                    .eq('session_id', selectedSessionId)
+                    .order('order_index', { ascending: true });
+                
                 setHasTrainingPlan((count || 0) > 0);
+                if (data) setPlanDrills(data);
             };
             checkPlan();
         } else {
@@ -690,27 +694,46 @@ export default function ClassModal({
                                         </div>
                                     )}
 
-                                    {/* TRAINING PLAN BUTTON */}
+                                    {/* MICRO-BRIEFING ROW */}
                                     {hasTrainingPlan && (
                                         <div className="mb-6 animate-fadeIn">
-                                            <button 
-                                                onClick={() => {
-                                                    onClose();
-                                                    window.location.href = `/drill-hub?session_id=${selectedSessionId}`;
-                                                }}
-                                                className="w-full bg-[#28D160]/10 border border-[#28D160]/50 hover:bg-[#28D160] text-black py-3 px-4 rounded-xl flex items-center justify-between group transition-all shadow-md hover:shadow-[0_0_15px_rgba(40,209,96,0.5)] hover:scale-[1.02]"
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-[#28D160] flex items-center justify-center text-black shadow-inner">
-                                                        <Layers size={16} />
-                                                    </div>
-                                                    <div className="text-left">
-                                                        <span className="block text-[9px] font-black uppercase tracking-widest text-[#28D160] group-hover:text-black/70 transition-colors">Pre-Session Review</span>
-                                                        <span className="block text-sm font-black italic uppercase text-gray-800 group-hover:text-black transition-colors leading-none mt-0.5">View Training Plan</span>
-                                                    </div>
-                                                </div>
-                                                <ChevronLeft className="rotate-180 text-[#28D160] group-hover:text-black transition-colors" size={20} />
-                                            </button>
+                                            <div className="flex justify-between items-center mb-3">
+                                                <p className="font-montserrat font-bold text-[10px] uppercase text-gray-400 tracking-wider">Plan Preview:</p>
+                                                <button 
+                                                    onClick={() => {
+                                                        onClose();
+                                                        window.location.href = `/drill-hub?session_id=${selectedSessionId}`;
+                                                    }}
+                                                    className="text-[10px] font-black italic text-east-light uppercase tracking-widest hover:brightness-110"
+                                                >
+                                                    Full View
+                                                </button>
+                                            </div>
+                                            <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+                                                {planDrills.map((p, idx) => (
+                                                    <button 
+                                                        key={p.id}
+                                                        onClick={() => {
+                                                            onClose();
+                                                            window.location.href = `/drill-hub?session_id=${selectedSessionId}&drill_id=${p.drill_id}`;
+                                                        }}
+                                                        className="flex-shrink-0 w-16 group relative"
+                                                    >
+                                                        <div className="w-16 h-16 rounded-2xl overflow-hidden border border-gray-100 group-hover:border-east-light transition-all shadow-sm">
+                                                            <img 
+                                                                src={p.coach_drills?.image_url || 'https://placehold.co/100'} 
+                                                                className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all"
+                                                                alt={p.coach_drills?.title}
+                                                            />
+                                                            <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors" />
+                                                            <div className="absolute bottom-1 right-1 bg-black/60 rounded-md px-1 py-0.5">
+                                                                <span className="text-[6px] font-black italic text-white italic">{idx + 1}</span>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-[7px] font-black uppercase text-gray-400 mt-1 truncate group-hover:text-black transition-colors">{p.coach_drills?.title}</p>
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                     )}
 
