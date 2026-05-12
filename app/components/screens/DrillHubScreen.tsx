@@ -20,7 +20,8 @@ import {
     Plus,
     Video,
     Eraser,
-    Trash2
+    Trash2,
+    PenTool
 } from 'lucide-react';
 
 interface Drill {
@@ -74,6 +75,8 @@ export default function DrillHubScreen() {
     const [sessions, setSessions] = useState<any[]>([]);
     const [showSessionPicker, setShowSessionPicker] = useState(false);
     const [schedulingDrill, setSchedulingDrill] = useState(false);
+    const [isDrawing, setIsDrawing] = useState(false);
+    const drillIdParam = searchParams.get('drill_id');
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
@@ -88,7 +91,6 @@ export default function DrillHubScreen() {
         };
         checkUser();
 
-        const drillIdParam = searchParams.get('drill_id');
         if (sessionId) {
             setIsSessionPlanMode(true);
             fetchSessionPlan(sessionId);
@@ -227,10 +229,15 @@ export default function DrillHubScreen() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        const { data: profile } = await supabase.from('profiles').select('first_name, last_name').eq('id', user.id).single();
+        if (!profile) return;
+
+        const fullName = `${profile.first_name} ${profile.last_name}`;
+
         const { data, error } = await supabase
             .from('sessions')
             .select('*')
-            .eq('coach_id', user.id)
+            .ilike('instructor', `%${fullName}%`)
             .gte('start_time', new Date().toISOString())
             .order('start_time', { ascending: true });
         
