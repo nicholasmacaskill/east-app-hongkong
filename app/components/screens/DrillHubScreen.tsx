@@ -409,16 +409,46 @@ export default function DrillHubScreen() {
                     <div className="flex items-center gap-6">
                         {(userRole === 'coach' || userRole === 'admin' || userRole === 'sys-admin') && (
                             <>
-                                <button 
-                                    onClick={() => {
-                                        fetchSessions();
-                                        setShowSessionPicker(true);
-                                    }}
-                                    className="relative z-[9999] px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border bg-east-light text-black border-east-light hover:shadow-[0_0_20px_#28D16066]"
-                                >
-                                    <Calendar size={14} />
-                                    SCHEDULE
-                                </button>
+                                {!showSessionPicker ? (
+                                    <button 
+                                        onClick={() => {
+                                            fetchSessions();
+                                            setShowSessionPicker(true);
+                                        }}
+                                        className="w-full px-6 py-4 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border bg-east-light text-black border-east-light hover:shadow-[0_0_20px_#28D16066]"
+                                    >
+                                        <Calendar size={16} />
+                                        SCHEDULE DRILL
+                                    </button>
+                                ) : (
+                                    <div className="bg-white/5 border border-white/10 rounded-[2rem] p-4 space-y-3 animate-fadeIn">
+                                        <div className="flex justify-between items-center mb-2 px-2">
+                                            <span className="text-[10px] font-black italic text-east-light uppercase tracking-widest">Select Session</span>
+                                            <button onClick={() => setShowSessionPicker(false)} className="text-gray-500 hover:text-white transition-colors">
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                        <div className="space-y-2 max-h-[200px] overflow-y-auto no-scrollbar">
+                                            {sessions.length === 0 ? (
+                                                <p className="text-[9px] font-bold text-gray-500 italic px-2">No sessions found...</p>
+                                            ) : (
+                                                sessions.map(s => (
+                                                    <button 
+                                                        key={s.id}
+                                                        onClick={() => handleAddToSession(s.id)}
+                                                        className="w-full p-3 rounded-xl bg-white/5 border border-white/5 hover:border-east-light hover:bg-east-light/5 text-left transition-all flex justify-between items-center group"
+                                                    >
+                                                        <div className="truncate pr-2">
+                                                            <p className="font-black uppercase tracking-tighter text-[9px] text-white truncate">{s.title}</p>
+                                                            <p className="text-[8px] font-medium italic text-gray-500">{new Date(s.start_time).toLocaleDateString()}</p>
+                                                        </div>
+                                                        <Plus size={12} className="text-gray-600 group-hover:text-east-light shrink-0" />
+                                                    </button>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                                 <button 
                                     onClick={() => setIsEditing(!isEditing)}
                                     className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border ${isEditing ? 'bg-white text-black border-white' : 'bg-white/5 text-[#28D160] border-[#28D160]/20 hover:bg-[#28D160]/10'}`}
