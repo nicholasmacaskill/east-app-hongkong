@@ -77,6 +77,7 @@ export default function DrillHubScreen() {
     const [showSessionPicker, setShowSessionPicker] = useState(false);
     const [schedulingDrill, setSchedulingDrill] = useState(false);
     const [isScheduled, setIsScheduled] = useState(false);
+    const [linkedSession, setLinkedSession] = useState<any>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const drillIdParam = searchParams.get('drill_id');
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -282,7 +283,8 @@ export default function DrillHubScreen() {
 
             if (error) throw error;
             setIsScheduled(true);
-            alert('Drill scheduled successfully!');
+            setLinkedSession(sessions.find(s => s.id === sessionId));
+            alert('Drill added to plan!');
             setShowSessionPicker(false);
         } catch (e: any) {
             alert(`Failed to schedule: ${e.message}`);
@@ -424,40 +426,62 @@ export default function DrillHubScreen() {
                     <div className="flex items-center gap-6">
                         {(userRole === 'coach' || userRole === 'admin' || userRole === 'sys-admin') && (
                             <>
-                                {!showSessionPicker ? (
-                                    <button 
-                                        onClick={() => {
-                                            fetchSessions();
-                                            setShowSessionPicker(true);
-                                        }}
-                                        className="w-full px-6 py-4 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border bg-east-light text-black border-east-light hover:shadow-[0_0_20px_#28D16066]"
-                                    >
-                                        <Calendar size={16} />
-                                        SCHEDULE DRILL
-                                    </button>
+                                {/* SESSION COMMAND CENTER */}
+                                {linkedSession ? (
+                                    <div className="w-full bg-east-light/10 border border-east-light/20 rounded-2xl p-5 space-y-4 mb-4 animate-fadeIn">
+                                        <div className="flex justify-between items-start">
+                                            <div className="space-y-1">
+                                                <span className="text-[8px] font-black italic text-east-light uppercase tracking-widest">Active Training Plan</span>
+                                                <h3 className="text-sm font-black uppercase text-white">{linkedSession.title}</h3>
+                                                <p className="text-[10px] text-gray-500 font-bold italic">{new Date(linkedSession.start_time).toLocaleDateString()} @ {new Date(linkedSession.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => handleRemoveFromSession(linkedSession.id)}
+                                                className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"
+                                            >
+                                                <X size={14} className="text-gray-500 group-hover:text-red-500" />
+                                            </button>
+                                        </div>
+                                    </div>
                                 ) : (
-                                    <div className="bg-white/5 border border-white/10 rounded-[2rem] p-4 space-y-3 animate-fadeIn">
+                                    !showSessionPicker && (
+                                        <button 
+                                            onClick={() => {
+                                                fetchSessions();
+                                                setShowSessionPicker(true);
+                                            }}
+                                            className="w-full mb-4 px-6 py-4 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border bg-east-light text-black border-east-light hover:shadow-[0_0_20px_#28D16066]"
+                                        >
+                                            <Calendar size={16} />
+                                            SCHEDULE DRILL
+                                        </button>
+                                    )
+                                )}
+
+                                {showSessionPicker && (
+                                    <div className="bg-white/5 border border-white/10 rounded-[2rem] p-4 space-y-3 animate-fadeIn mb-4">
                                         <div className="flex justify-between items-center mb-2 px-2">
-                                            <span className="text-[10px] font-black italic text-east-light uppercase tracking-widest">Select Session</span>
+                                            <span className="text-[10px] font-black italic text-east-light uppercase tracking-widest">Available Sessions</span>
                                             <button onClick={() => setShowSessionPicker(false)} className="text-gray-500 hover:text-white transition-colors">
                                                 <X size={14} />
                                             </button>
                                         </div>
                                         <div className="space-y-2 max-h-[200px] overflow-y-auto no-scrollbar">
                                             {sessions.length === 0 ? (
-                                                <p className="text-[9px] font-bold text-gray-500 italic px-2">No sessions found...</p>
+                                                <p className="text-[9px] font-bold text-gray-500 italic px-2">No upcoming sessions...</p>
                                             ) : (
                                                 sessions.map(s => (
                                                     <button 
                                                         key={s.id}
+                                                        disabled={linkedSession?.id === s.id}
                                                         onClick={() => handleAddToSession(s.id)}
-                                                        className="w-full p-3 rounded-xl bg-white/5 border border-white/5 hover:border-east-light hover:bg-east-light/5 text-left transition-all flex justify-between items-center group"
+                                                        className={`w-full p-3 rounded-xl border transition-all flex justify-between items-center group ${linkedSession?.id === s.id ? 'opacity-50 cursor-not-allowed bg-white/5 border-white/5' : 'bg-white/5 border-white/5 hover:border-east-light hover:bg-east-light/5'}`}
                                                     >
                                                         <div className="truncate pr-2">
                                                             <p className="font-black uppercase tracking-tighter text-[9px] text-white truncate">{s.title}</p>
                                                             <p className="text-[8px] font-medium italic text-gray-500">{new Date(s.start_time).toLocaleDateString()}</p>
                                                         </div>
-                                                        <Plus size={12} className="text-gray-600 group-hover:text-east-light shrink-0" />
+                                                        {linkedSession?.id === s.id ? <Check size={12} className="text-east-light" /> : <Plus size={12} className="text-gray-600 group-hover:text-east-light shrink-0" />}
                                                     </button>
                                                 ))
                                             )}
