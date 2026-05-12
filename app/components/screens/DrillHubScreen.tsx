@@ -411,10 +411,12 @@ export default function DrillHubScreen() {
                             <>
                                 <button 
                                     onClick={() => {
+                                        console.log('SCHEDULE BUTTON CLICKED');
+                                        window.alert('SCHEDULE BUTTON CLICKED');
                                         fetchSessions();
                                         setShowSessionPicker(true);
                                     }}
-                                    className="px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border bg-east-light text-black border-east-light hover:shadow-[0_0_20px_#28D16066]"
+                                    className="relative z-[9999] px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border bg-east-light text-black border-east-light hover:shadow-[0_0_20px_#28D16066]"
                                 >
                                     <Calendar size={14} />
                                     SCHEDULE
