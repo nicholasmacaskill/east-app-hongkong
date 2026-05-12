@@ -784,7 +784,7 @@ export default function DrillHubScreen() {
                 /* Redesigned Age Group Sections */
                 <div className="relative z-10 mt-6 space-y-16">
                     {AGE_GROUPS.map((ageGroup, idx) => {
-                        const groupItems = drills.filter(d => d.age_tags?.includes(ageGroup));
+                        const groupItems = filteredDrills.filter(d => d.age_tags?.includes(ageGroup));
                         
                         return (
                             <div key={ageGroup} className="px-8">
