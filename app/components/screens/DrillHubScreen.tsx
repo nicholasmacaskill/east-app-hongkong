@@ -293,6 +293,25 @@ export default function DrillHubScreen() {
         }
     };
 
+    const handleRemoveFromSession = async (sessionId: string) => {
+        if (!selectedDrill) return;
+        try {
+            const { error } = await supabase
+                .from('session_drills')
+                .delete()
+                .eq('session_id', sessionId)
+                .eq('drill_id', selectedDrill.id);
+
+            if (error) throw error;
+            
+            setLinkedSession(null);
+            setIsScheduled(false);
+            alert('Drill removed from plan.');
+        } catch (e: any) {
+            alert(`Failed to remove: ${e.message}`);
+        }
+    };
+
     const handleMediaReplace = async (type: 'image' | 'video', file: File) => {
         if (!selectedDrill || drillSteps.length === 0) return;
         setUploadingMedia(true);
