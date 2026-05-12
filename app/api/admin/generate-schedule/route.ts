@@ -72,8 +72,15 @@ export async function POST(request: Request) {
             }
 
             // Iterate intervals based on durationMinutes
-            const dayStartStr = `${hkDateStr} ${String(startHour).padStart(2, '0')}:00:00`;
-            const dayEndStr = `${hkDateStr} ${String(endHour).padStart(2, '0')}:00:00`;
+            let startT = String(startHour).includes(':') ? startHour : `${String(startHour).padStart(2, '0')}:00`;
+            let endT = String(endHour).includes(':') ? endHour : `${String(endHour).padStart(2, '0')}:00`;
+
+            // Ensure leading zero if HH:mm format is used with single digit hour (e.g. "7:30" -> "07:30")
+            if (startT.length === 4 && startT.includes(':')) startT = '0' + startT;
+            if (endT.length === 4 && endT.includes(':')) endT = '0' + endT;
+
+            const dayStartStr = `${hkDateStr} ${startT}:00`;
+            const dayEndStr = `${hkDateStr} ${endT}:00`;
 
             let slotStart = fromZonedTime(dayStartStr, APP_TIMEZONE);
             const dayEnd = fromZonedTime(dayEndStr, APP_TIMEZONE);

@@ -37,8 +37,8 @@ export default function ManageServicesPage() {
         serviceTitle: '',
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
-        startHour: 8,
-        endHour: 20,
+        startHour: '08:00',
+        endHour: '20:00',
         daysOfWeek: [0, 1, 2, 3, 4, 5, 6], // All days
         durationMinutes: 60,
         coachId: ''
@@ -360,11 +360,11 @@ export default function ManageServicesPage() {
                             {/* Time */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5 flex items-center gap-1"><Clock size={10} /> Hours (0-23)</label>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5 flex items-center gap-1"><Clock size={10} /> Window (e.g. 08:00 - 20:30)</label>
                                     <div className="flex gap-2">
-                                        <input type="number" min="0" max="23" value={generatorConfig.startHour} onChange={e => setGeneratorConfig({ ...generatorConfig, startHour: parseInt(e.target.value) })} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white text-center outline-none focus:border-[#28D160]" />
+                                        <input type="text" value={generatorConfig.startHour} onChange={e => setGeneratorConfig({ ...generatorConfig, startHour: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white text-center outline-none focus:border-[#28D160]" placeholder="08:00" />
                                         <span className="text-gray-500 self-center">-</span>
-                                        <input type="number" min="0" max="24" value={generatorConfig.endHour} onChange={e => setGeneratorConfig({ ...generatorConfig, endHour: parseInt(e.target.value) })} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white text-center outline-none focus:border-[#28D160]" />
+                                        <input type="text" value={generatorConfig.endHour} onChange={e => setGeneratorConfig({ ...generatorConfig, endHour: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white text-center outline-none focus:border-[#28D160]" placeholder="20:00" />
                                     </div>
                                 </div>
                                 <div>
