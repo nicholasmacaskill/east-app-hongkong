@@ -234,12 +234,23 @@ export default function DrillHubScreen() {
 
         const fullName = `${profile.first_name} ${profile.last_name}`;
 
-        const { data, error } = await supabase
+        let { data, error } = await supabase
             .from('sessions')
             .select('*')
             .ilike('instructor', `%${fullName}%`)
             .gte('start_time', new Date().toISOString())
             .order('start_time', { ascending: true });
+        
+        // Fallback: If no personal sessions, show all upcoming sessions for testing/admin purposes
+        if (!data || data.length === 0) {
+            const { data: allSessions } = await supabase
+                .from('sessions')
+                .select('*')
+                .gte('start_time', new Date().toISOString())
+                .order('start_time', { ascending: true })
+                .limit(20);
+            data = allSessions;
+        }
         
         if (!error && data) setSessions(data);
     };
@@ -399,7 +410,10 @@ export default function DrillHubScreen() {
                         {(userRole === 'coach' || userRole === 'admin' || userRole === 'sys-admin') && (
                             <>
                                 <button 
-                                    onClick={handleScheduleClick}
+                                    onClick={() => {
+                                        fetchSessions();
+                                        setShowSessionPicker(true);
+                                    }}
                                     className="px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border bg-east-light text-black border-east-light hover:shadow-[0_0_20px_#28D16066]"
                                 >
                                     <Calendar size={14} />
