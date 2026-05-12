@@ -400,6 +400,17 @@ export default function DrillHubScreen() {
                             <span className="text-[10px] font-black tracking-[0.4em] text-east-light uppercase italic">
                                 {isEditing ? 'Studio Mode' : 'Tactical Sequence'}
                             </span>
+                            
+                            {/* NEW: SCHEDULED BADGE */}
+                            {isSessionPlanMode && (
+                                <>
+                                    <span className="w-1 h-1 bg-white/20 rounded-full" />
+                                    <div className="flex items-center gap-2 px-3 py-1 bg-[#28D160]/10 border border-[#28D160]/30 rounded-full animate-bounce-subtle">
+                                        <Calendar size={10} className="text-[#28D160]" />
+                                        <span className="text-[8px] font-black italic text-[#28D160] uppercase tracking-widest">Active In Plan</span>
+                                    </div>
+                                </>
+                            )}
                         </div>
                         <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white leading-tight brightness-125">
                             {selectedDrill.title}
