@@ -360,12 +360,12 @@ export default function ManageServicesPage() {
                             {/* Time & Duration */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5 flex items-center gap-1"><Clock size={10} /> Start Time</label>
-                                    <input type="time" step="1800" value={generatorConfig.startTime} onChange={e => setGeneratorConfig({ ...generatorConfig, startTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-white text-center outline-none focus:border-[#28D160] dark-calendar-picker" style={{ colorScheme: 'dark' }} />
-                                </div>
-                                <div>
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5 flex items-center gap-1"><Clock size={10} /> End Time</label>
-                                    <input type="time" step="1800" value={generatorConfig.endTime} onChange={e => setGeneratorConfig({ ...generatorConfig, endTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-white text-center outline-none focus:border-[#28D160] dark-calendar-picker" style={{ colorScheme: 'dark' }} />
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5 flex items-center gap-1"><Clock size={10} /> Window (e.g. 08:00 - 20:30)</label>
+                                    <div className="flex gap-2">
+                                        <input type="text" value={generatorConfig.startTime} onChange={e => setGeneratorConfig({ ...generatorConfig, startTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-[10px] text-white text-center font-bold outline-none focus:border-[#28D160]" placeholder="08:00" />
+                                        <span className="text-gray-500 self-center">-</span>
+                                        <input type="text" value={generatorConfig.endTime} onChange={e => setGeneratorConfig({ ...generatorConfig, endTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-[10px] text-white text-center font-bold outline-none focus:border-[#28D160]" placeholder="20:00" />
+                                    </div>
                                 </div>
                             </div>
                             
