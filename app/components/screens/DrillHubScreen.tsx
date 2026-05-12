@@ -411,8 +411,6 @@ export default function DrillHubScreen() {
                             <>
                                 <button 
                                     onClick={() => {
-                                        console.log('SCHEDULE BUTTON CLICKED');
-                                        window.alert('SCHEDULE BUTTON CLICKED');
                                         fetchSessions();
                                         setShowSessionPicker(true);
                                     }}
