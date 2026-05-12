@@ -785,6 +785,7 @@ export default function DrillHubScreen() {
                 <div className="relative z-10 mt-6 space-y-16">
                     {AGE_GROUPS.map((ageGroup, idx) => {
                         const groupItems = filteredDrills.filter(d => d.age_tags?.includes(ageGroup));
+                        if (groupItems.length === 0) return null;
                         
                         return (
                             <div key={ageGroup} className="px-8">
@@ -795,16 +796,16 @@ export default function DrillHubScreen() {
                                 </div>
                                 
                                 <div className="flex overflow-x-auto no-scrollbar gap-8 pb-8 -mx-8 px-8">
-                                    {(groupItems.length > 0 ? groupItems : Array(4).fill(null)).map((drill, dIdx) => (
+                                    {groupItems.map((drill, dIdx) => (
                                         <div 
-                                            key={drill?.id || dIdx} 
-                                            onClick={() => drill && handleSelectDrill(drill)}
-                                            className={`shrink-0 w-72 h-96 rounded-[3.5rem] border border-white/5 relative overflow-hidden group transition-all duration-700 shadow-2xl ${drill ? 'cursor-pointer hover:border-east-light hover:-translate-y-4 hover:shadow-[0_40px_80px_rgba(0,0,0,0.6)]' : 'opacity-20'}`}
+                                            key={drill.id} 
+                                            onClick={() => handleSelectDrill(drill)}
+                                            className="shrink-0 w-72 h-96 rounded-[3.5rem] border border-white/5 relative overflow-hidden group transition-all duration-700 shadow-2xl cursor-pointer hover:border-east-light hover:-translate-y-4 hover:shadow-[0_40px_80px_rgba(0,0,0,0.6)]"
                                         >
                                             {/* Drill Image/Thumbnail */}
                                             <div className="absolute inset-0 bg-[#0a0a0a]">
                                                 <img 
-                                                    src={drill?.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"} 
+                                                    src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"} 
                                                     className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000" 
                                                     alt="drill" 
                                                 />
