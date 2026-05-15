@@ -487,7 +487,7 @@ export default function DrillHubScreen() {
                                 </div>
 
                                 <div className="space-y-6">
-                                    <span className="block text-[10px] font-black uppercase tracking-[0.4em] text-east-light italic">Tactical Briefing</span>
+                                    <span className="block text-[10px] font-black uppercase tracking-[0.4em] text-east-light italic">Drill Briefing</span>
                                     {isEditing && (userRole === 'coach' || userRole === 'admin' || userRole === 'sys-admin') ? (
                                         <textarea 
                                             value={currentStep.instruction}
@@ -507,16 +507,13 @@ export default function DrillHubScreen() {
                                     )}
                                 </div>
 
-                                            )}
-                                        </div>
-                                        <Video size={18} />
-                                    </button>
+                                <div className="flex flex-col gap-4 pt-4">
                                     <button 
                                         onClick={() => setActiveTab('visual')}
-                                        className={`w-full py-5 px-8 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'visual' ? 'bg-white/10 text-white border-white/20' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
+                                        className={`w-full py-5 px-8 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'visual' ? 'bg-[#28D160] text-black border-[#28D160] shadow-[0_20px_40px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <span>Visual Guide</span>
+                                            <span>Drill Briefing</span>
                                             {isEditing && (
                                                 <div 
                                                     onClick={(e) => { e.stopPropagation(); imageInputRef.current?.click(); }}
@@ -526,7 +523,25 @@ export default function DrillHubScreen() {
                                                 </div>
                                             )}
                                         </div>
-                                        <Layers size={18} />
+                                        <ImageIcon size={18} />
+                                    </button>
+
+                                    <button 
+                                        onClick={() => setActiveTab('analysis')}
+                                        className={`w-full py-5 px-8 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'analysis' ? 'bg-white text-black border-white shadow-[0_20px_40px_rgba(255,255,255,0.15)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <span>Analysis Stream</span>
+                                            {isEditing && (
+                                                <div 
+                                                    onClick={(e) => { e.stopPropagation(); videoInputRef.current?.click(); }}
+                                                    className="p-1.5 bg-east-light/20 text-east-light rounded-lg hover:bg-east-light hover:text-black transition-all"
+                                                >
+                                                    {uploadingMedia ? <Loader2 className="animate-spin" size={12} /> : <Upload size={12} />}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <Video size={18} />
                                     </button>
 
                                     {/* Hidden Inputs */}
