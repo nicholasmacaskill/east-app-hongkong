@@ -355,18 +355,17 @@ export default function DrillHubScreen() {
                                 </button>
                             </div>
                         ) : (
-                            !showSessionPicker && (
-                                <button 
-                                    onClick={() => {
-                                        fetchSessions();
-                                        setShowSessionPicker(true);
-                                    }}
-                                    className="px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 bg-[#28D160] text-black border-none hover:shadow-[0_0_20px_#28D16066]"
-                                >
-                                    <Calendar size={14} />
-                                    SCHEDULE DRILL
-                                </button>
-                            )
+                            <button 
+                                onClick={() => {
+                                    fetchSessions();
+                                    setShowSessionPicker(true);
+                                }}
+                                disabled={showSessionPicker}
+                                className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${showSessionPicker ? 'bg-white/5 text-gray-500 border border-white/10' : 'bg-[#28D160] text-black border-none hover:shadow-[0_0_20px_#28D16066]'}`}
+                            >
+                                <Calendar size={14} />
+                                {showSessionPicker ? 'SELECT SESSION...' : 'SCHEDULE DRILL'}
+                            </button>
                         )}
 
                         {isEditing && (
@@ -392,6 +391,7 @@ export default function DrillHubScreen() {
                         <button 
                             onClick={() => {
                                 setSelectedDrill(null);
+                                setShowSessionPicker(false);
                                 if (!drillIdParam) window.history.back();
                             }}
                             className="p-3 bg-white/5 border border-white/10 rounded-xl text-gray-500 hover:text-white transition-all"
@@ -507,27 +507,6 @@ export default function DrillHubScreen() {
                                     )}
                                 </div>
 
-                                <div className="flex flex-col gap-4 pt-4">
-                                    <button 
-                                        onClick={() => setActiveTab('tactical')}
-                                        className={`w-full py-5 px-8 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'tactical' ? 'bg-[#28D160] text-black border-[#28D160] shadow-[0_20px_40px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
-                                    >
-                                        <span>Tactical Board</span>
-                                        <PenTool size={18} />
-                                    </button>
-                                    <button 
-                                        onClick={() => setActiveTab('analysis')}
-                                        className={`w-full py-5 px-8 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'analysis' ? 'bg-white text-black border-white shadow-[0_20px_40px_rgba(255,255,255,0.15)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <span>Analysis Stream</span>
-                                            {isEditing && (
-                                                <div 
-                                                    onClick={(e) => { e.stopPropagation(); videoInputRef.current?.click(); }}
-                                                    className="p-1.5 bg-east-light/20 text-east-light rounded-lg hover:bg-east-light hover:text-black transition-all"
-                                                >
-                                                    {uploadingMedia ? <Loader2 className="animate-spin" size={12} /> : <Upload size={12} />}
-                                                </div>
                                             )}
                                         </div>
                                         <Video size={18} />
