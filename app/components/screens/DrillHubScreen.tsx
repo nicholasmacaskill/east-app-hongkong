@@ -285,8 +285,9 @@ export default function DrillHubScreen() {
         }
     };
 
+    // --- Filtering Logic ---
     const filteredDrills = React.useMemo(() => {
-        if (!drills) return [];
+        if (!drills || drills.length === 0) return [];
         return drills.filter(d => {
             const matchesAge = !activeAgeFilter || d.age_tags?.includes(activeAgeFilter);
             
