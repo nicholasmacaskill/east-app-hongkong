@@ -612,6 +612,45 @@ export default function DrillHubScreen() {
                         </button>
                     )}
                 </div>
+
+                {/* Session Picker Modal */}
+                {showSessionPicker && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl animate-fadeIn">
+                        <div className="w-full max-w-lg bg-[#0a0a0a] border border-white/10 rounded-[3rem] p-10 space-y-8 shadow-[0_50px_100px_rgba(0,0,0,0.8)]">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-3xl font-black italic uppercase tracking-tighter">Schedule Drill</h2>
+                                <button onClick={() => setShowSessionPicker(false)} className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            <div className="space-y-4 max-h-[400px] overflow-y-auto no-scrollbar pr-2">
+                                {schedulingDrill ? (
+                                    <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                                        <Loader2 className="w-12 h-12 text-east-light animate-spin" />
+                                        <p className="text-gray-500 font-bold italic uppercase tracking-widest text-xs">Fetching sessions...</p>
+                                    </div>
+                                ) : sessions.length === 0 ? (
+                                    <p className="text-gray-500 font-medium italic">No upcoming sessions found...</p>
+                                ) : (
+                                    sessions.map(s => (
+                                        <button 
+                                            key={s.id}
+                                            onClick={() => handleAddToSession(s.id)}
+                                            disabled={schedulingDrill}
+                                            className="w-full p-6 rounded-2xl bg-white/5 border border-white/5 hover:border-east-light hover:bg-east-light/5 text-left transition-all group flex justify-between items-center"
+                                        >
+                                            <div>
+                                                <p className="font-black uppercase tracking-widest text-xs text-east-light mb-1">{s.title}</p>
+                                                <p className="text-lg font-medium italic text-gray-300">{new Date(s.start_time).toLocaleDateString()} @ {new Date(s.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                            </div>
+                                            <ArrowRight size={20} className="text-gray-600 group-hover:translate-x-2 group-hover:text-east-light transition-all" />
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
@@ -746,45 +785,6 @@ export default function DrillHubScreen() {
                         );
                     })}
                 </div>
-            )}
-            {/* Session Picker Modal */}
-            {showSessionPicker && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl animate-fadeIn">
-                    <div className="w-full max-w-lg bg-[#0a0a0a] border border-white/10 rounded-[3rem] p-10 space-y-8 shadow-[0_50px_100px_rgba(0,0,0,0.8)]">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-3xl font-black italic uppercase tracking-tighter">Schedule Drill</h2>
-                            <button onClick={() => setShowSessionPicker(false)} className="p-3 bg-white/5 rounded-2xl hover:bg-white/10 transition-all">
-                                <X size={20} />
-                            </button>
-                        </div>
-                        <div className="space-y-4 max-h-[400px] overflow-y-auto no-scrollbar pr-2">
-                            {schedulingDrill ? (
-                                <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                                    <Loader2 className="w-12 h-12 text-east-light animate-spin" />
-                                    <p className="text-gray-500 font-bold italic uppercase tracking-widest text-xs">Fetching sessions...</p>
-                                </div>
-                            ) : sessions.length === 0 ? (
-                                <p className="text-gray-500 font-medium italic">No upcoming sessions found...</p>
-                            ) : (
-                                sessions.map(s => (
-                                    <button 
-                                        key={s.id}
-                                        onClick={() => handleAddToSession(s.id)}
-                                        disabled={schedulingDrill}
-                                        className="w-full p-6 rounded-2xl bg-white/5 border border-white/5 hover:border-east-light hover:bg-east-light/5 text-left transition-all group flex justify-between items-center"
-                                    >
-                                        <div>
-                                            <p className="font-black uppercase tracking-widest text-xs text-east-light mb-1">{s.title}</p>
-                                            <p className="text-lg font-medium italic text-gray-300">{new Date(s.start_time).toLocaleDateString()} @ {new Date(s.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                        </div>
-                                        <ArrowRight size={20} className="text-gray-600 group-hover:translate-x-2 group-hover:text-east-light transition-all" />
-                                    </button>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
