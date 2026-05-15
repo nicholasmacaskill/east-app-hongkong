@@ -19,9 +19,10 @@ import {
     X,
     Plus,
     Video,
-    Eraser,
     Trash2,
-    PenTool
+    PenTool,
+    Image as ImageIcon,
+    Check
 } from 'lucide-react';
 
 interface Drill {
@@ -67,20 +68,15 @@ export default function DrillHubScreen() {
     const [activeSkillFilter, setActiveSkillFilter] = useState<string | null>(null);
     const [isSessionPlanMode, setIsSessionPlanMode] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'visual' | 'tactical' | 'analysis'>('visual');
+    const [activeTab, setActiveTab] = useState<'visual' | 'analysis'>('visual');
     const [isEditing, setIsEditing] = useState(false);
-    const [color, setColor] = useState('#28D160');
-    const [isEraser, setIsEraser] = useState(false);
-    const [savingTactics, setSavingTactics] = useState(false);
     const [uploadingMedia, setUploadingMedia] = useState(false);
     const [sessions, setSessions] = useState<any[]>([]);
     const [showSessionPicker, setShowSessionPicker] = useState(false);
     const [schedulingDrill, setSchedulingDrill] = useState(false);
     const [isScheduled, setIsScheduled] = useState(false);
     const [linkedSession, setLinkedSession] = useState<any>(null);
-    const [isDrawing, setIsDrawing] = useState(false);
     const drillIdParam = searchParams.get('drill_id');
-    const canvasRef = useRef<HTMLCanvasElement>(null);
     const imageInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
 
@@ -98,14 +94,13 @@ export default function DrillHubScreen() {
         if (sessionId) {
             setIsSessionPlanMode(true);
             fetchSessionPlan(sessionId);
-        } else if (drillIdParam && !activeSkillFilter) { // Only auto-open if no filter is being manipulated
+        } else if (drillIdParam && !activeSkillFilter) {
             fetchSingleDrill(drillIdParam);
         } else {
             fetchDrills();
         }
     }, [sessionId, activeSkillFilter, searchParams]);
 
-    // Security Guard: Ensure isEditing can NEVER be true for athletes/parents
     useEffect(() => {
         if (userRole && !['coach', 'admin', 'sys-admin'].includes(userRole)) {
             setIsEditing(false);
@@ -129,7 +124,6 @@ export default function DrillHubScreen() {
 
     const fetchSessionPlan = async (sid: string) => {
         setLoading(true);
-        // Fetch session_drills
         const { data: sessionDrillsData, error: sdError } = await supabase
             .from('session_drills')
             .select('drill_id, order_index')
@@ -138,15 +132,12 @@ export default function DrillHubScreen() {
 
         if (!sdError && sessionDrillsData && sessionDrillsData.length > 0) {
             const drillIds = sessionDrillsData.map(sd => sd.drill_id);
-            
-            // Fetch drills
             const { data: drillsData, error: dError } = await supabase
                 .from('coach_drills')
                 .select('*, coach:profiles(first_name, last_name, avatar_url)')
                 .in('id', drillIds);
 
             if (!dError && drillsData) {
-                // Re-order based on sessionDrillsData
                 const orderedDrills = drillIds.map(id => drillsData.find(d => d.id === id)).filter(Boolean) as Drill[];
                 setDrills(orderedDrills);
             }
@@ -161,11 +152,8 @@ export default function DrillHubScreen() {
             .select('*, coach:profiles(first_name, last_name, avatar_url)')
             .eq('status', 'published')
             .order('created_at', { ascending: false });
-
-        // Removed DB-level filtering here to allow for instantaneous local filtering and better tag matching
         
         const { data, error } = await query;
-
         if (!error && data) {
             setDrills(data);
         }
@@ -185,50 +173,6 @@ export default function DrillHubScreen() {
         }
     };
 
-    const handleSelectDrill = (drill: Drill) => {
-        setSelectedDrill(drill);
-        fetchDrillSteps(drill.id);
-        setActiveTab('visual');
-    };
-
-    // --- Drawing Board Logic ---
-    const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
-        if (userRole !== 'coach' && userRole !== 'admin' && userRole !== 'sys-admin') return;
-        setIsDrawing(true);
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        if (!canvas || !ctx) return;
-        const rect = canvas.getBoundingClientRect();
-        const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-        ctx.beginPath();
-        ctx.moveTo(clientX - rect.left, clientY - rect.top);
-    };
-
-    const draw = (e: React.MouseEvent | React.TouchEvent) => {
-        if (!isDrawing || (userRole !== 'coach' && userRole !== 'admin' && userRole !== 'sys-admin')) return;
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        if (!canvas || !ctx) return;
-        const rect = canvas.getBoundingClientRect();
-        const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-        ctx.lineTo(clientX - rect.left, clientY - rect.top);
-        ctx.strokeStyle = isEraser ? '#050505' : color;
-        ctx.lineWidth = isEraser ? 30 : 3;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke();
-    };
-
-    const stopDrawing = () => setIsDrawing(false);
-
-    const clearCanvas = () => {
-        const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
-        if (canvas && ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-    };
-
     const fetchSessions = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -245,7 +189,6 @@ export default function DrillHubScreen() {
             .gte('start_time', new Date().toISOString())
             .order('start_time', { ascending: true });
         
-        // Fallback: If no personal sessions, show all upcoming sessions for testing/admin purposes
         if (!data || data.length === 0) {
             const { data: allSessions } = await supabase
                 .from('sessions')
@@ -263,7 +206,6 @@ export default function DrillHubScreen() {
         if (!selectedDrill) return;
         setSchedulingDrill(true);
         try {
-            // Get current max order
             const { data: currentDrills } = await supabase
                 .from('session_drills')
                 .select('order_index')
@@ -329,7 +271,6 @@ export default function DrillHubScreen() {
             const { error: dbErr } = await supabase.from('coach_drill_steps').update(updateData).eq('id', stepId);
             if (dbErr) throw dbErr;
 
-            // Update local state
             const newSteps = [...drillSteps];
             if (type === 'image') newSteps[currentStepIndex].diagram_url = publicUrl;
             else newSteps[currentStepIndex].video_url = publicUrl;
@@ -344,69 +285,15 @@ export default function DrillHubScreen() {
         }
     };
 
-    const saveTactics = async () => {
-        const canvas = canvasRef.current;
-        if (!canvas || !selectedDrill || drillSteps.length === 0) return;
-        setSavingTactics(true);
-        try {
-            const dataUrl = canvas.toDataURL();
-            const stepId = drillSteps[currentStepIndex].id;
-            await supabase.from('coach_drill_steps').update({ tactical_data: dataUrl }).eq('id', stepId);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setSavingTactics(false);
-        }
-    };
-
-    // Load tactics when step changes
-    useEffect(() => {
-        if (activeTab === 'tactical' && canvasRef.current && drillSteps[currentStepIndex]?.tactical_data) {
-            const canvas = canvasRef.current;
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            img.onload = () => {
-                ctx?.clearRect(0, 0, canvas.width, canvas.height);
-                ctx?.drawImage(img, 0, 0);
-            };
-            img.src = drillSteps[currentStepIndex].tactical_data;
-        } else if (activeTab === 'tactical' && canvasRef.current) {
-            clearCanvas();
-        }
-    }, [currentStepIndex, activeTab, drillSteps]);
-
-    const filteredDrills = React.useMemo(() => {
-        if (!drills) return [];
-        return drills.filter(d => {
-            const matchesAge = !activeAgeFilter || d.age_tags?.includes(activeAgeFilter);
-            
-            // Robust Skill Filtering
-            let matchesSkill = false;
-            if (!activeSkillFilter || activeSkillFilter === 'ALL') {
-                matchesSkill = true;
-            } else if (Array.isArray(d.skill_tags)) {
-                matchesSkill = d.skill_tags.some(s => 
-                    typeof s === 'string' && s.toUpperCase().includes(activeSkillFilter.toUpperCase())
-                );
-            } else if (typeof d.skill_tags === 'string') {
-                matchesSkill = (d.skill_tags as string).toUpperCase().includes(activeSkillFilter.toUpperCase());
-            }
-
-            return matchesAge && matchesSkill;
-        });
-    }, [drills, activeAgeFilter, activeSkillFilter]);
-
     if (selectedDrill) {
         const currentStep = drillSteps[currentStepIndex];
         return (
             <div className="min-h-screen bg-[#050505] text-white animate-fadeIn font-montserrat select-none overflow-hidden relative flex flex-col">
-                {/* Ambient Background Glows */}
                 <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
                     <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-east-light/10 blur-[150px] rounded-full animate-pulse" />
                     <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-east-light/5 blur-[120px] rounded-full" />
                 </div>
 
-                {/* Top Navigation Bar */}
                 <div className="relative z-30 flex justify-between items-center px-12 py-10 backdrop-blur-md bg-black/20 border-b border-white/5">
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-3">
@@ -425,120 +312,77 @@ export default function DrillHubScreen() {
                             <span className="text-[10px] font-black tracking-[0.4em] text-east-light uppercase italic">
                                 {isEditing ? 'Studio Mode' : 'Tactical Sequence'}
                             </span>
-                            
-                            {/* NEW: SCHEDULED BADGE */}
-                            {(isSessionPlanMode || isScheduled) && (
-                                <>
-                                    <span className="w-1 h-1 bg-white/20 rounded-full" />
-                                    <div className="flex items-center gap-2 px-3 py-1 bg-[#28D160]/10 border border-[#28D160]/30 rounded-full animate-bounce-subtle">
-                                        <Calendar size={10} className="text-[#28D160]" />
-                                        <span className="text-[8px] font-black italic text-[#28D160] uppercase tracking-widest">Active In Plan</span>
-                                    </div>
-                                </>
-                            )}
                         </div>
                         <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white leading-tight brightness-125">
                             {selectedDrill.title}
                         </h1>
                     </div>
                     
-                    <div className="flex items-center gap-6">
-                        {(userRole === 'coach' || userRole === 'admin' || userRole === 'sys-admin') && (
-                            <>
-                                {/* SESSION COMMAND CENTER */}
-                                {linkedSession ? (
-                                    <div className="w-full bg-east-light/10 border border-east-light/20 rounded-2xl p-5 space-y-4 mb-4 animate-fadeIn">
-                                        <div className="flex justify-between items-start">
-                                            <div className="space-y-1">
-                                                <span className="text-[8px] font-black italic text-east-light uppercase tracking-widest">Active Training Plan</span>
-                                                <h3 className="text-sm font-black uppercase text-white">{linkedSession.title}</h3>
-                                                <p className="text-[10px] text-gray-500 font-bold italic">{new Date(linkedSession.start_time).toLocaleDateString()} @ {new Date(linkedSession.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                                            </div>
-                                            <button 
-                                                onClick={() => handleRemoveFromSession(linkedSession.id)}
-                                                className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"
-                                            >
-                                                <X size={14} className="text-gray-500 group-hover:text-red-500" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    !showSessionPicker && (
-                                        <button 
-                                            onClick={() => {
-                                                fetchSessions();
-                                                setShowSessionPicker(true);
-                                            }}
-                                            className="w-full mb-4 px-6 py-4 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 border bg-east-light text-black border-east-light hover:shadow-[0_0_20px_#28D16066]"
-                                        >
-                                            <Calendar size={16} />
-                                            SCHEDULE DRILL
-                                        </button>
-                                    )
-                                )}
+                    <div className="flex items-center gap-3">
+                        {linkedSession ? (
+                            <div className="bg-[#28D160]/10 border border-[#28D160]/30 rounded-2xl px-4 py-2 flex items-center gap-4 animate-fadeIn">
+                                <div className="flex flex-col">
+                                    <span className="text-[7px] font-black italic text-[#28D160] uppercase tracking-widest">Active Plan</span>
+                                    <h3 className="text-[10px] font-black uppercase text-white truncate max-w-[120px]">{linkedSession.title}</h3>
+                                </div>
+                                <button 
+                                    onClick={() => handleRemoveFromSession(linkedSession.id)}
+                                    className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors group"
+                                >
+                                    <X size={12} className="text-gray-500 group-hover:text-red-500" />
+                                </button>
+                            </div>
+                        ) : (
+                            !showSessionPicker && (
+                                <button 
+                                    onClick={() => {
+                                        fetchSessions();
+                                        setShowSessionPicker(true);
+                                    }}
+                                    className="px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 bg-[#28D160] text-black border-none hover:shadow-[0_0_20px_#28D16066]"
+                                >
+                                    <Calendar size={14} />
+                                    SCHEDULE DRILL
+                                </button>
+                            )
+                        )}
 
-                                {showSessionPicker && (
-                                    <div className="bg-white/5 border border-white/10 rounded-[2rem] p-4 space-y-3 animate-fadeIn mb-4">
-                                        <div className="flex justify-between items-center mb-2 px-2">
-                                            <span className="text-[10px] font-black italic text-east-light uppercase tracking-widest">Available Sessions</span>
-                                            <button onClick={() => setShowSessionPicker(false)} className="text-gray-500 hover:text-white transition-colors">
-                                                <X size={14} />
-                                            </button>
-                                        </div>
-                                        <div className="space-y-2 max-h-[200px] overflow-y-auto no-scrollbar">
-                                            {sessions.length === 0 ? (
-                                                <p className="text-[9px] font-bold text-gray-500 italic px-2">No upcoming sessions...</p>
-                                            ) : (
-                                                sessions.map(s => (
-                                                    <button 
-                                                        key={s.id}
-                                                        disabled={linkedSession?.id === s.id}
-                                                        onClick={() => handleAddToSession(s.id)}
-                                                        className={`w-full p-3 rounded-xl border transition-all flex justify-between items-center group ${linkedSession?.id === s.id ? 'opacity-50 cursor-not-allowed bg-white/5 border-white/5' : 'bg-white/5 border-white/5 hover:border-east-light hover:bg-east-light/5'}`}
-                                                    >
-                                                        <div className="truncate pr-2">
-                                                            <p className="font-black uppercase tracking-tighter text-[9px] text-white truncate">{s.title}</p>
-                                                            <p className="text-[8px] font-medium italic text-gray-500">{new Date(s.start_time).toLocaleDateString()}</p>
-                                                        </div>
-                                                        {linkedSession?.id === s.id ? <Check size={12} className="text-east-light" /> : <Plus size={12} className="text-gray-600 group-hover:text-east-light shrink-0" />}
-                                                    </button>
-                                                ))
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                                {(userRole === 'sys-admin' || (selectedDrill && currentUser?.id === selectedDrill.coach_id)) && (
-                                    <button 
-                                        onClick={() => setIsEditing(!isEditing)}
-                                        className={`px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 border ${isEditing ? 'bg-white text-black border-white' : 'bg-white/5 text-[#28D160] border-[#28D160]/20 hover:bg-[#28D160]/10'}`}
-                                    >
-                                        {isEditing ? <Save size={14} /> : <Plus size={14} />}
-                                        {isEditing ? 'SAVE DRILL' : 'EDIT DRILL'}
-                                    </button>
-                                )}
-                            </>
+                        {isEditing && (
+                            <button 
+                                onClick={() => setIsEditing(false)}
+                                className="px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-white text-black border-none hover:scale-105"
+                            >
+                                <Save size={14} />
+                                SAVE DRILL
+                            </button>
+                        )}
+                        
+                        {!isEditing && (userRole === 'sys-admin' || (selectedDrill && currentUser?.id === selectedDrill.coach_id)) && (
+                            <button 
+                                onClick={() => setIsEditing(true)}
+                                className="px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-white/5 text-[#28D160] border border-[#28D160]/20 hover:bg-[#28D160]/10"
+                            >
+                                <Plus size={14} />
+                                EDIT DRILL
+                            </button>
                         )}
 
                         <button 
                             onClick={() => {
-                                window.history.replaceState({}, '', window.location.pathname);
                                 setSelectedDrill(null);
+                                if (!drillIdParam) window.history.back();
                             }}
-                            className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-east-light/50 transition-all group active:scale-90"
+                            className="p-3 bg-white/5 border border-white/10 rounded-xl text-gray-500 hover:text-white transition-all"
                         >
-                            <X size={20} className="text-gray-400 group-hover:text-white" />
+                            <X size={18} />
                         </button>
                     </div>
                 </div>
 
-                {/* Main Cinematic Content */}
                 <div className="flex-1 relative z-10 flex flex-col lg:flex-row overflow-hidden overflow-y-auto lg:overflow-hidden">
-                    
-                    {/* Left: Diagram Area (Large) */}
                     <div className="w-full lg:flex-1 relative bg-[#050505] flex items-center justify-center min-h-[300px] lg:min-h-0 border-b lg:border-b-0 border-white/5">
                         {drillSteps.length > 0 ? (
                             <div className="w-full h-full relative flex items-center justify-center p-4 lg:p-12">
-                                {/* Diagram Container */}
                                 <div className="relative w-full max-w-[800px] aspect-video bg-[#0a0a0a] rounded-[2rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] border border-white/5 overflow-hidden group flex items-center justify-center p-10">
                                     {activeTab === 'visual' ? (
                                         currentStep.diagram_url ? (
@@ -553,70 +397,6 @@ export default function DrillHubScreen() {
                                                 <span className="text-sm font-black uppercase tracking-[0.4em] italic">Awaiting Visuals</span>
                                             </div>
                                         )
-                                    ) : activeTab === 'tactical' ? (
-                                        <div className="relative w-full h-full bg-[#050505] flex items-center justify-center rounded-[2rem] overflow-hidden">
-                                            {/* Rink Background */}
-                                            <div className="absolute inset-0 opacity-10 pointer-events-none flex items-center justify-center p-8">
-                                                <svg viewBox="0 0 800 400" className="w-full h-full">
-                                                    <rect x="50" y="20" width="700" height="360" rx="100" fill="none" stroke="white" strokeWidth="2"/>
-                                                    <line x1="400" y1="20" x2="400" y2="380" stroke="#ff3b30" strokeWidth="2"/>
-                                                    <line x1="250" y1="20" x2="250" y2="380" stroke="#007aff" strokeWidth="2"/>
-                                                    <line x1="550" y1="20" x2="550" y2="380" stroke="#007aff" strokeWidth="2"/>
-                                                    <circle cx="400" cy="200" r="60" fill="none" stroke="#007aff" strokeWidth="2"/>
-                                                </svg>
-                                            </div>
-                                            
-
-
-                                            <canvas 
-                                                ref={canvasRef}
-                                                width={800}
-                                                height={450}
-                                                className={`w-full h-full relative z-20 ${userRole === 'coach' || userRole === 'admin' ? 'cursor-crosshair' : 'cursor-default'}`}
-                                                onMouseDown={startDrawing}
-                                                onMouseMove={draw}
-                                                onMouseUp={stopDrawing}
-                                                onMouseOut={stopDrawing}
-                                                onTouchStart={startDrawing}
-                                                onTouchMove={draw}
-                                                onTouchEnd={stopDrawing}
-                                            />
-                                            
-                                            {(userRole === 'coach' || userRole === 'admin') && (
-                                                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 bg-black/80 backdrop-blur-2xl p-3 rounded-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
-                                                    {['#28D160', '#FF3B3B', '#3B82F6', '#FFFFFF'].map(c => (
-                                                        <button 
-                                                            key={c}
-                                                            onClick={() => { setColor(c); setIsEraser(false); }}
-                                                            className={`w-8 h-8 rounded-full border-2 transition-all ${color === c && !isEraser ? 'scale-125 border-white shadow-[0_0_15px_rgba(255,255,255,0.5)]' : 'border-transparent opacity-50 hover:opacity-100'}`}
-                                                            style={{ backgroundColor: c }}
-                                                        />
-                                                    ))}
-                                                    <div className="w-[1px] h-6 bg-white/10 mx-1" />
-                                                    <button 
-                                                        onClick={() => setIsEraser(!isEraser)}
-                                                        className={`p-2 rounded-xl transition-all ${isEraser ? 'bg-white text-black scale-110' : 'bg-white/5 text-gray-400 hover:text-white'}`}
-                                                    >
-                                                        <Eraser size={18} />
-                                                    </button>
-                                                    <button 
-                                                        onClick={clearCanvas}
-                                                        className="p-2 rounded-xl bg-white/5 text-gray-400 hover:text-red-400 transition-all"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
-                                                    <div className="w-[1px] h-6 bg-white/10 mx-1" />
-                                                    <button 
-                                                        onClick={saveTactics}
-                                                        disabled={savingTactics}
-                                                        className="px-4 py-2 bg-east-light text-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
-                                                    >
-                                                        {savingTactics ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                                                        SAVE
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
                                     ) : (
                                         <div className="flex flex-col items-center gap-6 opacity-20">
                                             <Video size={120} className="text-white" />
@@ -624,7 +404,6 @@ export default function DrillHubScreen() {
                                         </div>
                                     )}
 
-                                    {/* Progress Ring Overlay (Top Right) */}
                                     <div className="absolute top-8 right-8 w-16 h-16 flex items-center justify-center">
                                         <svg className="w-full h-full -rotate-90">
                                             <circle cx="32" cy="32" r="28" fill="none" stroke="white" strokeWidth="2" className="opacity-10" />
