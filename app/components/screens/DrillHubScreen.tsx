@@ -785,6 +785,7 @@ export default function DrillHubScreen() {
                         );
                     })}
                 </div>
+            )}
         </div>
     );
 }
