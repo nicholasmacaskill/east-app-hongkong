@@ -173,6 +173,11 @@ export default function DrillHubScreen() {
         }
     };
 
+    const handleSelectDrill = (drill: Drill) => {
+        setSelectedDrill(drill);
+        fetchDrillSteps(drill.id);
+    };
+
     const fetchSessions = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
