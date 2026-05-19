@@ -344,33 +344,34 @@ export default function DrillHubScreen() {
                             {selectedDrill.title}
                         </h1>
                     </div>
-                    
                     <div className="flex items-center gap-3">
-                        {linkedSession ? (
-                            <div className="bg-[#28D160]/10 border border-[#28D160]/30 rounded-2xl px-4 py-2 flex items-center gap-4 animate-fadeIn">
-                                <div className="flex flex-col">
-                                    <span className="text-[7px] font-black italic text-[#28D160] uppercase tracking-widest">Active Plan</span>
-                                    <h3 className="text-[10px] font-black uppercase text-white truncate max-w-[120px]">{linkedSession.title}</h3>
+                        {['coach', 'admin', 'sys-admin'].includes(userRole || '') && (
+                            linkedSession ? (
+                                <div className="bg-[#28D160]/10 border border-[#28D160]/30 rounded-2xl px-4 py-2 flex items-center gap-4 animate-fadeIn">
+                                    <div className="flex flex-col">
+                                        <span className="text-[7px] font-black italic text-[#28D160] uppercase tracking-widest">Active Plan</span>
+                                        <h3 className="text-[10px] font-black uppercase text-white truncate max-w-[120px]">{linkedSession.title}</h3>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleRemoveFromSession(linkedSession.id)}
+                                        className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors group"
+                                    >
+                                        <X size={12} className="text-gray-500 group-hover:text-red-500" />
+                                    </button>
                                 </div>
+                            ) : (
                                 <button 
-                                    onClick={() => handleRemoveFromSession(linkedSession.id)}
-                                    className="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors group"
+                                    onClick={() => {
+                                        fetchSessions();
+                                        setShowSessionPicker(true);
+                                    }}
+                                    disabled={showSessionPicker}
+                                    className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${showSessionPicker ? 'bg-white/5 text-gray-500 border border-white/10' : 'bg-[#28D160] text-black border-none hover:shadow-[0_0_20px_#28D16066]'}`}
                                 >
-                                    <X size={12} className="text-gray-500 group-hover:text-red-500" />
+                                    <Calendar size={14} />
+                                    {showSessionPicker ? 'SELECT SESSION...' : 'SCHEDULE DRILL'}
                                 </button>
-                            </div>
-                        ) : (
-                            <button 
-                                onClick={() => {
-                                    fetchSessions();
-                                    setShowSessionPicker(true);
-                                }}
-                                disabled={showSessionPicker}
-                                className={`px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${showSessionPicker ? 'bg-white/5 text-gray-500 border border-white/10' : 'bg-[#28D160] text-black border-none hover:shadow-[0_0_20px_#28D16066]'}`}
-                            >
-                                <Calendar size={14} />
-                                {showSessionPicker ? 'SELECT SESSION...' : 'SCHEDULE DRILL'}
-                            </button>
+                            )
                         )}
 
                         {isEditing && (
