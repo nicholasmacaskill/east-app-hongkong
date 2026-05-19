@@ -39,6 +39,7 @@
     "next": "^15.2.1",
     "openai": "^6.16.0",
     "pg": "^8.17.2",
+    "playwright": "^1.60.0",
     "posthog-js": "^1.313.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.3",

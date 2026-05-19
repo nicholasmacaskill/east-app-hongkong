@@ -434,7 +434,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                                         {session.attendees.length > 0 ? (
                                                             <div className="bg-black/40 rounded-lg p-2 border border-white/5">
                                                                 <div className="flex items-center gap-2 mb-1.5 opacity-50">
-                                                                    <UsersIcon size={10} />
+                                                                    <Users size={10} />
                                                                     <span className="text-[9px] font-bold uppercase tracking-widest">Attending ({session.attendees.length})</span>
                                                                 </div>
                                                                 <div className="flex flex-wrap gap-2">
