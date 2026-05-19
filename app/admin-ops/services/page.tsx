@@ -34,8 +34,8 @@ export default function AdminOpsServicesPage() {
         serviceTitle: '',
         startDate: new Date().toISOString().split('T')[0],
         endDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0],
-        startHour: '08:00',
-        endHour: '20:00',
+        startTime: '08:00',
+        endTime: '20:00',
         daysOfWeek: [0, 1, 2, 3, 4, 5, 6], 
         durationMinutes: 60,
         coachId: ''
@@ -359,24 +359,26 @@ export default function AdminOpsServicesPage() {
                                 </div>
                             </div>
 
+                            {/* Time & Duration */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-[10px] font-black text-gray-600 uppercase block mb-2 px-1 text-center">Operational Range (e.g. 19:30)</label>
                                     <div className="flex gap-2">
-                                        <input type="text" value={generatorConfig.startHour} onChange={e => setGeneratorConfig({ ...generatorConfig, startHour: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-[10px] text-white text-center font-bold outline-none focus:border-[#28D160]" placeholder="08:00" />
+                                        <input type="text" value={generatorConfig.startTime} onChange={e => setGeneratorConfig({ ...generatorConfig, startTime: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-[10px] text-white text-center font-bold outline-none focus:border-[#28D160]" placeholder="08:00" />
                                         <span className="text-gray-800 self-center">/</span>
-                                        <input type="text" value={generatorConfig.endHour} onChange={e => setGeneratorConfig({ ...generatorConfig, endHour: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-[10px] text-white text-center font-bold outline-none focus:border-[#28D160]" placeholder="20:00" />
+                                        <input type="text" value={generatorConfig.endTime} onChange={e => setGeneratorConfig({ ...generatorConfig, endTime: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-[10px] text-white text-center font-bold outline-none focus:border-[#28D160]" placeholder="20:00" />
                                     </div>
                                 </div>
-                                <div>
-                                    <label className="text-[10px] font-black text-gray-600 uppercase block mb-2 px-1 text-center">Unit Duration</label>
-                                    <select value={generatorConfig.durationMinutes} onChange={e => setGeneratorConfig({ ...generatorConfig, durationMinutes: parseInt(e.target.value) })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-xs text-white font-bold text-center outline-none focus:border-[#28D160] appearance-none cursor-pointer">
-                                        <option value="30">30 MIN</option>
-                                        <option value="60">60 MIN</option>
-                                        <option value="90">90 MIN</option>
-                                        <option value="120">120 MIN</option>
-                                    </select>
-                                </div>
+                            </div>
+                            
+                            <div>
+                                <label className="text-[10px] font-black text-gray-600 uppercase block mb-2 px-1 text-center">Unit Duration</label>
+                                <select value={generatorConfig.durationMinutes} onChange={e => setGeneratorConfig({ ...generatorConfig, durationMinutes: parseInt(e.target.value) })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-xs text-white font-bold text-center outline-none focus:border-[#28D160] appearance-none cursor-pointer">
+                                    <option value="30">30 MIN</option>
+                                    <option value="60">60 MIN</option>
+                                    <option value="90">90 MIN</option>
+                                    <option value="120">120 MIN</option>
+                                </select>
                             </div>
 
                             <div>

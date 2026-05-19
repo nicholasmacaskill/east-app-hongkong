@@ -12,9 +12,9 @@ export async function GET() {
   // Fetch sessions that are in the future, ordered by time
   const supabaseAdmin = getSupabaseAdmin();
 
-  // Enforce 7-Day Booking Window
-  const sevenDaysLater = new Date();
-  sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+  // Enforce 10-Day Booking Window
+  const tenDaysLater = new Date();
+  tenDaysLater.setDate(tenDaysLater.getDate() + 10);
 
   const { data, error } = await supabaseAdmin
     .from('sessions')
@@ -24,7 +24,7 @@ export async function GET() {
     `)
     .neq('status', 'cancelled') // Exclude cancelled sessions
     .gt('start_time', new Date().toISOString())
-    .lte('start_time', sevenDaysLater.toISOString()) // 7-Day Limit
+    .lte('start_time', tenDaysLater.toISOString()) // 10-Day Limit
     .order('start_time', { ascending: true });
 
   if (error) {

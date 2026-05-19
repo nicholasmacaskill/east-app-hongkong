@@ -11,7 +11,7 @@ async function fetchSessionsReal(): Promise<Session[]> {
     try {
         // We use the Next.js API route because it handles:
         // 1. Admin-level privileges to count registrations (for hiding full slots)
-        // 2. Consistent 7-day window enforcement
+        // 2. Consistent 10-day window enforcement
         // 3. Centralized logic
         const res = await fetch('/api/sessions', { cache: 'no-store' }); // Ensure fresh data
         if (!res.ok) throw new Error('Failed to fetch sessions');
