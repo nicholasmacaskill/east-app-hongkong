@@ -2,7 +2,9 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+const isProd = process.env.PLAYWRIGHT_ENV === 'production';
+const envFile = isProd ? '../.env.production.latest' : '../.env.test';
+dotenv.config({ path: path.resolve(__dirname, envFile) });
 
 async function globalSetup() {
   console.log('🧹 GLOBAL SETUP: Purging old test/QA accounts...');
