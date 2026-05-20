@@ -83,7 +83,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
     const fetchDrills = async () => {
         if (!profileData?.id) return;
         setDrillsLoading(true);
-        const { data, error } = await supabase.from('drills').select('*').eq('coach_id', profileData.id).order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('coach_drills').select('*').eq('coach_id', profileData.id).order('created_at', { ascending: false });
         if (!error && data) {
             setDrills(data);
         }
@@ -607,9 +607,9 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                         <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.3em]">No Drills Published</p>
                                     </div>
                                 ) : drills.map(drill => (
-                                    <div key={drill.id} onClick={() => setSelectedDrill(drill)} className="relative overflow-hidden rounded-[2.5rem] border border-white/5 group cursor-pointer shadow-2xl bg-[#0a0a0a] h-64 active:scale-[0.98] transition-all duration-500 hover:border-east-light/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:-translate-y-1">
+                                    <div key={drill.id} onClick={() => window.location.href = `/drill-hub?drill_id=${drill.id}`} className="relative overflow-hidden rounded-[2.5rem] border border-white/5 group cursor-pointer shadow-2xl bg-[#0a0a0a] h-64 active:scale-[0.98] transition-all duration-500 hover:border-east-light/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:-translate-y-1">
                                         {/* Background Image */}
-                                        <img src={drill.image_url || drill.image} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-1000" alt={drill.title} />
+                                        <img src={drill.thumbnail_url || drill.image_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-1000" alt={drill.title} />
                                         
                                         {/* Dark Gradient Overlay */}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
@@ -627,7 +627,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                         {/* Badges Top */}
                                         <div className="absolute top-6 left-6 flex gap-2 z-10 translate-y-2 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
                                             <span className="px-3 py-1 bg-east-light/10 backdrop-blur-md rounded-full text-[8px] font-black text-east-light uppercase tracking-widest border border-east-light/20">
-                                                {drill.difficulty}
+                                                {drill.level_tags?.[0] || 'PRO'}
                                             </span>
                                             {drill.duration && (
                                                 <span className="px-3 py-1 bg-white/5 backdrop-blur-md rounded-full text-[8px] font-black text-gray-300 uppercase tracking-widest border border-white/10">
@@ -643,11 +643,11 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                             </h4>
                                             <div className="flex items-center gap-3 mt-3 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500 delay-75">
                                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                                                    {drill.category}
+                                                    {drill.skill_tags?.[0] || 'SKILL'}
                                                 </p>
                                                 <div className="w-1 h-1 bg-east-light rounded-full" />
                                                 <p className="text-[10px] font-black text-east-light uppercase tracking-[0.2em] italic">
-                                                    Tactical Analysis
+                                                    Tactical Sequence
                                                 </p>
                                             </div>
                                         </div>

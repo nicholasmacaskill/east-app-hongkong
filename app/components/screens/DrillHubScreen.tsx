@@ -413,9 +413,9 @@ export default function DrillHubScreen() {
                             <div className="w-full h-full relative flex items-center justify-center p-4 lg:p-12">
                                 <div className="relative w-full max-w-[800px] aspect-video bg-[#0a0a0a] rounded-[2rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] border border-white/5 overflow-hidden group flex items-center justify-center p-10">
                                     {activeTab === 'visual' ? (
-                                        currentStep.diagram_url ? (
+                                        (currentStep.diagram_url || currentStep.tactical_data) ? (
                                             <img 
-                                                src={currentStep.diagram_url} 
+                                                src={currentStep.diagram_url || currentStep.tactical_data} 
                                                 className="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-fadeIn" 
                                                 alt="diagram" 
                                             />

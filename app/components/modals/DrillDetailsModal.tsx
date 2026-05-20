@@ -63,8 +63,11 @@ export default function DrillDetailsModal({ drill, onClose, isCoach }: DrillDeta
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
         const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
         
+        const x = (clientX - rect.left) * (canvas.width / rect.width);
+        const y = (clientY - rect.top) * (canvas.height / rect.height);
+        
         ctx.beginPath();
-        ctx.moveTo(clientX - rect.left, clientY - rect.top);
+        ctx.moveTo(x, y);
     };
 
     const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -74,11 +77,19 @@ export default function DrillDetailsModal({ drill, onClose, isCoach }: DrillDeta
         const ctx = canvas?.getContext('2d');
         if (!canvas || !ctx) return;
 
+        // Prevent mobile page scrolling while drawing
+        if (e.cancelable) {
+            e.preventDefault();
+        }
+
         const rect = canvas.getBoundingClientRect();
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
         const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
-        ctx.lineTo(clientX - rect.left, clientY - rect.top);
+        const x = (clientX - rect.left) * (canvas.width / rect.width);
+        const y = (clientY - rect.top) * (canvas.height / rect.height);
+
+        ctx.lineTo(x, y);
         ctx.strokeStyle = isEraser ? '#ffffff' : color;
         ctx.lineWidth = isEraser ? 20 : lineWidth;
         
@@ -302,6 +313,7 @@ export default function DrillDetailsModal({ drill, onClose, isCoach }: DrillDeta
                                     width={800}
                                     height={600}
                                     className={`w-full h-full relative z-20 ${isCoach ? 'cursor-crosshair' : 'cursor-default'}`}
+                                     style={{ touchAction: 'none' }}
                                     onMouseDown={startDrawing}
                                     onMouseMove={draw}
                                     onMouseUp={stopDrawing}

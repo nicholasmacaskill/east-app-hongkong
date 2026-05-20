@@ -108,8 +108,13 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
         const rect = canvas.getBoundingClientRect();
         const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
         const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+        
+        // Scale display coordinates to canvas coordinates
+        const x = (clientX - rect.left) * (canvas.width / rect.width);
+        const y = (clientY - rect.top) * (canvas.height / rect.height);
+        
         ctx.beginPath();
-        ctx.moveTo(clientX - rect.left, clientY - rect.top);
+        ctx.moveTo(x, y);
     };
 
     const draw = (e: React.MouseEvent | React.TouchEvent) => {
@@ -117,10 +122,21 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
         if (!canvas || !ctx) return;
+        
+        // Prevent mobile page scrolling while drawing
+        if (e.cancelable) {
+            e.preventDefault();
+        }
+        
         const rect = canvas.getBoundingClientRect();
         const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
         const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
-        ctx.lineTo(clientX - rect.left, clientY - rect.top);
+        
+        // Scale display coordinates to canvas coordinates
+        const x = (clientX - rect.left) * (canvas.width / rect.width);
+        const y = (clientY - rect.top) * (canvas.height / rect.height);
+        
+        ctx.lineTo(x, y);
         ctx.strokeStyle = isEraser ? '#111' : drawColor;
         ctx.lineWidth = isEraser ? 30 : 3;
         ctx.lineCap = 'round';
@@ -483,6 +499,7 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                                                 width={800}
                                                 height={450}
                                                 className="w-full h-full relative z-20 cursor-crosshair"
+                                                style={{ touchAction: 'none' }}
                                                 onMouseDown={startDrawing}
                                                 onMouseMove={draw}
                                                 onMouseUp={stopDrawing}
