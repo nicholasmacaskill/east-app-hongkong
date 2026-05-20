@@ -182,7 +182,7 @@ export default function DrillHubScreen() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: profile } = await supabase.from('profiles').select('first_name, last_name').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('first_name, last_name, role').eq('id', user.id).single();
         if (!profile) return;
 
         const fullName = `${profile.first_name} ${profile.last_name}`;
@@ -190,11 +190,11 @@ export default function DrillHubScreen() {
         let { data, error } = await supabase
             .from('sessions')
             .select('*')
-            .ilike('instructor', `%${fullName}%`)
+            .or(`coach_id.eq.${user.id},instructor.ilike.%${fullName}%`)
             .gte('start_time', new Date().toISOString())
             .order('start_time', { ascending: true });
         
-        if (!data || data.length === 0) {
+        if ((!data || data.length === 0) && ['admin', 'sys-admin'].includes(profile.role || '')) {
             const { data: allSessions } = await supabase
                 .from('sessions')
                 .select('*')
