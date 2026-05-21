@@ -9,7 +9,7 @@ import { ToastProvider, useToast } from '@/app/components/ui/Toast';
 // Screens
 import HomeScreen from '@/app/components/screens/HomeScreen';
 import ScheduleScreen from '@/app/components/screens/ScheduleScreen';
-// import CommunityScreen from '@/app/components/CommunityScreen';
+import CommunityScreen from '@/app/components/CommunityScreen';
 import PlayerProfile from '@/app/components/screens/PlayerProfile';
 import CoachProfile from '@/app/components/screens/CoachProfile';
 import ParentProfile from '@/app/components/screens/ParentProfile';
@@ -625,6 +625,10 @@ function AppContent() {
               parentMode={userProfile.role === 'parent'}
               myChildren={myChildren}
             />
+          )}
+
+          {activeTab === 'community' && (
+            <CommunityScreen currentUserId={currentUserId} />
           )}
 
           {/* ... existing screens ... */}

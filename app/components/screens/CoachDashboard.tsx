@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send, Play } from 'lucide-react';
+import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send, Play, MessageSquare } from 'lucide-react';
 import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 import { safeFetch } from '@/app/lib/apiUtils';
 import SessionPlanModal from '@/app/components/modals/SessionPlanModal';
 import CreateDrillModal from '@/app/components/modals/CreateDrillModal';
 import DrillDetailsModal from '@/app/components/modals/DrillDetailsModal';
+import CommunityScreen from '@/app/components/CommunityScreen';
 
 interface Attendee {
     id: string;
@@ -33,7 +34,7 @@ interface MasterSession {
 export default function CoachDashboard({ currentUserId, userName, userLastName }: { currentUserId: string, userName: string, userLastName?: string }) {
     const [allSessions, setAllSessions] = useState<MasterSession[]>([]);
     const [filteredSessions, setFilteredSessions] = useState<MasterSession[]>([]);
-    const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view' | 'drill_hub'>('master_view');
+    const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view' | 'drill_hub' | 'community'>('master_view');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [collapsedDates, setCollapsedDates] = useState<string[]>([]);
@@ -278,6 +279,12 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                             >
                                 Drill Hub
                             </button>
+                            <button
+                                onClick={() => setViewMode('community')}
+                                className={`flex-1 md:flex-none px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1.5 ${viewMode === 'community' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                <MessageSquare size={12} /> Messages
+                            </button>
                         </div>
 
                         <div className="hidden md:block h-6 w-px bg-white/10" />
@@ -313,7 +320,11 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
             {/* MAIN TIMELINE */}
             <div className="max-w-3xl mx-auto p-6 space-y-8 pb-24">
 
-                {viewMode === 'drill_hub' ? (
+                {viewMode === 'community' ? (
+                    <div className="h-[80vh] -mx-6 -mt-6 rounded-3xl overflow-hidden border border-white/10 bg-black">
+                        <CommunityScreen currentUserId={currentUserId} />
+                    </div>
+                ) : viewMode === 'drill_hub' ? (
                     <div className="animate-fadeIn space-y-8">
                         <div className="flex justify-between items-center px-2">
                             <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white brightness-125">My Drills</h2>
