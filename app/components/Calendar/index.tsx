@@ -36,6 +36,12 @@ const eventTypeConfig: Record<CalendarEvent['type'], EventTypeConfig> = {
     color: 'bg-gray-500',
     textColor: 'text-white',
     icon: '📅'
+  },
+  'google': {
+    label: 'Google Calendar',
+    color: 'bg-[#4285F4]',
+    textColor: 'text-white',
+    icon: '📆'
   }
 };
 
