@@ -28,10 +28,10 @@ export default function BottomNav({ activeTab, setTab }: BottomNavProps) {
         <NavItem tab="profile" icon={UserIcon} label="Profile" />
         <NavItem tab="qr" icon={Wallet} label="Wallet" />
         <NavItem tab="schedule" icon={Activity} label="Schedule" />
-        {/* <NavItem tab="community" icon={MessageSquare} label="Community" /> */}
+        <NavItem tab="community" icon={MessageSquare} label="Community" />
       </div>
       <div className="flex justify-between items-center max-w-md mx-auto mt-2 px-2 pb-2">
-        {['home', 'profile', 'qr', 'schedule'].map((t) => (
+        {['home', 'profile', 'qr', 'schedule', 'community'].map((t) => (
           <div key={t} className={`h-1 flex-1 rounded-full mx-1 transition-colors duration-300 ${activeTab === t ? 'bg-east-light' : 'bg-gray-800'}`} />
         ))}
       </div>
