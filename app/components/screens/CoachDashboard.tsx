@@ -36,7 +36,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
     const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view' | 'drill_hub'>('master_view');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [expandedDates, setExpandedDates] = useState<string[]>([]);
+    const [collapsedDates, setCollapsedDates] = useState<string[]>([]);
     const [attendance, setAttendance] = useState<Record<string, boolean>>({});
     const [selectedAttendeeForNote, setSelectedAttendeeForNote] = useState<Attendee | null>(null);
     const [noteContent, setNoteContent] = useState('');
@@ -51,13 +51,13 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
     const [selectedDrill, setSelectedDrill] = useState<any | null>(null);
 
     const toggleDate = (date: string) => {
-        setExpandedDates(prev =>
+        setCollapsedDates(prev =>
             prev.includes(date) ? prev.filter(d => d !== date) : [...prev, date]
         );
     };
 
-    const expandAll = () => setExpandedDates(Object.keys(groupedSessions));
-    const collapseAll = () => setExpandedDates([]);
+    const expandAll = () => setCollapsedDates([]);
+    const collapseAll = () => setCollapsedDates(Object.keys(groupedSessions));
 
     const fetchSchedule = async () => {
         try {
@@ -380,7 +380,8 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                         )}
 
                         {Object.entries(groupedSessions).map(([date, daySessions]) => {
-                            const isExpanded = expandedDates.includes(date);
+                            const isExpanded = !collapsedDates.includes(date);
+                            console.log(`[DASHBOARD-DEBUG] date: "${date}" | collapsedDates:`, collapsedDates, "| isExpanded:", isExpanded, "| sessionsCount:", daySessions.length);
                             return (
                                 <div key={date} className="animate-fadeIn mb-8">
                                     <button

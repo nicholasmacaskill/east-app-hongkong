@@ -228,6 +228,14 @@ test.describe('Drill Hub — Coach Session Plan Builder', () => {
 
         // Look for the "Build Plan" button on any session card
         const buildPlanBtn = page.getByRole('button', { name: /Build Plan/i }).first();
+        const isBtnVisible = await buildPlanBtn.isVisible();
+        if (!isBtnVisible) {
+            const dateHeader = page.locator('button').filter({ hasText: /ITEM|ITEMS/i }).first();
+            if (await dateHeader.isVisible()) {
+                await dateHeader.click();
+                await page.waitForTimeout(1000);
+            }
+        }
         await expect(buildPlanBtn).toBeVisible({ timeout: 15000 });
         await buildPlanBtn.click();
 
@@ -242,6 +250,14 @@ test.describe('Drill Hub — Coach Session Plan Builder', () => {
         await page.waitForTimeout(2000);
 
         const buildPlanBtn = page.getByRole('button', { name: /Build Plan/i }).first();
+        const isBtnVisible = await buildPlanBtn.isVisible();
+        if (!isBtnVisible) {
+            const dateHeader = page.locator('button').filter({ hasText: /ITEM|ITEMS/i }).first();
+            if (await dateHeader.isVisible()) {
+                await dateHeader.click();
+                await page.waitForTimeout(1000);
+            }
+        }
         await expect(buildPlanBtn).toBeVisible({ timeout: 15000 });
         await buildPlanBtn.click();
 

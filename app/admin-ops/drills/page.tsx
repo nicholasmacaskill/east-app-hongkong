@@ -278,6 +278,7 @@ export default function DrillHubCMSPage() {
                                 <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Drill Title</label>
                                 <input
                                     type="text"
+                                    name="title"
                                     required
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
