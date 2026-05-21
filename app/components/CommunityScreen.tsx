@@ -4,6 +4,7 @@ import { supabase } from '@/app/lib/supabase';
 import { ChevronDown, ChevronLeft, Trash2, Camera, Image as ImageIcon, Paperclip, Heart, Share2, X, Send, Trophy } from 'lucide-react';
 import { useToast } from './ui/Toast';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Post, Message, Profile } from '@/app/types/community';
 import { compressImage } from '@/app/lib/image-utils';
 
@@ -95,7 +96,9 @@ const SharedPostCard = ({ post }: { post: Post }) => {
 // ✅ UPDATED: Component now accepts currentUserId prop
 export default function CommunityScreen({ currentUserId }: { currentUserId: string }) {
     const { addToast } = useToast();
-    const [viewMode, setViewMode] = useState<'feed' | 'messenger-list' | 'chat-detail'>('feed');
+    const searchParams = useSearchParams();
+    const chatWithParam = searchParams.get('chatWith');
+    const [viewMode, setViewMode] = useState<'feed' | 'messenger-list' | 'chat-detail'>(chatWithParam ? 'chat-detail' : 'feed');
 
     const [posts, setPosts] = useState<Post[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -236,8 +239,21 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
 
     useEffect(() => {
         supabase.from('profiles').select('*').neq('id', currentUserId)
-            .then(({ data }) => data && setUsers(data as Profile[]));
-    }, [currentUserId]);
+            .then(({ data }) => {
+                if (data) {
+                    setUsers(data as Profile[]);
+                    if (chatWithParam) {
+                        const targetUser = data.find(u => u.id === chatWithParam);
+                        if (targetUser) {
+                            setActiveChatUser(targetUser as Profile);
+                            setViewMode('chat-detail');
+                            // Clear URL param after loading to prevent getting stuck
+                            window.history.replaceState({}, '', '/?tab=community');
+                        }
+                    }
+                }
+            });
+    }, [currentUserId, chatWithParam]);
 
     // --- ACTIONS ---
 
