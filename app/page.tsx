@@ -45,7 +45,8 @@ function AppContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addToast, removeToast } = useToast();
-  const [activeTab, setActiveTab] = useState<Tab>('home');
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<Tab>((tabParam as Tab) || 'home');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);

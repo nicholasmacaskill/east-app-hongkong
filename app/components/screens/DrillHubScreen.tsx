@@ -22,7 +22,8 @@ import {
     Trash2,
     PenTool,
     Image as ImageIcon,
-    Check
+    Check,
+    MessageSquare
 } from 'lucide-react';
 
 interface Drill {
@@ -391,6 +392,16 @@ export default function DrillHubScreen() {
                             >
                                 <Plus size={12} className="sm:w-3.5 sm:h-3.5" />
                                 EDIT DRILL
+                            </button>
+                        )}
+
+                        {(!['coach', 'admin', 'sys-admin'].includes(userRole || '') && selectedDrill?.coach_id) && (
+                            <button 
+                                onClick={() => window.location.href = `/?tab=community&chatWith=${selectedDrill.coach_id}`}
+                                className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-[#28D160]/10 text-[#28D160] border border-[#28D160]/30 hover:bg-[#28D160]/20 shadow-[0_0_15px_rgba(40,209,96,0.15)] active:scale-95"
+                            >
+                                <MessageSquare size={12} className="sm:w-3.5 sm:h-3.5" />
+                                MESSAGE COACH
                             </button>
                         )}
 
