@@ -292,6 +292,7 @@ export default function ScheduleScreen({
             <h2 className="text-black font-montserrat font-black italic text-sm uppercase tracking-tight">My Schedule</h2>
             
             {/* Google Sync Button directly in Schedule Header */}
+            {/* HIDDEN PENDING GOOGLE VERIFICATION
             {!googleLoading && (
               googleConnected ? (
                 <button
@@ -315,6 +316,7 @@ export default function ScheduleScreen({
                 </button>
               )
             )}
+            */}
           </div>
           <div className="bg-[#0a0a0a] p-4 relative z-10">
 
