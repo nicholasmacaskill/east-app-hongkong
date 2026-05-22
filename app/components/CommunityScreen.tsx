@@ -98,7 +98,7 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
     const { addToast } = useToast();
     const searchParams = useSearchParams();
     const chatWithParam = searchParams.get('chatWith');
-    const [viewMode, setViewMode] = useState<'feed' | 'messenger-list' | 'chat-detail'>(chatWithParam ? 'chat-detail' : 'feed');
+    const [viewMode, setViewMode] = useState<'feed' | 'messenger-list' | 'chat-detail'>(chatWithParam ? 'chat-detail' : 'messenger-list');
 
     const [posts, setPosts] = useState<Post[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -386,9 +386,8 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
     const renderMessengerList = () => (
         <div className="h-full flex flex-col relative animate-fadeIn bg-black">
             <div className="relative z-10 px-5 pt-10 flex-1 overflow-y-auto pb-32 no-scrollbar">
-                <div className="flex items-center gap-3 mb-10 cursor-pointer group" onClick={() => setViewMode('feed')}>
+                <div className="flex items-center gap-3 mb-10">
                     <h1 className="font-montserrat font-black italic text-4xl text-white tracking-tight">MESSENGER</h1>
-                    <ChevronDown className="text-east-light group-hover:translate-y-1 transition-transform" />
                 </div>
                 <div className="mb-10">
                     <h3 className="font-montserrat font-black italic text-gray-500 text-[10px] uppercase tracking-[0.3em] mb-6">ACTIVE NOW</h3>
@@ -594,7 +593,6 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
         <div className="h-screen bg-black flex flex-col relative">
             {viewMode === 'messenger-list' && renderMessengerList()}
             {viewMode === 'chat-detail' && renderChatDetail()}
-            {viewMode === 'feed' && renderFeed()}
         </div>
     );
 }
