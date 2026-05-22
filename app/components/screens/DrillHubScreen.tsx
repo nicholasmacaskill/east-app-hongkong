@@ -479,12 +479,36 @@ export default function DrillHubScreen() {
                                 </button>
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center gap-8 text-center py-40">
-                                <div className="relative">
-                                    <Layers size={80} className="text-east-light animate-pulse opacity-40" />
-                                    <div className="absolute inset-0 bg-east-light/20 blur-3xl rounded-full" />
-                                </div>
-                                <h3 className="text-xl font-black italic uppercase text-gray-600 tracking-[0.5em]">Constructing Playbook</h3>
+                            <div className="flex flex-col items-center gap-6 text-center py-32">
+                                <Layers size={64} className="text-east-light opacity-20" />
+                                {(userRole === 'sys-admin' || (selectedDrill && currentUser?.id === selectedDrill.coach_id)) ? (
+                                    <>
+                                        <div>
+                                            <h3 className="text-lg font-black italic uppercase text-gray-500 tracking-[0.3em] mb-2">No Steps Yet</h3>
+                                            <p className="text-xs text-gray-600 font-medium">Add your first slide to build this drill.</p>
+                                        </div>
+                                        <button
+                                            onClick={async () => {
+                                                setIsEditing(true);
+                                                const { data } = await supabase.from('coach_drill_steps').insert({
+                                                    drill_id: selectedDrill.id,
+                                                    step_number: 1,
+                                                    title: 'Step 1',
+                                                    instruction: 'Add coaching instruction here...'
+                                                }).select().single();
+                                                if (data) {
+                                                    setDrillSteps([data]);
+                                                    setCurrentStepIndex(0);
+                                                }
+                                            }}
+                                            className="px-8 py-4 bg-east-light text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:shadow-[0_0_30px_rgba(40,209,96,0.4)] transition-all active:scale-95"
+                                        >
+                                            + Add First Step
+                                        </button>
+                                    </>
+                                ) : (
+                                    <h3 className="text-lg font-black italic uppercase text-gray-600 tracking-[0.3em]">Content Coming Soon</h3>
+                                )}
                             </div>
                         )}
                     </div>
