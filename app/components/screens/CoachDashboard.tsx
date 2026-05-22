@@ -86,12 +86,10 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
     };
 
     const fetchDrills = async () => {
-        if (!currentUserId) return;
         setDrillsLoading(true);
         const { data, error } = await supabase
             .from('coach_drills')
             .select('*')
-            .eq('coach_id', currentUserId)
             .order('created_at', { ascending: false });
         
         if (!error && data) {
@@ -327,7 +325,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                 ) : viewMode === 'drill_hub' ? (
                     <div className="animate-fadeIn space-y-8">
                         <div className="flex justify-between items-center px-2">
-                            <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white brightness-125">My Drills</h2>
+                            <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white brightness-125">Drill Library</h2>
                             <button 
                                 onClick={() => setShowCreateDrill(true)}
                                 className="px-6 py-2 bg-east-light text-black rounded-full text-[10px] font-black uppercase italic hover:bg-white transition-all shadow-[0_0_20px_rgba(40,209,96,0.3)] active:scale-95"
