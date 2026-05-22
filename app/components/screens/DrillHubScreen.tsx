@@ -110,12 +110,14 @@ export default function DrillHubScreen() {
 
     const fetchSingleDrill = async (id: string) => {
         setLoading(true);
+        console.log('[DEBUG] fetchSingleDrill calling for id:', id);
         const { data, error } = await supabase
             .from('coach_drills')
             .select('*, coach:profiles(first_name, last_name, avatar_url)')
             .eq('id', id)
             .single();
 
+        console.log('[DEBUG] fetchSingleDrill result:', data, 'error:', error);
         if (!error && data) {
             setSelectedDrill(data);
             fetchDrillSteps(data.id);
@@ -162,12 +164,14 @@ export default function DrillHubScreen() {
     };
 
     const fetchDrillSteps = async (drillId: string) => {
+        console.log('[DEBUG] fetchDrillSteps calling for drillId:', drillId);
         const { data, error } = await supabase
             .from('coach_drill_steps')
             .select('*')
             .eq('drill_id', drillId)
             .order('step_number', { ascending: true });
 
+        console.log('[DEBUG] fetchDrillSteps result:', data, 'error:', error);
         if (!error && data) {
             setDrillSteps(data);
             setCurrentStepIndex(0);
@@ -175,6 +179,7 @@ export default function DrillHubScreen() {
     };
 
     const handleSelectDrill = (drill: Drill) => {
+        console.log('[DEBUG] handleSelectDrill calling for drill:', drill.title, 'id:', drill.id);
         setSelectedDrill(drill);
         fetchDrillSteps(drill.id);
     };
@@ -759,8 +764,10 @@ export default function DrillHubScreen() {
             ) : (
                 /* Redesigned Age Group Sections */
                 <div className="relative z-10 mt-2 sm:mt-6 space-y-10 sm:space-y-16">
-                    {AGE_GROUPS.map((ageGroup, idx) => {
-                        const groupItems = filteredDrills.filter(d => d.age_tags?.includes(ageGroup));
+                    {[...AGE_GROUPS, 'General / All Ages'].map((ageGroup, idx) => {
+                        const groupItems = ageGroup === 'General / All Ages'
+                            ? filteredDrills.filter(d => !d.age_tags || d.age_tags.length === 0)
+                            : filteredDrills.filter(d => d.age_tags?.includes(ageGroup));
                         if (groupItems.length === 0) return null;
                         
                         return (
