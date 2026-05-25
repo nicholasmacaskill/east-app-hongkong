@@ -41,7 +41,8 @@ export default function ManageServicesPage() {
         endTime: '20:00',
         daysOfWeek: [0, 1, 2, 3, 4, 5, 6], // All days
         durationMinutes: 60,
-        coachId: ''
+        coachId: '',
+        appendMode: false
     });
     const [generating, setGenerating] = useState(false);
 
@@ -413,9 +414,31 @@ export default function ManageServicesPage() {
                                 </select>
                             </div>
 
+                            {/* Append Mode Toggle */}
+                            <div className={`rounded-xl p-4 border transition-all ${generatorConfig.appendMode ? 'bg-[#28D160]/10 border-[#28D160]/40' : 'bg-orange-500/10 border-orange-500/30'}`}>
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <p className={`text-[11px] font-black uppercase tracking-wider ${generatorConfig.appendMode ? 'text-[#28D160]' : 'text-orange-400'}`}>
+                                            {generatorConfig.appendMode ? '✅ Append Mode — Safe' : '⚠️ Replace Mode — Will overwrite'}
+                                        </p>
+                                        <p className="text-[10px] text-gray-500 mt-0.5">
+                                            {generatorConfig.appendMode
+                                                ? 'Only adds new slots. Existing schedule is untouched.'
+                                                : 'Deletes existing unbooked slots in this date range first.'}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => setGeneratorConfig(c => ({ ...c, appendMode: !c.appendMode }))}
+                                        className={`shrink-0 w-12 h-6 rounded-full transition-all relative ${generatorConfig.appendMode ? 'bg-[#28D160]' : 'bg-gray-700'}`}
+                                    >
+                                        <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${generatorConfig.appendMode ? 'left-7' : 'left-1'}`} />
+                                    </button>
+                                </div>
+                            </div>
+
                             <button onClick={handleGenerate} disabled={generating} className="w-full bg-[#28D160] text-black font-black uppercase py-4 rounded-xl hover:bg-white transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2">
                                 {generating ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-                                {generating ? 'Generating Content...' : 'Generate Slots Now'}
+                                {generating ? 'Generating Content...' : generatorConfig.appendMode ? 'Add New Slots' : 'Replace & Generate'}
                             </button>
                         </div>
                     </div>

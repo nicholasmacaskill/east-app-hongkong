@@ -16,7 +16,8 @@ export async function POST(request: Request) {
             endTime,
             daysOfWeek,
             durationMinutes = 60,
-            coachId
+            coachId,
+            appendMode = false
         } = await request.json();
 
         if (!serviceId || !startDate || !endDate) {
@@ -116,21 +117,67 @@ export async function POST(request: Request) {
             currentDate.setDate(currentDate.getDate() + 1);
         }
 
-        // 2. Wipe & Replace Strategy
-        // Delete existing slots for this service in this range before generating
+        // 2. Wipe & Replace vs Append Strategy
         const wipeStart = fromZonedTime(`${startDate} 00:00:00`, APP_TIMEZONE);
         const wipeEnd = fromZonedTime(`${endDate} 23:59:59`, APP_TIMEZONE);
 
-        const { error: deleteError } = await supabaseAdmin
-            .from('sessions')
-            .delete()
-            .eq('session_type_id', serviceId)
-            .gte('start_time', wipeStart.toISOString())
-            .lte('start_time', wipeEnd.toISOString());
+        if (!appendMode) {
+            // Original behaviour: delete all unbooked slots in range, then re-insert
+            // Only delete sessions with no bookings to protect booked slots
+            const { data: bookedSessions } = await supabaseAdmin
+                .from('bookings')
+                .select('session_id')
+                .not('session_id', 'is', null);
 
-        if (deleteError) {
-            console.error("Wipe error:", deleteError);
-            return NextResponse.json({ error: 'Failed to clear existing schedule: ' + deleteError.message }, { status: 500 });
+            const bookedIds = new Set((bookedSessions || []).map((b: any) => b.session_id));
+
+            const { data: existingInRange } = await supabaseAdmin
+                .from('sessions')
+                .select('id')
+                .eq('session_type_id', serviceId)
+                .gte('start_time', wipeStart.toISOString())
+                .lte('start_time', wipeEnd.toISOString());
+
+            const toDelete = (existingInRange || [])
+                .filter((s: any) => !bookedIds.has(s.id))
+                .map((s: any) => s.id);
+
+            if (toDelete.length > 0) {
+                const { error: deleteError } = await supabaseAdmin
+                    .from('sessions')
+                    .delete()
+                    .in('id', toDelete);
+
+                if (deleteError) {
+                    console.error("Wipe error:", deleteError);
+                    return NextResponse.json({ error: 'Failed to clear existing schedule: ' + deleteError.message }, { status: 500 });
+                }
+            }
+        } else {
+            // Append mode: fetch existing slots in range and skip duplicates
+            const { data: existingSlots } = await supabaseAdmin
+                .from('sessions')
+                .select('start_time')
+                .eq('session_type_id', serviceId)
+                .gte('start_time', wipeStart.toISOString())
+                .lte('start_time', wipeEnd.toISOString());
+
+            const existingStartTimes = new Set(
+                (existingSlots || []).map((s: any) => new Date(s.start_time).toISOString())
+            );
+
+            // Filter out sessions that already exist
+            const deduped = sessionsToInsert.filter(
+                s => !existingStartTimes.has(new Date(s.start_time).toISOString())
+            );
+
+            if (deduped.length === 0) {
+                return NextResponse.json({ success: true, count: 0, message: "No new slots to add — all selected times already exist." });
+            }
+
+            // Replace sessionsToInsert with deduplicated list
+            sessionsToInsert.length = 0;
+            deduped.forEach(s => sessionsToInsert.push(s));
         }
 
         if (sessionsToInsert.length === 0) {
@@ -138,11 +185,6 @@ export async function POST(request: Request) {
         }
 
         // 3. Batch Insert
-        // Use upsert or ignore conflicts? 
-        // Usually simple insert. If you run it twice it might duplicate.
-        // For now, simple insert. Admin should be careful or we add check.
-
-        // Chunking just in case
         const chunkSize = 100;
         for (let i = 0; i < sessionsToInsert.length; i += chunkSize) {
             const chunk = sessionsToInsert.slice(i, i + chunkSize);
