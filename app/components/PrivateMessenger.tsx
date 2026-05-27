@@ -26,10 +26,17 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
     
     const [showDrillPicker, setShowDrillPicker] = useState(false);
     const [coachDrills, setCoachDrills] = useState<any[]>([]);
+    const [selectedDrill, setSelectedDrill] = useState<any | null>(null);
 
     useEffect(() => {
         fetchTeamsAndProfiles();
+        fetchDrills();
     }, [currentUserId]);
+
+    const fetchDrills = async () => {
+        const { data } = await supabase.from('coach_drills').select('*').order('created_at', { ascending: false });
+        if (data) setCoachDrills(data);
+    };
 
     const fetchTeamsAndProfiles = async () => {
         // Fetch Teams where coach is the creator OR is a member
@@ -52,6 +59,31 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
             }
         }
     };
+
+    useEffect(() => {
+        if (!activeChatId) return;
+
+        // Realtime subscription
+        const channel = supabase.channel(`chat:${activeChatId}`)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' },
+                (payload) => {
+                    // Only add if it belongs to this chat and we didn't just send it
+                    const msg = payload.new;
+                    if (msg.sender_id !== currentUserId) {
+                        if (isTeamChat && msg.team_id === activeChatId) {
+                            setMessages(prev => [...prev, msg]);
+                            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                        } else if (!isTeamChat && (msg.sender_id === activeChatId || msg.receiver_id === activeChatId)) {
+                            setMessages(prev => [...prev, msg]);
+                            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    }
+                }
+            )
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, [activeChatId, isTeamChat, currentUserId]);
 
     const fetchMessages = async (chatId: string, isTeam: boolean) => {
         if (isTeam) {
@@ -99,13 +131,18 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
             sender_id: currentUserId,
             content: messageInput,
             video_url: uploadedVideoUrl,
+            shared_drill_id: selectedDrill ? selectedDrill.id : null,
             ...(isTeamChat ? { team_id: activeChatId } : { receiver_id: activeChatId })
         };
 
         setMessageInput('');
         setSelectedVideo(null);
+        setSelectedDrill(null);
         const { error } = await supabase.from('messages').insert(newMsg);
-        if (!error) {
+        if (error) {
+            console.error("Message Insert Error:", error);
+            alert("Failed to send message: " + error.message);
+        } else {
             fetchMessages(activeChatId, isTeamChat);
         }
         setIsUploading(false);
@@ -160,9 +197,20 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
                                         </div>
                                     )}
                                     {msg.shared_drill_id && (
-                                        <div className="mt-2 p-3 bg-black/50 rounded-xl flex items-center gap-2 border border-white/5 cursor-pointer hover:border-[#28D160]/50 transition">
-                                            <Layers size={16} className="text-[#28D160]" />
-                                            <span className="text-[10px] font-black uppercase">Drill Attached</span>
+                                        <div onClick={() => window.open(`/drill-hub?drill_id=${msg.shared_drill_id}`, '_blank')} className="mt-2 p-3 bg-black/50 rounded-xl flex items-center gap-3 border border-[#28D160]/30 cursor-pointer hover:bg-[#28D160]/10 transition group">
+                                            <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center border border-white/10 group-hover:border-[#28D160]/50 transition overflow-hidden">
+                                                {coachDrills.find(d => d.id === msg.shared_drill_id)?.thumbnail_url ? (
+                                                    <img src={coachDrills.find(d => d.id === msg.shared_drill_id)?.thumbnail_url} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <Layers size={20} className="text-[#28D160]" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <span className="text-[10px] font-black uppercase text-[#28D160] block leading-none mb-1">Attached Drill</span>
+                                                <span className="text-xs font-bold text-white block truncate max-w-[200px]">
+                                                    {coachDrills.find(d => d.id === msg.shared_drill_id)?.title || 'View Drill'}
+                                                </span>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -171,20 +219,62 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
                     })}
                 </div>
 
-                <div className="p-4 border-t border-white/10 bg-black/50">
-                    {selectedVideo && (
-                        <div className="mb-3 p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Video size={16} className="text-[#28D160]" />
-                                <span className="text-xs font-medium text-gray-300 truncate max-w-[200px]">{selectedVideo.name}</span>
+                <div className="p-4 border-t border-white/10 bg-black/50 relative">
+                    {showDrillPicker && (
+                        <div className="absolute bottom-full left-4 mb-2 w-72 max-h-80 bg-[#111] border border-white/10 rounded-2xl p-3 shadow-2xl flex flex-col z-50 overflow-hidden">
+                            <div className="flex justify-between items-center mb-3 pb-2 border-b border-white/10">
+                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Select a Drill</span>
+                                <button onClick={() => setShowDrillPicker(false)} className="text-gray-500 hover:text-white"><X size={14} /></button>
                             </div>
-                            <button onClick={() => setSelectedVideo(null)} className="p-1 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-red-400">
-                                <X size={14} />
-                            </button>
+                            <div className="flex-1 overflow-y-auto space-y-2 no-scrollbar pr-1">
+                                {coachDrills.map(drill => (
+                                    <button 
+                                        key={drill.id}
+                                        onClick={() => { setSelectedDrill(drill); setShowDrillPicker(false); }}
+                                        className="w-full text-left flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition"
+                                    >
+                                        <div className="w-10 h-10 rounded-lg bg-black overflow-hidden flex items-center justify-center border border-white/5 shrink-0">
+                                            {drill.thumbnail_url ? <img src={drill.thumbnail_url} className="w-full h-full object-cover" /> : <Layers size={16} className="text-gray-500" />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <span className="text-xs font-bold text-white block truncate">{drill.title}</span>
+                                            <span className="text-[9px] font-black text-[#28D160] uppercase">{drill.category}</span>
+                                        </div>
+                                    </button>
+                                ))}
+                                {coachDrills.length === 0 && <span className="text-[10px] text-gray-500 text-center block py-4">No drills found.</span>}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {(selectedVideo || selectedDrill) && (
+                        <div className="mb-3 space-y-2">
+                            {selectedVideo && (
+                                <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Video size={16} className="text-[#28D160]" />
+                                        <span className="text-xs font-medium text-gray-300 truncate max-w-[200px]">{selectedVideo.name}</span>
+                                    </div>
+                                    <button onClick={() => setSelectedVideo(null)} className="p-1 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-red-400">
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            )}
+                            {selectedDrill && (
+                                <div className="p-3 bg-white/5 rounded-xl border border-[#28D160]/30 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Layers size={16} className="text-[#28D160]" />
+                                        <span className="text-xs font-medium text-white truncate max-w-[200px]">{selectedDrill.title}</span>
+                                    </div>
+                                    <button onClick={() => setSelectedDrill(null)} className="p-1 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-red-400">
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
                     <div className="flex gap-2">
-                        <button className="p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition text-gray-400 hover:text-white">
+                        <button onClick={() => setShowDrillPicker(!showDrillPicker)} className={`p-4 rounded-2xl transition ${selectedDrill ? 'bg-[#28D160]/20 text-[#28D160] border border-[#28D160]/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`}>
                             <Layers size={20} />
                         </button>
                         <button onClick={() => videoFileRef.current?.click()} className={`p-4 rounded-2xl transition ${selectedVideo ? 'bg-[#28D160]/20 text-[#28D160] border border-[#28D160]/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`}>
@@ -199,7 +289,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
                             placeholder="Type a message..." 
                             className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 outline-none focus:border-[#28D160]/50 transition"
                         />
-                        <button disabled={isUploading || (!messageInput.trim() && !selectedVideo)} onClick={handleSendMessage} className="p-4 bg-[#28D160] text-black rounded-2xl hover:bg-white transition hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button disabled={isUploading || (!messageInput.trim() && !selectedVideo && !selectedDrill)} onClick={handleSendMessage} className="p-4 bg-[#28D160] text-black rounded-2xl hover:bg-white transition hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                             {isUploading ? <span className="text-[10px] font-black uppercase">Wait</span> : <Send size={20} />}
                         </button>
                     </div>

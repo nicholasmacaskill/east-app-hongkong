@@ -251,11 +251,6 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                     thumbnail_url: thumbnailUrl,
                     description: description.trim(),
                     accessories: accessoriesText.split(',').map(s => s.trim()).filter(Boolean),
-                    pods: pods.trim(),
-                    colors: colors.trim(),
-                    duration: duration.trim(),
-                    lights_out: lightsOut.trim(),
-                    light_delay: lightDelay.trim(),
                 })
                 .select()
                 .single();
@@ -472,40 +467,6 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                                     className="w-full bg-black/50 border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-sm placeholder:text-gray-700"
                                     placeholder="Comma separated — e.g. Goal, Soccer Balls, Cones"
                                 />
-                            </div>
-
-                            {/* Setup Grid */}
-                            <div>
-                                <label className="block text-[9px] font-black text-east-light uppercase tracking-[0.3em] mb-3">Setup Metrics</label>
-                                <div className="grid grid-cols-3 gap-3">
-                                    <div>
-                                        <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Pods</span>
-                                        <input type="text" value={pods} onChange={e => setPods(e.target.value)} className="w-full bg-black/50 border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs" placeholder="e.g. 4 per Station" />
-                                    </div>
-                                    <div>
-                                        <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Colors</span>
-                                        <input type="text" value={colors} onChange={e => setColors(e.target.value)} className="w-full bg-black/50 border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs" placeholder="e.g. 1 per Player" />
-                                    </div>
-                                    <div>
-                                        <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Duration</span>
-                                        <input type="text" value={duration} onChange={e => setDuration(e.target.value)} className="w-full bg-black/50 border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs" placeholder="e.g. 60 min" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Corner Setup */}
-                            <div>
-                                <label className="block text-[9px] font-black text-east-light uppercase tracking-[0.3em] mb-3">Corner Setup / Lights</label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Lights Out</span>
-                                        <input type="text" value={lightsOut} onChange={e => setLightsOut(e.target.value)} className="w-full bg-black/50 border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs" placeholder="e.g. Timeout 3 sec" />
-                                    </div>
-                                    <div>
-                                        <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Light Delay</span>
-                                        <input type="text" value={lightDelay} onChange={e => setLightDelay(e.target.value)} className="w-full bg-black/50 border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs" placeholder="e.g. None / Random" />
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
