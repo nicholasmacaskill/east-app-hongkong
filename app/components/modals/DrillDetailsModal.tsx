@@ -11,11 +11,134 @@ interface Drill {
     category?: string;
     skill_tags?: string[];
     level_tags?: string[];
+    group_tags?: string[];
+    age_tags?: string[];
     video_url?: string;
     image_url?: string;
     thumbnail_url?: string;
     coach_id?: string;
+    accessories?: string[];
+    pods?: string;
+    colors?: string;
+    lights_out?: string;
+    light_delay?: string;
 }
+
+const ActivityDescription = ({ text }: { text?: string }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const fallbackText = "No tactical details provided for this sequence.";
+    const content = text || fallbackText;
+    const isLong = content.length > 150;
+    
+    return (
+        <div className="space-y-2">
+            <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] mb-1 italic opacity-85">Activity Description</h3>
+            <p className="text-sm text-gray-300 font-medium leading-relaxed italic transition-all duration-300">
+                {isExpanded ? content : (isLong ? `${content.substring(0, 150)}...` : content)}
+            </p>
+            {isLong && (
+                <button 
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="text-[9px] font-black text-east-light uppercase tracking-widest hover:underline mt-1"
+                >
+                    {isExpanded ? "Show Less" : "More"}
+                </button>
+            )}
+        </div>
+    );
+};
+
+const AccessoriesList = ({ accessories }: { accessories?: string[] }) => {
+    if (!accessories || accessories.length === 0) return null;
+    return (
+        <div className="space-y-1.5">
+            <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Accessories</h3>
+            <p className="text-sm text-gray-300 font-medium">
+                {accessories.join(' · ')}
+            </p>
+        </div>
+    );
+};
+
+const ActivityGoals = ({ drill }: { drill: Drill }) => {
+    const allTags = [
+        ...(drill.skill_tags || []),
+        ...(drill.group_tags || []),
+        ...(drill.age_tags || [])
+    ].filter(Boolean);
+    
+    if (allTags.length === 0) return null;
+    
+    return (
+        <div className="space-y-2.5">
+            <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Activity Goals</h3>
+            <div className="flex flex-wrap gap-2">
+                {allTags.map((tag, idx) => (
+                    <span 
+                        key={idx} 
+                        className="px-3 py-1 rounded-full text-[10px] font-semibold text-gray-300 border border-white/20 bg-white/5"
+                    >
+                        {tag}
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const SetupGrid = ({ drill }: { drill: Drill }) => {
+    const hasSetup = drill.pods || drill.colors || drill.duration;
+    const hasCorner = drill.lights_out || drill.light_delay;
+    if (!hasSetup && !hasCorner) return null;
+    return (
+        <div className="space-y-5">
+            {hasSetup && (
+                <div>
+                    <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-3">Setup</h3>
+                    <div className="grid grid-cols-3 gap-2.5">
+                        {drill.pods && (
+                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
+                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Pods</span>
+                                <span className="text-xs text-white font-black">{drill.pods}</span>
+                            </div>
+                        )}
+                        {drill.colors && (
+                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
+                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Colors</span>
+                                <span className="text-xs text-white font-black">{drill.colors}</span>
+                            </div>
+                        )}
+                        {drill.duration && (
+                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
+                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Duration</span>
+                                <span className="text-xs text-white font-black">{drill.duration}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+            {hasCorner && (
+                <div>
+                    <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-3">Corner Pods</h3>
+                    <div className="grid grid-cols-2 gap-2.5">
+                        {drill.lights_out && (
+                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
+                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Lights Out</span>
+                                <span className="text-xs text-white font-black">{drill.lights_out}</span>
+                            </div>
+                        )}
+                        {drill.light_delay && (
+                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
+                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Light Delay</span>
+                                <span className="text-xs text-white font-black">{drill.light_delay}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 interface DrillDetailsModalProps {
     drill: Drill;
@@ -176,40 +299,34 @@ export default function DrillDetailsModal({ drill, onClose, isCoach }: DrillDeta
 
                 {/* Body Content */}
                 <div className="flex flex-1 overflow-hidden relative">
-                    {/* Left Sidebar (Details) */}
-                    <div className="w-1/3 min-w-[320px] border-r border-white/5 bg-black/40 p-10 flex flex-col gap-10 overflow-y-auto no-scrollbar relative z-10 backdrop-blur-md">
+                    {/* Left Sidebar (Details - Redesigned with Dark Blue-Grey Glassmorphism) */}
+                    <div className="w-1/3 min-w-[320px] border-r border-white/10 bg-[#0B132B]/80 p-8 flex flex-col gap-6 overflow-y-auto no-scrollbar relative z-10 backdrop-blur-md">
                         <div className="space-y-6">
-                            <div>
-                                <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] mb-4 italic opacity-80">Mission Briefing</h3>
-                                <p className="text-sm text-gray-400 font-medium leading-relaxed italic">
-                                    {drill.description || "No tactical details provided for this sequence."}
-                                </p>
-                            </div>
+                            <ActivityDescription text={drill.description} />
                             
-                            <div className="grid grid-cols-1 gap-4">
-                                <div className="bg-white/5 rounded-2xl p-6 border border-white/5 shadow-xl group hover:border-white/20 transition-all duration-500">
-                                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest block mb-2 italic">Duration</span>
-                                    <span className="text-xl text-white font-black italic group-hover:text-east-light transition-colors">{drill.duration || '00:00'}</span>
-                                </div>
-                            </div>
+                            <AccessoriesList accessories={drill.accessories} />
+                            
+                            <ActivityGoals drill={drill} />
+                            
+                            <SetupGrid drill={drill} />
                         </div>
 
                         {/* Action Tabs */}
-                        <div className="mt-auto flex flex-col gap-4 pt-10 border-t border-white/5">
+                        <div className="mt-auto flex flex-col gap-3 pt-6 border-t border-white/10">
                             <button 
                                 onClick={() => setActiveTab('video')}
-                                className={`group py-5 px-6 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 relative overflow-hidden flex items-center justify-between ${activeTab === 'video' ? 'bg-white text-black shadow-[0_20px_40px_rgba(255,255,255,0.15)]' : 'bg-white/5 text-gray-500 border border-white/5 hover:border-white/20 hover:text-white'}`}
+                                className={`group py-4 px-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] transition-all duration-500 relative overflow-hidden flex items-center justify-between ${activeTab === 'video' ? 'bg-white text-black shadow-[0_20px_40px_rgba(255,255,255,0.15)]' : 'bg-white/5 text-gray-500 border border-white/5 hover:border-white/20 hover:text-white'}`}
                             >
                                 <span className="relative z-10">Analysis Stream</span>
-                                <Video size={18} className={activeTab === 'video' ? 'text-black' : 'text-gray-600'} />
+                                <Video size={16} className={activeTab === 'video' ? 'text-black' : 'text-gray-600'} />
                                 {activeTab === 'video' && <div className="absolute inset-0 bg-gradient-to-r from-white to-gray-200" />}
                             </button>
                             <button 
                                 onClick={() => setActiveTab('whiteboard')}
-                                className={`group py-5 px-6 rounded-2xl font-black italic text-xs uppercase tracking-[0.2em] transition-all duration-500 relative overflow-hidden flex items-center justify-between ${activeTab === 'whiteboard' ? 'bg-east-light text-black shadow-[0_20px_40px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border border-white/5 hover:border-white/20 hover:text-white'}`}
+                                className={`group py-4 px-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] transition-all duration-500 relative overflow-hidden flex items-center justify-between ${activeTab === 'whiteboard' ? 'bg-east-light text-black shadow-[0_20px_40px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border border-white/5 hover:border-white/20 hover:text-white'}`}
                             >
                                 <span className="relative z-10">Tactical Board</span>
-                                <PenTool size={18} className={activeTab === 'whiteboard' ? 'text-black' : 'text-gray-600'} />
+                                <PenTool size={16} className={activeTab === 'whiteboard' ? 'text-black' : 'text-gray-600'} />
                                 {activeTab === 'whiteboard' && <div className="absolute inset-0 bg-gradient-to-r from-east-light to-[#20a34b]" />}
                             </button>
                         </div>
