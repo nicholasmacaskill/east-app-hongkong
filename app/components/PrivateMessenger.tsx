@@ -56,13 +56,13 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
     const fetchMessages = async (chatId: string, isTeam: boolean) => {
         if (isTeam) {
             const { data } = await supabase.from('messages')
-                .select('*, profiles(first_name, last_name, avatar_url)')
+                .select('*')
                 .eq('team_id', chatId)
                 .order('created_at', { ascending: true });
             if (data) setMessages(data);
         } else {
             const { data } = await supabase.from('messages')
-                .select('*, profiles(first_name, last_name, avatar_url)')
+                .select('*')
                 .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${chatId}),and(sender_id.eq.${chatId},receiver_id.eq.${currentUserId})`)
                 .order('created_at', { ascending: true });
             if (data) setMessages(data);
@@ -146,11 +146,12 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
                     {messages.map(msg => {
                         const isMe = msg.sender_id === currentUserId;
+                        const senderProfile = profiles.find(p => p.id === msg.sender_id);
                         return (
                             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[80%] rounded-2xl p-4 ${isMe ? 'bg-[#28D160]/20 border border-[#28D160]/30 rounded-tr-none' : 'bg-white/5 border border-white/10 rounded-tl-none'}`}>
-                                    {!isMe && isTeamChat && (
-                                        <p className="text-[9px] font-black uppercase text-gray-500 mb-1">{msg.profiles?.first_name} {msg.profiles?.last_name}</p>
+                                    {!isMe && isTeamChat && senderProfile && (
+                                        <p className="text-[9px] font-black uppercase text-gray-500 mb-1">{senderProfile.first_name} {senderProfile.last_name}</p>
                                     )}
                                     <p className="text-sm">{msg.content}</p>
                                     {msg.video_url && (
