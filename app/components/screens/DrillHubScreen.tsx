@@ -23,8 +23,10 @@ import {
     PenTool,
     Image as ImageIcon,
     Check,
-    MessageSquare
+    MessageSquare,
+    PenTool
 } from 'lucide-react';
+import WhiteboardModal from '../modals/WhiteboardModal';
 
 interface Drill {
     id: string;
@@ -226,6 +228,7 @@ export default function DrillHubScreen() {
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
+    const [showWhiteboard, setShowWhiteboard] = useState(false);
     const [drillSteps, setDrillSteps] = useState<DrillStep[]>([]);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     
@@ -909,6 +912,13 @@ export default function DrillHubScreen() {
                                 )}
                             </button>
 
+                            <button
+                                onClick={() => setShowWhiteboard(true)}
+                                className="px-5 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-2 bg-[#111] text-gray-400 border-white/5 hover:border-white/20 hover:text-white"
+                            >
+                                <PenTool size={14} /> Whiteboard
+                            </button>
+
                             {(selectedAgeFilters.length + selectedWorkoutFilters.length + selectedHockeyFilters.length) > 0 && (
                                 <button 
                                     onClick={() => {
@@ -1151,6 +1161,10 @@ export default function DrillHubScreen() {
                     </div>
                 );
             })()}
+
+            {showWhiteboard && (
+                <WhiteboardModal onClose={() => setShowWhiteboard(false)} />
+            )}
         </div>
     );
 }
