@@ -23,8 +23,7 @@ import {
     PenTool,
     Image as ImageIcon,
     Check,
-    MessageSquare,
-    PenTool
+    MessageSquare
 } from 'lucide-react';
 import WhiteboardModal from '../modals/WhiteboardModal';
 
