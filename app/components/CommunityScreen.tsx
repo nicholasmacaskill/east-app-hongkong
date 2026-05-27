@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { supabase } from '@/app/lib/supabase';
-import { ChevronDown, ChevronLeft, Trash2, Camera, Image as ImageIcon, Paperclip, Heart, Share2, X, Send, Trophy } from 'lucide-react';
+import { ChevronDown, ChevronLeft, Trash2, Camera, Image as ImageIcon, Paperclip, Heart, Share2, X, Send, Trophy, Search, Users as UsersRound, Video, ClipboardList } from 'lucide-react';
 import { useToast } from './ui/Toast';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -386,9 +386,36 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
     const renderMessengerList = () => (
         <div className="h-full flex flex-col relative animate-fadeIn bg-black">
             <div className="relative z-10 px-5 pt-10 flex-1 overflow-y-auto pb-32 no-scrollbar">
-                <div className="flex items-center gap-3 mb-10">
+                <div className="flex items-center justify-between gap-3 mb-6">
                     <h1 className="font-montserrat font-black italic text-4xl text-white tracking-tight">MESSENGER</h1>
+                    <button className="text-east-light hover:text-white transition-colors bg-white/5 p-2.5 rounded-full border border-white/10">
+                        <UsersRound size={20} />
+                    </button>
                 </div>
+
+                <div className="relative mb-8">
+                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                    <input 
+                        type="text" 
+                        placeholder="SEARCH PLAYERS OR TEAMS..."
+                        className="w-full bg-[#111] border border-gray-800 rounded-full py-3.5 pl-12 pr-4 text-white font-black italic text-xs uppercase tracking-widest placeholder:text-gray-600 focus:outline-none focus:border-east-light transition-colors"
+                    />
+                </div>
+
+                <div className="mb-10">
+                    <h3 className="font-montserrat font-black italic text-gray-500 text-[10px] uppercase tracking-[0.3em] mb-5">ACTIVE TEAMS</h3>
+                    <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+                        {['U15 Elite', 'Skills Clinic A', 'Defense Camp'].map((team) => (
+                            <div key={team} className="bg-[#1a1a1a] border border-gray-800 rounded-2xl p-4 shrink-0 cursor-pointer group hover:border-east-light transition-all flex flex-col items-center justify-center min-w-[120px]">
+                                <div className="w-12 h-12 bg-east-light/10 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                    <UsersRound size={24} className="text-east-light" />
+                                </div>
+                                <span className="font-montserrat font-black italic text-[10px] text-white uppercase text-center">{team}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
                 <div className="mb-10">
                     <h3 className="font-montserrat font-black italic text-gray-500 text-[10px] uppercase tracking-[0.3em] mb-6">ACTIVE NOW</h3>
                     <div className="flex gap-5 overflow-x-auto no-scrollbar pb-2">
@@ -484,7 +511,11 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
                             <Send size={18} className="text-black ml-0.5" />
                         </button>
                     ) : (
-                        <div className="flex gap-3 px-2 shrink-0"><Paperclip size={20} className="text-white" /></div>
+                        <div className="flex gap-2.5 px-2 shrink-0">
+                            <button className="text-gray-400 hover:text-east-light transition-colors" title="Attach Workout/Practice"><ClipboardList size={20} /></button>
+                            <button className="text-gray-400 hover:text-east-light transition-colors" title="Attach Video Feedback"><Video size={20} /></button>
+                            <button className="text-gray-400 hover:text-east-light transition-colors"><Paperclip size={20} /></button>
+                        </div>
                     )}
                 </div>
             </div>
