@@ -35,6 +35,13 @@ interface Drill {
     group_tags: string[];
     skill_tags: string[];
     thumbnail_url?: string;
+    description?: string;
+    accessories?: string[];
+    pods?: string;
+    colors?: string;
+    duration?: string;
+    lights_out?: string;
+    light_delay?: string;
     coach?: {
         first_name: string;
         last_name: string;
@@ -53,7 +60,155 @@ interface DrillStep {
     tactical_data?: string;
 }
 
-const AGE_GROUPS = ['10-12', '12-16', '16-20', '20-24', '24+'];
+const AGE_GROUPS = ['Beginner', 'U9', 'U11', 'U13', 'U15', 'U18'];
+
+const WORKOUT_TAGS = [
+    'lower body',
+    'upper body',
+    'speed',
+    'auxiliary',
+    'conditioning',
+    'mobility',
+    'strength',
+    'power, speed & conditioning'
+];
+
+const HOCKEY_TAGS = [
+    'individual skills',
+    'stickhandling',
+    'shooting',
+    'skating',
+    'team',
+    'small group',
+    'breakout',
+    'pp',
+    'pk',
+    'team offense',
+    'individual offense',
+    'team defense',
+    'individual defense',
+    'fun',
+    'challenges',
+    'battles',
+    'contact'
+];
+
+const AGE_TAGS = [
+    'Beginner',
+    'U9',
+    'U11',
+    'U13',
+    'U15',
+    'U18'
+];
+
+const ActivityDescription = ({ text }: { text?: string }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const fallbackText = "No tactical details provided for this sequence.";
+    const content = text || fallbackText;
+    const isLong = content.length > 150;
+    
+    return (
+        <div className="space-y-2">
+            <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] mb-1 italic opacity-85">Activity Description</h3>
+            <p className="text-sm text-gray-300 font-medium leading-relaxed italic transition-all duration-300">
+                {isExpanded ? content : (isLong ? `${content.substring(0, 150)}...` : content)}
+            </p>
+            {isLong && (
+                <button 
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="text-[9px] font-black text-east-light uppercase tracking-widest hover:underline mt-1"
+                >
+                    {isExpanded ? "Show Less" : "More"}
+                </button>
+            )}
+        </div>
+    );
+};
+
+const AccessoriesList = ({ accessories }: { accessories?: string[] }) => {
+    const list = accessories && accessories.length > 0 ? accessories : ['Goal', 'Soccer Balls'];
+    return (
+        <div className="space-y-3">
+            <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85">Accessories</h3>
+            <div className="flex flex-wrap gap-2">
+                {list.map((item, idx) => (
+                    <span 
+                        key={idx} 
+                        className="px-3.5 py-1.5 bg-[#1C2541]/80 text-gray-300 rounded-full text-[10px] font-bold border border-white/5 shadow-md"
+                    >
+                        {item}
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const ActivityGoals = ({ drill }: { drill: Drill }) => {
+    const allTags = [
+        ...(drill.skill_tags || []),
+        ...(drill.group_tags || []),
+        ...(drill.age_tags || [])
+    ].filter(Boolean);
+    
+    const fallbackGoals = ['Agility', 'Decision making', 'Reaction time', 'Spatial awareness'];
+    const displayTags = allTags.length > 0 ? allTags : fallbackGoals;
+    
+    return (
+        <div className="space-y-3">
+            <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85">Activity Goals</h3>
+            <div className="flex flex-wrap gap-2">
+                {displayTags.map((tag, idx) => (
+                    <span 
+                        key={idx} 
+                        className="px-3.5 py-1.5 bg-[#28D160]/10 text-east-light rounded-full text-[10px] font-black uppercase tracking-wider border border-east-light/20 shadow-[0_0_15px_rgba(40,209,96,0.1)]"
+                    >
+                        {tag}
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const SetupGrid = ({ drill }: { drill: Drill }) => {
+    return (
+        <div className="space-y-6">
+            <div>
+                <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85 mb-3">Setup</h3>
+                <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-[#1C2541]/40 border border-white/10 rounded-2xl p-4 shadow-lg hover:border-white/20 transition-all duration-300">
+                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1">Pods</span>
+                        <span className="text-xs text-white font-black italic">{drill.pods || '4 per Station'}</span>
+                    </div>
+                    <div className="bg-[#1C2541]/40 border border-white/10 rounded-2xl p-4 shadow-lg hover:border-white/20 transition-all duration-300">
+                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1">Colors</span>
+                        <span className="text-xs text-white font-black italic">{drill.colors || '1 per Player'}</span>
+                    </div>
+                    <div className="bg-[#1C2541]/40 border border-white/10 rounded-2xl p-4 shadow-lg hover:border-white/20 transition-all duration-300">
+                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1">Duration</span>
+                        <span className="text-xs text-white font-black italic">{drill.duration || '60 min'}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85 mb-3">Corner Setup</h3>
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#1C2541]/40 border border-white/10 rounded-2xl p-4 shadow-lg hover:border-white/20 transition-all duration-300">
+                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1">Lights Out</span>
+                        <span className="text-xs text-white font-black italic">{drill.lights_out || 'Timeout 3 sec'}</span>
+                    </div>
+                    <div className="bg-[#1C2541]/40 border border-white/10 rounded-2xl p-4 shadow-lg hover:border-white/20 transition-all duration-300">
+                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1">Light Delay</span>
+                        <span className="text-xs text-white font-black italic">{drill.light_delay || 'None'}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default function DrillHubScreen() {
     const searchParams = useSearchParams();
@@ -65,8 +220,13 @@ export default function DrillHubScreen() {
     const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
     const [drillSteps, setDrillSteps] = useState<DrillStep[]>([]);
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
-    const [activeAgeFilter, setActiveAgeFilter] = useState<string | null>(null);
-    const [activeSkillFilter, setActiveSkillFilter] = useState<string | null>(null);
+    
+    // Multi-select Filters
+    const [selectedAgeFilters, setSelectedAgeFilters] = useState<string[]>([]);
+    const [selectedWorkoutFilters, setSelectedWorkoutFilters] = useState<string[]>([]);
+    const [selectedHockeyFilters, setSelectedHockeyFilters] = useState<string[]>([]);
+    const [showFilters, setShowFilters] = useState(false);
+
     const [isSessionPlanMode, setIsSessionPlanMode] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'visual' | 'analysis'>('visual');
@@ -92,15 +252,16 @@ export default function DrillHubScreen() {
         };
         checkUser();
 
+        const hasActiveFilters = selectedAgeFilters.length > 0 || selectedWorkoutFilters.length > 0 || selectedHockeyFilters.length > 0;
         if (sessionId) {
             setIsSessionPlanMode(true);
             fetchSessionPlan(sessionId);
-        } else if (drillIdParam && !activeSkillFilter) {
+        } else if (drillIdParam && !hasActiveFilters) {
             fetchSingleDrill(drillIdParam);
         } else {
             fetchDrills();
         }
-    }, [sessionId, activeSkillFilter, searchParams]);
+    }, [sessionId, selectedAgeFilters, selectedWorkoutFilters, selectedHockeyFilters, searchParams]);
 
     useEffect(() => {
         if (userRole && !['coach', 'admin', 'sys-admin'].includes(userRole)) {
@@ -296,27 +457,23 @@ export default function DrillHubScreen() {
         }
     };
 
+    // Helper to check array overlap
+    const arrayOverlap = (drillTags: string[] | undefined | null, filterTags: string[]) => {
+        if (filterTags.length === 0) return true;
+        if (!drillTags || drillTags.length === 0) return false;
+        return drillTags.some(dt => filterTags.some(ft => ft.toLowerCase() === dt.toLowerCase()));
+    };
+
     // --- Filtering Logic ---
     const filteredDrills = React.useMemo(() => {
         if (!drills || drills.length === 0) return [];
         return drills.filter(d => {
-            const matchesAge = !activeAgeFilter || d.age_tags?.includes(activeAgeFilter);
-            
-            // Robust Skill Filtering
-            let matchesSkill = false;
-            if (!activeSkillFilter || activeSkillFilter === 'ALL') {
-                matchesSkill = true;
-            } else if (Array.isArray(d.skill_tags)) {
-                matchesSkill = d.skill_tags.some(s => 
-                    typeof s === 'string' && s.toUpperCase().includes(activeSkillFilter.toUpperCase())
-                );
-            } else if (typeof d.skill_tags === 'string') {
-                matchesSkill = (d.skill_tags as string).toUpperCase().includes(activeSkillFilter.toUpperCase());
-            }
-
-            return matchesAge && matchesSkill;
+            const matchesAge = selectedAgeFilters.length === 0 || arrayOverlap(d.age_tags, selectedAgeFilters);
+            const matchesWorkout = selectedWorkoutFilters.length === 0 || arrayOverlap(d.group_tags, selectedWorkoutFilters);
+            const matchesHockey = selectedHockeyFilters.length === 0 || arrayOverlap(d.skill_tags, selectedHockeyFilters);
+            return matchesAge && matchesWorkout && matchesHockey;
         });
-    }, [drills, activeAgeFilter, activeSkillFilter]);
+    }, [drills, selectedAgeFilters, selectedWorkoutFilters, selectedHockeyFilters]);
 
     if (selectedDrill) {
         const currentStep = drillSteps[currentStepIndex];
@@ -518,22 +675,22 @@ export default function DrillHubScreen() {
                         )}
                     </div>
 
-                    {/* Right: Instruction Sidebar */}
-                    <div className="w-full lg:w-[400px] lg:min-w-[400px] bg-black/60 backdrop-blur-2xl p-6 sm:p-8 lg:p-12 flex flex-col justify-center gap-6 lg:gap-12 border-t lg:border-t-0 lg:border-l border-white/5">
+                    {/* Right: Instruction Sidebar (Redesigned with Dark Blue-Grey Glassmorphism) */}
+                    <div className="w-full lg:w-[400px] lg:min-w-[400px] bg-[#0B132B]/80 backdrop-blur-2xl p-6 sm:p-8 flex flex-col gap-6 border-t lg:border-t-0 lg:border-l border-white/10 overflow-y-auto no-scrollbar">
                         {drillSteps.length > 0 && (
-                            <div className="space-y-6 sm:space-y-12 animate-slideInRight">
-                                <div className="space-y-4">
+                            <div className="space-y-6 animate-slideInRight">
+                                <div className="space-y-3">
                                     <div className="flex items-center gap-4">
-                                        <span className="text-4xl sm:text-5xl lg:text-6xl font-black italic text-east-light opacity-50 tracking-tighter leading-none">0{currentStep.step_number}</span>
+                                        <span className="text-3xl sm:text-4xl font-black italic text-east-light opacity-50 tracking-tighter leading-none">0{currentStep.step_number}</span>
                                         <div className="h-[2px] flex-1 bg-gradient-to-r from-east-light/30 to-transparent" />
                                     </div>
-                                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black italic uppercase tracking-tight text-white leading-tight">
+                                    <h2 className="text-xl sm:text-2xl font-black italic uppercase tracking-tight text-white leading-tight">
                                         {currentStep.title}
                                     </h2>
                                 </div>
 
-                                <div className="space-y-4 sm:space-y-6">
-                                    <span className="block text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] text-east-light italic">Drill Briefing</span>
+                                <div className="space-y-3">
+                                    <span className="block text-[9px] font-black uppercase tracking-[0.4em] text-east-light italic">Step Briefing</span>
                                     {isEditing && (userRole === 'coach' || userRole === 'admin' || userRole === 'sys-admin') ? (
                                         <textarea 
                                             value={currentStep.instruction}
@@ -541,22 +698,21 @@ export default function DrillHubScreen() {
                                                 const newSteps = [...drillSteps];
                                                 newSteps[currentStepIndex].instruction = e.target.value;
                                                 setDrillSteps(newSteps);
-                                                // Auto-save logic could go here
                                                 supabase.from('coach_drill_steps').update({ instruction: e.target.value }).eq('id', currentStep.id).then();
                                             }}
-                                            className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 text-sm sm:text-base lg:text-lg text-white font-medium italic outline-none focus:border-[#28D160] transition-all min-h-[120px] sm:min-h-[150px]"
+                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white font-medium italic outline-none focus:border-[#28D160] transition-all min-h-[100px]"
                                         />
                                     ) : (
-                                        <p className="text-sm sm:text-base lg:text-lg text-gray-300 font-medium leading-relaxed italic border-l-2 border-east-light/30 pl-4 sm:pl-8 py-2 bg-gradient-to-r from-east-light/5 to-transparent rounded-r-3xl">
+                                        <p className="text-sm text-gray-300 font-medium leading-relaxed italic border-l-2 border-east-light/30 pl-4 py-2 bg-gradient-to-r from-east-light/5 to-transparent rounded-r-3xl">
                                             {currentStep.instruction}
                                         </p>
                                     )}
                                 </div>
 
-                                <div className="flex flex-col gap-3 sm:gap-4 pt-2 sm:pt-4">
+                                <div className="flex flex-col gap-3 pt-2">
                                     <button 
                                         onClick={() => setActiveTab('visual')}
-                                        className={`w-full py-4 sm:py-5 px-6 sm:px-8 rounded-2xl font-black italic text-[10px] sm:text-xs uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'visual' ? 'bg-[#28D160] text-black border-[#28D160] shadow-[0_20px_40px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
+                                        className={`w-full py-3.5 px-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'visual' ? 'bg-[#28D160] text-black border-[#28D160] shadow-[0_20px_40px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
                                     >
                                         <div className="flex items-center gap-3">
                                             <span>Drill Briefing</span>
@@ -569,12 +725,12 @@ export default function DrillHubScreen() {
                                                 </div>
                                             )}
                                         </div>
-                                        <ImageIcon size={18} />
+                                        <ImageIcon size={16} />
                                     </button>
 
                                     <button 
                                         onClick={() => setActiveTab('analysis')}
-                                        className={`w-full py-4 sm:py-5 px-6 sm:px-8 rounded-2xl font-black italic text-[10px] sm:text-xs uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'analysis' ? 'bg-white text-black border-white shadow-[0_20px_40px_rgba(255,255,255,0.15)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
+                                        className={`w-full py-3.5 px-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'analysis' ? 'bg-white text-black border-white shadow-[0_20px_40px_rgba(255,255,255,0.15)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
                                     >
                                         <div className="flex items-center gap-3">
                                             <span>Analysis Stream</span>
@@ -587,7 +743,7 @@ export default function DrillHubScreen() {
                                                 </div>
                                             )}
                                         </div>
-                                        <Video size={18} />
+                                        <Video size={16} />
                                     </button>
 
                                     {/* Hidden Inputs */}
@@ -605,6 +761,17 @@ export default function DrillHubScreen() {
                                         accept="video/*" 
                                         onChange={(e) => e.target.files?.[0] && handleMediaReplace('video', e.target.files[0])} 
                                     />
+                                </div>
+
+                                {/* Divider */}
+                                <div className="border-t border-white/10 my-4" />
+
+                                {/* Redesigned Drill-wide Details (mockup matching) */}
+                                <div className="space-y-6">
+                                    <ActivityDescription text={selectedDrill.description} />
+                                    <AccessoriesList accessories={selectedDrill.accessories} />
+                                    <ActivityGoals drill={selectedDrill} />
+                                    <SetupGrid drill={selectedDrill} />
                                 </div>
                             </div>
                         )}
@@ -719,16 +886,108 @@ export default function DrillHubScreen() {
                 </div>
 
                 {!isSessionPlanMode && (
-                    <div className="flex gap-2 sm:gap-4 overflow-x-auto no-scrollbar py-2 -mx-4 px-4">
-                        {['ALL', 'SHOOTING', 'PASSING', 'DEFENSE', 'SKATING', 'STICKHANDLING', 'GOALIE'].map((f) => (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3">
                             <button 
-                                key={f} 
-                                onClick={() => setActiveSkillFilter(f)}
-                                className={`px-6 sm:px-10 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest transition-all duration-500 border backdrop-blur-md shadow-2xl active:scale-95 ${(activeSkillFilter === f || (!activeSkillFilter && f === 'ALL')) ? 'bg-east-light text-black border-east-light shadow-[0_0_25px_rgba(40,209,96,0.4)]' : 'bg-[#111] text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`px-5 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-2 ${showFilters ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-[#111] text-gray-400 border-white/5 hover:border-white/20'}`}
                             >
-                                {f}
+                                <Filter size={14} />
+                                {showFilters ? 'Hide Filters' : 'Filters'}
+                                {(selectedAgeFilters.length + selectedWorkoutFilters.length + selectedHockeyFilters.length) > 0 && (
+                                    <span className="ml-1 bg-black/20 px-2 py-0.5 rounded-full text-[9px] text-east-light font-black">
+                                        {selectedAgeFilters.length + selectedWorkoutFilters.length + selectedHockeyFilters.length}
+                                    </span>
+                                )}
                             </button>
-                        ))}
+
+                            {(selectedAgeFilters.length + selectedWorkoutFilters.length + selectedHockeyFilters.length) > 0 && (
+                                <button 
+                                    onClick={() => {
+                                        setSelectedAgeFilters([]);
+                                        setSelectedWorkoutFilters([]);
+                                        setSelectedHockeyFilters([]);
+                                    }}
+                                    className="px-5 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 flex items-center gap-1.5"
+                                >
+                                    <X size={12} />
+                                    Clear Filters
+                                </button>
+                            )}
+                        </div>
+
+                        {showFilters && (
+                            <div className="bg-[#0B132B]/80 border border-white/10 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 animate-fadeIn relative z-40">
+                                {/* Workouts Section */}
+                                <div className="space-y-3">
+                                    <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85">Workouts</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {WORKOUT_TAGS.map(tag => {
+                                            const active = selectedWorkoutFilters.includes(tag);
+                                            return (
+                                                <button
+                                                    key={tag}
+                                                    onClick={() => {
+                                                        setSelectedWorkoutFilters(prev => 
+                                                            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+                                                        );
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${active ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30'}`}
+                                                >
+                                                    {tag}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Hockey Section */}
+                                <div className="space-y-3">
+                                    <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85">Hockey</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {HOCKEY_TAGS.map(tag => {
+                                            const active = selectedHockeyFilters.includes(tag);
+                                            return (
+                                                <button
+                                                    key={tag}
+                                                    onClick={() => {
+                                                        setSelectedHockeyFilters(prev => 
+                                                            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+                                                        );
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${active ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30'}`}
+                                                >
+                                                    {tag}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Ages Section */}
+                                <div className="space-y-3">
+                                    <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85">Ages</h3>
+                                    <div className="flex flex-wrap gap-2">
+                                        {AGE_TAGS.map(tag => {
+                                            const active = selectedAgeFilters.includes(tag);
+                                            return (
+                                                <button
+                                                    key={tag}
+                                                    onClick={() => {
+                                                        setSelectedAgeFilters(prev => 
+                                                            prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+                                                        );
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${active ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30'}`}
+                                                >
+                                                    {tag}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -761,79 +1020,119 @@ export default function DrillHubScreen() {
                         </div>
                     ))}
                 </div>
-            ) : (
-                /* Redesigned Age Group Sections */
-                <div className="relative z-10 mt-2 sm:mt-6 space-y-10 sm:space-y-16">
-                    {[...AGE_GROUPS, 'General / All Ages'].map((ageGroup, idx) => {
-                        const groupItems = ageGroup === 'General / All Ages'
-                            ? filteredDrills.filter(d => !d.age_tags || d.age_tags.length === 0)
-                            : filteredDrills.filter(d => d.age_tags?.includes(ageGroup));
-                        if (groupItems.length === 0) return null;
-                        
-                        return (
-                            <div key={ageGroup} className="px-4 sm:px-8">
-                                <div className="flex items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
-                                    <h2 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tighter text-white brightness-125">{ageGroup}</h2>
-                                    <div className="h-[1px] flex-1 bg-gradient-to-r from-white/20 via-white/5 to-transparent" />
-                                    <span className="text-[9px] sm:text-[10px] font-black italic text-gray-600 uppercase tracking-widest">{groupItems.length} DRILLS</span>
+            ) : (() => {
+                const hasFilters = selectedAgeFilters.length > 0 || selectedWorkoutFilters.length > 0 || selectedHockeyFilters.length > 0;
+
+                // ── FILTERED VIEW: flat responsive grid ──
+                if (hasFilters) {
+                    return (
+                        <div className="relative z-10 px-4 sm:px-8 mt-2">
+                            <div className="flex items-center gap-3 mb-6">
+                                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">{filteredDrills.length} DRILLS</span>
+                                <div className="h-px flex-1 bg-white/5" />
+                            </div>
+                            {filteredDrills.length === 0 ? (
+                                <div className="text-center py-24 opacity-40">
+                                    <p className="text-sm font-black uppercase tracking-widest">No drills match your filters</p>
                                 </div>
-                                
-                                <div className="flex overflow-x-auto no-scrollbar gap-4 sm:gap-8 pb-4 sm:pb-8 -mx-4 sm:-mx-8 px-4 sm:px-8">
-                                    {groupItems.map((drill, dIdx) => (
-                                        <div 
-                                            key={drill.id} 
+                            ) : (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
+                                    {filteredDrills.map(drill => (
+                                        <div
+                                            key={drill.id}
                                             onClick={() => handleSelectDrill(drill)}
-                                            className="shrink-0 w-64 sm:w-72 h-80 sm:h-96 rounded-[2.5rem] sm:rounded-[3.5rem] border border-white/5 relative overflow-hidden group transition-all duration-700 shadow-2xl cursor-pointer hover:border-east-light hover:-translate-y-4 hover:shadow-[0_40px_80px_rgba(0,0,0,0.6)]"
+                                            className="relative rounded-[2rem] border border-white/5 overflow-hidden cursor-pointer group transition-all duration-500 shadow-2xl hover:border-east-light hover:-translate-y-2 hover:shadow-[0_30px_60px_rgba(0,0,0,0.6)] aspect-[3/4]"
                                         >
-                                            {/* Drill Image/Thumbnail */}
                                             <div className="absolute inset-0 bg-[#0a0a0a]">
-                                                <img 
-                                                    src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"} 
-                                                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000" 
-                                                    alt="drill" 
+                                                <img
+                                                    src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"}
+                                                    className="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700"
+                                                    alt="drill"
                                                 />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/20 to-transparent" />
                                             </div>
-
-                                            {/* Glow Overlay */}
-                                            <div className="absolute inset-0 bg-east-light/0 group-hover:bg-east-light/5 transition-colors duration-700" />
-
-                                            {/* Card Content */}
-                                            <div className="absolute inset-0 p-6 sm:p-8 flex flex-col justify-end">
-                                                {drill && (
-                                                    <>
-                                                        <div className="mb-4 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
-                                                            <div className="inline-flex px-3 py-1 bg-east-light/10 border border-east-light/20 rounded-full">
-                                                                <span className="text-[9px] font-black italic text-east-light uppercase tracking-widest">
-                                                                    {drill.skill_tags?.[0] || 'Fundamentals'}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        <h3 className="font-black italic text-xl sm:text-2xl text-white uppercase leading-[1.1] tracking-tight drop-shadow-2xl group-hover:text-east-light transition-colors duration-500">
-                                                            {drill.title || 'Coming Soon'}
-                                                        </h3>
-                                                        <div className="mt-6 flex items-center justify-between opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 delay-100">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="w-8 h-8 rounded-full border border-white/10 overflow-hidden">
-                                                                    <img src={drill.coach?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${drill.coach?.first_name}`} className="w-full h-full object-cover" />
-                                                                </div>
-                                                                <span className="text-[9px] font-black italic text-gray-400 uppercase">{drill.coach?.first_name} {drill.coach?.last_name}</span>
-                                                            </div>
-                                                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white text-black flex items-center justify-center shadow-2xl group-active:scale-90 transition-transform">
-                                                                <Play size={16} className="sm:w-5 sm:h-5 fill-black ml-1" />
-                                                            </div>
-                                                        </div>
-                                                    </>
+                                            <div className="absolute inset-0 p-4 flex flex-col justify-end">
+                                                <h3 className="font-black italic text-sm sm:text-base text-white uppercase leading-tight tracking-tight drop-shadow-2xl group-hover:text-east-light transition-colors duration-500">
+                                                    {drill.title}
+                                                </h3>
+                                                {drill.skill_tags?.[0] && (
+                                                    <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1">{drill.skill_tags[0]}</span>
                                                 )}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+                            )}
+                        </div>
+                    );
+                }
+
+                // ── DEFAULT VIEW: group by hockey skill tag ──
+                const SKILL_SECTIONS = [...HOCKEY_TAGS, 'General'];
+                return (
+                    <div className="relative z-10 mt-2 sm:mt-6 space-y-10 sm:space-y-16">
+                        {SKILL_SECTIONS.map(skillTag => {
+                            const groupItems = skillTag === 'General'
+                                ? filteredDrills.filter(d => !d.skill_tags || d.skill_tags.length === 0)
+                                : filteredDrills.filter(d => d.skill_tags?.some(t => t.toLowerCase() === skillTag.toLowerCase()));
+                            if (groupItems.length === 0) return null;
+
+                            return (
+                                <div key={skillTag} className="px-4 sm:px-8">
+                                    <div className="flex items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
+                                        <h2 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tighter text-white brightness-125">{skillTag}</h2>
+                                        <div className="h-[1px] flex-1 bg-gradient-to-r from-white/20 via-white/5 to-transparent" />
+                                        <span className="text-[9px] sm:text-[10px] font-black italic text-gray-600 uppercase tracking-widest">{groupItems.length} DRILLS</span>
+                                    </div>
+
+                                    <div className="flex overflow-x-auto no-scrollbar gap-4 sm:gap-8 pb-4 sm:pb-8 -mx-4 sm:-mx-8 px-4 sm:px-8">
+                                        {groupItems.map(drill => (
+                                            <div
+                                                key={drill.id}
+                                                onClick={() => handleSelectDrill(drill)}
+                                                className="shrink-0 w-56 sm:w-64 h-72 sm:h-80 rounded-[2.5rem] sm:rounded-[3rem] border border-white/5 relative overflow-hidden group transition-all duration-700 shadow-2xl cursor-pointer hover:border-east-light hover:-translate-y-4 hover:shadow-[0_40px_80px_rgba(0,0,0,0.6)]"
+                                            >
+                                                <div className="absolute inset-0 bg-[#0a0a0a]">
+                                                    <img
+                                                        src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"}
+                                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000"
+                                                        alt="drill"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/20 to-transparent" />
+                                                </div>
+                                                <div className="absolute inset-0 bg-east-light/0 group-hover:bg-east-light/5 transition-colors duration-700" />
+                                                <div className="absolute inset-0 p-6 flex flex-col justify-end">
+                                                    <div className="mb-3 translate-y-3 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
+                                                        <div className="inline-flex px-2.5 py-1 bg-east-light/10 border border-east-light/20 rounded-full">
+                                                            <span className="text-[8px] font-black italic text-east-light uppercase tracking-widest">
+                                                                {drill.group_tags?.[0] || drill.age_tags?.[0] || 'Drill'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <h3 className="font-black italic text-lg sm:text-xl text-white uppercase leading-[1.1] tracking-tight drop-shadow-2xl group-hover:text-east-light transition-colors duration-500">
+                                                        {drill.title || 'Coming Soon'}
+                                                    </h3>
+                                                    <div className="mt-4 flex items-center justify-between opacity-0 group-hover:opacity-100 translate-y-3 group-hover:translate-y-0 transition-all duration-500 delay-75">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-6 h-6 rounded-full border border-white/10 overflow-hidden">
+                                                                <img src={drill.coach?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${drill.coach?.first_name}`} className="w-full h-full object-cover" />
+                                                            </div>
+                                                            <span className="text-[8px] font-black italic text-gray-400 uppercase">{drill.coach?.first_name} {drill.coach?.last_name}</span>
+                                                        </div>
+                                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white text-black flex items-center justify-center shadow-2xl group-active:scale-90 transition-transform">
+                                                            <Play size={14} className="fill-black ml-0.5" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                );
+            })()}
         </div>
     );
 }
