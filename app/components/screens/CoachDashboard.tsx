@@ -10,6 +10,7 @@ import SessionPlanModal from '@/app/components/modals/SessionPlanModal';
 import CreateDrillModal from '@/app/components/modals/CreateDrillModal';
 import DrillDetailsModal from '@/app/components/modals/DrillDetailsModal';
 import CommunityScreen from '@/app/components/CommunityScreen';
+import PrivateMessenger from '@/app/components/PrivateMessenger';
 
 interface Attendee {
     id: string;
@@ -320,7 +321,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
 
                 {viewMode === 'community' ? (
                     <div className="h-[80vh] -mx-6 -mt-6 rounded-3xl overflow-hidden border border-white/10 bg-black">
-                        <CommunityScreen currentUserId={currentUserId} />
+                        <PrivateMessenger currentUserId={currentUserId} />
                     </div>
                 ) : viewMode === 'drill_hub' ? (
                     <div className="animate-fadeIn space-y-8">

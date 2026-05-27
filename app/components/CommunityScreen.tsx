@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Post, Message, Profile } from '@/app/types/community';
 import { compressImage } from '@/app/lib/image-utils';
+import PrivateMessenger from './PrivateMessenger';
 
 // --- HELPER: Safely Format Post Data ---
 // ✅ UPDATED: Accepts currentUserId and now constructs full name from First/Last
@@ -622,8 +623,7 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
 
     return (
         <div className="h-screen bg-black flex flex-col relative">
-            {viewMode === 'messenger-list' && renderMessengerList()}
-            {viewMode === 'chat-detail' && renderChatDetail()}
+            <PrivateMessenger currentUserId={currentUserId} chatWithUserId={chatWithParam} />
         </div>
     );
 }

@@ -113,6 +113,7 @@ const SetupGrid = ({ drill }: { drill: Drill }) => {
                         )}
                     </div>
                 </div>
+            )}
         </div>
     );
 };
