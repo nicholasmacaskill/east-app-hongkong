@@ -20,8 +20,6 @@ interface Drill {
     accessories?: string[];
     pods?: string;
     colors?: string;
-    lights_out?: string;
-    light_delay?: string;
 }
 
 const ActivityDescription = ({ text }: { text?: string }) => {
@@ -88,8 +86,7 @@ const ActivityGoals = ({ drill }: { drill: Drill }) => {
 
 const SetupGrid = ({ drill }: { drill: Drill }) => {
     const hasSetup = drill.pods || drill.colors || drill.duration;
-    const hasCorner = drill.lights_out || drill.light_delay;
-    if (!hasSetup && !hasCorner) return null;
+    if (!hasSetup) return null;
     return (
         <div className="space-y-5">
             {hasSetup && (
@@ -116,26 +113,6 @@ const SetupGrid = ({ drill }: { drill: Drill }) => {
                         )}
                     </div>
                 </div>
-            )}
-            {hasCorner && (
-                <div>
-                    <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-3">Corner Pods</h3>
-                    <div className="grid grid-cols-2 gap-2.5">
-                        {drill.lights_out && (
-                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
-                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Lights Out</span>
-                                <span className="text-xs text-white font-black">{drill.lights_out}</span>
-                            </div>
-                        )}
-                        {drill.light_delay && (
-                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
-                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Light Delay</span>
-                                <span className="text-xs text-white font-black">{drill.light_delay}</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
