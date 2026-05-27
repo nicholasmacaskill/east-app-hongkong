@@ -127,20 +127,13 @@ const ActivityDescription = ({ text }: { text?: string }) => {
 };
 
 const AccessoriesList = ({ accessories }: { accessories?: string[] }) => {
-    const list = accessories && accessories.length > 0 ? accessories : ['Goal', 'Soccer Balls'];
+    if (!accessories || accessories.length === 0) return null;
     return (
-        <div className="space-y-3">
-            <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85">Accessories</h3>
-            <div className="flex flex-wrap gap-2">
-                {list.map((item, idx) => (
-                    <span 
-                        key={idx} 
-                        className="px-3.5 py-1.5 bg-[#1C2541]/80 text-gray-300 rounded-full text-[10px] font-bold border border-white/5 shadow-md"
-                    >
-                        {item}
-                    </span>
-                ))}
-            </div>
+        <div className="space-y-1.5">
+            <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Accessories</h3>
+            <p className="text-sm text-gray-300 font-medium">
+                {accessories.join(' · ')}
+            </p>
         </div>
     );
 };
@@ -152,17 +145,16 @@ const ActivityGoals = ({ drill }: { drill: Drill }) => {
         ...(drill.age_tags || [])
     ].filter(Boolean);
     
-    const fallbackGoals = ['Agility', 'Decision making', 'Reaction time', 'Spatial awareness'];
-    const displayTags = allTags.length > 0 ? allTags : fallbackGoals;
+    if (allTags.length === 0) return null;
     
     return (
-        <div className="space-y-3">
-            <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85">Activity Goals</h3>
+        <div className="space-y-2.5">
+            <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Activity Goals</h3>
             <div className="flex flex-wrap gap-2">
-                {displayTags.map((tag, idx) => (
+                {allTags.map((tag, idx) => (
                     <span 
                         key={idx} 
-                        className="px-3.5 py-1.5 bg-[#28D160]/10 text-east-light rounded-full text-[10px] font-black uppercase tracking-wider border border-east-light/20 shadow-[0_0_15px_rgba(40,209,96,0.1)]"
+                        className="px-3 py-1 rounded-full text-[10px] font-semibold text-gray-300 border border-white/20 bg-white/5"
                     >
                         {tag}
                     </span>
@@ -173,39 +165,55 @@ const ActivityGoals = ({ drill }: { drill: Drill }) => {
 };
 
 const SetupGrid = ({ drill }: { drill: Drill }) => {
+    const hasSetup = drill.pods || drill.colors || drill.duration;
+    const hasCorner = drill.lights_out || drill.light_delay;
+    if (!hasSetup && !hasCorner) return null;
     return (
-        <div className="space-y-6">
-            <div>
-                <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85 mb-3">Setup</h3>
-                <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-[#1C2541]/40 border border-white/10 rounded-2xl p-4 shadow-lg hover:border-white/20 transition-all duration-300">
-                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1">Pods</span>
-                        <span className="text-xs text-white font-black italic">{drill.pods || '4 per Station'}</span>
-                    </div>
-                    <div className="bg-[#1C2541]/40 border border-white/10 rounded-2xl p-4 shadow-lg hover:border-white/20 transition-all duration-300">
-                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1">Colors</span>
-                        <span className="text-xs text-white font-black italic">{drill.colors || '1 per Player'}</span>
-                    </div>
-                    <div className="bg-[#1C2541]/40 border border-white/10 rounded-2xl p-4 shadow-lg hover:border-white/20 transition-all duration-300">
-                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1">Duration</span>
-                        <span className="text-xs text-white font-black italic">{drill.duration || '60 min'}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div>
-                <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85 mb-3">Corner Setup</h3>
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#1C2541]/40 border border-white/10 rounded-2xl p-4 shadow-lg hover:border-white/20 transition-all duration-300">
-                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1">Lights Out</span>
-                        <span className="text-xs text-white font-black italic">{drill.lights_out || 'Timeout 3 sec'}</span>
-                    </div>
-                    <div className="bg-[#1C2541]/40 border border-white/10 rounded-2xl p-4 shadow-lg hover:border-white/20 transition-all duration-300">
-                        <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1">Light Delay</span>
-                        <span className="text-xs text-white font-black italic">{drill.light_delay || 'None'}</span>
+        <div className="space-y-5">
+            {hasSetup && (
+                <div>
+                    <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-3">Setup</h3>
+                    <div className="grid grid-cols-3 gap-2.5">
+                        {drill.pods && (
+                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
+                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Pods</span>
+                                <span className="text-xs text-white font-black">{drill.pods}</span>
+                            </div>
+                        )}
+                        {drill.colors && (
+                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
+                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Colors</span>
+                                <span className="text-xs text-white font-black">{drill.colors}</span>
+                            </div>
+                        )}
+                        {drill.duration && (
+                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
+                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Duration</span>
+                                <span className="text-xs text-white font-black">{drill.duration}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
-            </div>
+            )}
+            {hasCorner && (
+                <div>
+                    <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-3">Corner Pods</h3>
+                    <div className="grid grid-cols-2 gap-2.5">
+                        {drill.lights_out && (
+                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
+                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Lights Out</span>
+                                <span className="text-xs text-white font-black">{drill.lights_out}</span>
+                            </div>
+                        )}
+                        {drill.light_delay && (
+                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
+                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Light Delay</span>
+                                <span className="text-xs text-white font-black">{drill.light_delay}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -1037,30 +1045,39 @@ export default function DrillHubScreen() {
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6">
-                                    {filteredDrills.map(drill => (
-                                        <div
-                                            key={drill.id}
-                                            onClick={() => handleSelectDrill(drill)}
-                                            className="relative rounded-[2rem] border border-white/5 overflow-hidden cursor-pointer group transition-all duration-500 shadow-2xl hover:border-east-light hover:-translate-y-2 hover:shadow-[0_30px_60px_rgba(0,0,0,0.6)] aspect-[3/4]"
-                                        >
-                                            <div className="absolute inset-0 bg-[#0a0a0a]">
-                                                <img
-                                                    src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"}
-                                                    className="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700"
-                                                    alt="drill"
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/20 to-transparent" />
+                                    {filteredDrills.map(drill => {
+                                        const allTags = [...(drill.skill_tags || []), ...(drill.group_tags || []), ...(drill.age_tags || [])].slice(0, 4);
+                                        return (
+                                            <div
+                                                key={drill.id}
+                                                onClick={() => handleSelectDrill(drill)}
+                                                className="relative rounded-[2rem] border border-white/5 overflow-hidden cursor-pointer group transition-all duration-500 shadow-2xl hover:border-east-light hover:-translate-y-2 hover:shadow-[0_30px_60px_rgba(0,0,0,0.6)] aspect-[3/4]"
+                                            >
+                                                <div className="absolute inset-0 bg-[#0a0a0a]">
+                                                    <img
+                                                        src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"}
+                                                        className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700"
+                                                        alt="drill"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                                                </div>
+                                                <div className="absolute inset-0 p-4 flex flex-col justify-end gap-2">
+                                                    <h3 className="font-black italic text-sm sm:text-base text-white uppercase leading-tight tracking-tight drop-shadow-2xl group-hover:text-east-light transition-colors duration-500">
+                                                        {drill.title}
+                                                    </h3>
+                                                    {allTags.length > 0 && (
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {allTags.map((tag, i) => (
+                                                                <span key={i} className="px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider border border-east-light/30 text-east-light bg-east-light/10">
+                                                                    {tag}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="absolute inset-0 p-4 flex flex-col justify-end">
-                                                <h3 className="font-black italic text-sm sm:text-base text-white uppercase leading-tight tracking-tight drop-shadow-2xl group-hover:text-east-light transition-colors duration-500">
-                                                    {drill.title}
-                                                </h3>
-                                                {drill.skill_tags?.[0] && (
-                                                    <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest mt-1">{drill.skill_tags[0]}</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
@@ -1086,46 +1103,47 @@ export default function DrillHubScreen() {
                                     </div>
 
                                     <div className="flex overflow-x-auto no-scrollbar gap-4 sm:gap-8 pb-4 sm:pb-8 -mx-4 sm:-mx-8 px-4 sm:px-8">
-                                        {groupItems.map(drill => (
-                                            <div
-                                                key={drill.id}
-                                                onClick={() => handleSelectDrill(drill)}
-                                                className="shrink-0 w-56 sm:w-64 h-72 sm:h-80 rounded-[2.5rem] sm:rounded-[3rem] border border-white/5 relative overflow-hidden group transition-all duration-700 shadow-2xl cursor-pointer hover:border-east-light hover:-translate-y-4 hover:shadow-[0_40px_80px_rgba(0,0,0,0.6)]"
-                                            >
-                                                <div className="absolute inset-0 bg-[#0a0a0a]">
-                                                    <img
-                                                        src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"}
-                                                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-1000"
-                                                        alt="drill"
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/20 to-transparent" />
-                                                </div>
-                                                <div className="absolute inset-0 bg-east-light/0 group-hover:bg-east-light/5 transition-colors duration-700" />
-                                                <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                                                    <div className="mb-3 translate-y-3 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-500">
-                                                        <div className="inline-flex px-2.5 py-1 bg-east-light/10 border border-east-light/20 rounded-full">
-                                                            <span className="text-[8px] font-black italic text-east-light uppercase tracking-widest">
-                                                                {drill.group_tags?.[0] || drill.age_tags?.[0] || 'Drill'}
-                                                            </span>
-                                                        </div>
+                                        {groupItems.map(drill => {
+                                            const allTags = [...(drill.skill_tags || []), ...(drill.group_tags || []), ...(drill.age_tags || [])].slice(0, 5);
+                                            return (
+                                                <div
+                                                    key={drill.id}
+                                                    onClick={() => handleSelectDrill(drill)}
+                                                    className="shrink-0 w-56 sm:w-64 h-72 sm:h-80 rounded-[2.5rem] sm:rounded-[3rem] border border-white/5 relative overflow-hidden group transition-all duration-700 shadow-2xl cursor-pointer hover:border-east-light hover:-translate-y-4 hover:shadow-[0_40px_80px_rgba(0,0,0,0.6)]"
+                                                >
+                                                    <div className="absolute inset-0 bg-[#0a0a0a]">
+                                                        <img
+                                                            src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"}
+                                                            className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-1000"
+                                                            alt="drill"
+                                                        />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
                                                     </div>
-                                                    <h3 className="font-black italic text-lg sm:text-xl text-white uppercase leading-[1.1] tracking-tight drop-shadow-2xl group-hover:text-east-light transition-colors duration-500">
-                                                        {drill.title || 'Coming Soon'}
-                                                    </h3>
-                                                    <div className="mt-4 flex items-center justify-between opacity-0 group-hover:opacity-100 translate-y-3 group-hover:translate-y-0 transition-all duration-500 delay-75">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-6 h-6 rounded-full border border-white/10 overflow-hidden">
-                                                                <img src={drill.coach?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${drill.coach?.first_name}`} className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 bg-east-light/0 group-hover:bg-east-light/5 transition-colors duration-700" />
+                                                    <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-end gap-3">
+                                                        <div>
+                                                            <h3 className="font-black italic text-lg sm:text-xl text-white uppercase leading-[1.1] tracking-tight drop-shadow-2xl group-hover:text-east-light transition-colors duration-500">
+                                                                {drill.title || 'Coming Soon'}
+                                                            </h3>
+                                                            {drill.coach?.first_name && (
+                                                                <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest mt-1">
+                                                                    {drill.coach.first_name} {drill.coach.last_name}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        {allTags.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1.5">
+                                                                {allTags.map((tag, i) => (
+                                                                    <span key={i} className="px-2.5 py-1 rounded-full text-[7px] sm:text-[8px] font-black uppercase tracking-wider border border-east-light/40 text-east-light bg-east-light/10 shadow-[0_0_8px_rgba(40,209,96,0.15)]">
+                                                                        {tag}
+                                                                    </span>
+                                                                ))}
                                                             </div>
-                                                            <span className="text-[8px] font-black italic text-gray-400 uppercase">{drill.coach?.first_name} {drill.coach?.last_name}</span>
-                                                        </div>
-                                                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white text-black flex items-center justify-center shadow-2xl group-active:scale-90 transition-transform">
-                                                            <Play size={14} className="fill-black ml-0.5" />
-                                                        </div>
+                                                        )}
                                                     </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             );
