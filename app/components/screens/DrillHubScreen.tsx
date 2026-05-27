@@ -908,6 +908,7 @@ export default function DrillHubScreen() {
                                     <span className="ml-1 bg-black/20 px-2 py-0.5 rounded-full text-[9px] text-east-light font-black">
                                         {selectedAgeFilters.length + selectedWorkoutFilters.length + selectedHockeyFilters.length}
                                     </span>
+                                )}
                             </button>
 
                             {(selectedAgeFilters.length + selectedWorkoutFilters.length + selectedHockeyFilters.length) > 0 && (
