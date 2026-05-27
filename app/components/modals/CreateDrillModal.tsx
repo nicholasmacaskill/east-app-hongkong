@@ -19,9 +19,45 @@ interface CreateDrillModalProps {
     onSuccess: () => void;
 }
 
-const SKILL_CATEGORIES = ['SHOOTING', 'DEFENSE', 'PASSING', 'SKATING', 'STICKHANDLING', 'GOALIE'];
-const DIFFICULTY_LEVELS = ['U10', 'U12', 'U15', 'PRO'];
-const AGE_GROUPS = ['10-12', '12-16', '16-20', '20-24', '24+'];
+const WORKOUT_TAGS = [
+    'lower body',
+    'upper body',
+    'speed',
+    'auxiliary',
+    'conditioning',
+    'mobility',
+    'strength',
+    'power, speed & conditioning'
+];
+
+const HOCKEY_TAGS = [
+    'individual skills',
+    'stickhandling',
+    'shooting',
+    'skating',
+    'team',
+    'small group',
+    'breakout',
+    'pp',
+    'pk',
+    'team offense',
+    'individual offense',
+    'team defense',
+    'individual defense',
+    'fun',
+    'challenges',
+    'battles',
+    'contact'
+];
+
+const AGE_TAGS = [
+    'Beginner',
+    'U9',
+    'U11',
+    'U13',
+    'U15',
+    'U18'
+];
 
 export default function CreateDrillModal({ coachId, onClose, onSuccess }: CreateDrillModalProps) {
     const { addToast } = useToast();
@@ -30,9 +66,19 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
 
     // Drill metadata
     const [title, setTitle] = useState('');
-    const [category, setCategory] = useState('SHOOTING');
-    const [difficulty, setDifficulty] = useState('PRO');
+    const [selectedWorkouts, setSelectedWorkouts] = useState<string[]>([]);
+    const [selectedHockey, setSelectedHockey] = useState<string[]>([]);
     const [selectedAges, setSelectedAges] = useState<string[]>([]);
+    
+    // Details matching mockup
+    const [description, setDescription] = useState('');
+    const [accessoriesText, setAccessoriesText] = useState('');
+    const [pods, setPods] = useState('');
+    const [colors, setColors] = useState('');
+    const [duration, setDuration] = useState('');
+    const [lightsOut, setLightsOut] = useState('');
+    const [lightDelay, setLightDelay] = useState('');
+
     const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
     const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
 
@@ -54,6 +100,14 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
 
     const toggleAge = (age: string) => {
         setSelectedAges(prev => prev.includes(age) ? prev.filter(a => a !== age) : [...prev, age]);
+    };
+
+    const toggleWorkout = (tag: string) => {
+        setSelectedWorkouts(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+    };
+
+    const toggleHockey = (tag: string) => {
+        setSelectedHockey(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
     };
 
     const handleThumbnailSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,11 +243,19 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                 .insert({
                     coach_id: coachId,
                     title: title.trim(),
-                    skill_tags: [category],
-                    level_tags: [difficulty],
+                    skill_tags: selectedHockey,
+                    level_tags: [],
+                    group_tags: selectedWorkouts,
                     age_tags: selectedAges,
                     status: 'published',
                     thumbnail_url: thumbnailUrl,
+                    description: description.trim(),
+                    accessories: accessoriesText.split(',').map(s => s.trim()).filter(Boolean),
+                    pods: pods.trim(),
+                    colors: colors.trim(),
+                    duration: duration.trim(),
+                    lights_out: lightsOut.trim(),
+                    light_delay: lightDelay.trim(),
                 })
                 .select()
                 .single();
@@ -280,7 +342,7 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
 
                 {/* PAGE 1: DRILL DETAILS */}
                 {currentPage === 'details' && (
-                    <div className="overflow-y-auto flex-1 p-6 space-y-5 no-scrollbar">
+                    <div className="overflow-y-auto flex-1 p-6 space-y-6 no-scrollbar">
 
                         {/* Thumbnail Upload */}
                         <div
@@ -315,44 +377,135 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                             />
                         </div>
 
-                        {/* Category + Difficulty */}
-                        <div className="grid grid-cols-2 gap-4">
+                        {/* ── TAG SECTION ── */}
+                        <div className="border-t border-white/5 pt-5 space-y-5">
+
+                            {/* Workouts Tags */}
                             <div>
-                                <label className="block text-[9px] font-black text-east-light uppercase tracking-[0.3em] mb-2">Skill</label>
-                                <select
-                                    value={category}
-                                    onChange={e => setCategory(e.target.value)}
-                                    className="w-full bg-black/50 border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs uppercase"
-                                >
-                                    {SKILL_CATEGORIES.map(c => <option key={c}>{c}</option>)}
-                                </select>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <label className="text-[9px] font-black text-east-light uppercase tracking-[0.3em]">Workouts</label>
+                                    {selectedWorkouts.length > 0 && (
+                                        <span className="text-[8px] font-black bg-east-light/15 text-east-light px-2 py-0.5 rounded-full">{selectedWorkouts.length} selected</span>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {WORKOUT_TAGS.map(tag => (
+                                        <button
+                                            key={tag}
+                                            type="button"
+                                            onClick={() => toggleWorkout(tag)}
+                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all active:scale-95 ${selectedWorkouts.includes(tag) ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30 hover:text-white'}`}
+                                        >
+                                            {tag}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
+
+                            {/* Hockey Tags */}
                             <div>
-                                <label className="block text-[9px] font-black text-east-light uppercase tracking-[0.3em] mb-2">Level</label>
-                                <select
-                                    value={difficulty}
-                                    onChange={e => setDifficulty(e.target.value)}
-                                    className="w-full bg-black/50 border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs uppercase"
-                                >
-                                    {DIFFICULTY_LEVELS.map(d => <option key={d}>{d}</option>)}
-                                </select>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <label className="text-[9px] font-black text-east-light uppercase tracking-[0.3em]">Hockey</label>
+                                    {selectedHockey.length > 0 && (
+                                        <span className="text-[8px] font-black bg-east-light/15 text-east-light px-2 py-0.5 rounded-full">{selectedHockey.length} selected</span>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {HOCKEY_TAGS.map(tag => (
+                                        <button
+                                            key={tag}
+                                            type="button"
+                                            onClick={() => toggleHockey(tag)}
+                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all active:scale-95 ${selectedHockey.includes(tag) ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30 hover:text-white'}`}
+                                        >
+                                            {tag}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Ages Tags */}
+                            <div>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <label className="text-[9px] font-black text-east-light uppercase tracking-[0.3em]">Ages</label>
+                                    {selectedAges.length > 0 && (
+                                        <span className="text-[8px] font-black bg-east-light/15 text-east-light px-2 py-0.5 rounded-full">{selectedAges.length} selected</span>
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {AGE_TAGS.map(age => (
+                                        <button
+                                            key={age}
+                                            type="button"
+                                            onClick={() => toggleAge(age)}
+                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all active:scale-95 ${selectedAges.includes(age) ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30 hover:text-white'}`}
+                                        >
+                                            {age}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Age Groups */}
-                        <div>
-                            <label className="block text-[9px] font-black text-east-light uppercase tracking-[0.3em] mb-3">Age Groups</label>
-                            <div className="flex flex-wrap gap-2">
-                                {AGE_GROUPS.map(age => (
-                                    <button
-                                        key={age}
-                                        type="button"
-                                        onClick={() => toggleAge(age)}
-                                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${selectedAges.includes(age) ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30'}`}
-                                    >
-                                        {age}
-                                    </button>
-                                ))}
+                        {/* ── ACTIVITY DETAILS ── */}
+                        <div className="border-t border-white/5 pt-5 space-y-5">
+
+                            {/* Description */}
+                            <div>
+                                <label className="block text-[9px] font-black text-east-light uppercase tracking-[0.3em] mb-2">Activity Description</label>
+                                <textarea
+                                    value={description}
+                                    onChange={e => setDescription(e.target.value)}
+                                    className="w-full bg-black/50 border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-sm placeholder:text-gray-700 resize-none"
+                                    rows={3}
+                                    placeholder="Describe the drill setup and flow..."
+                                />
+                            </div>
+
+                            {/* Accessories */}
+                            <div>
+                                <label className="block text-[9px] font-black text-east-light uppercase tracking-[0.3em] mb-2">Accessories</label>
+                                <input
+                                    type="text"
+                                    value={accessoriesText}
+                                    onChange={e => setAccessoriesText(e.target.value)}
+                                    className="w-full bg-black/50 border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-sm placeholder:text-gray-700"
+                                    placeholder="Comma separated — e.g. Goal, Soccer Balls, Cones"
+                                />
+                            </div>
+
+                            {/* Setup Grid */}
+                            <div>
+                                <label className="block text-[9px] font-black text-east-light uppercase tracking-[0.3em] mb-3">Setup Metrics</label>
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div>
+                                        <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Pods</span>
+                                        <input type="text" value={pods} onChange={e => setPods(e.target.value)} className="w-full bg-black/50 border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs" placeholder="e.g. 4 per Station" />
+                                    </div>
+                                    <div>
+                                        <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Colors</span>
+                                        <input type="text" value={colors} onChange={e => setColors(e.target.value)} className="w-full bg-black/50 border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs" placeholder="e.g. 1 per Player" />
+                                    </div>
+                                    <div>
+                                        <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Duration</span>
+                                        <input type="text" value={duration} onChange={e => setDuration(e.target.value)} className="w-full bg-black/50 border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs" placeholder="e.g. 60 min" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Corner Setup */}
+                            <div>
+                                <label className="block text-[9px] font-black text-east-light uppercase tracking-[0.3em] mb-3">Corner Setup / Lights</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Lights Out</span>
+                                        <input type="text" value={lightsOut} onChange={e => setLightsOut(e.target.value)} className="w-full bg-black/50 border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs" placeholder="e.g. Timeout 3 sec" />
+                                    </div>
+                                    <div>
+                                        <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Light Delay</span>
+                                        <input type="text" value={lightDelay} onChange={e => setLightDelay(e.target.value)} className="w-full bg-black/50 border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs" placeholder="e.g. None / Random" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
