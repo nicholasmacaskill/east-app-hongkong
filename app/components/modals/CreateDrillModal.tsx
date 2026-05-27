@@ -580,20 +580,30 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                             <div className="space-y-4">
                                 <label className="block text-[9px] font-black text-east-light uppercase tracking-[0.3em] mb-2">Visual Content</label>
                                 
-                                <div className="flex gap-2 p-1 bg-black/40 rounded-2xl border border-white/5">
+                                <div className="flex flex-col gap-3">
                                     {[
-                                        { id: 'image', label: 'Photo', icon: ImageIcon },
-                                        { id: 'video', label: 'Video', icon: Video },
-                                        { id: 'tactical', label: 'Draw', icon: PenTool }
-                                    ].map(tab => (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() => updateStep(activeStepIndex, 'media_type', tab.id)}
-                                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${activeStep.media_type === tab.id ? 'bg-white/10 text-white shadow-xl' : 'text-gray-600 hover:text-gray-400'}`}
-                                        >
-                                            <tab.icon size={14} /> {tab.label}
-                                        </button>
-                                    ))}
+                                        { id: 'image', label: 'Drill Briefing', icon: ImageIcon },
+                                        { id: 'video', label: 'Analysis Stream', icon: Video },
+                                        { id: 'tactical', label: 'Tactical Board', icon: PenTool }
+                                    ].map(tab => {
+                                        const isActive = activeStep.media_type === tab.id;
+                                        return (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => updateStep(activeStepIndex, 'media_type', tab.id as any)}
+                                                className={`w-full flex items-center justify-between px-6 py-4 rounded-xl border transition-all ${
+                                                    isActive 
+                                                        ? 'bg-[#28D160] border-white text-black shadow-[0_0_20px_rgba(40,209,96,0.4)]' 
+                                                        : 'bg-[#1C2541]/40 border-white/10 text-gray-500 hover:border-white/20 hover:text-white'
+                                                }`}
+                                            >
+                                                <span className={`text-[10px] font-black uppercase tracking-widest italic ${isActive ? 'text-black' : 'text-gray-400'}`}>
+                                                    {tab.label}
+                                                </span>
+                                                <tab.icon size={16} className={isActive ? 'text-black' : 'text-gray-600'} />
+                                            </button>
+                                        );
+                                    })}
                                 </div>
 
                                 <div className="relative h-44 rounded-2xl overflow-hidden border-2 border-dashed border-white/10 bg-black/30">

@@ -908,14 +908,6 @@ export default function DrillHubScreen() {
                                     <span className="ml-1 bg-black/20 px-2 py-0.5 rounded-full text-[9px] text-east-light font-black">
                                         {selectedAgeFilters.length + selectedWorkoutFilters.length + selectedHockeyFilters.length}
                                     </span>
-                                )}
-                            </button>
-
-                            <button
-                                onClick={() => setShowWhiteboard(true)}
-                                className="px-5 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border flex items-center gap-2 bg-[#111] text-gray-400 border-white/5 hover:border-white/20 hover:text-white"
-                            >
-                                <PenTool size={14} /> Whiteboard
                             </button>
 
                             {(selectedAgeFilters.length + selectedWorkoutFilters.length + selectedHockeyFilters.length) > 0 && (
