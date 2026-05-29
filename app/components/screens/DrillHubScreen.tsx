@@ -753,16 +753,21 @@ export default function DrillHubScreen() {
 
                                 {/* Divider */}
                                 <div className="border-t border-white/10 my-4" />
-
-                                {/* Redesigned Drill-wide Details (mockup matching) */}
-                                <div className="space-y-6">
-                                    <ActivityDescription text={selectedDrill.description} />
-                                    <AccessoriesList accessories={selectedDrill.accessories} />
-                                    <ActivityGoals drill={selectedDrill} />
-                                    <SetupGrid drill={selectedDrill} />
-                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-6 animate-slideInRight mb-4">
+                                <h2 className="text-xl font-black italic uppercase text-white tracking-widest">Drill Overview</h2>
+                                <div className="border-t border-white/10" />
                             </div>
                         )}
+
+                        {/* Redesigned Drill-wide Details (mockup matching) */}
+                        <div className="space-y-6 animate-slideInRight">
+                            <ActivityDescription text={selectedDrill.description} />
+                            <AccessoriesList accessories={selectedDrill.accessories} />
+                            <ActivityGoals drill={selectedDrill} />
+                            <SetupGrid drill={selectedDrill} />
+                        </div>
                     </div>
                 </div>
 
