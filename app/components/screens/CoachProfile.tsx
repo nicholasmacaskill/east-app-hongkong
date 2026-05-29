@@ -656,7 +656,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                             </div>
                             
                             {!isPublic && (
-                                <button onClick={() => setShowCreateDrill(true)} className="group relative overflow-hidden w-full bg-[#111] border border-white/5 hover:border-east-light/50 text-white font-black italic text-sm py-6 rounded-[2rem] transition-all duration-700 active:scale-[0.98] shadow-2xl mt-4">
+                                <button data-testid="publish-new-drill-btn" onClick={() => setShowCreateDrill(true)} className="group relative overflow-hidden w-full bg-[#111] border border-white/5 hover:border-east-light/50 text-white font-black italic text-sm py-6 rounded-[2rem] transition-all duration-700 active:scale-[0.98] shadow-2xl mt-4">
                                     <div className="absolute inset-0 bg-gradient-to-r from-east-light/0 via-east-light/5 to-east-light/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                                     <span className="relative z-10 uppercase tracking-[0.3em] flex items-center justify-center gap-3 drop-shadow-md group-hover:text-east-light transition-colors">
                                         <Plus size={20} className="group-hover:rotate-90 transition-transform duration-700" /> PUBLISH NEW DRILL

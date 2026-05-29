@@ -302,7 +302,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
 
             {/* QUICK ACTIONS BAR */}
             <div className="bg-[#121212] px-6 py-2 border-b border-white/5 flex justify-between items-center overflow-x-auto no-scrollbar">
-                <button onClick={() => setViewMode('drill_hub')} className="text-[9px] font-black uppercase text-black hover:text-black transition-colors flex items-center gap-1 bg-east-light hover:bg-white px-3 py-1.5 rounded-full border border-east-light/50 shadow-[0_0_10px_rgba(40,209,96,0.2)] whitespace-nowrap">
+                <button onClick={() => setViewMode('drill_hub')} data-testid="manage-drill-hub-btn" className="text-[9px] font-black uppercase text-black hover:text-black transition-colors flex items-center gap-1 bg-east-light hover:bg-white px-3 py-1.5 rounded-full border border-east-light/50 shadow-[0_0_10px_rgba(40,209,96,0.2)] whitespace-nowrap">
                     <Layers size={12} /> Manage Drill Hub
                 </button>
                 <div className="flex items-center gap-2 ml-auto">
@@ -418,17 +418,17 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                                     </div>
 
                                                     <div className="flex-1">
-                                                        <div className="flex justify-between items-start mb-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <h3 className={`font-bold text-sm uppercase tracking-wide ${session.type === 'slot' ? 'text-gray-500' : 'text-white'}`}>{session.title}</h3>
+                                                        <div className="flex justify-between items-start gap-4 mb-1">
+                                                            <div className="flex flex-wrap items-center gap-2 flex-1">
+                                                                <h3 className={`font-bold text-sm uppercase tracking-wide leading-tight ${session.type === 'slot' ? 'text-gray-500' : 'text-white'}`}>{session.title}</h3>
                                                                 {getStatusBadge(session)}
                                                             </div>
-                                                            <div className="flex flex-col items-end gap-2">
+                                                            <div className="flex flex-col items-end gap-2 shrink-0">
                                                                 <span className="text-[9px] font-bold text-gray-500 uppercase border border-white/10 px-1.5 py-0.5 rounded">{session.category}</span>
                                                                 {session.type !== 'slot' && (
                                                                     <button 
                                                                         onClick={(e) => { e.stopPropagation(); setSelectedSessionForPlan(session); }} 
-                                                                        className="text-[9px] font-black uppercase text-[#28D160] hover:text-white transition-colors flex items-center gap-1 bg-[#28D160]/10 hover:bg-[#28D160]/20 px-2 py-1 rounded"
+                                                                        className="text-[9px] font-black uppercase text-[#28D160] hover:text-white transition-colors flex items-center gap-1 bg-[#28D160]/10 hover:bg-[#28D160]/20 px-2 py-1 rounded whitespace-nowrap"
                                                                     >
                                                                         <Layers size={10} /> Build Plan
                                                                     </button>
