@@ -3,12 +3,14 @@
 import React from 'react';
 import { LogOut } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
+import posthog from 'posthog-js';
 import { useRouter } from 'next/navigation';
 
 export default function AdminLogoutButton() {
     const router = useRouter();
 
     const handleLogout = async () => {
+        posthog.reset();
         await supabase.auth.signOut();
         // Force full reload to clear all client state/cache
         window.location.href = '/';

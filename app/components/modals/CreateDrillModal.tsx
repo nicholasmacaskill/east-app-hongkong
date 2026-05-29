@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { X, Upload, Image as ImageIcon, Loader2, Plus, Trash2, ChevronLeft, ChevronRight, GripVertical, Video, PenTool, Eraser, Save, Layers } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
+import { useTracking } from '@/app/hooks/useTracking';
 
 interface DrillStep {
     title: string;
@@ -61,6 +62,7 @@ const AGE_TAGS = [
 
 export default function CreateDrillModal({ coachId, onClose, onSuccess }: CreateDrillModalProps) {
     const { addToast } = useToast();
+    const { track } = useTracking();
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState<'details' | 'steps'>('details');
 
@@ -302,6 +304,7 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                 });
             }
 
+            track('drill_created', { drill_name: drillData.title, skill_tags: drillData.skill_tags, steps_count: validSteps.length });
             addToast('Drill published successfully!', 'success');
             onSuccess();
         } catch (err: any) {

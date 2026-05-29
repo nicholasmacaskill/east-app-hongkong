@@ -3,11 +3,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { Search, Users, MessageSquare, Plus, Video, Layers, Send, X, ChevronLeft } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
+import CreateTeamModal from '@/app/components/modals/CreateTeamModal';
 
 export default function PrivateMessenger({ currentUserId, chatWithUserId }: { currentUserId: string, chatWithUserId?: string | null }) {
     const { addToast } = useToast();
     const [view, setView] = useState<'list' | 'chat'>(chatWithUserId ? 'chat' : 'list');
     const [searchQuery, setSearchQuery] = useState('');
+    const [showCreateTeam, setShowCreateTeam] = useState(false);
     
     // Data states
     const [teams, setTeams] = useState<any[]>([]);
@@ -306,7 +308,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
                         <h2 className="text-3xl font-black italic uppercase tracking-tighter">Messages</h2>
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Private Coaching Threads</p>
                     </div>
-                    <button className="p-3 bg-[#28D160]/10 text-[#28D160] rounded-xl hover:bg-[#28D160]/20 transition flex items-center gap-2 border border-[#28D160]/30">
+                    <button onClick={() => setShowCreateTeam(true)} className="p-3 bg-[#28D160]/10 text-[#28D160] rounded-xl hover:bg-[#28D160]/20 transition flex items-center gap-2 border border-[#28D160]/30">
                         <Plus size={16} /> <span className="text-[10px] font-black uppercase">New Team</span>
                     </button>
                 </div>
@@ -357,9 +359,26 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
                                 </div>
                             </button>
                         ))}
+                        {filteredProfiles.length === 0 && filteredTeams.length === 0 && (
+                            <div className="p-8 text-center border border-white/5 rounded-2xl bg-white/5 mt-4">
+                                <Users className="mx-auto text-gray-500 mb-3" size={24} />
+                                <p className="text-xs font-bold text-gray-400">No conversations found.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
+
+            {showCreateTeam && (
+                <CreateTeamModal 
+                    coachId={currentUserId}
+                    onClose={() => setShowCreateTeam(false)}
+                    onSuccess={() => {
+                        setShowCreateTeam(false);
+                        fetchTeamsAndProfiles();
+                    }}
+                />
+            )}
         </div>
     );
 }

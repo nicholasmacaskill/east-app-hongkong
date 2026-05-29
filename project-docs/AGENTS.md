@@ -51,3 +51,7 @@ You can command the entire team from a single chat window using **Tags**:
 - Agents are FORBIDDEN from running raw SQL.
 - All database changes must be written as TypeScript scripts in `/database` (e.g., similar to `database/seed.ts`).
 - A human developer must manually execute migrations using `npx ts-node`.
+
+## Environment Variables Protocol
+- NEVER trust local `.env` or `.env.local` files for production database configuration or credentials. These files frequently contain outdated or test references.
+- ALWAYS use the Vercel CLI (`npx vercel env pull .env.production.local`) to pull the authoritative production environment variables before running any database scripts or migrations.

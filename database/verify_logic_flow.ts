@@ -18,13 +18,38 @@ async function runLogicTest() {
         if (!coach || !player) throw new Error("Missing Coach or Player for test.");
         console.log(`✅ Found Coach (${coach.email}) and Player (${player.email})`);
 
-        // 2. Create Drill
-        const { data: drill, error: drillErr } = await supabase.from('coach_drills').insert({
+        // 2. Create Fully Populated Drill
+        const drillPayload = {
             coach_id: coach.id,
-            title: "API Test Drill",
-        }).select().single();
+            title: "API Advanced Tagged Drill",
+            age_tags: ["U15", "PRO"],
+            level_tags: ["ELITE"],
+            skill_tags: ["SHOOTING", "DEFENSE"],
+            pods: "6",
+            colors: "Red, Blue, Green",
+            lights_out: "Yes",
+            light_delay: "1.5s",
+            description: "A highly complex drill designed to test array filtering and metrics logic."
+        };
+
+        const { data: drill, error: drillErr } = await supabase.from('coach_drills').insert(drillPayload).select().single();
         if (drillErr) throw drillErr;
-        console.log(`✅ Drill created successfully! ID: ${drill.id}`);
+        console.log(`✅ Drill created successfully with full metrics and tags! ID: ${drill.id}`);
+
+        // 2.5 Test Database Filtering Logic
+        console.log(`⏳ Testing Database Array Filtering...`);
+        const { data: filteredDrills, error: filterErr } = await supabase
+            .from('coach_drills')
+            .select('*')
+            .contains('age_tags', ['PRO'])
+            .contains('skill_tags', ['DEFENSE'])
+            .eq('id', drill.id);
+            
+        if (filterErr) throw filterErr;
+        if (!filteredDrills || filteredDrills.length === 0) {
+            throw new Error("Database filtering failed: Could not find the drill using array 'contains' filters.");
+        }
+        console.log(`✅ Database filtering works flawlessly! Found the drill using specific PRO & DEFENSE tags.`);
 
         // 3. Create Team
         const { data: team, error: teamErr } = await supabase.from('teams').insert({

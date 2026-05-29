@@ -19,6 +19,7 @@ import {
 import { safeFetch } from '@/app/lib/apiUtils';
 import { formatHK, safeDate } from '@/app/lib/dateUtils';
 import { useToast } from '@/app/components/ui/Toast';
+import { useTracking } from '@/app/hooks/useTracking';
 
 
 export default function ScheduleScreen({
@@ -46,6 +47,7 @@ export default function ScheduleScreen({
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleConnected, setGoogleConnected] = useState(false);
   const { addToast } = useToast();
+  const { track } = useTracking();
 
   // State for Navigation and Selection
   const [viewStartDate, setViewStartDate] = useState(new Date()); // The first visible day in the strip
@@ -165,6 +167,10 @@ export default function ScheduleScreen({
     loadSchedule(); 
     fetchGoogleCalendar(); 
   }, [loadSchedule, fetchGoogleCalendar, refreshKey]);
+
+  useEffect(() => {
+    track('schedule_viewed');
+  }, []);
 
 
   // --- WEEKLY NAVIGATION (Moves the window by 7 days) ---

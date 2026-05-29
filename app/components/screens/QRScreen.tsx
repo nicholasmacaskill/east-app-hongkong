@@ -22,6 +22,7 @@ export default function QRScreen({ credits, currentUserId, subscriptionStatus, a
   const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [qrValue, setQrValue] = useState('');
+  const [checkInCount, setCheckInCount] = useState<number>(0);
 
   // Generate static QR value
   useEffect(() => {
@@ -31,6 +32,30 @@ export default function QRScreen({ credits, currentUserId, subscriptionStatus, a
       type: 'athlete_wallet',
       userId: currentUserId
     }));
+  }, [currentUserId]);
+
+  useEffect(() => {
+    const fetchCheckIns = async () => {
+      if (!currentUserId) return;
+      try {
+        const { count, error } = await supabase
+          .from('check_ins')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', currentUserId);
+        
+        if (error) {
+          console.error('Error fetching check-ins:', error);
+          return;
+        }
+        
+        if (count !== null) {
+          setCheckInCount(count);
+        }
+      } catch (e) {
+        console.error('Exception fetching check-ins:', e);
+      }
+    };
+    fetchCheckIns();
   }, [currentUserId]);
 
   const fetchShopItems = async () => {
@@ -128,6 +153,18 @@ export default function QRScreen({ credits, currentUserId, subscriptionStatus, a
               <span className="font-montserrat font-black italic text-4xl">{credits}</span>
               <span className="text-xs font-black text-gray-500 uppercase mt-2 italic tracking-tighter">Credits</span>
             </div>
+          </div>
+
+          <div className="bg-white border-2 border-black/10 rounded-2xl p-4 mb-4 shadow-sm flex justify-between items-center">
+             <div className="flex flex-col text-left">
+               <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">LIFETIME VISITS</span>
+               <span className="font-montserrat font-black italic text-xl text-black">
+                 {checkInCount} <span className="text-xs font-black text-gray-400 uppercase not-italic tracking-tighter">Check-Ins</span>
+               </span>
+             </div>
+             <div className="h-10 w-10 bg-black text-white rounded-full flex items-center justify-center shadow-md">
+               <CheckCircle2 size={20} />
+             </div>
           </div>
 
           {/* Locked Credits Warning */}

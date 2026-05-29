@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { X, Play, PenTool, Eraser, Trash2, Video, Upload, Loader2 } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
+import { useTracking } from '@/app/hooks/useTracking';
 
 interface Drill {
     id: string;
@@ -125,6 +126,7 @@ interface DrillDetailsModalProps {
 }
 
 export default function DrillDetailsModal({ drill, onClose, isCoach }: DrillDetailsModalProps) {
+    const { track } = useTracking();
     const [activeTab, setActiveTab] = useState<'video' | 'whiteboard'>('video');
     const [isPlaying, setIsPlaying] = useState(false);
     const [videoUrl, setVideoUrl] = useState(drill.video_url || '');
@@ -132,6 +134,10 @@ export default function DrillDetailsModal({ drill, onClose, isCoach }: DrillDeta
     const videoInputRef = useRef<HTMLInputElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const coverImage = drill.thumbnail_url || drill.image_url || '';
+
+    useEffect(() => {
+        track('drill_viewed', { drill_name: drill.title, skill_tags: drill.skill_tags });
+    }, [drill.id]);
 
     // Whiteboard State
     const canvasRef = useRef<HTMLCanvasElement>(null);

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Trophy, Flame, Star, Shield, Users, ChevronLeft, Flag, Target, Activity, User } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
+import { useTracking } from '@/app/hooks/useTracking';
 
 // Field configurations matching CMS
 const STAT_FIELDS = {
@@ -49,6 +50,7 @@ export default function LeaderboardPage() {
     const [currentUserStats, setCurrentUserStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const { track } = useTracking();
 
     useEffect(() => {
         // Set default filter when sport changes
@@ -70,6 +72,7 @@ export default function LeaderboardPage() {
     }, []);
 
     useEffect(() => {
+        track('leaderboard_viewed', { sport, filter: activeFilter });
         fetchLeaderboard();
     }, [sport, activeFilter, activeDivision, activeSeason, activeWeek]);
 

@@ -6,6 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
 import { fetchProfileResilient } from '@/app/lib/authProfile';
+import { usePostHog } from 'posthog-js/react';
+import { useTracking } from '@/app/hooks/useTracking';
 import type { UserRole } from '../types';
 
 /**
@@ -84,6 +86,8 @@ const InputField: React.FC<{ label: string; name: keyof FormData; type: string; 
 
 export default function AuthScreen({ onAuthSuccess, expectedRole, initialStep }: AuthScreenProps) {
     const { addToast } = useToast();
+    const posthog = usePostHog();
+    const { track } = useTracking();
     const [step, setStep] = useState<AuthStep>(initialStep || 'login');
     const [formData, setFormData] = useState<FormData>({
         ...initialFormData,
@@ -114,13 +118,20 @@ export default function AuthScreen({ onAuthSuccess, expectedRole, initialStep }:
                 // Mirroring Admin Layout Logic: Check metadata first for immediate access
                 const metaRole = data.user.user_metadata?.role;
                 if (metaRole === 'admin' || metaRole === 'sys-admin') {
+                    if (posthog) {
+                        posthog.identify(data.user.id, { email: data.user.email, role: metaRole });
+                    }
                     onAuthSuccess(metaRole);
                     return;
                 }
 
                 // Fetch role from profile (Resiliently)
                 const profile = await fetchProfileResilient(data.user.id, { select: 'role' });
-                onAuthSuccess(profile?.role || 'player');
+                const finalRole = profile?.role || 'player';
+                if (posthog) {
+                    posthog.identify(data.user.id, { email: data.user.email, role: finalRole });
+                }
+                onAuthSuccess(finalRole);
             }
         } catch (err: any) {
             console.error('[AUTH_LOGIN] Critical error during sign-in:', err);
@@ -180,6 +191,7 @@ export default function AuthScreen({ onAuthSuccess, expectedRole, initialStep }:
             if (!response.ok) {
                 addToast(result.error || 'Registration failed', 'error');
             } else {
+                track('account_created', { role: formData.role });
                 setStep('success');
                 addToast('Account created! Please verify your email.', 'success');
             }

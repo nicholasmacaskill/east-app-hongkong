@@ -8,6 +8,7 @@ import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils'
 import { safeFetch } from '@/app/lib/apiUtils';
 import { useToast } from '@/app/components/ui/Toast';
 import { getStripePriceId } from '@/app/lib/stripe-config';
+import { useTracking } from '@/app/hooks/useTracking';
 
 interface ClassModalProps {
     sessions: Session[];
@@ -50,6 +51,8 @@ export default function ClassModal({
     const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
     const [showTopUp, setShowTopUp] = useState(false);
     const [myChildren, setMyChildren] = useState<{ id: string; first_name: string; last_name: string; role: string }[]>([]);
+    const { track } = useTracking();
+    const hasBookedRef = React.useRef(false);
 
     // Multi-Select State
     const [selectedAttendeeIds, setSelectedAttendeeIds] = useState<string[]>([]);
@@ -317,6 +320,14 @@ export default function ClassModal({
                 return;
             }
 
+            track('session_booked', {
+                session_type: selectedSession?.category,
+                coach_name: selectedSession?.instructor,
+                credits_used: attendeesToBook.length * creditCostPerPerson,
+                attendees_count: attendeesToBook.length,
+            });
+
+            hasBookedRef.current = true;
             addToast(res.data.message || `Success! Session booked.`, 'success');
             if (onScheduleChange) onScheduleChange();
             onClose();
@@ -330,6 +341,7 @@ export default function ClassModal({
     // --- TOP UP LOGIC ---
     const handleTopUp = async () => {
         setIsProcessing(true);
+        track('checkout_started');
         try {
             const priceId = getStripePriceId('TOPUP');
             if (!priceId) {
@@ -423,6 +435,15 @@ export default function ClassModal({
             }
         }
 
+        if (successCount > 0) {
+            track('session_cancelled', {
+                session_type: selectedSession?.category,
+                coach_name: selectedSession?.instructor,
+                refund_percentage: penaltyData.percentage,
+                refund_amount: penaltyData.amount
+            });
+        }
+
         setIsProcessing(false);
         setShowPenaltyWarning(false);
         addToast(`Cancelled ${successCount} booking(s).`, "success");
@@ -481,6 +502,13 @@ export default function ClassModal({
         }
     }, [selectedSessionId]);
 
+    const handleClose = () => {
+        if (!hasBookedRef.current && selectedSessionId) {
+            track('booking_abandoned', { session_type: selectedSession?.category, coach_name: selectedSession?.instructor });
+        }
+        onClose();
+    };
+
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn overscroll-y-none">
             <div className="w-full max-w-sm bg-white rounded-3xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl relative">
@@ -490,7 +518,7 @@ export default function ClassModal({
                     <h2 className="font-montserrat font-black italic text-xl text-white uppercase truncate pr-2">
                         {showTopUp ? 'TOP UP NEEDED' : (showPenaltyWarning ? 'Cancellation Policy' : (origin === 'coaches' && !isFacility ? 'BOOK COACH' : modalHeaderTitle))}
                     </h2>
-                    <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors">
+                    <button onClick={handleClose} className="p-1 hover:bg-white/20 rounded-full transition-colors">
                         <X className="text-white" size={24} />
                     </button>
                 </div>
@@ -701,7 +729,7 @@ export default function ClassModal({
                                                 <p className="font-montserrat font-bold text-[10px] uppercase text-gray-400 tracking-wider">Plan Preview:</p>
                                                 <button 
                                                     onClick={() => {
-                                                        onClose();
+                                                        handleClose();
                                                         window.location.href = `/drill-hub?session_id=${selectedSessionId}`;
                                                     }}
                                                     className="text-[10px] font-black italic text-east-light uppercase tracking-widest hover:brightness-110"
@@ -714,7 +742,7 @@ export default function ClassModal({
                                                     <button 
                                                         key={p.id}
                                                         onClick={() => {
-                                                            onClose();
+                                                            handleClose();
                                                             window.location.href = `/drill-hub?session_id=${selectedSessionId}&drill_id=${p.drill_id}`;
                                                         }}
                                                         className="flex-shrink-0 w-16 group relative"

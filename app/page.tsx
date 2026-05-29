@@ -3,8 +3,10 @@ export const dynamic = 'force-dynamic';
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
+import posthog from 'posthog-js';
 import { Home, User, QrCode, Activity, MessageSquare, Plus } from 'lucide-react';
 import { ToastProvider, useToast } from '@/app/components/ui/Toast';
+import { useTracking } from '@/app/hooks/useTracking';
 
 // Screens
 import HomeScreen from '@/app/components/screens/HomeScreen';
@@ -45,6 +47,7 @@ function AppContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addToast, removeToast } = useToast();
+  const { track } = useTracking();
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<Tab>((tabParam as Tab) || 'home');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -329,6 +332,7 @@ function AppContent() {
     }
 
     if (searchParams.get('success') === 'true') {
+      track('credits_purchased');
       isWaitingForCreditsRef.current = true;
       router.replace('/');
       const tid = addToast("Payment Received. Finalizing credits...", "loading", 0);
@@ -479,6 +483,7 @@ function AppContent() {
   }
 
   const handleLogout = async () => {
+    posthog.reset();
     await supabase.auth.signOut();
     window.location.reload();
   };
@@ -601,6 +606,7 @@ function AppContent() {
                         if (!res.ok) {
                           addToast(`Error: ${data.error}`, 'error');
                         } else {
+                          track('child_added');
                           addToast('Child added successfully!', 'success');
                           setRefreshKey(prev => prev + 1);
                         }

@@ -2,6 +2,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
+import posthog from 'posthog-js';
 import { useRouter } from 'next/navigation';
 import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send, Play, MessageSquare } from 'lucide-react';
 import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
@@ -192,6 +193,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
     };
 
     const handleLogout = async () => {
+        posthog.reset();
         await supabase.auth.signOut();
         window.location.reload();
     };
