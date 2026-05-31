@@ -18,8 +18,13 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
     // Active chat state
     const [activeChatId, setActiveChatId] = useState<string | null>(null); // can be a user_id or a team_id
     const [isTeamChat, setIsTeamChat] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
     const [messages, setMessages] = useState<any[]>([]);
     const [messageInput, setMessageInput] = useState('');
+    
+    // Unread tracking
+    const [lastMessages, setLastMessages] = useState<Record<string, any>>({});
+    const [readReceipts, setReadReceipts] = useState<Record<string, string>>({});
     
     // Attachments
     const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
@@ -59,6 +64,41 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
                     fetchMessages(chatWithUserId, false);
                 }
             }
+        }
+        
+        // Fetch recent messages for sorting and unread indicators
+        const teamIds = myTeams?.map(t => t.id) || [];
+        const { data: dmData } = await supabase.from('messages')
+            .select('*')
+            .or(`sender_id.eq.${currentUserId},receiver_id.eq.${currentUserId}`)
+            .order('created_at', { ascending: false });
+            
+        const { data: teamData } = teamIds.length > 0 
+            ? await supabase.from('messages').select('*').in('team_id', teamIds).order('created_at', { ascending: false })
+            : { data: [] };
+            
+        const combined = [...(dmData || []), ...(teamData || [])].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        
+        const latest: Record<string, any> = {};
+        combined.forEach(msg => {
+            const chatId = msg.team_id || (msg.sender_id === currentUserId ? msg.receiver_id : msg.sender_id);
+            if (chatId && !latest[chatId]) {
+                latest[chatId] = msg;
+            }
+        });
+        setLastMessages(latest);
+        
+        // Load read receipts from local storage
+        if (typeof window !== 'undefined') {
+            const receipts: Record<string, string> = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key?.startsWith(`chat_read_${currentUserId}_`)) {
+                    const chatId = key.replace(`chat_read_${currentUserId}_`, '');
+                    receipts[chatId] = localStorage.getItem(key) || '';
+                }
+            }
+            setReadReceipts(receipts);
         }
     };
 
@@ -108,6 +148,14 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
         setIsTeamChat(isTeam);
         setView('chat');
         fetchMessages(id, isTeam);
+        
+        // Mark as read immediately when opening
+        if (lastMessages[id]) {
+            if (typeof window !== 'undefined') {
+                localStorage.setItem(`chat_read_${currentUserId}_${id}`, lastMessages[id].id.toString());
+                setReadReceipts(prev => ({ ...prev, [id]: lastMessages[id].id.toString() }));
+            }
+        }
     };
 
     const handleSendMessage = async () => {
@@ -159,9 +207,17 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
     const filteredProfiles = profiles.filter(p => 
         (p.first_name + " " + p.last_name).toLowerCase().includes(searchQuery.toLowerCase()) || 
         (p.role && p.role.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    ).sort((a, b) => {
+        const aTime = lastMessages[a.id] ? new Date(lastMessages[a.id].created_at).getTime() : 0;
+        const bTime = lastMessages[b.id] ? new Date(lastMessages[b.id].created_at).getTime() : 0;
+        return bTime - aTime;
+    });
 
-    const filteredTeams = teams.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const filteredTeams = teams.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase())).sort((a, b) => {
+        const aTime = lastMessages[a.id] ? new Date(lastMessages[a.id].created_at).getTime() : 0;
+        const bTime = lastMessages[b.id] ? new Date(lastMessages[b.id].created_at).getTime() : 0;
+        return bTime - aTime;
+    });
 
     if (view === 'chat') {
         const chatTitle = isTeamChat 
@@ -219,6 +275,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
                             </div>
                         );
                     })}
+                    <div ref={messagesEndRef} />
                 </div>
 
                 <div className="p-4 border-t border-white/10 bg-black/50 relative">
@@ -275,12 +332,12 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
                             )}
                         </div>
                     )}
-                    <div className="flex gap-2">
-                        <button onClick={() => setShowDrillPicker(!showDrillPicker)} className={`p-4 rounded-2xl transition ${selectedDrill ? 'bg-[#28D160]/20 text-[#28D160] border border-[#28D160]/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`}>
-                            <Layers size={20} />
+                    <div className="flex gap-2 items-center">
+                        <button onClick={() => setShowDrillPicker(!showDrillPicker)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl transition shrink-0 ${selectedDrill ? 'bg-[#28D160]/20 text-[#28D160] border border-[#28D160]/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`}>
+                            <Layers size={18} className="md:w-5 md:h-5" />
                         </button>
-                        <button onClick={() => videoFileRef.current?.click()} className={`p-4 rounded-2xl transition ${selectedVideo ? 'bg-[#28D160]/20 text-[#28D160] border border-[#28D160]/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`}>
-                            <Video size={20} />
+                        <button onClick={() => videoFileRef.current?.click()} className={`p-3 md:p-4 rounded-xl md:rounded-2xl transition shrink-0 ${selectedVideo ? 'bg-[#28D160]/20 text-[#28D160] border border-[#28D160]/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`}>
+                            <Video size={18} className="md:w-5 md:h-5" />
                         </button>
                         <input type="file" accept="video/*" ref={videoFileRef} onChange={handleVideoSelect} className="hidden" />
                         <input 
@@ -289,10 +346,10 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
                             onChange={e => setMessageInput(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
                             placeholder="Type a message..." 
-                            className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-6 outline-none focus:border-[#28D160]/50 transition"
+                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl md:rounded-2xl px-4 md:px-6 py-3 outline-none focus:border-[#28D160]/50 transition text-sm"
                         />
-                        <button disabled={isUploading || (!messageInput.trim() && !selectedVideo && !selectedDrill)} onClick={handleSendMessage} className="p-4 bg-[#28D160] text-black rounded-2xl hover:bg-white transition hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                            {isUploading ? <span className="text-[10px] font-black uppercase">Wait</span> : <Send size={20} />}
+                        <button disabled={isUploading || (!messageInput.trim() && !selectedVideo && !selectedDrill)} onClick={handleSendMessage} className="p-3 md:p-4 bg-[#28D160] text-black rounded-xl md:rounded-2xl shrink-0 hover:bg-white transition hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                            {isUploading ? <span className="text-[10px] font-black uppercase">Wait</span> : <Send size={18} className="md:w-5 md:h-5" />}
                         </button>
                     </div>
                 </div>
@@ -330,17 +387,22 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
                     <div>
                         <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-3 px-2">My Teams</h3>
                         <div className="space-y-2">
-                            {filteredTeams.map(team => (
-                                <button key={team.id} onClick={() => handleOpenChat(team.id, true)} className="w-full p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-4 hover:border-white/20 transition group text-left">
-                                    <div className="w-12 h-12 rounded-xl bg-[#28D160]/20 flex items-center justify-center border border-[#28D160]/30 group-hover:scale-110 transition-transform">
-                                        <Users size={20} className="text-[#28D160]" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h4 className="font-black italic uppercase">{team.name}</h4>
-                                        <p className="text-[10px] text-gray-500 font-bold uppercase">Team Chat</p>
-                                    </div>
-                                </button>
-                            ))}
+                            {filteredTeams.map(team => {
+                                const latestMsg = lastMessages[team.id];
+                                const isUnread = latestMsg && latestMsg.sender_id !== currentUserId && readReceipts[team.id] !== latestMsg.id.toString();
+                                return (
+                                    <button key={team.id} onClick={() => handleOpenChat(team.id, true)} className="w-full p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-4 hover:border-white/20 transition group text-left relative">
+                                        <div className="w-12 h-12 rounded-xl bg-[#28D160]/20 flex items-center justify-center border border-[#28D160]/30 group-hover:scale-110 transition-transform">
+                                            <Users size={20} className="text-[#28D160]" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-black italic uppercase truncate">{team.name}</h4>
+                                            <p className="text-[10px] text-gray-500 font-bold uppercase truncate">{latestMsg ? latestMsg.content || 'Attachment' : 'Team Chat'}</p>
+                                        </div>
+                                        {isUnread && <div className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]" />}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
@@ -348,17 +410,25 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
                 <div>
                     <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-3 px-2">Direct Messages</h3>
                     <div className="space-y-2">
-                        {filteredProfiles.map(p => (
-                            <button key={p.id} onClick={() => handleOpenChat(p.id, false)} className="w-full p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-4 hover:border-white/20 transition group text-left">
-                                <div className="w-12 h-12 rounded-full overflow-hidden border border-white/10 group-hover:scale-110 transition-transform">
-                                    <img src={p.avatar_url || "https://placehold.co/100"} alt={p.first_name} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex-1">
-                                    <h4 className="font-black italic uppercase">{p.first_name} {p.last_name}</h4>
-                                    <p className="text-[10px] text-[#28D160] font-bold uppercase">{p.role}</p>
-                                </div>
-                            </button>
-                        ))}
+                        {filteredProfiles.map(p => {
+                            const latestMsg = lastMessages[p.id];
+                            const isUnread = latestMsg && latestMsg.sender_id !== currentUserId && readReceipts[p.id] !== latestMsg.id.toString();
+                            return (
+                                <button key={p.id} onClick={() => handleOpenChat(p.id, false)} className="w-full p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-4 hover:border-white/20 transition group text-left relative">
+                                    <div className="w-12 h-12 rounded-full overflow-hidden border border-white/10 group-hover:scale-110 transition-transform shrink-0">
+                                        <img src={p.avatar_url || "https://placehold.co/100"} alt={p.first_name} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-black italic uppercase truncate">{p.first_name} {p.last_name}</h4>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-[10px] text-[#28D160] font-bold uppercase shrink-0">{p.role}</p>
+                                            {latestMsg && <p className="text-[10px] text-gray-500 font-bold uppercase truncate border-l border-white/10 pl-2 ml-2">{latestMsg.content || 'Attachment'}</p>}
+                                        </div>
+                                    </div>
+                                    {isUnread && <div className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]" />}
+                                </button>
+                            );
+                        })}
                         {filteredProfiles.length === 0 && filteredTeams.length === 0 && (
                             <div className="p-8 text-center border border-white/5 rounded-2xl bg-white/5 mt-4">
                                 <Users className="mx-auto text-gray-500 mb-3" size={24} />

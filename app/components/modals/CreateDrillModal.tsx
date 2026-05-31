@@ -75,11 +75,6 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
     // Details matching mockup
     const [description, setDescription] = useState('');
     const [accessoriesText, setAccessoriesText] = useState('');
-    const [pods, setPods] = useState('');
-    const [colors, setColors] = useState('');
-    const [duration, setDuration] = useState('');
-    const [lightsOut, setLightsOut] = useState('');
-    const [lightDelay, setLightDelay] = useState('');
 
     const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
     const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
@@ -193,10 +188,15 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
         const y = (clientY - rect.top) * (canvas.height / rect.height);
         
         ctx.lineTo(x, y);
-        ctx.strokeStyle = isEraser ? '#111' : drawColor;
-        ctx.lineWidth = isEraser ? 30 : 3;
+        ctx.strokeStyle = isEraser ? '#ffffff' : drawColor;
+        ctx.lineWidth = isEraser ? 20 : 3;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+        if (isEraser) {
+             ctx.globalCompositeOperation = 'destination-out';
+        } else {
+             ctx.globalCompositeOperation = 'source-over';
+        }
         ctx.stroke();
     };
 
@@ -253,9 +253,6 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                     thumbnail_url: thumbnailUrl,
                     description: description.trim(),
                     accessories: accessoriesText.split(',').map(s => s.trim()).filter(Boolean),
-                    pods: pods.trim(),
-                    colors: colors.trim(),
-                    duration: duration.trim(),
                 })
                 .select()
                 .single();
@@ -417,7 +414,7 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                                             key={tag}
                                             type="button"
                                             onClick={() => toggleHockey(tag)}
-                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all active:scale-95 ${selectedHockey.includes(tag) ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30 hover:text-white'}`}
+                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all active:scale-95 ${selectedHockey.includes(tag) ? 'bg-[#0A84FF] text-white border-[#0A84FF] shadow-[0_0_15px_rgba(10,132,255,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30 hover:text-white'}`}
                                         >
                                             {tag}
                                         </button>
@@ -439,7 +436,7 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                                             key={age}
                                             type="button"
                                             onClick={() => toggleAge(age)}
-                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all active:scale-95 ${selectedAges.includes(age) ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30 hover:text-white'}`}
+                                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all active:scale-95 ${selectedAges.includes(age) ? 'bg-[#BF5AF2] text-white border-[#BF5AF2] shadow-[0_0_15px_rgba(191,90,242,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30 hover:text-white'}`}
                                         >
                                             {age}
                                         </button>
@@ -473,25 +470,6 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                                     className="w-full bg-black/50 border border-white/10 p-3.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-sm placeholder:text-gray-700"
                                     placeholder="Comma separated — e.g. Goal, Soccer Balls, Cones"
                                 />
-                            </div>
-
-                            {/* Setup Grid */}
-                            <div>
-                                <label className="block text-[9px] font-black text-east-light uppercase tracking-[0.3em] mb-3">Setup Metrics</label>
-                                <div className="grid grid-cols-3 gap-3">
-                                    <div>
-                                        <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Pods</span>
-                                        <input type="text" value={pods} onChange={e => setPods(e.target.value)} className="w-full bg-black/50 border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs" placeholder="e.g. 4 per Station" />
-                                    </div>
-                                    <div>
-                                        <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Colors</span>
-                                        <input type="text" value={colors} onChange={e => setColors(e.target.value)} className="w-full bg-black/50 border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs" placeholder="e.g. 1 per Player" />
-                                    </div>
-                                    <div>
-                                        <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">Duration</span>
-                                        <input type="text" value={duration} onChange={e => setDuration(e.target.value)} className="w-full bg-black/50 border border-white/10 p-2.5 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold text-xs" placeholder="e.g. 60 min" />
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -568,8 +546,8 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                                 
                                 <div className="flex flex-col gap-3">
                                     {[
-                                        { id: 'image', label: 'Drill Briefing', icon: ImageIcon },
-                                        { id: 'video', label: 'Analysis Stream', icon: Video },
+                                        { id: 'image', label: 'Diagram / Photo', icon: ImageIcon },
+                                        { id: 'video', label: 'Video Feed', icon: Video },
                                         { id: 'tactical', label: 'Tactical Board', icon: PenTool }
                                     ].map(tab => {
                                         const isActive = activeStep.media_type === tab.id;

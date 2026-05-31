@@ -622,7 +622,7 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
     );
 
     return (
-        <div className="h-screen bg-black flex flex-col relative">
+        <div className="h-[100dvh] pb-24 bg-black flex flex-col relative">
             <PrivateMessenger currentUserId={currentUserId} chatWithUserId={chatWithParam} />
         </div>
     );

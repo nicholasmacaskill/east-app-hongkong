@@ -251,6 +251,19 @@ export default function DrillHubScreen() {
         }
     }, [sessionId, selectedAgeFilters, selectedWorkoutFilters, selectedHockeyFilters, searchParams]);
 
+    const handleCloseDrill = () => {
+        if (drillIdParam || sessionId) {
+            if (window.history.length > 2) {
+                window.history.back();
+            } else {
+                window.location.href = '/';
+            }
+        } else {
+            setSelectedDrill(null);
+            setShowSessionPicker(false);
+        }
+    };
+
     useEffect(() => {
         if (userRole && !['coach', 'admin', 'sys-admin'].includes(userRole)) {
             setIsEditing(false);
@@ -476,13 +489,8 @@ export default function DrillHubScreen() {
                     <div className="flex flex-col gap-1 w-full md:w-auto">
                         <div className="flex items-center gap-3">
                             <button 
-                                onClick={() => {
-                                    window.history.replaceState({}, '', window.location.pathname);
-                                    setSelectedDrill(null);
-                                    setShowSessionPicker(false);
-                                    if (window.history.length > 1 && !drillIdParam) window.history.back();
-                                }}
-                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-east-light transition-all group"
+                                onClick={handleCloseDrill}
+                                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-east-light transition-all group border border-gray-800 rounded-full px-4 py-2 hover:bg-gray-900"
                             >
                                 <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back
                             </button>
@@ -556,12 +564,8 @@ export default function DrillHubScreen() {
                         )}
 
                         <button 
-                            onClick={() => {
-                                setSelectedDrill(null);
-                                setShowSessionPicker(false);
-                                if (!drillIdParam) window.history.back();
-                            }}
-                            className="p-2.5 sm:p-3 bg-white/5 border border border-white/10 rounded-xl text-gray-500 hover:text-white transition-all"
+                            onClick={handleCloseDrill}
+                            className="p-2.5 sm:p-3 bg-white/5 border border-white/10 rounded-xl text-gray-500 hover:text-white transition-all"
                         >
                             <X size={16} className="sm:w-4.5 sm:h-4.5" />
                         </button>
@@ -583,13 +587,13 @@ export default function DrillHubScreen() {
                                         ) : (
                                             <div className="flex flex-col items-center gap-4 sm:gap-6 opacity-20">
                                                 <Layers className="w-16 h-16 sm:w-24 sm:h-24 md:w-28 md:h-28 text-white" />
-                                                <span className="text-xs sm:text-sm font-black uppercase tracking-[0.4em] italic">Awaiting Visuals</span>
+                                                <span className="text-xs sm:text-sm font-black uppercase tracking-[0.4em] italic">No Diagram / Photo</span>
                                             </div>
                                         )
                                     ) : (
                                         <div className="flex flex-col items-center gap-4 sm:gap-6 opacity-20">
                                             <Video className="w-16 h-16 sm:w-24 sm:h-24 md:w-28 md:h-28 text-white" />
-                                            <span className="text-xs sm:text-sm font-black uppercase tracking-[0.4em] italic">Analysis Stream</span>
+                                            <span className="text-xs sm:text-sm font-black uppercase tracking-[0.4em] italic">No Video Uploaded</span>
                                         </div>
                                     )}
 
@@ -703,7 +707,7 @@ export default function DrillHubScreen() {
                                         className={`w-full py-3.5 px-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'visual' ? 'bg-[#28D160] text-black border-[#28D160] shadow-[0_20px_40px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <span>Drill Briefing</span>
+                                            <span>Diagram / Photo</span>
                                             {isEditing && (
                                                 <div 
                                                     onClick={(e) => { e.stopPropagation(); imageInputRef.current?.click(); }}
@@ -721,7 +725,7 @@ export default function DrillHubScreen() {
                                         className={`w-full py-3.5 px-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'analysis' ? 'bg-white text-black border-white shadow-[0_20px_40px_rgba(255,255,255,0.15)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <span>Analysis Stream</span>
+                                            <span>Video Feed</span>
                                             {isEditing && (
                                                 <div 
                                                     onClick={(e) => { e.stopPropagation(); videoInputRef.current?.click(); }}
@@ -943,7 +947,7 @@ export default function DrillHubScreen() {
 
                                 {/* Hockey Section */}
                                 <div className="space-y-3">
-                                    <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85">Hockey</h3>
+                                    <h3 className="text-[10px] font-black text-[#0A84FF] uppercase tracking-[0.3em] italic opacity-85">Hockey</h3>
                                     <div className="flex flex-wrap gap-2">
                                         {HOCKEY_TAGS.map(tag => {
                                             const active = selectedHockeyFilters.includes(tag);
@@ -955,7 +959,7 @@ export default function DrillHubScreen() {
                                                             prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
                                                         );
                                                     }}
-                                                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${active ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30'}`}
+                                                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${active ? 'bg-[#0A84FF] text-white border-[#0A84FF] shadow-[0_0_15px_rgba(10,132,255,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30'}`}
                                                 >
                                                     {tag}
                                                 </button>
@@ -966,7 +970,7 @@ export default function DrillHubScreen() {
 
                                 {/* Ages Section */}
                                 <div className="space-y-3">
-                                    <h3 className="text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85">Ages</h3>
+                                    <h3 className="text-[10px] font-black text-[#BF5AF2] uppercase tracking-[0.3em] italic opacity-85">Ages</h3>
                                     <div className="flex flex-wrap gap-2">
                                         {AGE_TAGS.map(tag => {
                                             const active = selectedAgeFilters.includes(tag);
@@ -978,7 +982,7 @@ export default function DrillHubScreen() {
                                                             prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
                                                         );
                                                     }}
-                                                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${active ? 'bg-east-light text-black border-east-light shadow-[0_0_15px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30'}`}
+                                                    className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all ${active ? 'bg-[#BF5AF2] text-white border-[#BF5AF2] shadow-[0_0_15px_rgba(191,90,242,0.3)]' : 'bg-white/5 text-gray-500 border-white/10 hover:border-white/30'}`}
                                                 >
                                                     {tag}
                                                 </button>
