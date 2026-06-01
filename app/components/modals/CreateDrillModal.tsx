@@ -28,7 +28,8 @@ const WORKOUT_TAGS = [
     'conditioning',
     'mobility',
     'strength',
-    'power, speed & conditioning'
+    'power',
+    'core'
 ];
 
 const HOCKEY_TAGS = [

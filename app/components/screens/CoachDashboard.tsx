@@ -261,28 +261,28 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
 
                     <div className="flex items-center justify-between w-full md:w-auto gap-4">
                         {/* View Toggles */}
-                        <div className="bg-[#1e1e1e] p-1 rounded-lg flex border border-white/10 flex-1 md:flex-none justify-center">
+                        <div className="bg-[#1e1e1e] p-1 rounded-lg flex overflow-x-auto no-scrollbar border border-white/10 w-full md:w-auto md:flex-none justify-start md:justify-center">
                             <button
                                 onClick={() => setViewMode('master_view')}
-                                className={`flex-1 md:flex-none px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${viewMode === 'master_view' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                                className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 rounded-md text-[10px] font-bold uppercase whitespace-nowrap transition-all ${viewMode === 'master_view' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
                             >
                                 Master View
                             </button>
                             <button
                                 onClick={() => setViewMode('my_schedule')}
-                                className={`flex-1 md:flex-none px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${viewMode === 'my_schedule' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                                className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 rounded-md text-[10px] font-bold uppercase whitespace-nowrap transition-all ${viewMode === 'my_schedule' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
                             >
                                 My Schedule
                             </button>
                             <button
                                 onClick={() => setViewMode('drill_hub')}
-                                className={`flex-1 md:flex-none px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${viewMode === 'drill_hub' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                                className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 rounded-md text-[10px] font-bold uppercase whitespace-nowrap transition-all ${viewMode === 'drill_hub' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
                             >
                                 Drill Hub
                             </button>
                             <button
                                 onClick={() => setViewMode('community')}
-                                className={`flex-1 md:flex-none px-4 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1.5 ${viewMode === 'community' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                                className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 rounded-md text-[10px] font-bold uppercase whitespace-nowrap transition-all flex items-center justify-center gap-1.5 ${viewMode === 'community' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
                             >
                                 <MessageSquare size={12} /> Messages
                             </button>
@@ -348,36 +348,69 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                 <p className="text-[10px] font-black uppercase text-gray-600 tracking-widest">No drills created yet</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-2">
-                                {drills.map(drill => (
-                                    <div 
-                                        key={drill.id} 
-                                        onClick={() => window.location.href = `/drill-hub?drill_id=${drill.id}`}
-                                        className="relative overflow-hidden rounded-[2.5rem] border border-white/5 group cursor-pointer shadow-2xl bg-[#111] h-64 active:scale-[0.98] transition-all duration-500 hover:border-east-light/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
-                                    >
-                                        <img 
-                                            src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"} 
-                                            className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-1000" 
-                                            alt={drill.title} 
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-                                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 z-10">
-                                            <div className="w-16 h-16 rounded-[1.5rem] bg-white flex items-center justify-center pl-1">
-                                                <Play fill="black" size={24} className="text-black" />
+                            <div className="space-y-10 sm:space-y-16 mt-6">
+                                {[...[
+                                    'individual skills', 'stickhandling', 'shooting', 'skating', 'team',
+                                    'small group', 'breakout', 'pp', 'pk', 'team offense', 'individual offense',
+                                    'team defense', 'individual defense', 'fun', 'challenges', 'battles', 'contact'
+                                ], 'General'].map(skillTag => {
+                                    const groupItems = skillTag === 'General'
+                                        ? drills.filter(d => !d.skill_tags || d.skill_tags.length === 0)
+                                        : drills.filter(d => d.skill_tags?.some((t: string) => t.toLowerCase() === skillTag.toLowerCase()));
+                                    if (groupItems.length === 0) return null;
+
+                                    return (
+                                        <div key={skillTag} className="px-2">
+                                            <div className="flex items-center gap-4 sm:gap-6 mb-6">
+                                                <h2 className="text-2xl sm:text-3xl font-black italic uppercase tracking-tighter text-white brightness-125">{skillTag}</h2>
+                                                <div className="h-[1px] flex-1 bg-gradient-to-r from-white/20 via-white/5 to-transparent" />
+                                                <span className="text-[9px] sm:text-[10px] font-black italic text-gray-600 uppercase tracking-widest">{groupItems.length} DRILLS</span>
+                                            </div>
+
+                                            <div className="flex overflow-x-auto no-scrollbar gap-4 sm:gap-6 pb-4 sm:pb-8 -mx-4 sm:-mx-8 px-4 sm:px-8">
+                                                {groupItems.map(drill => {
+                                                    const allTags = [...(drill.skill_tags || []), ...(drill.group_tags || []), ...(drill.age_tags || [])].slice(0, 5);
+                                                    return (
+                                                        <div
+                                                            key={drill.id}
+                                                            onClick={() => window.location.href = `/drill-hub?drill_id=${drill.id}`}
+                                                            className="shrink-0 w-56 sm:w-64 h-72 sm:h-80 rounded-[2.5rem] border border-white/5 relative overflow-hidden group transition-all duration-700 shadow-2xl cursor-pointer hover:border-east-light hover:-translate-y-4 hover:shadow-[0_40px_80px_rgba(0,0,0,0.6)]"
+                                                        >
+                                                            <div className="absolute inset-0 bg-[#0a0a0a]">
+                                                                <img
+                                                                    src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"}
+                                                                    className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-1000"
+                                                                    alt="drill"
+                                                                />
+                                                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                                                            </div>
+                                                            <div className="absolute inset-0 bg-east-light/0 group-hover:bg-east-light/5 transition-colors duration-700" />
+                                                            <div className="absolute inset-0 p-5 sm:p-6 flex flex-col justify-end gap-3">
+                                                                <h3 className="font-black italic text-lg sm:text-xl text-white uppercase leading-[1.1] tracking-tight drop-shadow-2xl group-hover:text-east-light transition-colors duration-500">
+                                                                    {drill.title || 'Coming Soon'}
+                                                                </h3>
+                                                                {allTags.length > 0 && (
+                                                                    <div className="flex flex-wrap gap-1.5">
+                                                                        {allTags.map((tag, i) => {
+                                                                            let colorClass = 'text-[#28D160] border-[#28D160]/40 bg-[#28D160]/10 shadow-[0_0_8px_rgba(40,209,96,0.15)]';
+                                                                            if (drill.skill_tags?.includes(tag)) colorClass = 'text-[#0A84FF] border-[#0A84FF]/40 bg-[#0A84FF]/10 shadow-[0_0_8px_rgba(10,132,255,0.15)]';
+                                                                            else if (drill.age_tags?.includes(tag)) colorClass = 'text-[#BF5AF2] border-[#BF5AF2]/40 bg-[#BF5AF2]/10 shadow-[0_0_8px_rgba(191,90,242,0.15)]';
+                                                                            return (
+                                                                                <span key={i} className={`px-2.5 py-1 rounded-full text-[7px] sm:text-[8px] font-black uppercase tracking-wider border ${colorClass}`}>
+                                                                                    {tag}
+                                                                                </span>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
-                                        <div className="absolute bottom-6 left-8 right-8 z-10">
-                                            <h4 className="font-black italic text-2xl text-white uppercase leading-tight line-clamp-2 group-hover:text-east-light transition-colors">
-                                                {drill.title}
-                                            </h4>
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">
-                                                    {drill.skill_tags?.[0] || 'Fundamentals'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

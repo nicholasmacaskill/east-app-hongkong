@@ -47,8 +47,10 @@ export default function LeaderboardPage() {
     const [activeSeason, setActiveSeason] = useState<number | 'All'>('All');
     const [activeWeek, setActiveWeek] = useState<number | 'All'>('All');
     const [entries, setEntries] = useState<any[]>([]);
+    const [checkInEntries, setCheckInEntries] = useState<any[]>([]);
     const [currentUserStats, setCurrentUserStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [loadingCheckIns, setLoadingCheckIns] = useState(true);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const { track } = useTracking();
 
@@ -74,7 +76,73 @@ export default function LeaderboardPage() {
     useEffect(() => {
         track('leaderboard_viewed', { sport, filter: activeFilter });
         fetchLeaderboard();
+        fetchCheckInLeaderboard();
     }, [sport, activeFilter, activeDivision, activeSeason, activeWeek]);
+
+    const fetchCheckInLeaderboard = async () => {
+        setLoadingCheckIns(true);
+        try {
+            // First try to use the view `check_in_leaderboard` if it exists
+            const { data, error } = await supabase
+                .from('check_in_leaderboard')
+                .select(`
+                    player_id,
+                    checkin_count,
+                    profiles!check_in_leaderboard_player_id_fkey(first_name, last_name, avatar_url, team)
+                `)
+                .order('checkin_count', { ascending: false })
+                .limit(100);
+
+            if (error) {
+                if (error.code === 'PGRST205' || error.message.includes('does not exist')) {
+                    // Fallback to fetching check_ins and aggregating client-side if view is missing
+                    const { data: rawData, error: rawError } = await supabase
+                        .from('check_ins')
+                        .select('user_id, profiles(first_name, last_name, avatar_url, team)');
+                        
+                    if (!rawError && rawData) {
+                        const counts: any = {};
+                        rawData.forEach((row: any) => {
+                            if (!row.user_id) return;
+                            if (!counts[row.user_id]) {
+                                const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+                                counts[row.user_id] = { count: 0, profile };
+                            }
+                            counts[row.user_id].count++;
+                        });
+                        const agg = Object.keys(counts).map(uid => ({
+                            id: uid,
+                            name: `${counts[uid].profile?.first_name || ''} ${counts[uid].profile?.last_name || ''}`.trim() || 'Player',
+                            team: counts[uid].profile?.team || 'INDEPENDENT',
+                            avatar_url: counts[uid].profile?.avatar_url,
+                            score: counts[uid].count
+                        })).sort((a, b) => b.score - a.score).slice(0, 100);
+                        
+                        setCheckInEntries(agg);
+                        return;
+                    }
+                }
+                throw error;
+            }
+
+            const mapped = (data || []).map((entry: any) => {
+                const profile = Array.isArray(entry.profiles) ? entry.profiles[0] : entry.profiles;
+                return {
+                    id: entry.player_id,
+                    name: `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'Player',
+                    team: profile?.team || 'INDEPENDENT',
+                    avatar_url: profile?.avatar_url,
+                    score: entry.checkin_count
+                };
+            });
+            setCheckInEntries(mapped);
+        } catch (error) {
+            console.error('Failed to fetch check-in leaderboard:', error);
+            setCheckInEntries([]);
+        } finally {
+            setLoadingCheckIns(false);
+        }
+    };
 
     const fetchLeaderboard = async () => {
         setLoading(true);
@@ -210,7 +278,7 @@ export default function LeaderboardPage() {
                 <div className="absolute inset-0 bg-gradient-to-b from-black via-black/40 to-black" />
             </div>
 
-            <div className="relative z-10 px-4 pt-12 max-w-5xl mx-auto">
+            <div className="relative z-10 px-4 pt-12 max-w-7xl mx-auto">
                 <Link href="/" className="absolute left-4 top-10 z-50 text-white hover:text-east-light transition-colors backdrop-blur-md p-2 rounded-full border border-white/20 bg-black/60 shadow-lg">
                     <ChevronLeft size={24} />
                 </Link>
@@ -316,92 +384,51 @@ export default function LeaderboardPage() {
                     </div>
                 </div>
 
-                {/* LEADERBOARD TABLE */}
-                <div className="animate-slideUp max-w-md mx-auto min-h-[400px]">
-                    {loading ? (
-                        <div className="text-center py-20 animate-pulse font-black italic uppercase text-gray-600 tracking-widest text-[10px]">Loading Stats...</div>
-                    ) : entries.length === 0 ? (
-                        <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5 border-dashed">
-                            <Target size={40} className="mx-auto mb-4 opacity-10" />
-                            <p className="font-black italic uppercase text-gray-600 tracking-widest text-[10px]">No Data Recorded</p>
+                <div className="flex flex-col gap-12 pb-10">
+                    {/* LEADERBOARD TABLE (SPORTS) */}
+                    <div className="animate-slideUp w-full max-w-2xl mx-auto">
+                        <div className="flex items-center gap-2 mb-4 justify-center">
+                            <Trophy size={16} className="text-[#28D160]" />
+                            <h2 className="font-black italic text-lg uppercase tracking-widest text-white">Performance</h2>
                         </div>
-                    ) : (
-                        <>
-                            {/* Header */}
-                            <div className="flex items-center gap-4 px-4 pb-3 mb-3 border-b border-white/10">
-                                <div className="w-8 text-[10px] font-black uppercase text-gray-500">Rank</div>
-                                <div className="w-12"></div>
-                                <div className="flex-1 text-[10px] font-black uppercase text-gray-500">Player</div>
-                                <div className="text-[10px] font-black uppercase text-gray-500">Score</div>
+                        {loading ? (
+                            <div className="text-center py-20 animate-pulse font-black italic uppercase text-gray-600 tracking-widest text-[10px]">Loading Stats...</div>
+                        ) : entries.length === 0 ? (
+                            <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5 border-dashed">
+                                <Target size={40} className="mx-auto mb-4 opacity-10" />
+                                <p className="font-black italic uppercase text-gray-600 tracking-widest text-[10px]">No Data Recorded</p>
                             </div>
+                        ) : (
+                            <>
+                                {/* Header */}
+                                <div className="flex items-center gap-4 px-4 pb-3 mb-3 border-b border-white/10">
+                                    <div className="w-8 text-[10px] font-black uppercase text-gray-500">Rank</div>
+                                    <div className="w-12"></div>
+                                    <div className="flex-1 text-[10px] font-black uppercase text-gray-500">Player</div>
+                                    <div className="text-[10px] font-black uppercase text-gray-500">Score</div>
+                                </div>
 
-                            {/* Entries */}
-                            <div className="flex flex-col gap-3">
-                                {entries.map((entry, i) => (
-                                    <div
-                                        key={i}
-                                        className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${entry.id === currentUserId
-                                            ? 'bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]'
-                                            : i === 0
-                                                ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
-                                                : 'bg-[#050505] border-white/5 hover:border-white/20'
-                                            }`}
-                                    >
-                                        {/* Rank */}
-                                        <div className={`w-8 font-black italic text-2xl ${entry.id === currentUserId || i === 0 ? 'text-[#28D160]' : 'text-white/20'} group-hover:text-[#28D160] transition-colors`}>
-                                            {i + 1}
-                                        </div>
-
-                                        {/* Avatar */}
-                                        <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/5 group-hover:border-white/40 transition-all shrink-0">
-                                            {entry.avatar_url ? (
-                                                <img src={entry.avatar_url} className="w-full h-full object-cover" alt="" />
-                                            ) : (
-                                                <div className="w-full h-full bg-gray-950 flex items-center justify-center text-gray-700">
-                                                    <User size={18} />
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Player Info */}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="font-black italic uppercase text-sm text-white tracking-tight truncate">{entry.name}</h3>
-                                                {entry.id === currentUserId && (
-                                                    <span className="bg-east-light text-black text-[8px] font-black px-1.5 py-0.5 rounded italic uppercase tracking-tighter">YOU</span>
-                                                )}
-                                            </div>
-                                            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{entry.team}</p>
-                                        </div>
-
-                                        {/* Score */}
-                                        <div className="text-right pr-2 shrink-0">
-                                            <div className="font-black italic text-2xl text-white group-hover:scale-110 transition-transform">
-                                                {entry.score}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {/* Personal Stats Section (if not in top 100) */}
-                                {currentUserStats && currentUserStats.rank > 100 && (
-                                    <>
-                                        <div className="flex items-center gap-4 py-4">
-                                            <div className="flex-1 h-px bg-white/10" />
-                                            <div className="text-[10px] font-black uppercase text-gray-500 italic tracking-[0.2em]">Your Performance</div>
-                                            <div className="flex-1 h-px bg-white/10" />
-                                        </div>
-
-                                        <div className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]`}>
+                                {/* Entries */}
+                                <div className="flex flex-col gap-3">
+                                    {entries.map((entry, i) => (
+                                        <div
+                                            key={i}
+                                            className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${entry.id === currentUserId
+                                                ? 'bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]'
+                                                : i === 0
+                                                    ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
+                                                    : 'bg-[#050505] border-white/5 hover:border-white/20'
+                                                }`}
+                                        >
                                             {/* Rank */}
-                                            <div className={`w-8 font-black italic text-2xl text-[#28D160] group-hover:text-[#28D160] transition-colors`}>
-                                                {currentUserStats.rank}
+                                            <div className={`w-8 font-black italic text-2xl ${entry.id === currentUserId || i === 0 ? 'text-[#28D160]' : 'text-white/20'} group-hover:text-[#28D160] transition-colors`}>
+                                                {i + 1}
                                             </div>
 
                                             {/* Avatar */}
                                             <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/5 group-hover:border-white/40 transition-all shrink-0">
-                                                {currentUserStats.avatar_url ? (
-                                                    <img src={currentUserStats.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                {entry.avatar_url ? (
+                                                    <img src={entry.avatar_url} className="w-full h-full object-cover" alt="" />
                                                 ) : (
                                                     <div className="w-full h-full bg-gray-950 flex items-center justify-center text-gray-700">
                                                         <User size={18} />
@@ -412,24 +439,146 @@ export default function LeaderboardPage() {
                                             {/* Player Info */}
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2">
-                                                    <h3 className="font-black italic uppercase text-sm text-white tracking-tight truncate">{currentUserStats.name}</h3>
-                                                    <span className="bg-east-light text-black text-[8px] font-black px-1.5 py-0.5 rounded italic uppercase tracking-tighter">YOU</span>
+                                                    <h3 className="font-black italic uppercase text-sm text-white tracking-tight truncate">{entry.name}</h3>
+                                                    {entry.id === currentUserId && (
+                                                        <span className="bg-east-light text-black text-[8px] font-black px-1.5 py-0.5 rounded italic uppercase tracking-tighter">YOU</span>
+                                                    )}
                                                 </div>
-                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{currentUserStats.team}</p>
+                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{entry.team}</p>
                                             </div>
 
                                             {/* Score */}
                                             <div className="text-right pr-2 shrink-0">
                                                 <div className="font-black italic text-2xl text-white group-hover:scale-110 transition-transform">
-                                                    {currentUserStats.score}
+                                                    {entry.score}
                                                 </div>
                                             </div>
                                         </div>
-                                    </>
-                                )}
+                                    ))}
+
+                                    {/* Personal Stats Section (if not in top 100) */}
+                                    {currentUserStats && currentUserStats.rank > 100 && (
+                                        <>
+                                            <div className="flex items-center gap-4 py-4">
+                                                <div className="flex-1 h-px bg-white/10" />
+                                                <div className="text-[10px] font-black uppercase text-gray-500 italic tracking-[0.2em]">Your Performance</div>
+                                                <div className="flex-1 h-px bg-white/10" />
+                                            </div>
+
+                                            <div className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]`}>
+                                                {/* Rank */}
+                                                <div className={`w-8 font-black italic text-2xl text-[#28D160] group-hover:text-[#28D160] transition-colors`}>
+                                                    {currentUserStats.rank}
+                                                </div>
+
+                                                {/* Avatar */}
+                                                <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/5 group-hover:border-white/40 transition-all shrink-0">
+                                                    {currentUserStats.avatar_url ? (
+                                                        <img src={currentUserStats.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-gray-950 flex items-center justify-center text-gray-700">
+                                                            <User size={18} />
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Player Info */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <h3 className="font-black italic uppercase text-sm text-white tracking-tight truncate">{currentUserStats.name}</h3>
+                                                        <span className="bg-east-light text-black text-[8px] font-black px-1.5 py-0.5 rounded italic uppercase tracking-tighter">YOU</span>
+                                                    </div>
+                                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{currentUserStats.team}</p>
+                                                </div>
+
+                                                {/* Score */}
+                                                <div className="text-right pr-2 shrink-0">
+                                                    <div className="font-black italic text-2xl text-white group-hover:scale-110 transition-transform">
+                                                        {currentUserStats.score}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    {/* CHECK-IN LEADERBOARD */}
+                    <div className="animate-slideUp w-full max-w-2xl mx-auto">
+                        <div className="flex items-center gap-2 mb-4 justify-center">
+                            <Activity size={16} className="text-[#28D160]" />
+                            <h2 className="font-black italic text-lg uppercase tracking-widest text-white">Most Visits</h2>
+                        </div>
+                        {loadingCheckIns ? (
+                            <div className="text-center py-20 animate-pulse font-black italic uppercase text-gray-600 tracking-widest text-[10px]">Loading Visits...</div>
+                        ) : checkInEntries.length === 0 ? (
+                            <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5 border-dashed">
+                                <Target size={40} className="mx-auto mb-4 opacity-10" />
+                                <p className="font-black italic uppercase text-gray-600 tracking-widest text-[10px]">No Check-Ins Recorded</p>
                             </div>
-                        </>
-                    )}
+                        ) : (
+                            <>
+                                {/* Header */}
+                                <div className="flex items-center gap-4 px-4 pb-3 mb-3 border-b border-white/10">
+                                    <div className="w-8 text-[10px] font-black uppercase text-gray-500">Rank</div>
+                                    <div className="w-12"></div>
+                                    <div className="flex-1 text-[10px] font-black uppercase text-gray-500">Player</div>
+                                    <div className="text-[10px] font-black uppercase text-gray-500">Check-Ins</div>
+                                </div>
+
+                                {/* Entries */}
+                                <div className="flex flex-col gap-3">
+                                    {checkInEntries.map((entry, i) => (
+                                        <div
+                                            key={i}
+                                            className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${entry.id === currentUserId
+                                                ? 'bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]'
+                                                : i === 0
+                                                    ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
+                                                    : 'bg-[#050505] border-white/5 hover:border-white/20'
+                                                }`}
+                                        >
+                                            {/* Rank */}
+                                            <div className={`w-8 font-black italic text-2xl ${entry.id === currentUserId || i === 0 ? 'text-[#28D160]' : 'text-white/20'} group-hover:text-[#28D160] transition-colors`}>
+                                                {i + 1}
+                                            </div>
+
+                                            {/* Avatar */}
+                                            <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/5 group-hover:border-white/40 transition-all shrink-0">
+                                                {entry.avatar_url ? (
+                                                    <img src={entry.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gray-950 flex items-center justify-center text-gray-700">
+                                                        <User size={18} />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Player Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-black italic uppercase text-sm text-white tracking-tight truncate">{entry.name}</h3>
+                                                    {entry.id === currentUserId && (
+                                                        <span className="bg-east-light text-black text-[8px] font-black px-1.5 py-0.5 rounded italic uppercase tracking-tighter">YOU</span>
+                                                    )}
+                                                </div>
+                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{entry.team}</p>
+                                            </div>
+
+                                            {/* Score */}
+                                            <div className="text-right pr-2 shrink-0">
+                                                <div className="font-black italic text-2xl text-white group-hover:scale-110 transition-transform">
+                                                    {entry.score}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

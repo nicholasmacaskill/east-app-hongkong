@@ -301,7 +301,7 @@ export default function DrillDetailsModal({ drill, onClose, isCoach }: DrillDeta
                                 onClick={() => setActiveTab('video')}
                                 className={`group py-4 px-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] transition-all duration-500 relative overflow-hidden flex items-center justify-between ${activeTab === 'video' ? 'bg-white text-black shadow-[0_20px_40px_rgba(255,255,255,0.15)]' : 'bg-white/5 text-gray-500 border border-white/5 hover:border-white/20 hover:text-white'}`}
                             >
-                                <span className="relative z-10">Analysis Stream</span>
+                                <span className="relative z-10">Video Feed</span>
                                 <Video size={16} className={activeTab === 'video' ? 'text-black' : 'text-gray-600'} />
                                 {activeTab === 'video' && <div className="absolute inset-0 bg-gradient-to-r from-white to-gray-200" />}
                             </button>

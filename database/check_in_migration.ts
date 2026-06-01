@@ -35,8 +35,18 @@ const sql = `
   END
   $$;
   
+  CREATE OR REPLACE VIEW public.check_in_leaderboard AS
+  SELECT 
+    user_id as player_id,
+    count(id) as checkin_count
+  FROM public.check_ins
+  GROUP BY user_id;
+  
   GRANT ALL ON TABLE public.check_ins TO service_role;
   GRANT SELECT ON TABLE public.check_ins TO authenticated;
+
+  GRANT ALL ON public.check_in_leaderboard TO service_role;
+  GRANT SELECT ON public.check_in_leaderboard TO authenticated;
 `;
 
 (async () => {

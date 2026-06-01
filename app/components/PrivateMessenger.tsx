@@ -14,6 +14,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
     // Data states
     const [teams, setTeams] = useState<any[]>([]);
     const [profiles, setProfiles] = useState<any[]>([]);
+    const [currentUserProfile, setCurrentUserProfile] = useState<any | null>(null);
     
     // Active chat state
     const [activeChatId, setActiveChatId] = useState<string | null>(null); // can be a user_id or a team_id
@@ -46,6 +47,10 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
     };
 
     const fetchTeamsAndProfiles = async () => {
+        // Fetch current user profile
+        const { data: myProfile } = await supabase.from('profiles').select('*').eq('id', currentUserId).single();
+        if (myProfile) setCurrentUserProfile(myProfile);
+
         // Fetch Teams where coach is the creator OR is a member
         const { data: myTeams } = await supabase.from('teams').select('*').eq('coach_id', currentUserId);
         if (myTeams) setTeams(myTeams);
@@ -53,11 +58,18 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
         // Fetch Profiles for 1-on-1 chats
         const { data: allProfiles } = await supabase.from('profiles').select('*').neq('id', currentUserId);
         if (allProfiles) {
-            setProfiles(allProfiles);
+            let allowedProfiles = allProfiles;
+            
+            // Prevent players from messaging other players directly
+            if (myProfile?.role === 'player') {
+                allowedProfiles = allProfiles.filter(p => p.role !== 'player');
+            }
+
+            setProfiles(allowedProfiles);
             
             if (chatWithUserId) {
                 // Check if the user exists
-                const targetUser = allProfiles.find(p => p.id === chatWithUserId);
+                const targetUser = allowedProfiles.find(p => p.id === chatWithUserId);
                 if (targetUser) {
                     setActiveChatId(chatWithUserId);
                     setIsTeamChat(false);
@@ -365,9 +377,11 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
                         <h2 className="text-3xl font-black italic uppercase tracking-tighter">Messages</h2>
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Private Coaching Threads</p>
                     </div>
-                    <button onClick={() => setShowCreateTeam(true)} className="p-3 bg-[#28D160]/10 text-[#28D160] rounded-xl hover:bg-[#28D160]/20 transition flex items-center gap-2 border border-[#28D160]/30">
-                        <Plus size={16} /> <span className="text-[10px] font-black uppercase">New Team</span>
-                    </button>
+                    {(currentUserProfile?.role === 'coach' || currentUserProfile?.role === 'sys-admin') && (
+                        <button onClick={() => setShowCreateTeam(true)} className="p-3 bg-[#28D160]/10 text-[#28D160] rounded-xl hover:bg-[#28D160]/20 transition flex items-center gap-2 border border-[#28D160]/30">
+                            <Plus size={16} /> <span className="text-[10px] font-black uppercase">New Team</span>
+                        </button>
+                    )}
                 </div>
                 
                 <div className="relative">

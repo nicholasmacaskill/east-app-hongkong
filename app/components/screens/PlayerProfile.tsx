@@ -59,6 +59,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
   const [activeTab, setActiveTab] = useState<'streaks' | 'full_stats'>('streaks');
   const [categoryStats, setCategoryStats] = useState<Record<string, any>>({});
   const [uploading, setUploading] = useState(false);
+  const [checkInCount, setCheckInCount] = useState<number | null>(null);
 
   // Removed gallery state and refs
   const avatarInputRef = React.useRef<HTMLInputElement>(null);
@@ -103,7 +104,26 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
       }
     };
 
+    const fetchCheckIns = async () => {
+      if (!profileData?.id) return;
+      try {
+        const { count, error } = await supabase
+          .from('check_ins')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', profileData.id);
+          
+        if (!error) {
+          setCheckInCount(count !== null ? count : 0);
+        } else {
+          setCheckInCount(0);
+        }
+      } catch (err) {
+        setCheckInCount(0);
+      }
+    };
+
     fetchAllStats();
+    fetchCheckIns();
   }, [profileData?.id, initialStats]);
 
 
@@ -229,13 +249,14 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                 <div className="grid grid-cols-2 w-full gap-3 mt-2">
                   {[
                     { l: 'CREDITS', l2: 'AVAILABLE', v: profileData.credits || 0, icon: Coins, action: onShowHistory },
+                    { l: 'GYM VISITS', l2: 'LIFETIME', v: checkInCount !== null ? checkInCount : '-', icon: Activity },
                     { l: 'TOP SCORER', l2: '(TEAM)', v: 'soon', icon: Award },
                     { l: 'MOST SHOTS', l2: '(TEAM)', v: 'soon', icon: Award },
                   ].map((badge: any, i) => (
                     <div
                       key={i}
                       onClick={badge.action}
-                      className={`flex flex-col items-center p-3 bg-white/5 rounded-2xl border border-white/10 group hover:border-[#28D160]/50 transition-colors ${badge.action ? 'cursor-pointer' : ''} min-h-[90px] justify-center ${i === 2 ? 'col-span-2' : ''}`}
+                      className={`flex flex-col items-center p-3 bg-white/5 rounded-2xl border border-white/10 group hover:border-[#28D160]/50 transition-colors ${badge.action ? 'cursor-pointer' : ''} min-h-[90px] justify-center`}
                     >
                       <div className="w-10 h-10 rounded-full border border-east-light/30 bg-black/40 flex items-center justify-center mb-2 shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">
                         <badge.icon size={20} className="text-[#28D160] drop-shadow-md" />

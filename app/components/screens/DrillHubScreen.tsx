@@ -69,7 +69,8 @@ const WORKOUT_TAGS = [
     'conditioning',
     'mobility',
     'strength',
-    'power, speed & conditioning'
+    'power',
+    'core'
 ];
 
 const HOCKEY_TAGS = [
@@ -496,7 +497,7 @@ export default function DrillHubScreen() {
                             </button>
                             <span className="w-1 h-1 bg-white/20 rounded-full" />
                             <span className="text-[10px] font-black tracking-[0.4em] text-east-light uppercase italic">
-                                {isEditing ? 'Studio Mode' : 'Tactical Sequence'}
+                                {isEditing ? 'Studio Mode' : (selectedDrill.group_tags?.[0] || selectedDrill.skill_tags?.[0] || 'Tactical Sequence')}
                             </span>
                         </div>
                         <h1 className="text-xl sm:text-2xl md:text-4xl font-black italic uppercase tracking-tighter text-white leading-tight brightness-125">
@@ -669,8 +670,19 @@ export default function DrillHubScreen() {
 
                     {/* Right: Instruction Sidebar (Redesigned with Dark Blue-Grey Glassmorphism) */}
                     <div className="w-full lg:w-[400px] lg:min-w-[400px] bg-[#0B132B]/80 backdrop-blur-2xl p-6 sm:p-8 flex flex-col gap-6 border-t lg:border-t-0 lg:border-l border-white/10 overflow-y-auto no-scrollbar">
-                        {drillSteps.length > 0 ? (
+                        {/* Redesigned Drill-wide Details (mockup matching) */}
+                        <div className="space-y-6 animate-slideInRight">
+                            <ActivityDescription text={selectedDrill.description} />
+                            <AccessoriesList accessories={selectedDrill.accessories} />
+                            <ActivityGoals drill={selectedDrill} />
+                            <SetupGrid drill={selectedDrill} />
+                        </div>
+
+                        {drillSteps.length > 0 && (
                             <div className="space-y-6 animate-slideInRight">
+                                {/* Divider */}
+                                <div className="border-t border-white/10 my-4" />
+
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-4">
                                         <span className="text-3xl sm:text-4xl font-black italic text-east-light opacity-50 tracking-tighter leading-none">0{currentStep.step_number}</span>
@@ -754,24 +766,8 @@ export default function DrillHubScreen() {
                                         onChange={(e) => e.target.files?.[0] && handleMediaReplace('video', e.target.files[0])} 
                                     />
                                 </div>
-
-                                {/* Divider */}
-                                <div className="border-t border-white/10 my-4" />
-                            </div>
-                        ) : (
-                            <div className="space-y-6 animate-slideInRight mb-4">
-                                <h2 className="text-xl font-black italic uppercase text-white tracking-widest">Drill Overview</h2>
-                                <div className="border-t border-white/10" />
                             </div>
                         )}
-
-                        {/* Redesigned Drill-wide Details (mockup matching) */}
-                        <div className="space-y-6 animate-slideInRight">
-                            <ActivityDescription text={selectedDrill.description} />
-                            <AccessoriesList accessories={selectedDrill.accessories} />
-                            <ActivityGoals drill={selectedDrill} />
-                            <SetupGrid drill={selectedDrill} />
-                        </div>
                     </div>
                 </div>
 
@@ -1063,11 +1059,16 @@ export default function DrillHubScreen() {
                                                     </h3>
                                                     {allTags.length > 0 && (
                                                         <div className="flex flex-wrap gap-1">
-                                                            {allTags.map((tag, i) => (
-                                                                <span key={i} className="px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider border border-east-light/30 text-east-light bg-east-light/10">
-                                                                    {tag}
-                                                                </span>
-                                                            ))}
+                                                            {allTags.map((tag, i) => {
+                                                                let colorClass = 'text-[#28D160] border-[#28D160]/40 bg-[#28D160]/10';
+                                                                if (drill.skill_tags?.includes(tag)) colorClass = 'text-[#0A84FF] border-[#0A84FF]/40 bg-[#0A84FF]/10';
+                                                                else if (drill.age_tags?.includes(tag)) colorClass = 'text-[#BF5AF2] border-[#BF5AF2]/40 bg-[#BF5AF2]/10';
+                                                                return (
+                                                                    <span key={i} className={`px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-wider border ${colorClass}`}>
+                                                                        {tag}
+                                                                    </span>
+                                                                );
+                                                            })}
                                                         </div>
                                                     )}
                                                 </div>
@@ -1129,11 +1130,16 @@ export default function DrillHubScreen() {
                                                         </div>
                                                         {allTags.length > 0 && (
                                                             <div className="flex flex-wrap gap-1.5">
-                                                                {allTags.map((tag, i) => (
-                                                                    <span key={i} className="px-2.5 py-1 rounded-full text-[7px] sm:text-[8px] font-black uppercase tracking-wider border border-east-light/40 text-east-light bg-east-light/10 shadow-[0_0_8px_rgba(40,209,96,0.15)]">
-                                                                        {tag}
-                                                                    </span>
-                                                                ))}
+                                                                {allTags.map((tag, i) => {
+                                                                    let colorClass = 'text-[#28D160] border-[#28D160]/40 bg-[#28D160]/10 shadow-[0_0_8px_rgba(40,209,96,0.15)]';
+                                                                    if (drill.skill_tags?.includes(tag)) colorClass = 'text-[#0A84FF] border-[#0A84FF]/40 bg-[#0A84FF]/10 shadow-[0_0_8px_rgba(10,132,255,0.15)]';
+                                                                    else if (drill.age_tags?.includes(tag)) colorClass = 'text-[#BF5AF2] border-[#BF5AF2]/40 bg-[#BF5AF2]/10 shadow-[0_0_8px_rgba(191,90,242,0.15)]';
+                                                                    return (
+                                                                        <span key={i} className={`px-2.5 py-1 rounded-full text-[7px] sm:text-[8px] font-black uppercase tracking-wider border ${colorClass}`}>
+                                                                            {tag}
+                                                                        </span>
+                                                                    );
+                                                                })}
                                                             </div>
                                                         )}
                                                     </div>
