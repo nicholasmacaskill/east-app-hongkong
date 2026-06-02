@@ -11,8 +11,11 @@ export const inngest = new Inngest({ id: "east-training-app" });
 // ------------------------------------------------------------------
 
 export const sendConfirmationEmail = inngest.createFunction(
-  { id: "send-booking-confirmation-email", event: "app/booking.registered" },
-  async ({ event, step }) => {
+  { 
+    id: "send-booking-confirmation-email",
+    triggers: [{ event: "app/booking.registered" }]
+  },
+  async ({ event, step }: { event: any, step: any }) => {
     // Note: The event payload is passed to the function
     const { contact_email, first_name, remainingCredits } = event.data;
 
