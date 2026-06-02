@@ -88,39 +88,38 @@ export default function LeaderboardPage() {
                 .select(`
                     player_id,
                     checkin_count,
-                    profiles!check_in_leaderboard_player_id_fkey(first_name, last_name, avatar_url, team)
+                    profiles(first_name, last_name, avatar_url, team)
                 `)
                 .order('checkin_count', { ascending: false })
                 .limit(100);
 
             if (error) {
-                if (error.code === 'PGRST205' || error.message.includes('does not exist')) {
-                    // Fallback to fetching check_ins and aggregating client-side if view is missing
-                    const { data: rawData, error: rawError } = await supabase
-                        .from('check_ins')
-                        .select('user_id, profiles(first_name, last_name, avatar_url, team)');
-                        
-                    if (!rawError && rawData) {
-                        const counts: any = {};
-                        rawData.forEach((row: any) => {
-                            if (!row.user_id) return;
-                            if (!counts[row.user_id]) {
-                                const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
-                                counts[row.user_id] = { count: 0, profile };
-                            }
-                            counts[row.user_id].count++;
-                        });
-                        const agg = Object.keys(counts).map(uid => ({
-                            id: uid,
-                            name: `${counts[uid].profile?.first_name || ''} ${counts[uid].profile?.last_name || ''}`.trim() || 'Player',
-                            team: counts[uid].profile?.team || 'INDEPENDENT',
-                            avatar_url: counts[uid].profile?.avatar_url,
-                            score: counts[uid].count
-                        })).sort((a, b) => b.score - a.score).slice(0, 100);
-                        
-                        setCheckInEntries(agg);
-                        return;
-                    }
+                console.warn('View check_in_leaderboard query failed, attempting client-side aggregation fallback:', error);
+                // Fallback to fetching check_ins and aggregating client-side
+                const { data: rawData, error: rawError } = await supabase
+                    .from('check_ins')
+                    .select('user_id, profiles(first_name, last_name, avatar_url, team)');
+                    
+                if (!rawError && rawData) {
+                    const counts: any = {};
+                    rawData.forEach((row: any) => {
+                        if (!row.user_id) return;
+                        if (!counts[row.user_id]) {
+                            const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+                            counts[row.user_id] = { count: 0, profile };
+                        }
+                        counts[row.user_id].count++;
+                    });
+                    const agg = Object.keys(counts).map(uid => ({
+                        id: uid,
+                        name: `${counts[uid].profile?.first_name || ''} ${counts[uid].profile?.last_name || ''}`.trim() || 'Player',
+                        team: counts[uid].profile?.team || 'INDEPENDENT',
+                        avatar_url: counts[uid].profile?.avatar_url,
+                        score: counts[uid].count
+                    })).sort((a, b) => b.score - a.score).slice(0, 100);
+                    
+                    setCheckInEntries(agg);
+                    return;
                 }
                 throw error;
             }
