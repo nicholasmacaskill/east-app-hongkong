@@ -407,6 +407,27 @@ CREATE TABLE IF NOT EXISTS public.transactions (
 ALTER TABLE "public"."transactions" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS public.check_ins (
+    id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    location_id text NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+ALTER TABLE "public"."check_ins" OWNER TO "postgres";
+
+CREATE OR REPLACE VIEW public.check_in_leaderboard AS
+SELECT 
+    user_id as player_id,
+    count(id) as checkin_count
+FROM public.check_ins
+GROUP BY user_id;
+
+ALTER TABLE "public"."check_in_leaderboard" OWNER TO "postgres";
+
+
+
 ALTER TABLE ONLY "public"."availability"
     ADD CONSTRAINT "availability_pkey" PRIMARY KEY ("id");
 
