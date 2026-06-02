@@ -127,4 +127,22 @@ export interface Transaction {
     profiles?: UserProfileData;
 }
 
+export interface TrainingPlan {
+    id: string;
+    coach_id: string;
+    title: string;
+    description?: string;
+    created_at?: string;
+    updated_at?: string;
+    coach?: UserProfileData;
+}
+
+export interface TrainingPlanDrill {
+    id: string;
+    plan_id: string;
+    drill_id: string;
+    order_index: number;
+    created_at?: string;
+}
+
 export type ScheduleItem = Session | Availability;

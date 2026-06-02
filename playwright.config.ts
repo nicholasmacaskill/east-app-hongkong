@@ -4,7 +4,7 @@ import path from 'path';
 
 const isProd = process.env.PLAYWRIGHT_ENV === 'production';
 const envFile = isProd ? '.env.production.latest' : '.env.test';
-const baseURL = isProd ? 'https://app.eastsportsgroup.com' : 'https://test-branch-east.vercel.app';
+const baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL || (isProd ? 'https://app.eastsportsgroup.com' : 'https://test-branch-east.vercel.app');
 
 dotenv.config({ path: path.resolve(__dirname, envFile) });
 
@@ -99,7 +99,8 @@ export default defineConfig({
         'tests/leaderboard-cms.spec.ts',
         'tests/parent-photo-editability.spec.ts',
         'tests/ticket-19-qr-wallet.spec.ts',
-        'tests/drill-hub-e2e.spec.ts'
+        'tests/drill-hub-e2e.spec.ts',
+        'tests/training-plans.spec.ts'
       ],
     },
 

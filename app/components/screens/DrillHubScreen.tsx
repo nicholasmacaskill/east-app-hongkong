@@ -26,6 +26,8 @@ import {
     MessageSquare
 } from 'lucide-react';
 import WhiteboardModal from '../modals/WhiteboardModal';
+import TrainingPlanModal from '../modals/TrainingPlanModal';
+import { TrainingPlan } from '@/app/types';
 
 interface Drill {
     id: string;
@@ -230,6 +232,14 @@ export default function DrillHubScreen() {
     const imageInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
 
+    const [hubMode, setHubMode] = useState<'drills' | 'plans'>('drills');
+    const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
+    const [selectedPlanForEdit, setSelectedPlanForEdit] = useState<TrainingPlan | null>(null);
+    const [creatingPlan, setCreatingPlan] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState<TrainingPlan | null>(null);
+    const [planDrills, setPlanDrills] = useState<Drill[]>([]);
+    const [loadingPlanDrills, setLoadingPlanDrills] = useState(false);
+
     useEffect(() => {
         const checkUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -250,6 +260,7 @@ export default function DrillHubScreen() {
         } else {
             fetchDrills();
         }
+        fetchTrainingPlans();
     }, [sessionId, selectedAgeFilters, selectedWorkoutFilters, selectedHockeyFilters, searchParams]);
 
     const handleCloseDrill = () => {
@@ -324,6 +335,84 @@ export default function DrillHubScreen() {
             setDrills(data);
         }
         setLoading(false);
+    };
+
+    const fetchTrainingPlans = async () => {
+        const { data, error } = await supabase
+            .from('training_plans')
+            .select('*, coach:profiles(first_name, last_name, avatar_url)')
+            .order('created_at', { ascending: false });
+        
+        if (!error && data) {
+            setTrainingPlans(data);
+        }
+    };
+
+    const handleCreatePlan = async () => {
+        if (!currentUser) return;
+        setCreatingPlan(true);
+        try {
+            const { data, error } = await supabase
+                .from('training_plans')
+                .insert({
+                    title: 'New Training Plan',
+                    coach_id: currentUser.id,
+                    description: 'A new training plan'
+                })
+                .select()
+                .single();
+            if (error) throw error;
+            if (data) {
+                setTrainingPlans([data, ...trainingPlans]);
+                setSelectedPlanForEdit(data);
+            }
+        } catch (e: any) {
+            alert('Failed to create plan: ' + e.message);
+        } finally {
+            setCreatingPlan(false);
+        }
+    };
+
+    const handleSelectPlan = async (plan: TrainingPlan) => {
+        setSelectedPlan(plan);
+        setLoadingPlanDrills(true);
+        try {
+            // Get all drill_ids for this plan
+            const { data: pdData, error: pdError } = await supabase
+                .from('training_plan_drills')
+                .select('drill_id, order_index')
+                .eq('plan_id', plan.id)
+                .order('order_index', { ascending: true });
+                
+            if (pdError) throw pdError;
+            
+            if (pdData && pdData.length > 0) {
+                const drillIds = pdData.map(pd => pd.drill_id);
+                // Fetch the actual drills detail
+                const { data: drillsData, error: drillsError } = await supabase
+                    .from('coach_drills')
+                    .select('*')
+                    .in('id', drillIds);
+                    
+                if (drillsError) throw drillsError;
+                
+                if (drillsData) {
+                    // Sort them according to order_index from pdData
+                    const sortedDrills = pdData
+                        .map(pd => drillsData.find(d => d.id === pd.drill_id))
+                        .filter(Boolean) as Drill[];
+                    setPlanDrills(sortedDrills);
+                } else {
+                    setPlanDrills([]);
+                }
+            } else {
+                setPlanDrills([]);
+            }
+        } catch (e) {
+            console.error('Failed to load training plan drills:', e);
+        } finally {
+            setLoadingPlanDrills(false);
+        }
     };
 
     const fetchDrillSteps = async (drillId: string) => {
@@ -873,19 +962,44 @@ export default function DrillHubScreen() {
             <div className="relative z-10 p-4 sm:p-8 pt-12 sm:pt-16">
                 <div className="flex flex-col gap-3 mb-8 sm:mb-10 items-start">
                     <button 
-                        onClick={() => window.history.back()}
+                        onClick={() => {
+                            if (selectedPlan) {
+                                setSelectedPlan(null);
+                            } else {
+                                window.history.back();
+                            }
+                        }}
                         className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition-all group mb-2"
                     >
                         <ChevronLeft size={16} className="text-gray-400 group-hover:text-white transition-colors group-hover:-translate-x-1" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-white transition-colors">Back</span>
                     </button>
                     <span className="text-[9px] sm:text-[10px] font-black tracking-[0.5em] text-east-light uppercase italic opacity-80">Evolution System</span>
-                    <h1 className="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tighter leading-none brightness-125 drop-shadow-2xl">
-                        {isSessionPlanMode ? "Training Plan" : "Drill Hub"}
-                    </h1>
+                    <div className="flex items-center gap-6">
+                        <h1 className="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tighter leading-none brightness-125 drop-shadow-2xl">
+                            {selectedPlan ? selectedPlan.title : isSessionPlanMode ? "Training Plan" : "Drill Hub"}
+                        </h1>
+                        
+                        {!isSessionPlanMode && !selectedPlan && (
+                            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 ml-4">
+                                <button 
+                                    onClick={() => setHubMode('drills')}
+                                    className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${hubMode === 'drills' ? 'bg-east-light text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                                >
+                                    Drills
+                                </button>
+                                <button 
+                                    onClick={() => setHubMode('plans')}
+                                    className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${hubMode === 'plans' ? 'bg-east-light text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                                >
+                                    Plans
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {!isSessionPlanMode && (
+                {!isSessionPlanMode && !selectedPlan && (
                     <div className="space-y-4">
                         <div className="flex items-center gap-3">
                             <button 
@@ -992,7 +1106,41 @@ export default function DrillHubScreen() {
                 )}
             </div>
 
-            {isSessionPlanMode ? (
+            {selectedPlan ? (
+                <div className="px-4 sm:px-6 space-y-4">
+                    {loadingPlanDrills ? (
+                        <div className="py-20 text-center animate-pulse text-[#28D160] font-black uppercase text-sm tracking-widest">
+                            Loading Plan Drills...
+                        </div>
+                    ) : planDrills.length === 0 ? (
+                        <div className="text-center py-20 opacity-40">
+                            <Layers className="mx-auto mb-4 text-gray-500" size={48} />
+                            <p className="text-sm font-black uppercase tracking-widest">No drills in this plan yet.</p>
+                        </div>
+                    ) : (
+                        planDrills.map((drill, idx) => (
+                            <div 
+                                key={drill.id} 
+                                onClick={() => handleSelectDrill(drill)}
+                                className="bg-[#121212] border border-white/10 rounded-2xl p-4 flex items-center justify-between cursor-pointer active:scale-95 transition-all shadow-xl"
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/5 rounded-xl flex items-center justify-center text-[#28D160] font-black italic text-lg sm:text-xl">
+                                        {idx + 1}
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black italic text-base sm:text-lg uppercase">{drill.title}</h3>
+                                        <span className="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                            {drill.skill_tags?.[0] || 'Fundamentals'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <ChevronRight className="text-gray-600 w-4 h-4 sm:w-5 sm:h-5" />
+                            </div>
+                        ))
+                    )}
+                </div>
+            ) : isSessionPlanMode ? (
                 <div className="px-4 sm:px-6 space-y-4">
                     {drills.length === 0 && !loading && (
                         <div className="text-center py-20 opacity-50">
@@ -1019,6 +1167,67 @@ export default function DrillHubScreen() {
                             <ChevronRight className="text-gray-600 w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                     ))}
+                </div>
+            ) : hubMode === 'plans' ? (
+                <div className="relative z-10 px-4 sm:px-8 mt-2 space-y-6">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                            <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">{trainingPlans.length} PLANS</span>
+                            <div className="h-px flex-1 bg-white/5" />
+                        </div>
+                        {['coach', 'admin', 'sys-admin'].includes(userRole || '') && (
+                            <button
+                                onClick={handleCreatePlan}
+                                disabled={creatingPlan}
+                                className="px-6 py-2 bg-east-light text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all active:scale-95 flex items-center gap-2"
+                            >
+                                {creatingPlan ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                                Create Plan
+                            </button>
+                        )}
+                    </div>
+                    {trainingPlans.length === 0 ? (
+                        <div className="text-center py-24 opacity-40">
+                            <Layers className="mx-auto mb-4" size={48} />
+                            <p className="text-sm font-black uppercase tracking-widest">No Training Plans Found</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {trainingPlans.map(plan => (
+                                <div
+                                    key={plan.id}
+                                    onClick={() => handleSelectPlan(plan)}
+                                    className="bg-[#121212] border border-white/5 hover:border-east-light/50 rounded-[2rem] p-6 sm:p-8 flex flex-col justify-between cursor-pointer active:scale-95 transition-all shadow-xl group"
+                                >
+                                    <div className="space-y-4 mb-8">
+                                        <div className="flex justify-between items-start">
+                                            <div className="w-12 h-12 rounded-full bg-east-light/10 text-east-light flex items-center justify-center font-black italic">
+                                                TP
+                                            </div>
+                                            {['coach', 'admin', 'sys-admin'].includes(userRole || '') && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setSelectedPlanForEdit(plan); }}
+                                                    className="p-2 bg-white/5 text-gray-500 rounded-lg hover:bg-east-light hover:text-black transition-all"
+                                                >
+                                                    <PenTool size={14} />
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h3 className="font-black italic text-xl sm:text-2xl uppercase leading-none group-hover:text-east-light transition-colors">{plan.title}</h3>
+                                            {plan.coach && (
+                                                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-2">Coach {plan.coach.first_name} {plan.coach.last_name}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                                        <span>Evolution Plan</span>
+                                        <ChevronRight size={16} className="text-gray-500 group-hover:text-east-light transition-colors group-hover:translate-x-1" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             ) : (() => {
                 const hasFilters = selectedAgeFilters.length > 0 || selectedWorkoutFilters.length > 0 || selectedHockeyFilters.length > 0;
@@ -1156,6 +1365,13 @@ export default function DrillHubScreen() {
 
             {showWhiteboard && (
                 <WhiteboardModal onClose={() => setShowWhiteboard(false)} />
+            )}
+
+            {selectedPlanForEdit && (
+                <TrainingPlanModal 
+                    planData={selectedPlanForEdit} 
+                    onClose={() => setSelectedPlanForEdit(null)} 
+                />
             )}
         </div>
     );
