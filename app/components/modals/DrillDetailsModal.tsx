@@ -19,8 +19,6 @@ interface Drill {
     thumbnail_url?: string;
     coach_id?: string;
     accessories?: string[];
-    pods?: string;
-    colors?: string;
 }
 
 const ActivityDescription = ({ text }: { text?: string }) => {
@@ -85,39 +83,6 @@ const ActivityGoals = ({ drill }: { drill: Drill }) => {
     );
 };
 
-const SetupGrid = ({ drill }: { drill: Drill }) => {
-    const hasSetup = drill.pods || drill.colors || drill.duration;
-    if (!hasSetup) return null;
-    return (
-        <div className="space-y-5">
-            {hasSetup && (
-                <div>
-                    <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-3">Setup</h3>
-                    <div className="grid grid-cols-3 gap-2.5">
-                        {drill.pods && (
-                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
-                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Pods</span>
-                                <span className="text-xs text-white font-black">{drill.pods}</span>
-                            </div>
-                        )}
-                        {drill.colors && (
-                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
-                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Colors</span>
-                                <span className="text-xs text-white font-black">{drill.colors}</span>
-                            </div>
-                        )}
-                        {drill.duration && (
-                            <div className="bg-[#1C2541]/60 border border-white/8 rounded-2xl p-3.5 shadow-lg">
-                                <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Duration</span>
-                                <span className="text-xs text-white font-black">{drill.duration}</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
 
 interface DrillDetailsModalProps {
     drill: Drill;
@@ -291,8 +256,6 @@ export default function DrillDetailsModal({ drill, onClose, isCoach }: DrillDeta
                             <AccessoriesList accessories={drill.accessories} />
                             
                             <ActivityGoals drill={drill} />
-                            
-                            <SetupGrid drill={drill} />
                         </div>
 
                         {/* Action Tabs */}
