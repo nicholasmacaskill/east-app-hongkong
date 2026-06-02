@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import posthog from 'posthog-js';
 import { useRouter } from 'next/navigation';
-import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send, Play, MessageSquare } from 'lucide-react';
+import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send, Play, MessageSquare, ClipboardList, Plus, ArrowRight } from 'lucide-react';
+import { TrainingPlan } from '@/app/types';
 import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 import { safeFetch } from '@/app/lib/apiUtils';
 import SessionPlanModal from '@/app/components/modals/SessionPlanModal';
@@ -36,7 +37,9 @@ interface MasterSession {
 export default function CoachDashboard({ currentUserId, userName, userLastName }: { currentUserId: string, userName: string, userLastName?: string }) {
     const [allSessions, setAllSessions] = useState<MasterSession[]>([]);
     const [filteredSessions, setFilteredSessions] = useState<MasterSession[]>([]);
-    const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view' | 'drill_hub' | 'community'>('master_view');
+    const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view' | 'drill_hub' | 'plans' | 'community'>('master_view');
+    const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
+    const [plansLoading, setPlansLoading] = useState(false);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [collapsedDates, setCollapsedDates] = useState<string[]>([]);
@@ -100,9 +103,20 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
         setDrillsLoading(false);
     };
 
+    const fetchTrainingPlans = async () => {
+        setPlansLoading(true);
+        const { data, error } = await supabase
+            .from('training_plans')
+            .select('*')
+            .order('created_at', { ascending: false });
+        if (!error && data) setTrainingPlans(data);
+        setPlansLoading(false);
+    };
+
     useEffect(() => {
         fetchSchedule();
         fetchDrills();
+        fetchTrainingPlans();
     }, [currentUserId]);
 
     // Filter Logic
@@ -281,6 +295,12 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                 Drill Hub
                             </button>
                             <button
+                                onClick={() => { setViewMode('plans'); fetchTrainingPlans(); }}
+                                className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 rounded-md text-[10px] font-bold uppercase whitespace-nowrap transition-all flex items-center justify-center gap-1.5 ${viewMode === 'plans' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                <ClipboardList size={12} /> Plans
+                            </button>
+                            <button
                                 onClick={() => setViewMode('community')}
                                 className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 rounded-md text-[10px] font-bold uppercase whitespace-nowrap transition-all flex items-center justify-center gap-1.5 ${viewMode === 'community' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
                             >
@@ -324,6 +344,67 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                 {viewMode === 'community' ? (
                     <div className="h-[80vh] -mx-6 -mt-6 rounded-3xl overflow-hidden border border-white/10 bg-black">
                         <PrivateMessenger currentUserId={currentUserId} />
+                    </div>
+                ) : viewMode === 'plans' ? (
+                    <div className="animate-fadeIn space-y-6">
+                        <div className="flex justify-between items-center px-2">
+                            <div>
+                                <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white brightness-125">Training Plans</h2>
+                                <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest mt-1">{trainingPlans.length} plans created</p>
+                            </div>
+                            <button
+                                onClick={() => window.location.href = '/drill-hub'}
+                                className="px-6 py-2 bg-east-light text-black rounded-full text-[10px] font-black uppercase italic hover:bg-white transition-all shadow-[0_0_20px_rgba(40,209,96,0.3)] active:scale-95 flex items-center gap-2"
+                            >
+                                <Plus size={12} /> New Plan
+                            </button>
+                        </div>
+
+                        {plansLoading ? (
+                            <div className="py-20 text-center">
+                                <RefreshCw className="animate-spin mx-auto mb-4 text-east-light" size={32} />
+                                <p className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Loading Plans...</p>
+                            </div>
+                        ) : trainingPlans.length === 0 ? (
+                            <div className="py-20 text-center border border-dashed border-white/10 rounded-[2rem] bg-white/[0.02]">
+                                <ClipboardList className="mx-auto mb-4 text-gray-800" size={48} />
+                                <p className="text-[10px] font-black uppercase text-gray-600 tracking-widest mb-4">No training plans yet</p>
+                                <button
+                                    onClick={() => window.location.href = '/drill-hub'}
+                                    className="px-6 py-2 bg-east-light text-black rounded-full text-[10px] font-black uppercase italic hover:bg-white transition-all"
+                                >
+                                    Create Your First Plan
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-2">
+                                {trainingPlans.map(plan => (
+                                    <div
+                                        key={plan.id}
+                                        onClick={() => window.location.href = `/drill-hub?plan_id=${plan.id}`}
+                                        className="bg-[#121212] border border-white/5 hover:border-east-light/40 rounded-2xl p-6 cursor-pointer transition-all hover:bg-[#1a1a1a] hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)] group"
+                                    >
+                                        <div className="flex items-start justify-between gap-3 mb-4">
+                                            <div className="p-2.5 bg-east-light/10 rounded-xl border border-east-light/20">
+                                                <ClipboardList size={18} className="text-east-light" />
+                                            </div>
+                                            <ArrowRight size={16} className="text-gray-700 group-hover:text-east-light group-hover:translate-x-1 transition-all mt-1" />
+                                        </div>
+                                        <h3 className="text-base font-black italic uppercase tracking-tight text-white group-hover:text-east-light transition-colors leading-tight mb-2">
+                                            {plan.title}
+                                        </h3>
+                                        {plan.description && (
+                                            <p className="text-[11px] text-gray-500 font-medium line-clamp-2 leading-relaxed">{plan.description}</p>
+                                        )}
+                                        {plan.created_at && (
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-gray-700 mt-4">
+                                                {new Date(plan.created_at).toLocaleDateString('en-HK', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 ) : viewMode === 'drill_hub' ? (
                     <div className="animate-fadeIn space-y-8">
