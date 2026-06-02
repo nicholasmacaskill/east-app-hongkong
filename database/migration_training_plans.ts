@@ -1,29 +1,23 @@
-import { Client } from 'pg';
+import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+// Load .env.production
+dotenv.config({ path: path.resolve(__dirname, '../.env.production') });
 
-const dbUrl = process.env.DATABASE_URL;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!dbUrl) {
-    console.error('Missing DATABASE_URL in .env.local');
+if (!supabaseUrl || !supabaseServiceKey) {
+    console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.production');
     process.exit(1);
 }
 
-const client = new Client({
-    host: 'aws-1-us-east-1.pooler.supabase.com',
-    port: 6543,
-    database: 'postgres',
-    user: 'postgres.lzqnviblkcnjsxutqeht',
-    password: 'FNjB8Ca3Ar0Yg816mY%9',
-    ssl: { rejectUnauthorized: false }
-});
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function runMigration() {
     try {
-        await client.connect();
-        console.log('--- Connected to DB. Starting Training Plans Schema Setup ---');
+        console.log(`Connecting to production Supabase API: ${supabaseUrl}...`);
 
         const sql = `
             CREATE TABLE IF NOT EXISTS public.training_plans (
@@ -94,15 +88,23 @@ async function runMigration() {
             GRANT ALL ON public.training_plan_drills TO service_role;
             GRANT SELECT ON public.training_plan_drills TO authenticated;
             GRANT INSERT, UPDATE, DELETE ON public.training_plan_drills TO authenticated;
+
+            -- Reload Schema Cache
+            NOTIFY pgrst, 'reload schema';
         `;
 
-        await client.query(sql);
-        console.log('✅ Successfully created training_plans and training_plan_drills tables.');
+        const { data, error } = await supabase.rpc('run_sql', { sql_query: sql });
+
+        if (error) {
+            console.error('❌ Migration via run_sql failed:', error.message);
+            process.exit(1);
+        } else {
+            console.log('✅ Successfully created training_plans and training_plan_drills tables via run_sql RPC.');
+        }
 
     } catch (e) {
         console.error('❌ Migration failed:', e);
-    } finally {
-        await client.end();
+        process.exit(1);
     }
 }
 
