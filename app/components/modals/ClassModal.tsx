@@ -896,6 +896,77 @@ export default function ClassModal({
                                         </div>
                                     )}
 
+                                    {/* DRAGGABLE ATHLETES BUBBLES AND TOGGLE */}
+                                    {!isNews && (
+                                        <div className="flex justify-between items-end mb-6 mt-4">
+                                            <div className="flex items-center gap-3">
+                                                {/* Parent Avatar */}
+                                                <div
+                                                    draggable
+                                                    onDragStart={(e) => {
+                                                        e.dataTransfer.setData('text/plain', currentUserId!);
+                                                        e.dataTransfer.effectAllowed = 'copy';
+                                                    }}
+                                                    onClick={() => setSelectedTappedAttendeeId(currentUserId === selectedTappedAttendeeId ? null : currentUserId!)}
+                                                    className={`relative cursor-grab active:cursor-grabbing hover:scale-110 transition-transform ${selectedTappedAttendeeId === currentUserId ? 'ring-2 ring-offset-2 ring-[#28D160] scale-110' : ''}`}
+                                                    title="Drag or tap to book yourself"
+                                                >
+                                                    <div className="w-12 h-12 rounded-full border-2 border-black overflow-hidden bg-black flex items-center justify-center">
+                                                        {parentProfile?.avatar_url ? (
+                                                            <img src={parentProfile.avatar_url} className="w-full h-full object-cover" alt="Me" />
+                                                        ) : (
+                                                            <span className="text-white font-black">{parentProfile?.first_name?.charAt(0) || 'P'}</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Child Avatars */}
+                                                {myChildren.map((child: any) => (
+                                                    <div
+                                                        key={child.id}
+                                                        draggable
+                                                        onDragStart={(e) => {
+                                                            e.dataTransfer.setData('text/plain', child.id);
+                                                            e.dataTransfer.effectAllowed = 'copy';
+                                                        }}
+                                                        onClick={() => setSelectedTappedAttendeeId(child.id === selectedTappedAttendeeId ? null : child.id)}
+                                                        className={`relative cursor-grab active:cursor-grabbing hover:scale-110 transition-transform ${selectedTappedAttendeeId === child.id ? 'ring-2 ring-offset-2 ring-[#28D160] scale-110' : ''}`}
+                                                        title={`Drag or tap to book ${child.first_name}`}
+                                                    >
+                                                        <div className="w-12 h-12 rounded-full border-2 border-black overflow-hidden bg-black flex items-center justify-center">
+                                                            {child.avatar_url ? (
+                                                                <img src={child.avatar_url} className="w-full h-full object-cover" alt={child.first_name} />
+                                                            ) : (
+                                                                <span className="text-white font-black">{child.first_name?.charAt(0) || 'C'}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* UI Toggle Switch */}
+                                            <div className="flex flex-col gap-2">
+                                                <div 
+                                                    className={`flex items-center justify-between gap-3 px-3 py-1.5 rounded-md border cursor-pointer transition-colors ${!initialsOnly ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-200'}`}
+                                                    onClick={() => setInitialsOnly(false)}
+                                                >
+                                                    <span className={`text-[9px] font-bold tracking-wider ${!initialsOnly ? 'text-white' : 'text-gray-500'}`}>Full Name</span>
+                                                    <div className={`w-7 h-4 rounded-full flex items-center px-0.5 transition-colors ${!initialsOnly ? 'bg-[#28D160]' : 'bg-gray-300'}`}>
+                                                        <div className={`w-3 h-3 bg-white rounded-full shadow-sm transition-transform ${!initialsOnly ? 'translate-x-3' : 'translate-x-0'}`} />
+                                                    </div>
+                                                </div>
+                                                <div 
+                                                    className={`flex items-center justify-between gap-3 px-3 py-1.5 rounded-md border cursor-pointer transition-colors ${initialsOnly ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-200'}`}
+                                                    onClick={() => setInitialsOnly(true)}
+                                                >
+                                                    <span className={`text-[9px] font-bold tracking-wider ${initialsOnly ? 'text-white' : 'text-gray-500'}`}>Initials</span>
+                                                    <div className={`w-7 h-4 rounded-full flex items-center px-0.5 transition-colors ${initialsOnly ? 'bg-[#28D160]' : 'bg-gray-300'}`}>
+                                                        <div className={`w-3 h-3 bg-white rounded-full shadow-sm transition-transform ${initialsOnly ? 'translate-x-3' : 'translate-x-0'}`} />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                     {/* MICRO-BRIEFING ROW */}
                                     {hasTrainingPlan && (
                                         <div className="mb-6 animate-fadeIn">
