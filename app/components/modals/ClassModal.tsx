@@ -192,7 +192,7 @@ export default function ClassModal({
 
     // Dynamic Header Logic
     const isFacility = displaySession.category === 'FACILITY';
-    let modalHeaderTitle = filterTitle || (selectedSession?.title) || displaySession.title;
+    let modalHeaderTitle = displaySession.category === 'CLASS' ? 'CLASS' : (filterTitle || (selectedSession?.title) || displaySession.title);
     if (origin === 'coaches' && coachName && !filterTitle && !isFacility) {
         modalHeaderTitle = coachName;
     }
@@ -832,6 +832,22 @@ export default function ClassModal({
                                     {/* SLOTS UI (PO DESIGN) */}
                                     {selectedSession && !isNews && (
                                         <div className="flex flex-col gap-3 mb-8 mt-6">
+                                            {/* CAPACITY METER */}
+                                            <div className="flex flex-col mb-4">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="font-montserrat font-bold text-[10px] uppercase text-gray-400 tracking-wider">Session Capacity</span>
+                                                    <span className={`font-black text-xs ${currentRegistrations >= maxCapacity ? 'text-red-500' : 'text-[#28D160]'}`}>
+                                                        {currentRegistrations} / {maxCapacity} Spots Taken
+                                                    </span>
+                                                </div>
+                                                <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className={`h-full transition-all duration-500 ${currentRegistrations >= maxCapacity ? 'bg-red-500' : 'bg-[#28D160]'}`}
+                                                        style={{ width: `${Math.min(100, (currentRegistrations / maxCapacity) * 100)}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+
                                             {Array.from({ length: maxCapacity }).map((_, idx) => {
                                                 const reg = sessionAttendees[idx];
                                                 const isOccupied = !!reg;
