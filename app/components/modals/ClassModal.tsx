@@ -630,11 +630,10 @@ export default function ClassModal({
             addToast(`${person.name} is already booked!`, 'info');
             return;
         }
-        const confirmBook = confirm(`Book ${person.name} into this class for ${creditCostPerPerson} credits?`);
-        if (confirmBook) {
-            setSelectedAttendeeIds([personId]);
-            await bookSingleAttendee(personId);
-        }
+        
+        // Instantly book without freezing the UI with a confirm
+        setSelectedAttendeeIds([personId]);
+        await bookSingleAttendee(personId);
     };
 
     const attendeesList = [
@@ -783,7 +782,21 @@ export default function ClassModal({
                         ) : (
                             /* --- SESSION SELECTION VIEW --- */
                             <>
-                                <div className="overflow-y-auto p-6 text-black hide-scrollbar">
+                                <div 
+                                    className="overflow-y-auto p-6 text-black hide-scrollbar"
+                                    onDragOver={(e) => {
+                                        // Allow dropping anywhere outside the slots to cancel
+                                        if (e.dataTransfer.types.includes('cancel/plain')) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    onDrop={(e) => {
+                                        const cancelId = e.dataTransfer.getData('cancel/plain');
+                                        if (cancelId) {
+                                            cancelSingleAttendee(cancelId);
+                                        }
+                                    }}
+                                >
 
                                     {/* Back Button if filtered */}
                                     {filterInstructor && uniqueInstructors.size > 1 && (
@@ -836,7 +849,14 @@ export default function ClassModal({
                                                     return (
                                                         <div 
                                                             key={idx}
-                                                            className="flex items-center justify-between p-4 rounded bg-white border-2 border-dashed border-gray-600 group relative"
+                                                            draggable={isMyBooking}
+                                                            onDragStart={(e) => {
+                                                                if (isMyBooking) {
+                                                                    e.dataTransfer.setData('cancel/plain', reg.user_id);
+                                                                    e.dataTransfer.effectAllowed = 'move';
+                                                                }
+                                                            }}
+                                                            className={`flex items-center justify-between p-4 rounded bg-white border-2 border-dashed group relative ${isMyBooking ? 'border-[#28D160] cursor-grab active:cursor-grabbing' : 'border-gray-600'}`}
                                                         >
                                                             <span className="text-sm font-medium text-gray-800">{timeString} - {formattedName}</span>
                                                             <div className="flex items-center gap-3">
