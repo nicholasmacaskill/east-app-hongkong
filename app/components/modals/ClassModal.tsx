@@ -1,7 +1,7 @@
 // app/components/modals/ClassModal.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
-import { X, Share2, Send, CreditCard, AlertCircle, Check, ChevronLeft, Layers } from 'lucide-react';
+import { X, Share2, Send, CreditCard, AlertCircle, Check, ChevronLeft, Layers, Trash } from 'lucide-react';
 import { Session } from '@/app/types/index';
 import { supabase } from '@/app/lib/supabase';
 import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
@@ -72,13 +72,35 @@ export default function ClassModal({
     const [filterInstructor, setFilterInstructor] = useState<string | null>(null);
     const [filterTitle, setFilterTitle] = useState<string | null>(null);
 
-    // Fetch children on mount
+    // Drag and Drop & Capacity details state
+    const [sessionAttendees, setSessionAttendees] = useState<any[]>([]);
+    const [initialsOnly, setInitialsOnly] = useState<boolean>(false);
+    const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
+    const [selectedTappedAttendeeId, setSelectedTappedAttendeeId] = useState<string | null>(null);
+    const [parentProfile, setParentProfile] = useState<any>(null);
+
+    // Fetch parent profile for avatar and display
+    useEffect(() => {
+        if (currentUserId) {
+            const fetchParent = async () => {
+                const { data } = await supabase
+                    .from('profiles')
+                    .select('id, first_name, last_name, avatar_url, role')
+                    .eq('id', currentUserId)
+                    .single();
+                if (data) setParentProfile(data);
+            };
+            fetchParent();
+        }
+    }, [currentUserId]);
+
+    // Fetch children on mount (with avatar_url)
     useEffect(() => {
         if (currentUserId) {
             const fetchChildren = async () => {
                 const { data } = await supabase
                     .from('profiles')
-                    .select('id, first_name, last_name, role')
+                    .select('id, first_name, last_name, role, avatar_url')
                     .eq('parent_id', currentUserId);
                 if (data) setMyChildren(data);
             };
@@ -197,7 +219,7 @@ export default function ClassModal({
 
     // Derived State
     const totalCost = (selectedAttendeeIds.length * creditCostPerPerson);
-    const allSelectedAreBooked = selectedAttendeeIds.length > 0 && selectedAttendeeIds.every(id => getBookedStatus(id));
+    const allSelectedAreBooked = selectedAttendeeIds.length > 0 && selectedAttendeeIds.every((id: string) => getBookedStatus(id));
 
     const filteredSessions = visibleSessions.filter(s =>
         (!filterInstructor || normalize(s.instructor || '') === normalize(filterInstructor)) &&
@@ -253,9 +275,9 @@ export default function ClassModal({
 
     // Toggle Selection
     const toggleAttendee = (id: string) => {
-        setSelectedAttendeeIds(prev => {
+        setSelectedAttendeeIds((prev: string[]) => {
             if (prev.includes(id)) {
-                return prev.filter(x => x !== id);
+                return prev.filter((x: string) => x !== id);
             } else {
                 return [...prev, id];
             }
@@ -277,7 +299,7 @@ export default function ClassModal({
             return;
         }
 
-        const attendeesToBook = selectedAttendeeIds.filter(id => !getBookedStatus(id));
+        const attendeesToBook = selectedAttendeeIds.filter((id: string) => !getBookedStatus(id));
 
         if (attendeesToBook.length === 0) {
             addToast("All selected attendees are already booked.", "warning");
@@ -463,27 +485,25 @@ export default function ClassModal({
         }
     };
 
-    // Fetch capacity for selected session
+    // Fetch capacity, attendees, and training plan for selected session
     useEffect(() => {
         if (selectedSessionId) {
-            const fetchCapacity = async () => {
+            const fetchCapacityAndAttendees = async () => {
                 setIsLoadingCapacity(true);
                 try {
-                    const { count, error } = await supabase
-                        .from('registrations')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('session_id', selectedSessionId);
-
-                    if (!error) {
-                        setCurrentRegistrations(count || 0);
+                    const res = await fetch(`/api/sessions?sessionId=${selectedSessionId}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setSessionAttendees(data);
+                        setCurrentRegistrations(data.length);
                     }
                 } catch (e) {
-                    console.error("Error fetching capacity:", e);
+                    console.error("Error fetching session capacity/attendees:", e);
                 } finally {
                     setIsLoadingCapacity(false);
                 }
             };
-            fetchCapacity();
+            fetchCapacityAndAttendees();
             
             // Also check for Training Plan
             const checkPlan = async () => {
@@ -498,9 +518,131 @@ export default function ClassModal({
             };
             checkPlan();
         } else {
+            setSessionAttendees([]);
+            setCurrentRegistrations(0);
             setHasTrainingPlan(false);
         }
     }, [selectedSessionId]);
+
+    const getFormattedName = (profile: any) => {
+        if (!profile) return 'Guest';
+        const first = profile.first_name || '';
+        const last = profile.last_name || '';
+        if (initialsOnly) {
+            return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase() || first.slice(0, 2).toUpperCase();
+        }
+        return `${first} ${last}`.trim();
+    };
+
+    const cancelSingleAttendee = (attendeeId: string) => {
+        if (!selectedSessionId || !selectedSession) return;
+
+        // Calculate Refund
+        const startTime = new Date(selectedSession.start_time).getTime();
+        const now = Date.now();
+        const hoursUntilStart = (startTime - now) / (1000 * 60 * 60);
+
+        let percentage = 100;
+        let message = "You will receive a full refund.";
+
+        if (hoursUntilStart < 24) {
+            percentage = 0;
+            message = "This cancellation is within 24 hours of your session. You will NOT receive a refund.";
+        } else if (hoursUntilStart < 48) {
+            percentage = 50;
+            message = "This cancellation is between 24-48 hours before your session. You will receive a 50% refund.";
+        }
+
+        // Calculate amount for just this attendee
+        const totalPaid = bookedSessions
+            .filter(b => b.id === selectedSessionId && b.attendee?.id === attendeeId)
+            .reduce((sum, b) => sum + (b.credit_cost || 0), 0);
+
+        const refundAmount = Math.floor(totalPaid * (percentage / 100));
+
+        setPenaltyData({ percentage, amount: refundAmount, message });
+        setSelectedAttendeeIds([attendeeId]);
+        setShowPenaltyWarning(true);
+    };
+
+    const bookSingleAttendee = async (personId: string) => {
+        setIsProcessing(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+
+            const res = await safeFetch('/api/sessions/book', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
+                body: JSON.stringify({
+                    userId: currentUserId,
+                    sessionId: selectedSessionId,
+                    attendeeIds: [personId],
+                    coachId: null,
+                    origin: origin
+                })
+            });
+
+            if (!res.success) {
+                const errorMsg = res.error || 'Unknown error';
+                if (errorMsg.includes('Insufficient credits')) {
+                    setShowTopUp(true);
+                    return;
+                }
+                addToast(errorMsg, 'error');
+                return;
+            }
+
+            track('session_booked', {
+                session_type: selectedSession?.category,
+                coach_name: selectedSession?.instructor,
+                credits_used: creditCostPerPerson,
+                attendees_count: 1,
+            });
+
+            hasBookedRef.current = true;
+            addToast(res.data.message || `Success! Session booked.`, 'success');
+            if (onScheduleChange) onScheduleChange();
+
+            // Refresh capacity and attendees list
+            const attRes = await fetch(`/api/sessions?sessionId=${selectedSessionId}`);
+            if (attRes.ok) {
+                const attData = await attRes.json();
+                setSessionAttendees(attData);
+                setCurrentRegistrations(attData.length);
+            }
+        } catch (error: any) {
+            console.error(error);
+            addToast(`Booking Request Failed: ${error.message || 'Network error'}`, 'error');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleDropToBook = async (personId: string) => {
+        const person = attendeesList.find(p => p.id === personId);
+        if (!person) return;
+        const isBooked = getBookedStatus(personId);
+        if (isBooked) {
+            addToast(`${person.name} is already booked!`, 'info');
+            return;
+        }
+        const confirmBook = confirm(`Book ${person.name} into this class for ${creditCostPerPerson} credits?`);
+        if (confirmBook) {
+            setSelectedAttendeeIds([personId]);
+            await bookSingleAttendee(personId);
+        }
+    };
+
+    const attendeesList = [
+        ...(parentProfile ? [{ id: parentProfile.id, name: 'Myself', first_name: parentProfile.first_name, last_name: parentProfile.last_name, avatar_url: parentProfile.avatar_url }] : []),
+        ...myChildren.map((c: any) => ({ id: c.id, name: c.first_name, first_name: c.first_name, last_name: c.last_name, avatar_url: (c as any).avatar_url }))
+    ];
+
+    const maxCapacity = selectedSession?.max_capacity || (selectedSession?.category === 'PRIVATE' ? 1 : 4);
 
     const handleClose = () => {
         if (!hasBookedRef.current && selectedSessionId) {
@@ -674,48 +816,191 @@ export default function ClassModal({
                                         </p>
                                     )}
 
-                                    {/* Image */}
-                                    {(!filterInstructor || filterTitle) && (displaySession.image_url || displaySession.coach_image_url) && (
-                                        <div className="w-full aspect-video rounded-xl overflow-hidden bg-gray-100 mb-6 shadow-inner border border-gray-200">
-                                            <img
-                                                src={isCoachView ? (displaySession.coach_image_url || displaySession.image_url) : (filteredSessions[0]?.image_url || displaySession.image_url)}
-                                                className="w-full h-full object-cover"
-                                                alt={modalHeaderTitle}
-                                            />
+                                    {/* CAPACITY DASHBOARD / SLOTS UI */}
+                                    {selectedSession && !isNews && (selectedSession.max_capacity ? selectedSession.max_capacity > 1 : true) ? (
+                                        <div className={`p-4 rounded-xl border mb-6 bg-[#0a0a0a] text-white transition-all duration-300 ${
+                                            sessionAttendees.length >= maxCapacity
+                                                ? 'border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.07)]'
+                                                : 'border-gray-800'
+                                        }`}>
+                                            {/* Header with Title and Toggle */}
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="font-montserrat font-black italic text-xs uppercase tracking-wider text-gray-400">Class Capacity</span>
+                                                <button
+                                                    onClick={() => setInitialsOnly(!initialsOnly)}
+                                                    className="text-[9px] font-black uppercase tracking-widest text-[#28D160] hover:brightness-110 transition-all border border-[#28D160]/20 bg-[#28D160]/5 px-2 py-1 rounded"
+                                                >
+                                                    {initialsOnly ? 'Show Full Names' : 'Show Initials'}
+                                                </button>
+                                            </div>
+
+                                            {/* Capacity Meter */}
+                                            <div className="mb-4">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="text-[10px] font-bold text-gray-500 uppercase">Capacity</span>
+                                                    <span className={`text-xs font-black italic uppercase ${sessionAttendees.length >= maxCapacity ? 'text-red-500' : 'text-[#28D160]'}`}>
+                                                        {sessionAttendees.length} / {maxCapacity} Spots Taken {sessionAttendees.length >= maxCapacity && '(FULL)'}
+                                                    </span>
+                                                </div>
+                                                <div className="w-full h-1.5 bg-gray-900 rounded-full overflow-hidden border border-gray-800">
+                                                    <div 
+                                                        className={`h-full transition-all duration-500 ${sessionAttendees.length >= maxCapacity ? 'bg-red-500' : 'bg-[#28D160]'}`}
+                                                        style={{ width: `${Math.min(100, (sessionAttendees.length / maxCapacity) * 100)}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Slots Display */}
+                                            <div className="flex flex-col gap-2 mb-2">
+                                                {Array.from({ length: maxCapacity }).map((_, idx) => {
+                                                    const reg = sessionAttendees[idx];
+                                                    const isOccupied = !!reg;
+                                                    const attendeeProfile = reg ? (Array.isArray(reg.profiles) ? reg.profiles[0] : reg.profiles) : null;
+                                                    const isMyBooking = reg ? (reg.user_id === currentUserId || myChildren.some((c: any) => c.id === reg.user_id)) : false;
+
+                                                    if (isOccupied && attendeeProfile) {
+                                                        const formattedName = getFormattedName(attendeeProfile);
+                                                        const initials = `${attendeeProfile.first_name?.charAt(0) || ''}${attendeeProfile.last_name?.charAt(0) || ''}`.toUpperCase() || 'G';
+                                                        return (
+                                                            <div 
+                                                                key={idx}
+                                                                className="flex items-center justify-between p-2.5 rounded-lg bg-gray-900/60 border border-gray-800/80 transition-all hover:bg-gray-900"
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    {/* Avatar Bubble */}
+                                                                    <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-800 flex items-center justify-center border border-gray-700 shadow-sm shrink-0">
+                                                                        {attendeeProfile.avatar_url ? (
+                                                                            <img src={attendeeProfile.avatar_url} alt={formattedName} className="w-full h-full object-cover" />
+                                                                        ) : (
+                                                                            <span className="text-[10px] font-black text-gray-300">{initials}</span>
+                                                                        )}
+                                                                    </div>
+                                                                    <span className="text-xs font-bold uppercase tracking-wide text-white">{formattedName}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[9px] font-black italic text-gray-500 uppercase tracking-widest bg-gray-950 px-1.5 py-0.5 rounded border border-gray-800">Booked</span>
+                                                                    {isMyBooking && (
+                                                                        <button 
+                                                                            onClick={() => cancelSingleAttendee(reg.user_id)}
+                                                                            className="p-1 text-gray-500 hover:text-red-500 transition-colors bg-gray-950 rounded hover:border-red-500/20 border border-transparent"
+                                                                            title="Cancel Booking"
+                                                                        >
+                                                                            <Trash size={12} />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    } else {
+                                                        const isDragOver = dragOverSlot === idx;
+                                                        return (
+                                                            <div
+                                                                key={idx}
+                                                                onDragOver={(e) => {
+                                                                    e.preventDefault();
+                                                                    setDragOverSlot(idx);
+                                                                }}
+                                                                onDragLeave={() => setDragOverSlot(null)}
+                                                                onDrop={(e) => {
+                                                                    e.preventDefault();
+                                                                    setDragOverSlot(null);
+                                                                    const personId = e.dataTransfer.getData('text/plain');
+                                                                    if (personId) {
+                                                                        handleDropToBook(personId);
+                                                                    }
+                                                                }}
+                                                                onClick={() => {
+                                                                    if (selectedTappedAttendeeId) {
+                                                                        handleDropToBook(selectedTappedAttendeeId);
+                                                                    }
+                                                                }}
+                                                                className={`flex items-center justify-center p-2.5 rounded-lg border-2 border-dashed transition-all cursor-pointer ${
+                                                                    isDragOver
+                                                                        ? 'border-[#28D160] bg-[#28D160]/5 text-[#28D160] scale-[1.01]'
+                                                                        : 'border-gray-800 text-gray-500 hover:border-gray-700 hover:text-gray-400'
+                                                                }`}
+                                                            >
+                                                                <span className="text-[10px] font-black uppercase tracking-wider">
+                                                                    {selectedTappedAttendeeId ? 'Tap to book selected athlete here' : 'Drop athlete here to book'}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    }
+                                                })}
+                                            </div>
                                         </div>
+                                    ) : (
+                                        /* Image Fallback for News or single capacity sessions */
+                                        (!filterInstructor || filterTitle) && (displaySession.image_url || displaySession.coach_image_url) && (
+                                            <div className="w-full aspect-video rounded-xl overflow-hidden bg-gray-100 mb-6 shadow-inner border border-gray-200">
+                                                <img
+                                                    src={isCoachView ? (displaySession.coach_image_url || displaySession.image_url) : (filteredSessions[0]?.image_url || displaySession.image_url)}
+                                                    className="w-full h-full object-cover"
+                                                    alt={modalHeaderTitle}
+                                                />
+                                            </div>
+                                        )
                                     )}
 
-                                    {/* ATTENDEE SELECTOR */}
-                                    {myChildren.length > 0 && (
+                                    {/* DRAGGABLE ATHLETES BUBBLES */}
+                                    {!isNews && (
                                         <div className="mb-6">
-                                            <p className="font-montserrat font-bold text-[10px] mb-2 uppercase text-gray-400">WHO IS ATTENDING?</p>
-                                            <div className="flex flex-col gap-2">
-                                                {[
-                                                    { id: currentUserId, name: 'Myself (Parent)' },
-                                                    ...myChildren.map(c => ({ id: c.id, name: c.first_name }))
-                                                ].map(person => {
-                                                    const isSelected = selectedAttendeeIds.includes(person.id);
+                                            <p className="font-montserrat font-bold text-[10px] mb-3 uppercase text-gray-400">
+                                                {myChildren.length > 0 ? 'DRAG ATHLETE TO BOOK SLOT (OR TAP TO SELECT):' : 'DRAG MYSELF TO BOOK SLOT (OR TAP TO SELECT):'}
+                                            </p>
+                                            <div className="flex flex-wrap gap-4 items-center">
+                                                {attendeesList.map(person => {
                                                     const isAlreadyBooked = getBookedStatus(person.id);
+                                                    const isSelectedTapped = selectedTappedAttendeeId === person.id;
+                                                    const isSelectedMulti = selectedAttendeeIds.includes(person.id);
+                                                    const initials = `${person.first_name?.charAt(0) || ''}${person.last_name?.charAt(0) || ''}`.toUpperCase() || 'G';
 
                                                     return (
-                                                        <button
+                                                        <div
                                                             key={person.id}
-                                                            onClick={() => toggleAttendee(person.id)}
-                                                            className={`w-full py-2 px-4 rounded-lg flex items-center justify-between border transition-all ${isSelected
-                                                                ? 'bg-black text-white border-black shadow-md'
-                                                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                                                                }`}
+                                                            draggable={!isAlreadyBooked}
+                                                            onDragStart={(e) => {
+                                                                e.dataTransfer.setData('text/plain', person.id);
+                                                            }}
+                                                            onClick={() => {
+                                                                if (!isAlreadyBooked) {
+                                                                    setSelectedTappedAttendeeId(selectedTappedAttendeeId === person.id ? null : person.id);
+                                                                    // Also toggle multi-select to sync with standard button
+                                                                    toggleAttendee(person.id);
+                                                                }
+                                                            }}
+                                                            className={`flex flex-col items-center gap-1.5 transition-all select-none cursor-pointer ${
+                                                                isAlreadyBooked ? 'opacity-40' : 'hover:scale-105 active:scale-95'
+                                                            }`}
                                                         >
-                                                            <div className="flex items-center gap-2">
-                                                                <div className={`w-4 h-4 rounded border flex items-center justify-center ${isSelected ? 'bg-white border-white' : 'border-gray-300'}`}>
-                                                                    {isSelected && <Check size={12} className="text-black" />}
-                                                                </div>
-                                                                <span className="text-xs font-bold uppercase">{person.name}</span>
+                                                            {/* Bubble Container */}
+                                                            <div className={`w-12 h-12 rounded-full overflow-hidden flex items-center justify-center border-2 shadow-md relative transition-all ${
+                                                                isAlreadyBooked
+                                                                    ? 'bg-gray-800 border-gray-700'
+                                                                    : isSelectedTapped || isSelectedMulti
+                                                                        ? 'bg-[#28D160] border-white scale-105'
+                                                                        : 'bg-black border-gray-800 hover:border-[#28D160]'
+                                                            }`}>
+                                                                {person.avatar_url ? (
+                                                                    <img src={person.avatar_url} alt={person.name} className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    <span className={`text-xs font-black ${isSelectedTapped || isSelectedMulti ? 'text-black' : 'text-gray-300'}`}>{initials}</span>
+                                                                )}
+                                                                
+                                                                {/* Status indicator badge */}
+                                                                {isAlreadyBooked && (
+                                                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                                                        <Check size={16} className="text-[#28D160] stroke-[3]" />
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                            {isAlreadyBooked && (
-                                                                <span className="text-[10px] font-black italic text-green-500 uppercase tracking-wide">BOOKED</span>
-                                                            )}
-                                                        </button>
+                                                            {/* Name label */}
+                                                            <span className={`text-[10px] font-bold uppercase tracking-wider text-center max-w-[70px] truncate ${
+                                                                isAlreadyBooked ? 'text-gray-600' : isSelectedTapped || isSelectedMulti ? 'text-[#28D160]' : 'text-gray-400'
+                                                            }`}>
+                                                                {person.name}
+                                                            </span>
+                                                        </div>
                                                     );
                                                 })}
                                             </div>
@@ -738,7 +1023,7 @@ export default function ClassModal({
                                                 </button>
                                             </div>
                                             <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-                                                {planDrills.map((p, idx) => (
+                                                {planDrills.map((p: any, idx: number) => (
                                                     <button 
                                                         key={p.id}
                                                         onClick={() => {
@@ -837,6 +1122,9 @@ export default function ClassModal({
                                                                         {daySessions.map(sess => {
                                                                             const isSelected = selectedSessionId === sess.id;
                                                                             const timeStr = formatHK(sess.start_time, 'h:mma').toLowerCase();
+                                                                            const regCount = (sess.registrations as any)?.[0]?.count || 0;
+                                                                            const cap = sess.max_capacity;
+                                                                            const isSessFull = cap ? regCount >= cap : false;
                                                                             return (
                                                                                 <button
                                                                                     key={sess.id}
@@ -847,6 +1135,11 @@ export default function ClassModal({
                                                                                         }`}
                                                                                 >
                                                                                     <span className={`text-xs font-black uppercase ${isSelected ? 'text-black' : 'text-gray-800'}`}>{timeStr}</span>
+                                                                                    {cap && cap > 1 && (
+                                                                                        <span className={`block text-[9px] font-bold ${isSessFull ? 'text-red-500 animate-pulse' : 'text-gray-400'}`}>
+                                                                                            {isSessFull ? 'FULL' : `${regCount}/${cap}`}
+                                                                                        </span>
+                                                                                    )}
                                                                                 </button>
                                                                             )
                                                                         })}
@@ -870,6 +1163,9 @@ export default function ClassModal({
                                                         });
                                                         const isBooked = myBookingsAtTime.some(b => b.id === sess.id);
                                                         const totalPaid = myBookingsAtTime.reduce((sum, b) => sum + (b.credit_cost || 0), 0);
+                                                        const regCount = (sess.registrations as any)?.[0]?.count || 0;
+                                                        const cap = sess.max_capacity;
+                                                        const isSessFull = cap ? regCount >= cap : false;
 
                                                         return (
                                                             <button key={sess.id} onClick={() => setSelectedSessionId(sess.id)} className={`w-full py-3 px-4 rounded-lg border transition-all relative flex items-center justify-between ${isSelected ? 'bg-east-light text-black border-east-light shadow-md scale-[1.01]' : 'bg-white text-gray-600 border-gray-300 hover:border-east-light hover:text-black'}`}>
@@ -882,9 +1178,16 @@ export default function ClassModal({
                                                                         {safetoLocaleDateString(dateObj, 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })} <span className="mx-1 opacity-50">@</span> {formatHK(dateObj, 'h:mm a')}
                                                                     </span>
                                                                 </div>
-                                                                <span className={`text-xs font-bold ${isSelected ? 'text-black' : (isBooked ? 'text-green-600' : 'text-east-dark')}`}>
-                                                                    {isBooked ? `PAID: ${totalPaid}` : `${sessionCost} Credits`}
-                                                                </span>
+                                                                <div className="flex items-center gap-4">
+                                                                    {cap && cap > 1 && (
+                                                                        <span className={`text-[10px] font-black uppercase ${isSessFull ? 'text-red-500 animate-pulse' : 'text-gray-400'}`}>
+                                                                            {isSessFull ? 'FULL' : `${regCount}/${cap} SPOTS`}
+                                                                        </span>
+                                                                    )}
+                                                                    <span className={`text-xs font-bold ${isSelected ? 'text-black' : (isBooked ? 'text-green-600' : 'text-east-dark')}`}>
+                                                                        {isBooked ? `PAID: ${totalPaid}` : `${sessionCost} Credits`}
+                                                                    </span>
+                                                                </div>
                                                             </button>
                                                         );
                                                     })}

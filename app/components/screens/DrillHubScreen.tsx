@@ -193,6 +193,7 @@ export default function DrillHubScreen() {
     const [isScheduled, setIsScheduled] = useState(false);
     const [linkedSession, setLinkedSession] = useState<any>(null);
     const drillIdParam = searchParams.get('drill_id');
+    const planIdParam = searchParams.get('plan_id');
     const imageInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
 
@@ -221,6 +222,9 @@ export default function DrillHubScreen() {
             fetchSessionPlan(sessionId);
         } else if (drillIdParam && !hasActiveFilters) {
             fetchSingleDrill(drillIdParam);
+        } else if (planIdParam && !hasActiveFilters) {
+            setHubMode('plans');
+            fetchSinglePlan(planIdParam);
         } else {
             fetchDrills();
         }
@@ -245,6 +249,51 @@ export default function DrillHubScreen() {
             setIsEditing(false);
         }
     }, [userRole]);
+
+    const fetchSinglePlan = async (id: string) => {
+        setLoading(true);
+        setLoadingPlanDrills(true);
+        try {
+            const { data: planData, error: planError } = await supabase
+                .from('training_plans')
+                .select('*, coach:profiles(first_name, last_name, avatar_url)')
+                .eq('id', id)
+                .single();
+            
+            if (!planError && planData) {
+                setSelectedPlan(planData);
+                const { data: pdData, error: pdError } = await supabase
+                    .from('training_plan_drills')
+                    .select('drill_id, order_index')
+                    .eq('plan_id', id)
+                    .order('order_index', { ascending: true });
+                
+                if (!pdError && pdData && pdData.length > 0) {
+                    const drillIds = pdData.map(pd => pd.drill_id);
+                    const { data: drillsData, error: drillsError } = await supabase
+                        .from('coach_drills')
+                        .select('*, coach:profiles(first_name, last_name, avatar_url)')
+                        .in('id', drillIds);
+                    
+                    if (!drillsError && drillsData) {
+                        const sortedDrills = pdData
+                            .map(pd => drillsData.find(d => d.id === pd.drill_id))
+                            .filter(Boolean) as Drill[];
+                        setPlanDrills(sortedDrills);
+                    } else {
+                        setPlanDrills([]);
+                    }
+                } else {
+                    setPlanDrills([]);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to fetch plan:', e);
+        } finally {
+            setLoading(false);
+            setLoadingPlanDrills(false);
+        }
+    };
 
     const fetchSingleDrill = async (id: string) => {
         setLoading(true);
@@ -927,9 +976,21 @@ export default function DrillHubScreen() {
                     <button 
                         onClick={() => {
                             if (selectedPlan) {
-                                setSelectedPlan(null);
+                                if (planIdParam) {
+                                    if (window.history.length > 2) {
+                                        window.history.back();
+                                    } else {
+                                        window.location.href = '/';
+                                    }
+                                } else {
+                                    setSelectedPlan(null);
+                                }
                             } else {
-                                window.history.back();
+                                if (window.history.length > 2) {
+                                    window.history.back();
+                                } else {
+                                    window.location.href = '/';
+                                }
                             }
                         }}
                         className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition-all group mb-2"
@@ -1333,7 +1394,22 @@ export default function DrillHubScreen() {
             {selectedPlanForEdit && (
                 <TrainingPlanModal 
                     planData={selectedPlanForEdit} 
-                    onClose={() => setSelectedPlanForEdit(null)} 
+                    onClose={async () => {
+                        setSelectedPlanForEdit(null);
+                        await fetchTrainingPlans();
+                        if (selectedPlan && selectedPlan.id === selectedPlanForEdit.id) {
+                            const { data: stillExists } = await supabase
+                                .from('training_plans')
+                                .select('id')
+                                .eq('id', selectedPlan.id)
+                                .maybeSingle();
+                            if (stillExists) {
+                                handleSelectPlan(selectedPlan);
+                            } else {
+                                setSelectedPlan(null);
+                            }
+                        }
+                    }} 
                 />
             )}
         </div>

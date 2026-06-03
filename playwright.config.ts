@@ -100,7 +100,8 @@ export default defineConfig({
         'tests/parent-photo-editability.spec.ts',
         'tests/ticket-19-qr-wallet.spec.ts',
         'tests/drill-hub-e2e.spec.ts',
-        'tests/training-plans.spec.ts'
+        'tests/training-plans.spec.ts',
+        'tests/session-capacity.spec.ts'
       ],
     },
 

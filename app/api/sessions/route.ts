@@ -8,11 +8,37 @@ import { sendEmail } from '@/app/lib/email'; // Assume you have this utility
 // **********************************************
 // 1. GET - Fetches the list of all future sessions (READ)
 // **********************************************
-export async function GET() {
-  // Fetch sessions that are in the future, ordered by time
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const sessionId = searchParams.get('sessionId');
   const supabaseAdmin = getSupabaseAdmin();
 
-  // Enforce 10-Day Booking Window
+  if (sessionId) {
+    // Fetch attendees for this session using admin client to bypass RLS for class list
+    const { data: registrations, error: regError } = await supabaseAdmin
+      .from('registrations')
+      .select(`
+        id,
+        user_id,
+        profiles!registrations_user_id_fkey (
+          id,
+          first_name,
+          last_name,
+          avatar_url
+        )
+      `)
+      .eq('session_id', parseInt(sessionId))
+      .neq('status', 'cancelled'); // Only active registrations
+
+    if (regError) {
+      console.error("API GET SESSION ATTENDEES ERROR:", regError);
+      return NextResponse.json({ error: regError.message }, { status: 500 });
+    }
+
+    return NextResponse.json(registrations);
+  }
+
+  // Fetch sessions that are in the future, ordered by time
   const tenDaysLater = new Date();
   tenDaysLater.setDate(tenDaysLater.getDate() + 10);
 
@@ -32,17 +58,8 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Filter out sessions that are full
-  // Note: registrations returns as [{ count: n }] array due to PostgREST format with count
-  const availableSessions = data.filter((session: any) => {
-    // If max_capacity is not set, assume unlimited
-    if (!session.max_capacity) return true;
-
-    const count = session.registrations?.[0]?.count || 0;
-    return count < session.max_capacity;
-  });
-
-  return NextResponse.json(availableSessions);
+  // Keep all sessions (even full ones) so that they can be displayed correctly
+  return NextResponse.json(data);
 }
 
 // **********************************************
