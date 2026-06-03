@@ -826,9 +826,9 @@ export default function ClassModal({
                                                 const isMyBooking = reg ? (reg.user_id === currentUserId || myChildren.some((c: any) => c.id === reg.user_id)) : false;
                                                 
                                                 // Time formatting (e.g., "5-6pm")
-                                                const startHour = new Date(selectedSession.start_time).toLocaleTimeString([], { hour: 'numeric' }).replace(' ', '').toLowerCase();
-                                                const endHour = new Date(selectedSession.end_time).toLocaleTimeString([], { hour: 'numeric' }).replace(' ', '').toLowerCase();
-                                                const timeString = `${startHour}-${endHour}`;
+                                                const startStr = formatHK(selectedSession.start_time, 'h:mma').toLowerCase().replace(':00', '');
+                                                const endStr = formatHK(selectedSession.end_time, 'h:mma').toLowerCase().replace(':00', '');
+                                                const timeString = `${startStr}-${endStr}`;
 
                                                 if (isOccupied && attendeeProfile) {
                                                     const formattedName = getFormattedName(attendeeProfile);
