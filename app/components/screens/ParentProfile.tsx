@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useRef } from 'react';
+import Image from 'next/image';
 import { Edit2, CheckCircle2, ChevronRight, Users, Calendar, Heart, Award, Lock, Plus, X, Coins, Camera } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '../ui/Toast';
@@ -214,9 +215,10 @@ export default function ParentProfile({
                }
             }}
          >
-            <img
+            <Image
                src={profileData.banner_url || "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=2670&auto=format&fit=crop"}
-               className="w-full h-full object-cover opacity-60"
+               className="object-cover opacity-60"
+               fill
                alt="Cover"
             />
             <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black" />
@@ -253,7 +255,7 @@ export default function ParentProfile({
                }}
             >
                {profileData.avatar_url ? (
-                  <img src={profileData.avatar_url} className="w-full h-full object-cover" alt="Profile" />
+                  <Image src={profileData.avatar_url} fill className="object-cover" alt="Profile" />
                ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-black">
                      <span className="text-3xl font-black italic text-gray-700">{profileData.first_name?.[0]}</span>
@@ -349,7 +351,7 @@ export default function ParentProfile({
                                        }
                                     }}
                                  >
-                                    <img src={athlete.avatar_url || "https://images.unsplash.com/photo-1544005313-94ddf0286df2??auto=format&fit=crop&q=80&w=200"} className="w-full h-full object-cover" alt={athlete.first_name} />
+                                    <Image src={athlete.avatar_url || "https://images.unsplash.com/photo-1544005313-94ddf0286df2??auto=format&fit=crop&q=80&w=200"} fill className="object-cover" alt={athlete.first_name} />
                                     {!isReadOnly && (
                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/childimg:opacity-100 transition-opacity">
                                           <Camera size={20} className="text-white" />

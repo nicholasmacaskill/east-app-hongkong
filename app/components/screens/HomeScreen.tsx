@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { fetchSessions } from '@/app/services/dataFetcher';
 import { Session } from '@/app/types';
 import { Plus } from 'lucide-react';
@@ -340,7 +341,7 @@ export default function HomeScreen({
             <div className="flex overflow-x-auto no-scrollbar gap-4 snap-x pb-4">
               {combinedNews.map((item) => (
                 <div key={item.id} onClick={() => onClassClick([item as Session], item.description, 'facilities', null, null, null, null, (item as any).session_type_id)} className="snap-center min-w-[85%] relative rounded-2xl overflow-hidden aspect-[16/9] border border-white/10 cursor-pointer group shadow-2xl active:scale-95 transition-transform duration-200">
-                  <img src={item.image_url} alt={item.title} className="w-full h-full object-cover opacity-80 transition-all duration-700 group-hover:scale-105 group-hover:opacity-60" />
+                  <Image src={item.image_url} fill alt={item.title} className="object-cover opacity-80 transition-all duration-700 group-hover:scale-105 group-hover:opacity-60" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 p-5 w-full">
                     <div className="bg-east-light text-black text-[8px] font-black px-2 py-0.5 rounded-full w-fit mb-2 uppercase tracking-wider">News</div>
@@ -365,7 +366,7 @@ export default function HomeScreen({
               {serviceFacilities.map((fac) => (
                 <div key={fac.id} onClick={() => handleServiceClick(fac)} className="flex flex-col gap-2 cursor-pointer group active:scale-95 transition-transform duration-200">
                   <div className="aspect-square rounded-2xl overflow-hidden border border-gray-800 bg-[#0a0a0a] relative shadow-lg group-hover:border-east-light transition-colors">
-                    <img src={fac.image_url || 'https://images.unsplash.com/photo-1541744158664-972170366318?w=400'} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" alt={fac.title} />
+                    <Image src={fac.image_url || 'https://images.unsplash.com/photo-1541744158664-972170366318?w=400'} fill className="object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" alt={fac.title} />
                   </div>
                   <span className="font-montserrat font-bold italic text-[11px] uppercase text-center text-gray-400 group-hover:text-white transition-colors">{fac.title}</span>
                 </div>
@@ -386,7 +387,7 @@ export default function HomeScreen({
               {serviceClasses.map((cls) => (
                 <div key={cls.id} onClick={() => handleServiceClick(cls)} className="flex flex-col gap-2 cursor-pointer group active:scale-95 transition-transform duration-200">
                   <div className="aspect-square rounded-2xl overflow-hidden border border-gray-800 bg-[#0a0a0a] relative shadow-lg group-hover:border-east-light transition-colors">
-                    <img src={cls.image_url || 'https://images.unsplash.com/photo-1549466723-863a9af4535e?w=400'} alt={cls.title} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" />
+                    <Image src={cls.image_url || 'https://images.unsplash.com/photo-1549466723-863a9af4535e?w=400'} fill alt={cls.title} className="object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110" />
                     {isGroupBooked(cls.title, 'CLASS') && (
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                         <span className="text-east-light text-[10px] font-black uppercase tracking-widest border border-east-light px-2 py-1 rounded-full bg-black">Booked</span>
@@ -412,7 +413,7 @@ export default function HomeScreen({
               {servicePrivate.map((p) => (
                 <div key={p.id} onClick={() => handleServiceClick(p)} className="flex flex-col items-center gap-1.5 cursor-pointer group active:scale-95 transition-transform duration-200">
                   <div className="w-full aspect-square rounded-xl overflow-hidden border border-gray-800 bg-[#0a0a0a] relative shadow-md group-hover:border-east-light transition-all">
-                    <img src={p.image_url || 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400'} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500" alt={p.title} />
+                    <Image src={p.image_url || 'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=400'} fill className="object-cover opacity-80 group-hover:opacity-100 transition-all duration-500" alt={p.title} />
                   </div>
                   <span className="font-montserrat font-bold italic text-[10px] uppercase text-center text-gray-500 group-hover:text-white transition-colors truncate w-full">{p.title}</span>
                 </div>
@@ -472,7 +473,7 @@ export default function HomeScreen({
                   }
                 }} className="flex-shrink-0 flex flex-col items-center gap-2 cursor-pointer group w-20 active:scale-95 transition-transform duration-200">
                   <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-800 relative shadow-xl group-hover:border-east-light transition-colors">
-                    <img src={coach.avatar_url || 'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?w=400'} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt={`${coach.first_name} ${coach.last_name}`} />
+                    <Image src={coach.avatar_url || 'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?w=400'} fill className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt={`${coach.first_name} ${coach.last_name}`} />
                   </div>
                   <span className="font-montserrat font-black italic text-[9px] uppercase text-center text-gray-400 group-hover:text-white transition-colors">{coach.first_name} {coach.last_name}</span>
                 </div>
@@ -492,7 +493,7 @@ export default function HomeScreen({
             ) : combinedEvents.map((event: any) => (
               <div key={event.id} className="cursor-pointer group relative rounded-xl overflow-hidden border border-gray-800 active:scale-95 transition-transform duration-200" onClick={() => handleItemClick(event, 'title')}>
                 <div className="h-28 relative">
-                  <img src={event.image_url || ''} className="w-full h-full object-cover opacity-80 group-hover:opacity-60 transition-all duration-500" alt={event.title} />
+                  <Image src={event.image_url || 'https://images.unsplash.com/photo-1540317580384-e5d43616b9aa?w=800'} fill className="object-cover opacity-80 group-hover:opacity-60 transition-all duration-500" alt={event.title} />
                   <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-center items-start">
                     <span className="text-[8px] font-bold text-east-light uppercase tracking-widest mb-1 border border-EAST-LIGHT px-2 py-0.5 rounded-full bg-black">coming soon</span>
