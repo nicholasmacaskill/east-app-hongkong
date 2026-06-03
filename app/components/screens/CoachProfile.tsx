@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { useToast } from '@/app/components/ui/Toast';
 import { Camera, Edit2, Play, Plus, ChevronRight, Award, Trophy, Users, Calendar, Video, Upload, Layers } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
@@ -314,9 +315,10 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
         <div className="animate-fadeIn bg-black min-h-screen pb-24 relative overflow-hidden font-montserrat">
             {/* Background Image Layer - Premium Blur Overlay */}
             <div className="fixed inset-0 z-0">
-                <img
+                <Image
                     src="https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=1200"
-                    className="w-full h-full object-cover opacity-20 grayscale"
+                    className="object-cover opacity-20 grayscale"
+                    fill
                     alt="bg"
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/50 to-black/90" />
@@ -347,9 +349,10 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                     }
                                 }}
                             >
-                                <img
+                                <Image
                                     src={profileData.avatar_url || "https://images.pexels.com/photos/6550836/pexels-photo-6550836.jpeg"}
-                                    className={`w-full h-full object-cover opacity-90 transition-opacity ${isPublic ? '' : 'group-hover:opacity-40'}`}
+                                    className={`object-cover opacity-90 transition-opacity ${isPublic ? '' : 'group-hover:opacity-40'}`}
+                                    fill
                                     alt="profile"
                                 />
                                 {!isPublic && (
@@ -466,7 +469,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                     />
                                 ) : (
                                     <>
-                                        <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=800" className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" alt="intro" />
+                                        <Image src="https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=800" fill className="object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" alt="intro" />
                                         <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
                                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                             <div className="w-14 h-14 rounded-full bg-east-light flex items-center justify-center pl-1 shadow-2xl group-hover:scale-110 transition-transform">
@@ -503,8 +506,8 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                 </div>
                                 <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
                                     {displayGallery.map((img: string, i: number) => (
-                                        <div key={i} onClick={() => gallery.open(i)} className="w-32 h-20 shrink-0 rounded-xl overflow-hidden border border-white/10 shadow-lg group cursor-pointer active:scale-95 transition-transform">
-                                            <img src={img} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" />
+                                        <div key={i} onClick={() => gallery.open(i)} className="relative w-32 h-20 shrink-0 rounded-xl overflow-hidden border border-white/10 shadow-lg group cursor-pointer active:scale-95 transition-transform">
+                                            <Image src={img} fill alt={`Gallery ${i}`} className="object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" />
                                         </div>
                                     ))}
                                 </div>
@@ -550,10 +553,11 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                 upcomingSessions.map((session) => (
                                     <div key={session.id} onClick={() => setSelectedSession(session)} className="relative overflow-hidden rounded-2xl border border-white/10 group hover:border-east-light/50 transition-all cursor-pointer bg-white/5 shadow-xl active:scale-95 duration-200">
                                         <div className="p-4 flex items-center gap-4">
-                                            <div className="w-16 h-16 rounded-xl overflow-hidden border border-white/20">
-                                                <img
+                                            <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-white/20">
+                                                <Image
                                                     src={session.image_url || "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=400"}
-                                                    className="w-full h-full object-cover"
+                                                    className="object-cover"
+                                                    fill
                                                     alt={session.title}
                                                 />
                                             </div>
@@ -609,7 +613,7 @@ export default function CoachProfile({ onOpenSettings, profileData, isPublic = f
                                 ) : drills.map(drill => (
                                     <div key={drill.id} onClick={() => window.location.href = `/drill-hub?drill_id=${drill.id}`} className="relative overflow-hidden rounded-[2.5rem] border border-white/5 group cursor-pointer shadow-2xl bg-[#0a0a0a] h-64 active:scale-[0.98] transition-all duration-500 hover:border-east-light/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:-translate-y-1">
                                         {/* Background Image */}
-                                        <img src={drill.thumbnail_url || drill.image_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"} className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-1000" alt={drill.title} />
+                                        <Image src={drill.thumbnail_url || drill.image_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"} fill className="object-cover opacity-40 group-hover:opacity-70 group-hover:scale-110 transition-all duration-1000" alt={drill.title} />
                                         
                                         {/* Dark Gradient Overlay */}
                                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />

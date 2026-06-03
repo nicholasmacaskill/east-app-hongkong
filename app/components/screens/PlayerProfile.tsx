@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Edit2, Activity, Award, Camera, Coins } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '../ui/Toast';
@@ -175,9 +176,10 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
       {/* Background Image Layer - Premium Blur Overlay */}
       <div className="fixed inset-0 z-0 overflow-hidden">
-        <img
+        <Image
           src="https://images.unsplash.com/photo-1541534741688-6078c64b550d?auto=format&fit=crop&q=80&w=1200"
-          className="w-full h-full object-cover opacity-20 grayscale scale-110"
+          className="object-cover opacity-20 grayscale scale-110"
+          fill
           alt="Premium background"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/40 to-black/95" />
@@ -209,9 +211,10 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                       }
                     }}
                   >
-                    <img
+                    <Image
                       src={profileData.avatar_url || "https://images.pexels.com/photos/6550836/pexels-photo-6550836.jpeg"}
-                      className={`w-full h-full object-cover transition-opacity ${isReadOnly ? '' : 'group-hover:opacity-40'} ${uploading ? 'opacity-20' : 'opacity-90'}`}
+                      className={`object-cover transition-opacity ${isReadOnly ? '' : 'group-hover:opacity-40'} ${uploading ? 'opacity-20' : 'opacity-90'}`}
+                      fill
                       alt="profile"
                     />
                     {!isReadOnly && (
