@@ -275,12 +275,12 @@ export default function ParentProfile({
             </div>
          </div>
 
-         {/* MAIN GRID */}
-         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pb-24">
-            <div className="lg:grid lg:grid-cols-12 lg:gap-12 lg:items-start">
+         {/* MAIN CONTENT */}
+         <div className="mx-auto px-4 mt-8 pb-24">
+            <div className="flex flex-col gap-8">
                
-               {/* LEFT SIDEBAR: NAV & CREDITS */}
-               <div className="lg:col-span-4 lg:sticky lg:top-8 flex flex-col gap-8">
+               {/* NAV & CREDITS */}
+               <div className="flex flex-col gap-8">
                   {/* NAVIGATION */}
                   <div className="flex lg:flex-col justify-center lg:justify-start gap-4 p-2 bg-white/5 rounded-2xl border border-white/5">
                      {['ATHLETES'].map(tab => (
@@ -313,8 +313,8 @@ export default function ParentProfile({
                   </div>
                </div>
 
-               {/* RIGHT CONTENT: ATHLETES LIST */}
-               <div className="lg:col-span-8 mt-12 lg:mt-0">
+               {/* ATHLETES LIST */}
+               <div className="mt-4">
                   {activeTab === 'athletes' && (
                      <div className="flex flex-col gap-6 animate-fadeIn">
                         {(myChildren || []).map((athlete) => {
