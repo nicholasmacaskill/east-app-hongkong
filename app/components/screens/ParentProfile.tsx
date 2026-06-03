@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef } from 'react';
-import { Edit2, ChevronRight, Lock, Plus, X, Coins, Camera } from 'lucide-react';
+import { Edit2, CheckCircle2, ChevronRight, Users, Calendar, Heart, Award, Lock, Plus, X, Coins, Camera } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '../ui/Toast';
 import { compressImage } from '@/app/lib/image-utils';
@@ -179,6 +179,8 @@ export default function ParentProfile({
 
          addToast('Credits transferred successfully!', 'success');
          setShowTransferModal(false);
+         // Ideally triggers a refresh of the parent data, but for now we reload or rely on state update if parent fetches again?
+         // Since app/page.tsx handles the state, a reload is safest to update both balances
          window.location.reload();
 
       } catch (error: any) {
@@ -188,6 +190,8 @@ export default function ParentProfile({
       }
    };
 
+
+
    const handleAddChild = async () => {
       if (!newChild.first || !newChild.last) return;
       await onAddChild(newChild);
@@ -195,10 +199,11 @@ export default function ParentProfile({
       setNewChild({ first: '', last: '', email: '', sport: '' });
    };
 
+   // Check lock status
    const isLocked = profileData.subscription_status && profileData.subscription_status !== 'active' && profileData.subscription_status !== 'trialing';
 
    return (
-      <div className="animate-fadeIn bg-black min-h-screen pb-24 relative overflow-hidden font-montserrat">
+      <div className="animate-fadeIn bg-black min-h-screen pb-24 relative overflow-hidden">
          {/* HEADER IMAGE */}
          <div
             className={`h-56 relative shadow-2xl ${!isReadOnly ? 'cursor-pointer' : ''}`}
@@ -236,10 +241,10 @@ export default function ParentProfile({
          </div>
 
          {/* PROFILE INFO */}
-         <div className="relative z-10 flex flex-col items-center -mt-20 px-4">
+         <div className="px-6 -mt-20 relative z-10 flex flex-col items-center">
             <div
                data-testid="parent-avatar-container"
-               className={`w-36 h-36 rounded-full border-[6px] border-black shadow-2xl overflow-hidden bg-zinc-900 relative group ${isReadOnly ? '' : 'cursor-pointer'}`}
+               className={`w-32 h-32 rounded-full border-[6px] border-black shadow-2xl overflow-hidden bg-zinc-900 relative group ${isReadOnly ? '' : 'cursor-pointer'}`}
                onClick={(e) => {
                   if (!isReadOnly) {
                      e.stopPropagation();
@@ -251,257 +256,251 @@ export default function ParentProfile({
                   <img src={profileData.avatar_url} className="w-full h-full object-cover" alt="Profile" />
                ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-black">
-                     <span className="text-4xl font-black italic text-gray-700">{profileData.first_name?.[0]}</span>
+                     <span className="text-3xl font-black italic text-gray-700">{profileData.first_name?.[0]}</span>
                   </div>
                )}
                {!isReadOnly && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                     <Camera size={40} className="text-white" />
+                     <Camera size={32} className="text-white" />
                   </div>
                )}
             </div>
             <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
 
             <div className="mt-4 text-center">
-               <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none mb-2">
-                  {profileData.first_name} <span className="text-east-light">{profileData.last_name}</span>
+               <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none mb-1">
+                  {profileData.first_name} {profileData.last_name}
                </h1>
-               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-east-light/10 border border-east-light/20">
-                  <div className="w-2 h-2 rounded-full bg-east-light animate-pulse shadow-[0_0_10px_#28D160]" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-east-light">
-                     {profileData.role || 'PARENT'} ACCESS
+               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-east-light/10 border border-east-light/20">
+                  <div className="w-1.5 h-1.5 rounded-full bg-east-light animate-pulse shadow-[0_0_10px_#28D160]" />
+                  <span className="text-[10px] font-black uppercase tracking-wider text-east-light">
+                     {profileData.role || 'PARENT'} ACCT
                   </span>
                </div>
             </div>
+
+            <div className="flex justify-center w-full mt-6">
+               {[
+                  {
+                     l: 'CREDITS\nBALANCE',
+                     v: profileData.credits || '0',
+                     icon: isLocked ? Lock : Coins,
+                     isLocked: isLocked
+                  },
+               ].map((stat, i) => (
+                  <div
+                     key={i}
+                     onClick={() => stat.isLocked && addToast("Current credits are unusable until a new subscription is purchased.", "warning")}
+                     title={stat.isLocked ? "Current credits are unusable until a new subscription is purchased." : ""}
+                     className={`flex flex-col items-center p-3 bg-white/5 rounded-xl border group hover:border-east-light/50 transition-colors w-1/2 max-w-[200px] ${stat.isLocked ? 'border-red-900/50 bg-red-900/10 cursor-not-allowed' : 'border-white/10'}`}
+                  >
+                     <div className="flex items-center gap-1 mb-1">
+                        <stat.icon size={14} className={stat.isLocked ? 'text-red-500' : 'text-east-light'} />
+                        {stat.isLocked && <Lock size={10} className="text-red-500" />}
+                     </div>
+                     <span className={`font-black text-lg italic ${stat.isLocked ? 'text-red-500/50' : 'text-white'}`}>{stat.v}</span>
+                     <span className="text-[7px] font-black font-montserrat uppercase text-center leading-tight text-gray-500 whitespace-pre-line">{stat.l}</span>
+                  </div>
+               ))}
+            </div>
          </div>
 
-         {/* MAIN CONTENT */}
-         <div className="mx-auto px-4 mt-8 pb-24">
-            <div className="flex flex-col gap-8">
-               
-               {/* NAV & CREDITS */}
-               <div className="flex flex-col gap-8">
-                  {/* NAVIGATION */}
-                  <div className="flex lg:flex-col justify-center lg:justify-start gap-4 p-2 bg-white/5 rounded-2xl border border-white/5">
-                     {['ATHLETES'].map(tab => (
-                        <button
-                           key={tab}
-                           onClick={() => setActiveTab(tab.toLowerCase())}
-                           className={`font-black italic text-xs uppercase transition-all px-6 py-4 rounded-xl text-left ${activeTab === tab.toLowerCase() ? 'bg-east-light text-black scale-105 shadow-xl' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
-                        >
-                           {tab}
-                        </button>
-                     ))}
-                  </div>
-
-                  {/* CREDITS CARD */}
-                  <div
-                     onClick={() => isLocked && addToast("Current credits are unusable until a new subscription is purchased.", "warning")}
-                     className={`flex flex-col items-center p-8 bg-gradient-to-br from-white/10 to-transparent rounded-[2rem] border transition-all hover:scale-[1.02] ${isLocked ? 'border-red-900/50 bg-red-900/10 cursor-not-allowed' : 'border-white/10 shadow-2xl'}`}
+         {/* NAVIGATION */}
+         <div className="flex justify-center gap-6 py-6 relative z-20 overflow-x-auto no-scrollbar px-4">
+            {
+               ['ATHLETES'].map(tab => (
+                  <button
+                     key={tab}
+                     onClick={() => setActiveTab(tab.toLowerCase())}
+                     className={`font-montserrat font-black italic text-xs uppercase transition-all drop-shadow-lg whitespace-nowrap ${activeTab === tab.toLowerCase() ? 'text-white border-b-2 border-east-light pb-1' : 'text-gray-500 hover:text-gray-300'}`}
                   >
-                     <div className="w-16 h-16 rounded-full bg-black/40 flex items-center justify-center mb-4 border border-east-light/20 shadow-inner">
-                        <Coins size={32} className={isLocked ? 'text-red-500' : 'text-east-light'} />
-                     </div>
-                     <span className={`font-black text-5xl italic ${isLocked ? 'text-red-500/50' : 'text-white'}`}>{profileData.credits || '0'}</span>
-                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mt-2">Available Credits</span>
-                     {isLocked && (
-                        <div className="mt-4 flex items-center gap-2 text-red-500 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
-                           <Lock size={12} />
-                           <span className="text-[9px] font-black uppercase">Account Locked</span>
-                        </div>
-                     )}
-                  </div>
-               </div>
+                     {tab}
+                  </button>
+               ))
+            }
+         </div>
 
-               {/* ATHLETES LIST */}
-               <div className="mt-4">
-                  {activeTab === 'athletes' && (
-                     <div className="flex flex-col gap-6 animate-fadeIn">
-                        {(myChildren || []).map((athlete) => {
-                           const isSelected = selectedChildId === athlete.id;
-                           return (
-                              <div
-                                 key={athlete.id}
-                                 onClick={() => {
-                                    setSelectedChildId(athlete.id);
-                                    if (setActiveChildId) setActiveChildId(athlete.id);
-                                 }}
-                                 className={`relative overflow-hidden rounded-[2rem] border transition-all duration-500 group cursor-pointer ${isSelected ? 'border-east-light bg-east-light/5 shadow-2xl scale-[1.02]' : 'border-white/5 bg-white/5 hover:border-white/20 hover:bg-white/[0.07]'}`}
-                              >
-                                 <div className="p-6 flex flex-col sm:flex-row items-center gap-6">
-                                    {/* Athlete Avatar */}
-                                    <div
-                                       className={`w-28 h-28 rounded-full overflow-hidden border-4 transition-all duration-500 relative shrink-0 ${isSelected ? 'border-east-light scale-105' : 'border-white/10'}`}
-                                       onClick={(e) => {
-                                          if (!isReadOnly) {
-                                             e.stopPropagation();
-                                             setEditingChildId(athlete.id);
-                                             childAvatarInputRef.current?.click();
-                                          }
-                                       }}
-                                    >
-                                       <img src={athlete.avatar_url || "https://images.unsplash.com/photo-1544005313-94ddf0286df2"} className="w-full h-full object-cover" alt={athlete.first_name} />
-                                       {!isReadOnly && (
-                                          <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                             <Camera size={24} className="text-white" />
-                                          </div>
-                                       )}
-                                    </div>
-
-                                    <div className="flex-1 text-center sm:text-left">
-                                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                          <div>
-                                             <h4 className="font-black italic text-2xl uppercase tracking-tighter text-white">{athlete.first_name}</h4>
-                                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{athlete.team || 'EAST SPORTS ACADEMY'}</p>
-                                          </div>
-                                          {isSelected && (
-                                             <div className="bg-east-light text-black text-[9px] font-black px-3 py-1 rounded-full uppercase italic self-center sm:self-start shadow-lg">Current Selection</div>
-                                          )}
+         {/* CONTENT AREA */}
+         <div className="px-4 pb-24 w-full">
+            {/* ATHLETES TAB */}
+            {
+               activeTab === 'athletes' && (
+                  <div className="flex flex-col gap-4 animate-fadeIn">
+                     {(myChildren || []).map((athlete) => {
+                        const isSelected = selectedChildId === athlete.id;
+                        return (
+                           <div
+                              key={athlete.id}
+                              data-testid={`child-section-${athlete.id}`}
+                              onClick={() => {
+                                 setSelectedChildId(athlete.id);
+                                 if (setActiveChildId) setActiveChildId(athlete.id);
+                              }}
+                              className={`relative overflow-hidden rounded-2xl border transition-all duration-300 group cursor-pointer ${isSelected ? 'border-east-light shadow-2xl scale-[1.02]' : 'border-white/5 hover:border-white/20'}`}
+                           >
+                              <div className="p-4 flex items-center gap-4 bg-gradient-to-br from-white/10 to-transparent backdrop-blur-md">
+                                 <div
+                                    className={`w-20 h-20 rounded-full overflow-hidden border-4 transition-colors relative group/childimg ${isSelected ? 'border-east-light' : 'border-white/10'} ${isReadOnly ? '' : 'cursor-pointer'}`}
+                                    onClick={(e) => {
+                                       if (!isReadOnly) {
+                                          e.stopPropagation();
+                                          setEditingChildId(athlete.id);
+                                          childAvatarInputRef.current?.click();
+                                       }
+                                    }}
+                                 >
+                                    <img src={athlete.avatar_url || "https://images.unsplash.com/photo-1544005313-94ddf0286df2??auto=format&fit=crop&q=80&w=200"} className="w-full h-full object-cover" alt={athlete.first_name} />
+                                    {!isReadOnly && (
+                                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover/childimg:opacity-100 transition-opacity">
+                                          <Camera size={20} className="text-white" />
                                        </div>
-
-                                       <div className="flex flex-wrap justify-center sm:justify-start items-center gap-4 mt-6">
-                                          <div className="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-xl border border-white/5">
-                                             <Coins size={14} className="text-east-light" />
-                                             <span className="text-sm font-black text-white">{athlete.credits || 0} <span className="text-[10px] text-gray-500 italic ml-1">CREDITS</span></span>
-                                          </div>
-                                          <button
-                                             onClick={(e) => handleOpenTransfer(e, athlete)}
-                                             className="bg-white/10 text-white text-[10px] font-black uppercase px-5 py-2.5 rounded-xl hover:bg-east-light hover:text-black transition-all active:scale-95 border border-white/10"
-                                          >
-                                             + Transfer Credits
-                                          </button>
-                                       </div>
-                                    </div>
-                                    <ChevronRight size={24} className={`hidden sm:block transition-all duration-500 ${isSelected ? 'text-east-light translate-x-1' : 'text-gray-700 opacity-0 group-hover:opacity-100'}`} />
+                                    )}
                                  </div>
+                                 <div className="flex-1">
+                                    <div className="flex justify-between items-start">
+                                       <h4 className={`font-montserrat font-black italic text-lg leading-none uppercase ${isSelected ? 'text-white' : 'text-white/80'}`}>{athlete.first_name}</h4>
+                                       {isSelected && <div className="bg-east-light text-black text-[8px] font-black px-2 py-0.5 rounded-full uppercase italic">Selected</div>}
+                                    </div>
+                                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">{athlete.team || 'EAST SPORTS'}</p>
+                                    <div className="flex items-center gap-4 mt-3">
+                                       <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1.5 rounded-lg border border-white/5">
+                                          <Coins size={10} className="text-east-light" />
+                                          <span className="text-[10px] font-black text-white">{athlete.credits || 0} <span className="text-gray-500">CREDITS</span></span>
+                                       </div>
+                                       <button
+                                          onClick={(e) => handleOpenTransfer(e, athlete)}
+                                          className="bg-east-light text-black text-[8px] font-black uppercase px-3 py-1.5 rounded-lg hover:bg-white transition-colors"
+                                       >
+                                          + Transfer
+                                       </button>
+                                    </div>
+                                 </div>
+                                 <ChevronRight size={18} className={`transition-transform ${isSelected ? 'text-east-light rotate-90' : 'text-gray-600'}`} />
                               </div>
-                           );
-                        })}
+                           </div>
+                        );
+                     })}
 
-                        {/* ADD CHILD BUTTON */}
-                        <button
-                           onClick={() => setShowAddChild(true)}
-                           className="w-full py-8 border-2 border-dashed border-white/10 rounded-[2rem] text-gray-500 font-black italic text-sm hover:border-east-light/50 hover:text-white hover:bg-white/5 transition-all uppercase tracking-widest group"
-                        >
-                           <span className="flex items-center justify-center gap-3">
-                              <Plus size={20} className="group-hover:rotate-90 transition-transform" />
-                              Register New Athlete
-                           </span>
-                        </button>
-                     </div>
-                  )}
+                     {/* ADD CHILD BUTTON */}
+                     <button
+                        onClick={() => setShowAddChild(true)}
+                        className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl text-gray-500 font-montserrat font-black italic text-xs hover:border-east-light/50 hover:text-white transition-all uppercase tracking-widest bg-white/5">
+                        + Register New Athlete
+                     </button>
 
-                  {/* ADD CHILD MODAL */}
-                  {showAddChild && (
-                     <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 backdrop-blur-xl">
-                        <div className="bg-[#1e1e1e] p-8 rounded-[2.5rem] w-full max-w-md border border-white/10 shadow-2xl relative">
-                           <button onClick={() => setShowAddChild(false)} className="absolute top-6 right-6 text-gray-500 hover:text-white">
-                              <X size={24} />
-                           </button>
-                           <h3 className="font-black italic text-3xl uppercase mb-8 text-white tracking-tighter">Add <span className="text-east-light">Athlete</span></h3>
-                           <div className="space-y-5">
-                              <div className="grid grid-cols-2 gap-4">
+                     {/* ADD CHILD MODAL */}
+                     {showAddChild && (
+                        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+                           <div className="bg-[#1e1e1e] p-6 rounded-2xl w-full max-w-sm border border-white/10">
+                              <h3 className="font-black italic text-xl uppercase mb-4 text-white">Add Child</h3>
+                              <div className="space-y-4">
                                  <div>
-                                    <label className="text-[10px] uppercase font-bold text-gray-500 mb-2 block ml-1">First Name</label>
+                                    <label className="text-[10px] uppercase font-bold text-gray-500">First Name</label>
                                     <input
                                        value={newChild.first}
                                        onChange={e => setNewChild({ ...newChild, first: e.target.value })}
-                                       className="w-full bg-black/50 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-east-light transition-colors"
-                                       placeholder="Michael"
+                                       className="w-full bg-black/50 border border-white/10 p-3 rounded-lg text-white outline-none focus:border-east-light"
+                                       placeholder="e.g. Michael"
                                     />
                                  </div>
                                  <div>
-                                    <label className="text-[10px] uppercase font-bold text-gray-500 mb-2 block ml-1">Last Name</label>
+                                    <label className="text-[10px] uppercase font-bold text-gray-500">Last Name</label>
                                     <input
                                        value={newChild.last}
                                        onChange={e => setNewChild({ ...newChild, last: e.target.value })}
-                                       className="w-full bg-black/50 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-east-light transition-colors"
-                                       placeholder="Jordan"
+                                       className="w-full bg-black/50 border border-white/10 p-3 rounded-lg text-white outline-none focus:border-east-light"
+                                       placeholder="e.g. Jordan"
                                     />
                                  </div>
-                              </div>
-                              <div>
-                                 <label className="text-[10px] uppercase font-bold text-gray-500 mb-2 block ml-1">Email Address</label>
-                                 <input
-                                    value={newChild.email}
-                                    onChange={e => setNewChild({ ...newChild, email: e.target.value })}
-                                    className="w-full bg-black/50 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-east-light transition-colors"
-                                    placeholder="athlete@example.com"
-                                    type="email"
-                                 />
-                              </div>
-                              <div>
-                                 <label className="text-[10px] uppercase font-bold text-gray-500 mb-2 block ml-1">Primary Sport / Team</label>
-                                 <input
-                                    value={newChild.sport}
-                                    onChange={e => setNewChild({ ...newChild, sport: e.target.value })}
-                                    className="w-full bg-black/50 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-east-light transition-colors"
-                                    placeholder="Ice Hockey"
-                                 />
-                              </div>
-                              <div className="flex gap-4 pt-4">
-                                 <button onClick={handleAddChild} className="flex-1 bg-east-light text-black font-black uppercase py-4 rounded-2xl text-sm hover:scale-[1.02] transition-all shadow-lg active:scale-95">Save Profile</button>
-                                 <button onClick={() => setShowAddChild(false)} className="flex-1 bg-white/10 text-white font-black uppercase py-4 rounded-2xl text-sm hover:bg-white/20 transition-all">Cancel</button>
+                                 <div>
+                                    <label className="text-[10px] uppercase font-bold text-gray-500">Email Address</label>
+                                    <input
+                                       value={newChild.email}
+                                       onChange={e => setNewChild({ ...newChild, email: e.target.value })}
+                                       className="w-full bg-black/50 border border-white/10 p-3 rounded-lg text-white outline-none focus:border-east-light"
+                                       placeholder="child@example.com"
+                                       type="email"
+                                    />
+                                 </div>
+                                 <div>
+                                    <label className="text-[10px] uppercase font-bold text-gray-500">Sport / Team</label>
+                                    <input
+                                       value={newChild.sport}
+                                       onChange={e => setNewChild({ ...newChild, sport: e.target.value })}
+                                       className="w-full bg-black/50 border border-white/10 p-3 rounded-lg text-white outline-none focus:border-east-light"
+                                       placeholder="e.g. Ice Hockey"
+                                    />
+                                 </div>
+                                 <div className="flex gap-2 pt-2">
+                                    <button onClick={handleAddChild} className="flex-1 bg-east-light text-black font-black uppercase py-3 rounded-lg text-xs hover:bg-white">Save</button>
+                                    <button onClick={() => setShowAddChild(false)} className="flex-1 bg-white/10 text-white font-black uppercase py-3 rounded-lg text-xs hover:bg-white/20">Cancel</button>
+                                 </div>
                               </div>
                            </div>
                         </div>
-                     </div>
-                  )}
-               </div>
-            </div>
-         </div>
-
-         {/* TRANSFER MODAL */}
-         {showTransferModal && transferTarget && (
-            <div className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center p-6 backdrop-blur-2xl">
-               <div className="bg-[#1e1e1e] p-10 rounded-[3rem] w-full max-w-md border border-white/10 relative shadow-2xl">
-                  <button onClick={() => setShowTransferModal(false)} className="absolute top-8 right-8 text-gray-500 hover:text-white">
-                     <X size={28} />
-                  </button>
-
-                  <div className="text-center mb-10">
-                     <div className="w-20 h-20 bg-east-light/10 text-east-light rounded-full flex items-center justify-center mx-auto mb-6 border border-east-light/20 shadow-xl">
-                        <Coins size={40} />
-                     </div>
-                     <h3 className="font-black italic text-3xl text-white uppercase tracking-tighter">Transfer <span className="text-east-light">Credits</span></h3>
-                     <p className="text-gray-500 text-[10px] font-black uppercase mt-3 tracking-[0.2em]">
-                        To <span className="text-white">{transferTarget.name}</span>
-                     </p>
+                     )}
                   </div>
+               )
+            }
 
-                  <div className="space-y-8">
-                     <div>
-                        <label className="text-[10px] uppercase font-bold text-gray-500 mb-4 block text-center tracking-widest">Amount to Transfer</label>
-                        <input
-                           type="number"
-                           min="1"
-                           max={profileData.credits || 0}
-                           value={transferAmount}
-                           onChange={(e) => setTransferAmount(parseInt(e.target.value) || 0)}
-                           className="w-full bg-black/60 border border-white/10 p-6 rounded-3xl text-center text-5xl font-black italic text-white outline-none focus:border-east-light transition-all shadow-inner"
-                        />
-                     </div>
 
-                     <div className="bg-black/40 p-5 rounded-2xl border border-white/5 text-center">
-                        <p className="text-[9px] text-gray-500 uppercase font-black tracking-widest">New Parent Balance</p>
-                        <p className="text-white font-black text-2xl italic mt-1">
-                           {(profileData.credits || 0) - transferAmount} <span className="text-xs text-gray-600 not-italic ml-1">CREDITS</span>
+            {/* TRANSFER MODAL */}
+            {showTransferModal && transferTarget && (
+               <div className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-6 backdrop-blur-md">
+                  <div className="bg-[#1e1e1e] p-8 rounded-[2rem] w-full max-w-sm border border-white/10 relative shadow-2xl">
+                     <button
+                        onClick={() => setShowTransferModal(false)}
+                        className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors"
+                     >
+                        <X size={24} />
+                     </button>
+
+                     <div className="text-center mb-8">
+                        <div className="w-16 h-16 bg-east-light/10 text-east-light rounded-full flex items-center justify-center mx-auto mb-4 border border-east-light/20">
+                           <Coins size={32} />
+                        </div>
+                        <h3 className="font-black italic text-2xl text-white uppercase tracking-tighter">Transfer Credits</h3>
+                        <p className="text-gray-500 text-xs font-bold uppercase mt-2 tracking-wide">
+                           To <span className="text-white">{transferTarget.name}</span>
                         </p>
                      </div>
 
-                     <button
-                        onClick={handleTransferCredits}
-                        disabled={isTransferring || transferAmount > (profileData.credits || 0)}
-                        className="w-full bg-east-light text-black font-black uppercase py-5 rounded-2xl text-base hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(40,209,96,0.3)] transition-all active:scale-95 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
-                     >
-                        {isTransferring ? 'Processing...' : 'Confirm Transfer Now'}
-                     </button>
+                     <div className="space-y-6">
+                        <div>
+                           <label className="text-[10px] uppercase font-bold text-gray-500 mb-2 block text-center">Amount to Transfer</label>
+                           <input
+                              type="number"
+                              min="1"
+                              max={profileData.credits || 0}
+                              value={transferAmount}
+                              onChange={(e) => setTransferAmount(parseInt(e.target.value) || 0)}
+                              className="w-full bg-black/50 border border-white/10 p-4 rounded-xl text-center text-3xl font-black italic text-white outline-none focus:border-east-light"
+                           />
+                        </div>
+
+                        <div className="bg-black/40 p-4 rounded-xl border border-white/5 text-center">
+                           <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest">New Parent Balance</p>
+                           <p className="text-white font-bold text-lg">
+                              {(profileData.credits || 0) - transferAmount} <span className="text-xs text-gray-600">CREDITS</span>
+                           </p>
+                        </div>
+
+                        <button
+                           onClick={handleTransferCredits}
+                           disabled={isTransferring || transferAmount > (profileData.credits || 0)}
+                           className="w-full bg-east-light text-black font-black uppercase py-4 rounded-xl text-sm hover:bg-white transition-all shadow-[0_0_20px_rgba(40,209,96,0.2)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                           {isTransferring ? 'Processing...' : 'Confirm Transfer'}
+                        </button>
+                     </div>
                   </div>
                </div>
-            </div>
-         )}
-         
-         <input type="file" ref={childAvatarInputRef} onChange={handleChildAvatarUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
+            )}
+
+
+
+            <input type="file" ref={childAvatarInputRef} onChange={handleChildAvatarUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
+         </div>
       </div>
    );
 }
