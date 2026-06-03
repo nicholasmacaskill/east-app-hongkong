@@ -3,10 +3,17 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 const isProd = process.env.PLAYWRIGHT_ENV === 'production';
-const envFile = isProd ? '.env.production.latest' : '.env.test';
 const baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL || (isProd ? 'https://app.eastsportsgroup.com' : 'https://test-branch-east.vercel.app');
 
-dotenv.config({ path: path.resolve(__dirname, envFile) });
+// Dynamically determine the correct .env file based on the baseURL being tested
+let envFile = '.env.test'; // Default for test branch
+if (isProd || baseURL.includes('app.eastsportsgroup.com')) {
+  envFile = '.env.production.latest';
+} else if (baseURL.includes('localhost') || baseURL.includes('127.0.0.1')) {
+  envFile = '.env.local'; // Local dev server uses .env.local
+}
+
+dotenv.config({ path: path.resolve(__dirname, envFile), override: true });
 
 
 /**

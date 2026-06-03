@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 // Load env vars
-dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '../.env.local'), override: true });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -129,9 +129,8 @@ test.describe('Session Capacity Management Integration', () => {
         });
         expect(fetchResponseInitial.ok()).toBeTruthy();
         const initialDetails = await fetchResponseInitial.json();
-        expect(initialDetails.success).toBe(true);
-        expect(initialDetails.attendees).toBeDefined();
-        expect(initialDetails.attendees.length).toBe(0);
+        expect(Array.isArray(initialDetails)).toBe(true);
+        expect(initialDetails.length).toBe(0);
 
         // 2. Book first attendee (parent)
         const bookResponse1 = await request.post('/api/sessions/book', {
@@ -145,6 +144,9 @@ test.describe('Session Capacity Management Integration', () => {
                 origin: 'facilities'
             }
         });
+        if (!bookResponse1.ok()) {
+            console.error("BOOKING 1 FAILED:", await bookResponse1.text());
+        }
         expect(bookResponse1.ok()).toBeTruthy();
         const bookJson1 = await bookResponse1.json();
         expect(bookJson1.success).toBe(true);
@@ -157,9 +159,9 @@ test.describe('Session Capacity Management Integration', () => {
         });
         expect(fetchResponseAfterBook.ok()).toBeTruthy();
         const afterBookDetails = await fetchResponseAfterBook.json();
-        expect(afterBookDetails.success).toBe(true);
-        expect(afterBookDetails.attendees.length).toBe(1);
-        expect(afterBookDetails.attendees[0].user_id).toBe(parentUserId);
+        expect(Array.isArray(afterBookDetails)).toBe(true);
+        expect(afterBookDetails.length).toBe(1);
+        expect(afterBookDetails[0].user_id).toBe(parentUserId);
 
         // 4. Try to book second attendee (child) - should fail because max_capacity is 1
         const bookResponse2 = await request.post('/api/sessions/book', {
@@ -169,14 +171,15 @@ test.describe('Session Capacity Management Integration', () => {
             },
             data: {
                 sessionId: testSessionId,
-                userId: childUserId,
+                userId: parentUserId,
+                attendeeIds: [childUserId],
                 origin: 'facilities'
             }
         });
         // The booking route should return a failure/capacity error
         expect(bookResponse2.ok()).toBeFalsy();
         const bookJson2 = await bookResponse2.json();
-        expect(bookJson2.error).toContain('capacity');
+        expect(bookJson2.error).toContain('Capacity');
 
         // 5. Cancel the booking
         const cancelResponse = await request.delete('/api/sessions/cancel', {
@@ -201,6 +204,7 @@ test.describe('Session Capacity Management Integration', () => {
         });
         expect(fetchResponseFinal.ok()).toBeTruthy();
         const finalDetails = await fetchResponseFinal.json();
-        expect(finalDetails.attendees.length).toBe(0);
+        expect(Array.isArray(finalDetails)).toBe(true);
+        expect(finalDetails.length).toBe(0);
     });
 });
