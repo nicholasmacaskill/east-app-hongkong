@@ -9,6 +9,7 @@ import { safeFetch } from '@/app/lib/apiUtils';
 import { useToast } from '@/app/components/ui/Toast';
 import { getStripePriceId } from '@/app/lib/stripe-config';
 import { useTracking } from '@/app/hooks/useTracking';
+import { polyfill } from "mobile-drag-drop";
 
 interface ClassModalProps {
     sessions: Session[];
@@ -76,7 +77,7 @@ export default function ClassModal({
     const [sessionAttendees, setSessionAttendees] = useState<any[]>([]);
     const [initialsOnly, setInitialsOnly] = useState<boolean>(false);
     const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
-    const [selectedTappedAttendeeId, setSelectedTappedAttendeeId] = useState<string | null>(null);
+    const [pendingAttendeeIds, setPendingAttendeeIds] = useState<string[]>([]);
     const [parentProfile, setParentProfile] = useState<any>(null);
 
     // Fetch parent profile for avatar and display
@@ -119,11 +120,26 @@ export default function ClassModal({
         }
     }, [currentUserId, initialAttendeeId]);
 
-    // Lock Background Scroll
+    // Lock Background Scroll & Init Polyfill
     useEffect(() => {
         document.body.style.overflow = 'hidden';
+        
+        // Initialize mobile drag and drop polyfill
+        polyfill({
+            dragImageCenterOnTouch: true
+        });
+
+        // Optional: prevent default touch action to ensure drag works cleanly on iOS
+        const preventTouchScroll = (e: TouchEvent) => {
+            if ((e.target as HTMLElement).hasAttribute('draggable')) {
+                e.preventDefault();
+            }
+        };
+        window.addEventListener('touchmove', preventTouchScroll, { passive: false });
+
         return () => {
             document.body.style.overflow = 'unset';
+            window.removeEventListener('touchmove', preventTouchScroll);
         };
     }, []);
 
@@ -350,6 +366,7 @@ export default function ClassModal({
             });
 
             hasBookedRef.current = true;
+            setPendingAttendeeIds([]);
             addToast(res.data.message || `Success! Session booked.`, 'success');
             if (onScheduleChange) onScheduleChange();
             onClose();
@@ -565,64 +582,7 @@ export default function ClassModal({
         setShowPenaltyWarning(true);
     };
 
-    const bookSingleAttendee = async (personId: string) => {
-        setIsProcessing(true);
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const token = session?.access_token;
-
-            const res = await safeFetch('/api/sessions/book', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token ? `Bearer ${token}` : ''
-                },
-                body: JSON.stringify({
-                    userId: currentUserId,
-                    sessionId: selectedSessionId,
-                    attendeeIds: [personId],
-                    coachId: null,
-                    origin: origin
-                })
-            });
-
-            if (!res.success) {
-                const errorMsg = res.error || 'Unknown error';
-                if (errorMsg.includes('Insufficient credits')) {
-                    setShowTopUp(true);
-                    return;
-                }
-                addToast(errorMsg, 'error');
-                return;
-            }
-
-            track('session_booked', {
-                session_type: selectedSession?.category,
-                coach_name: selectedSession?.instructor,
-                credits_used: creditCostPerPerson,
-                attendees_count: 1,
-            });
-
-            hasBookedRef.current = true;
-            addToast(res.data.message || `Success! Session booked.`, 'success');
-            if (onScheduleChange) onScheduleChange();
-
-            // Refresh capacity and attendees list
-            const attRes = await fetch(`/api/sessions?sessionId=${selectedSessionId}`);
-            if (attRes.ok) {
-                const attData = await attRes.json();
-                setSessionAttendees(attData);
-                setCurrentRegistrations(attData.length);
-            }
-        } catch (error: any) {
-            console.error(error);
-            addToast(`Booking Request Failed: ${error.message || 'Network error'}`, 'error');
-        } finally {
-            setIsProcessing(false);
-        }
-    };
-
-    const handleDropToBook = async (personId: string) => {
+    const handleDropToBook = (personId: string) => {
         const person = attendeesList.find(p => p.id === personId);
         if (!person) return;
         const isBooked = getBookedStatus(personId);
@@ -630,10 +590,17 @@ export default function ClassModal({
             addToast(`${person.name} is already booked!`, 'info');
             return;
         }
+        if (pendingAttendeeIds.includes(personId)) return;
         
-        // Instantly book without freezing the UI with a confirm
-        setSelectedAttendeeIds([personId]);
-        await bookSingleAttendee(personId);
+        const cap = selectedSession?.max_capacity || (selectedSession?.category === 'PRIVATE' ? 1 : 4);
+        const totalTakingUpSlots = currentRegistrations + pendingAttendeeIds.length;
+        if (cap && totalTakingUpSlots >= cap) {
+             addToast('Session is at full capacity', 'warning');
+             return;
+        }
+
+        setPendingAttendeeIds(prev => [...prev, personId]);
+        setSelectedAttendeeIds(prev => Array.from(new Set([...prev, personId])));
     };
 
     const attendeesList = [
@@ -848,87 +815,128 @@ export default function ClassModal({
                                                 </div>
                                             </div>
 
-                                            {Array.from({ length: maxCapacity }).map((_, idx) => {
-                                                const reg = sessionAttendees[idx];
-                                                const isOccupied = !!reg;
-                                                const attendeeProfile = reg ? (Array.isArray(reg.profiles) ? reg.profiles[0] : reg.profiles) : null;
-                                                const isMyBooking = reg ? (reg.user_id === currentUserId || myChildren.some((c: any) => c.id === reg.user_id)) : false;
+                                            {(() => {
+                                                const slots: any[] = [];
+                                                for (let i = 0; i < maxCapacity; i++) {
+                                                    if (i < currentRegistrations) {
+                                                        slots.push({ type: 'booked', data: sessionAttendees[i], index: i });
+                                                    } else if (i < currentRegistrations + pendingAttendeeIds.length) {
+                                                        const pendingId = pendingAttendeeIds[i - currentRegistrations];
+                                                        const person = attendeesList.find(p => p.id === pendingId);
+                                                        slots.push({ type: 'pending', person, index: i });
+                                                    } else {
+                                                        slots.push({ type: 'empty', index: i });
+                                                    }
+                                                }
                                                 
-                                                // Time formatting (e.g., "5-6pm")
-                                                const startStr = formatHK(selectedSession.start_time, 'h:mma').toLowerCase().replace(':00', '');
-                                                const endStr = formatHK(selectedSession.end_time, 'h:mma').toLowerCase().replace(':00', '');
-                                                const timeString = `${startStr}-${endStr}`;
+                                                return slots.map((slot) => {
+                                                    const idx = slot.index;
+                                                    const startStr = formatHK(selectedSession.start_time, 'h:mma').toLowerCase().replace(':00', '');
+                                                    const endStr = formatHK(selectedSession.end_time, 'h:mma').toLowerCase().replace(':00', '');
+                                                    const timeString = `${startStr}-${endStr}`;
 
-                                                if (isOccupied && attendeeProfile) {
-                                                    const formattedName = getFormattedName(attendeeProfile);
-                                                    const initials = `${attendeeProfile.first_name?.charAt(0) || ''}${attendeeProfile.last_name?.charAt(0) || ''}`.toUpperCase() || 'G';
-                                                    return (
-                                                        <div 
-                                                            key={idx}
-                                                            draggable={isMyBooking}
-                                                            onDragStart={(e) => {
-                                                                if (isMyBooking) {
-                                                                    e.dataTransfer.setData('cancel/plain', reg.user_id);
-                                                                    e.dataTransfer.effectAllowed = 'move';
-                                                                }
-                                                            }}
-                                                            className={`flex items-center justify-between p-4 rounded bg-white border-2 border-dashed group relative ${isMyBooking ? 'border-[#28D160] cursor-grab active:cursor-grabbing' : 'border-gray-600'}`}
-                                                        >
-                                                            <span className="text-sm font-medium text-gray-800">{timeString} - {formattedName}</span>
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center border border-gray-300 shrink-0">
-                                                                    {attendeeProfile.avatar_url ? (
-                                                                        <img src={attendeeProfile.avatar_url} alt={formattedName} className="w-full h-full object-cover" />
-                                                                    ) : (
-                                                                        <span className="text-xs font-black text-gray-500">{initials}</span>
+                                                    if (slot.type === 'booked') {
+                                                        const reg = slot.data;
+                                                        const attendeeProfile = reg ? (Array.isArray(reg.profiles) ? reg.profiles[0] : reg.profiles) : null;
+                                                        const isMyBooking = reg ? (reg.user_id === currentUserId || myChildren.some((c: any) => c.id === reg.user_id)) : false;
+                                                        if (!attendeeProfile) return null;
+                                                        const formattedName = getFormattedName(attendeeProfile);
+                                                        const initials = `${attendeeProfile.first_name?.charAt(0) || ''}${attendeeProfile.last_name?.charAt(0) || ''}`.toUpperCase() || 'G';
+                                                        return (
+                                                            <div 
+                                                                key={idx}
+                                                                draggable={isMyBooking}
+                                                                onDragStart={(e) => {
+                                                                    if (isMyBooking) {
+                                                                        e.dataTransfer.setData('cancel/plain', reg.user_id);
+                                                                        e.dataTransfer.effectAllowed = 'move';
+                                                                    }
+                                                                }}
+                                                                className={`flex items-center justify-between p-4 rounded bg-white border-2 border-dashed group relative touch-none ${isMyBooking ? 'border-[#28D160] cursor-grab active:cursor-grabbing' : 'border-gray-600'}`}
+                                                            >
+                                                                <span className="text-sm font-medium text-gray-800">{timeString} - {formattedName}</span>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center border border-gray-300 shrink-0">
+                                                                        {attendeeProfile.avatar_url ? (
+                                                                            <img src={attendeeProfile.avatar_url} alt={formattedName} className="w-full h-full object-cover" />
+                                                                        ) : (
+                                                                            <span className="text-xs font-black text-gray-500">{initials}</span>
+                                                                        )}
+                                                                    </div>
+                                                                    {isMyBooking && (
+                                                                        <button 
+                                                                            onClick={() => cancelSingleAttendee(reg.user_id)}
+                                                                            className="absolute right-[-40px] opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 transition-all bg-white rounded-full shadow border"
+                                                                            title="Cancel Booking"
+                                                                        >
+                                                                            <Trash size={14} />
+                                                                        </button>
                                                                     )}
                                                                 </div>
-                                                                {isMyBooking && (
-                                                                    <button 
-                                                                        onClick={() => cancelSingleAttendee(reg.user_id)}
-                                                                        className="absolute right-[-40px] opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 transition-all bg-white rounded-full shadow border"
-                                                                        title="Cancel Booking"
-                                                                    >
-                                                                        <Trash size={14} />
-                                                                    </button>
-                                                                )}
                                                             </div>
-                                                        </div>
-                                                    );
-                                                } else {
-                                                    const isDragOver = dragOverSlot === idx;
-                                                    return (
-                                                        <div
-                                                            key={idx}
-                                                            onDragOver={(e) => {
-                                                                e.preventDefault();
-                                                                setDragOverSlot(idx);
-                                                            }}
-                                                            onDragLeave={() => setDragOverSlot(null)}
-                                                            onDrop={(e) => {
-                                                                e.preventDefault();
-                                                                setDragOverSlot(null);
-                                                                const personId = e.dataTransfer.getData('text/plain');
-                                                                if (personId) {
-                                                                    handleDropToBook(personId);
-                                                                }
-                                                            }}
-                                                            onClick={() => {
-                                                                if (selectedTappedAttendeeId) {
-                                                                    handleDropToBook(selectedTappedAttendeeId);
-                                                                }
-                                                            }}
-                                                            className={`flex items-center justify-between p-4 rounded border-2 border-dashed transition-all cursor-pointer ${
-                                                                isDragOver
-                                                                    ? 'border-[#28D160] bg-[#28D160]/10 text-[#28D160] scale-[1.02]'
-                                                                    : 'border-[#28D160] text-gray-500 hover:border-[#28D160]/70 hover:bg-[#28D160]/5'
-                                                            }`}
-                                                        >
-                                                            <span className="text-sm font-medium">{timeString} - Opening</span>
-                                                        </div>
-                                                    );
-                                                }
-                                            })}
+                                                        );
+                                                    } else if (slot.type === 'pending') {
+                                                        const person = slot.person;
+                                                        if (!person) return null;
+                                                        const formattedName = getFormattedName(person);
+                                                        const initials = `${person.first_name?.charAt(0) || ''}${person.last_name?.charAt(0) || ''}`.toUpperCase() || 'P';
+                                                        return (
+                                                            <div 
+                                                                key={`pending-${idx}`}
+                                                                className="flex items-center justify-between p-4 rounded bg-[#28D160]/10 border-2 border-dashed border-[#28D160] group relative animate-fadeIn"
+                                                            >
+                                                                <span className="text-sm font-black italic text-[#28D160]">{timeString} - {formattedName} (Pending)</span>
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center border border-[#28D160] shrink-0">
+                                                                        {person.avatar_url ? (
+                                                                            <img src={person.avatar_url} alt={formattedName} className="w-full h-full object-cover" />
+                                                                        ) : (
+                                                                            <span className="text-xs font-black text-[#28D160]">{initials}</span>
+                                                                        )}
+                                                                    </div>
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            setPendingAttendeeIds(prev => prev.filter(id => id !== person.id));
+                                                                            setSelectedAttendeeIds(prev => prev.filter(id => id !== person.id));
+                                                                        }}
+                                                                        className="absolute right-[-40px] opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 transition-all bg-white rounded-full shadow border"
+                                                                        title="Remove Pending"
+                                                                    >
+                                                                        <X size={14} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    } else {
+                                                        const isDragOver = dragOverSlot === idx;
+                                                        return (
+                                                            <div
+                                                                key={`empty-${idx}`}
+                                                                onDragOver={(e) => {
+                                                                    e.preventDefault();
+                                                                    setDragOverSlot(idx);
+                                                                }}
+                                                                onDragLeave={() => setDragOverSlot(null)}
+                                                                onDrop={(e) => {
+                                                                    e.preventDefault();
+                                                                    setDragOverSlot(null);
+                                                                    const personId = e.dataTransfer.getData('text/plain');
+                                                                    if (personId) {
+                                                                        handleDropToBook(personId);
+                                                                    }
+                                                                }}
+                                                                className={`flex items-center justify-between p-4 rounded border-2 border-dashed transition-all ${
+                                                                    isDragOver
+                                                                        ? 'border-[#28D160] bg-[#28D160]/10 text-[#28D160] scale-[1.02]'
+                                                                        : 'border-[#28D160] text-gray-500 hover:border-[#28D160]/70 hover:bg-[#28D160]/5'
+                                                                }`}
+                                                            >
+                                                                <span className="text-sm font-medium">{timeString} - Drop Athlete Here</span>
+                                                            </div>
+                                                        );
+                                                    }
+                                                });
+                                            })()}
                                         </div>
                                     )}
 
@@ -943,8 +951,7 @@ export default function ClassModal({
                                                         e.dataTransfer.setData('text/plain', currentUserId!);
                                                         e.dataTransfer.effectAllowed = 'copy';
                                                     }}
-                                                    onClick={() => setSelectedTappedAttendeeId(currentUserId === selectedTappedAttendeeId ? null : currentUserId!)}
-                                                    className={`relative cursor-grab active:cursor-grabbing hover:scale-110 transition-transform ${selectedTappedAttendeeId === currentUserId ? 'ring-2 ring-offset-2 ring-[#28D160] scale-110' : ''}`}
+                                                    className="relative cursor-grab active:cursor-grabbing hover:scale-110 transition-transform touch-none"
                                                     title="Drag or tap to book yourself"
                                                 >
                                                     <div className="w-12 h-12 rounded-full border-2 border-black overflow-hidden bg-black flex items-center justify-center">
@@ -965,8 +972,7 @@ export default function ClassModal({
                                                             e.dataTransfer.setData('text/plain', child.id);
                                                             e.dataTransfer.effectAllowed = 'copy';
                                                         }}
-                                                        onClick={() => setSelectedTappedAttendeeId(child.id === selectedTappedAttendeeId ? null : child.id)}
-                                                        className={`relative cursor-grab active:cursor-grabbing hover:scale-110 transition-transform ${selectedTappedAttendeeId === child.id ? 'ring-2 ring-offset-2 ring-[#28D160] scale-110' : ''}`}
+                                                        className="relative cursor-grab active:cursor-grabbing hover:scale-110 transition-transform touch-none"
                                                         title={`Drag or tap to book ${child.first_name}`}
                                                     >
                                                         <div className="w-12 h-12 rounded-full border-2 border-black overflow-hidden bg-black flex items-center justify-center">
