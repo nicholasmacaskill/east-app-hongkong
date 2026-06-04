@@ -111,14 +111,13 @@ export default function ClassModal({
 
     // Set initial selection
     useEffect(() => {
-        if (currentUserId && selectedAttendeeIds.length === 0) {
+        if (selectedAttendeeIds.length === 0 && pendingAttendeeIds.length === 0) {
             if (initialAttendeeId) {
                 setSelectedAttendeeIds([initialAttendeeId]);
-            } else {
-                setSelectedAttendeeIds([currentUserId]);
+                setPendingAttendeeIds([initialAttendeeId]);
             }
         }
-    }, [currentUserId, initialAttendeeId]);
+    }, [initialAttendeeId]);
 
     // Lock Background Scroll & Init Polyfill
     useEffect(() => {
