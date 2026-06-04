@@ -865,7 +865,7 @@ export default function ClassModal({
                                                                     {isMyBooking && (
                                                                         <button 
                                                                             onClick={() => cancelSingleAttendee(reg.user_id)}
-                                                                            className="absolute right-[-40px] opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 transition-all bg-white rounded-full shadow border"
+                                                                            className="p-1.5 text-gray-400 hover:text-white hover:bg-red-500 bg-gray-100 rounded-full transition-all"
                                                                             title="Cancel Booking"
                                                                         >
                                                                             <Trash size={14} />
@@ -898,7 +898,7 @@ export default function ClassModal({
                                                                             setPendingAttendeeIds(prev => prev.filter(id => id !== person.id));
                                                                             setSelectedAttendeeIds(prev => prev.filter(id => id !== person.id));
                                                                         }}
-                                                                        className="absolute right-[-40px] opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 transition-all bg-white rounded-full shadow border"
+                                                                        className="p-1 text-red-400 hover:text-white hover:bg-red-500 bg-red-50 rounded-full transition-all"
                                                                         title="Remove Pending"
                                                                     >
                                                                         <X size={14} />
