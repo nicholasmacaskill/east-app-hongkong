@@ -359,7 +359,7 @@ function ScheduleContent() {
     });
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-700">
+        <div className="space-y-8 animate-in fade-in duration-700 pb-24">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
@@ -542,7 +542,7 @@ function ScheduleContent() {
                                          <input type="number" value={editingSession.credit_cost} onChange={e => setEditingSession({ ...editingSession, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black/80 border border-white/5 p-5 rounded-2xl text-white font-black italic text-center" />
                                     </div>
                                     <div>
-                                         <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest px-2 mb-3 block">Max Load</label>
+                                         <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest px-2 mb-3 block">Max Capacity (Athletes)</label>
                                          <input type="number" value={editingSession.max_capacity} onChange={e => setEditingSession({ ...editingSession, max_capacity: parseInt(e.target.value) || 1 })} className="w-full bg-black/80 border border-white/5 p-5 rounded-2xl text-white font-black italic text-center" />
                                     </div>
                                     <div className="col-span-2 md:col-span-1">

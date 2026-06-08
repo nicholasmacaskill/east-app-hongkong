@@ -1,6 +1,7 @@
 // app/components/screens/CoachDashboard.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { supabase } from '@/app/lib/supabase';
 import posthog from 'posthog-js';
 import { useRouter } from 'next/navigation';
@@ -458,10 +459,12 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                                             className="shrink-0 w-56 sm:w-64 h-72 sm:h-80 rounded-[2.5rem] border border-white/5 relative overflow-hidden group transition-all duration-700 shadow-2xl cursor-pointer hover:border-east-light hover:-translate-y-4 hover:shadow-[0_40px_80px_rgba(0,0,0,0.6)]"
                                                         >
                                                             <div className="absolute inset-0 bg-[#0a0a0a]">
-                                                                <img
+                                                                <Image
                                                                     src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"}
-                                                                    className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-1000"
+                                                                    className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-1000"
                                                                     alt="drill"
+                                                                    fill
+                                                                    sizes="(max-width: 768px) 250px, 300px"
                                                                 />
                                                                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
                                                             </div>

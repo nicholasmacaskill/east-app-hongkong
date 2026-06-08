@@ -105,7 +105,7 @@ export async function POST(request: Request) {
                     coach_image_url: coachImageUrl,
                     start_time: slotStart.toISOString(),
                     end_time: slotEnd.toISOString(),
-                    max_capacity: service.category === 'CLASS' ? 10 : 1,
+                    max_capacity: service.default_capacity || (service.category === 'CLASS' ? 10 : 1),
                     credit_cost: service.credit_cost,
                     instructor: coachName,
                     session_type_id: service.id,

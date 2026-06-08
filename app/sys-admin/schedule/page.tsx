@@ -335,7 +335,7 @@ export default function MasterSchedule() {
     };
 
     return (
-        <div className="flex flex-col gap-6 animate-fadeIn pb-20 select-none">
+        <div className="flex flex-col gap-6 animate-fadeIn pb-32 select-none">
             {/* Header */}
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -728,7 +728,7 @@ export default function MasterSchedule() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Max Users</label>
+                                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Max Capacity (Athletes)</label>
                                         <input type="number" value={editingSession.max_capacity} onChange={e => setEditingSession({ ...editingSession, max_capacity: parseInt(e.target.value) || 1 })} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] font-bold" />
                                     </div>
                                     <div>

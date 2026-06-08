@@ -384,7 +384,81 @@ export default function LeaderboardPage() {
                 </div>
 
                 <div className="flex flex-col gap-12 pb-10">
-                    {/* LEADERBOARD TABLE (SPORTS) */}
+                    {/* CHECK-IN LEADERBOARD */}
+                    <div className="animate-slideUp w-full max-w-2xl mx-auto">
+                        <div className="flex items-center gap-2 mb-4 justify-center">
+                            <Activity size={16} className="text-[#28D160]" />
+                            <h2 className="font-black italic text-lg uppercase tracking-widest text-white">Most Visits</h2>
+                        </div>
+                        {loadingCheckIns ? (
+                            <div className="text-center py-20 animate-pulse font-black italic uppercase text-gray-600 tracking-widest text-[10px]">Loading Visits...</div>
+                        ) : checkInEntries.length === 0 ? (
+                            <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5 border-dashed">
+                                <Target size={40} className="mx-auto mb-4 opacity-10" />
+                                <p className="font-black italic uppercase text-gray-600 tracking-widest text-[10px]">No Check-Ins Recorded</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Header */}
+                                <div className="flex items-center gap-4 px-4 pb-3 mb-3 border-b border-white/10">
+                                    <div className="w-8 text-[10px] font-black uppercase text-gray-500">Rank</div>
+                                    <div className="w-12"></div>
+                                    <div className="flex-1 text-[10px] font-black uppercase text-gray-500">Player</div>
+                                    <div className="text-[10px] font-black uppercase text-gray-500">Check-Ins</div>
+                                </div>
+
+                                {/* Entries */}
+                                <div className="flex flex-col gap-3">
+                                    {checkInEntries.map((entry, i) => (
+                                        <div
+                                            key={i}
+                                            className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${entry.id === currentUserId
+                                                ? 'bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]'
+                                                : i === 0
+                                                    ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
+                                                    : 'bg-[#050505] border-white/5 hover:border-white/20'
+                                                }`}
+                                        >
+                                            {/* Rank */}
+                                            <div className={`w-8 font-black italic text-2xl ${entry.id === currentUserId || i === 0 ? 'text-[#28D160]' : 'text-white/20'} group-hover:text-[#28D160] transition-colors`}>
+                                                {i + 1}
+                                            </div>
+
+                                            {/* Avatar */}
+                                            <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/5 group-hover:border-white/40 transition-all shrink-0">
+                                                {entry.avatar_url ? (
+                                                    <img src={entry.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gray-950 flex items-center justify-center text-gray-700">
+                                                        <User size={18} />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Player Info */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-black italic uppercase text-sm text-white tracking-tight truncate">{entry.name}</h3>
+                                                    {entry.id === currentUserId && (
+                                                        <span className="bg-east-light text-black text-[8px] font-black px-1.5 py-0.5 rounded italic uppercase tracking-tighter">YOU</span>
+                                                    )}
+                                                </div>
+                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{entry.team}</p>
+                                            </div>
+
+                                            {/* Score */}
+                                            <div className="text-right pr-2 shrink-0">
+                                                <div className="font-black italic text-2xl text-white group-hover:scale-110 transition-transform">
+                                                    {entry.score}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                {/* LEADERBOARD TABLE (SPORTS) */}
                     <div className="animate-slideUp w-full max-w-2xl mx-auto">
                         <div className="flex items-center gap-2 mb-4 justify-center">
                             <Trophy size={16} className="text-[#28D160]" />
@@ -504,81 +578,7 @@ export default function LeaderboardPage() {
                         )}
                     </div>
 
-                    {/* CHECK-IN LEADERBOARD */}
-                    <div className="animate-slideUp w-full max-w-2xl mx-auto">
-                        <div className="flex items-center gap-2 mb-4 justify-center">
-                            <Activity size={16} className="text-[#28D160]" />
-                            <h2 className="font-black italic text-lg uppercase tracking-widest text-white">Most Visits</h2>
-                        </div>
-                        {loadingCheckIns ? (
-                            <div className="text-center py-20 animate-pulse font-black italic uppercase text-gray-600 tracking-widest text-[10px]">Loading Visits...</div>
-                        ) : checkInEntries.length === 0 ? (
-                            <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5 border-dashed">
-                                <Target size={40} className="mx-auto mb-4 opacity-10" />
-                                <p className="font-black italic uppercase text-gray-600 tracking-widest text-[10px]">No Check-Ins Recorded</p>
-                            </div>
-                        ) : (
-                            <>
-                                {/* Header */}
-                                <div className="flex items-center gap-4 px-4 pb-3 mb-3 border-b border-white/10">
-                                    <div className="w-8 text-[10px] font-black uppercase text-gray-500">Rank</div>
-                                    <div className="w-12"></div>
-                                    <div className="flex-1 text-[10px] font-black uppercase text-gray-500">Player</div>
-                                    <div className="text-[10px] font-black uppercase text-gray-500">Check-Ins</div>
-                                </div>
-
-                                {/* Entries */}
-                                <div className="flex flex-col gap-3">
-                                    {checkInEntries.map((entry, i) => (
-                                        <div
-                                            key={i}
-                                            className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${entry.id === currentUserId
-                                                ? 'bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]'
-                                                : i === 0
-                                                    ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
-                                                    : 'bg-[#050505] border-white/5 hover:border-white/20'
-                                                }`}
-                                        >
-                                            {/* Rank */}
-                                            <div className={`w-8 font-black italic text-2xl ${entry.id === currentUserId || i === 0 ? 'text-[#28D160]' : 'text-white/20'} group-hover:text-[#28D160] transition-colors`}>
-                                                {i + 1}
-                                            </div>
-
-                                            {/* Avatar */}
-                                            <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/5 group-hover:border-white/40 transition-all shrink-0">
-                                                {entry.avatar_url ? (
-                                                    <img src={entry.avatar_url} className="w-full h-full object-cover" alt="" />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gray-950 flex items-center justify-center text-gray-700">
-                                                        <User size={18} />
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Player Info */}
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <h3 className="font-black italic uppercase text-sm text-white tracking-tight truncate">{entry.name}</h3>
-                                                    {entry.id === currentUserId && (
-                                                        <span className="bg-east-light text-black text-[8px] font-black px-1.5 py-0.5 rounded italic uppercase tracking-tighter">YOU</span>
-                                                    )}
-                                                </div>
-                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate">{entry.team}</p>
-                                            </div>
-
-                                            {/* Score */}
-                                            <div className="text-right pr-2 shrink-0">
-                                                <div className="font-black italic text-2xl text-white group-hover:scale-110 transition-transform">
-                                                    {entry.score}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </>
-                        )}
                     </div>
-                </div>
             </div>
         </div>
     );

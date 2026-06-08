@@ -14,6 +14,7 @@ interface SessionType {
     image_url: string | null;
     description: string | null;
     credit_cost?: number;
+    default_capacity?: number;
 }
 
 export default function ManageServicesPage() {
@@ -93,7 +94,8 @@ export default function ManageServicesPage() {
                 category: currentService.category,
                 image_url: currentService.image_url || null,
                 description: currentService.description || null,
-                credit_cost: currentService.credit_cost || 0
+                credit_cost: currentService.credit_cost || 0,
+                default_capacity: currentService.default_capacity || null
             };
 
             let serviceId = currentService.id;
@@ -285,9 +287,15 @@ export default function ManageServicesPage() {
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Service Title</label>
                                 <input type="text" value={currentService.title || ''} onChange={e => setCurrentService({ ...currentService, title: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160]" placeholder="e.g. Golf, Hyrox" />
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Credit Cost</label>
-                                <input type="number" value={currentService.credit_cost || 0} onChange={e => setCurrentService({ ...currentService, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160]" placeholder="100" />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Credit Cost</label>
+                                    <input type="number" value={currentService.credit_cost || 0} onChange={e => setCurrentService({ ...currentService, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160]" placeholder="100" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Default Capacity (Athletes per Class)</label>
+                                    <input type="number" value={currentService.default_capacity || ''} onChange={e => setCurrentService({ ...currentService, default_capacity: parseInt(e.target.value) || undefined })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160]" placeholder={currentService.category === 'CLASS' ? '10' : '1'} />
+                                </div>
                             </div>
                             {/* ... (Rest of existing edit modal fields) ... */}
                             <div>

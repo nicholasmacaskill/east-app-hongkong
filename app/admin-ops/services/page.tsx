@@ -12,6 +12,7 @@ interface SessionType {
     image_url: string | null;
     description: string | null;
     credit_cost?: number;
+    default_capacity?: number;
 }
 
 export default function AdminOpsServicesPage() {
@@ -87,7 +88,8 @@ export default function AdminOpsServicesPage() {
                 category: currentService.category,
                 image_url: currentService.image_url || null,
                 description: currentService.description || null,
-                credit_cost: currentService.credit_cost || 0
+                credit_cost: currentService.credit_cost || 0,
+                default_capacity: currentService.default_capacity || null
             };
 
             const serviceId = currentService.id;
@@ -297,6 +299,10 @@ export default function AdminOpsServicesPage() {
                                     <div>
                                         <label className="px-1 block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Credits Cost</label>
                                         <input type="number" value={currentService.credit_cost || 0} onChange={e => setCurrentService({ ...currentService, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold focus:outline-none focus:border-[#28D160]" />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="px-1 block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Default Capacity (Athletes per Class)</label>
+                                        <input type="number" value={currentService.default_capacity || ''} onChange={e => setCurrentService({ ...currentService, default_capacity: parseInt(e.target.value) || undefined })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold focus:outline-none focus:border-[#28D160]" placeholder={currentService.category === 'CLASS' ? '10' : '1'} />
                                     </div>
                                 </div>
                             </div>

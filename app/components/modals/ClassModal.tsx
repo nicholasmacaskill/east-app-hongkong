@@ -115,9 +115,11 @@ export default function ClassModal({
             if (initialAttendeeId) {
                 setSelectedAttendeeIds([initialAttendeeId]);
                 setPendingAttendeeIds([initialAttendeeId]);
+            } else if (currentUserId && displaySession?.category === 'FACILITY') {
+                setSelectedAttendeeIds([currentUserId]);
             }
         }
-    }, [initialAttendeeId]);
+    }, [initialAttendeeId, currentUserId, displaySession]);
 
     // Lock Background Scroll & Init Polyfill
     useEffect(() => {
@@ -130,15 +132,32 @@ export default function ClassModal({
 
         // Optional: prevent default touch action to ensure drag works cleanly on iOS
         const preventTouchScroll = (e: TouchEvent) => {
-            if ((e.target as HTMLElement).hasAttribute('draggable')) {
+            const target = e.target as HTMLElement;
+            if (target.getAttribute('draggable') === 'true') {
                 e.preventDefault();
             }
         };
         window.addEventListener('touchmove', preventTouchScroll, { passive: false });
 
+        // Add custom drag image styles for the hovering bubble effect
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .dnd-poly-drag-image {
+                opacity: 0.8 !important;
+                transform: scale(1.1) translateY(-10px) !important;
+                box-shadow: 0 20px 40px rgba(40, 209, 96, 0.4) !important;
+                border-radius: 50% !important;
+                border: 3px solid #28D160 !important;
+                z-index: 9999 !important;
+                transition: transform 0.1s ease-out;
+            }
+        `;
+        document.head.appendChild(style);
+
         return () => {
             document.body.style.overflow = 'unset';
             window.removeEventListener('touchmove', preventTouchScroll);
+            if (style.parentNode) style.parentNode.removeChild(style);
         };
     }, []);
 
@@ -598,7 +617,7 @@ export default function ClassModal({
              return;
         }
 
-        setPendingAttendeeIds(prev => [...prev, personId]);
+        setPendingAttendeeIds(prev => prev.includes(personId) ? prev : [...prev, personId]);
         setSelectedAttendeeIds(prev => Array.from(new Set([...prev, personId])));
     };
 
@@ -796,7 +815,7 @@ export default function ClassModal({
                                     )}
 
                                     {/* SLOTS UI (PO DESIGN) */}
-                                    {selectedSession && !isNews && (
+                                    {selectedSession && !isNews && displaySession.category !== 'FACILITY' && (
                                         <div className="flex flex-col gap-3 mb-8 mt-6">
                                             {/* CAPACITY METER */}
                                             <div className="flex flex-col mb-4">
@@ -844,7 +863,7 @@ export default function ClassModal({
                                                         return (
                                                             <div 
                                                                 key={idx}
-                                                                draggable={isMyBooking}
+                                                                draggable={isMyBooking ? "true" : "false"}
                                                                 onDragStart={(e) => {
                                                                     if (isMyBooking) {
                                                                         e.dataTransfer.setData('cancel/plain', reg.user_id);
@@ -940,12 +959,12 @@ export default function ClassModal({
                                     )}
 
                                     {/* DRAGGABLE ATHLETES BUBBLES AND TOGGLE */}
-                                    {!isNews && (
+                                    {!isNews && displaySession.category !== 'FACILITY' && (
                                         <div className="flex justify-between items-end mb-6 mt-4">
                                             <div className="flex items-center gap-3">
                                                 {/* Parent Avatar */}
                                                 <div
-                                                    draggable
+                                                    draggable="true"
                                                     onDragStart={(e) => {
                                                         e.dataTransfer.setData('text/plain', currentUserId!);
                                                         e.dataTransfer.effectAllowed = 'copy';
@@ -966,7 +985,7 @@ export default function ClassModal({
                                                 {myChildren.map((child: any) => (
                                                     <div
                                                         key={child.id}
-                                                        draggable
+                                                        draggable="true"
                                                         onDragStart={(e) => {
                                                             e.dataTransfer.setData('text/plain', child.id);
                                                             e.dataTransfer.effectAllowed = 'copy';

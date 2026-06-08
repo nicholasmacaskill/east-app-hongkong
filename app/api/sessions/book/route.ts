@@ -22,6 +22,9 @@ async function verifyUser(request: Request, claimedUserId: string): Promise<bool
   // 3. Verify
   const { data: { user }, error } = await supabase.auth.getUser(token);
 
+  if (error) console.error("verifyUser Auth Error:", error);
+  if (user) console.log(`verifyUser: token user.id=${user.id}, claimedUserId=${claimedUserId}`);
+
   if (error || !user) return false;
   return user.id === claimedUserId;
 }
