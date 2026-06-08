@@ -43,8 +43,8 @@ setup('authenticate as admin', async ({ page }) => {
     // Force click to handle animation/instability
     await page.locator('button:has-text("LOGIN")').click({ force: true });
 
-    // Wait for redirect
-    await page.waitForURL('/', { timeout: 15000 });
+    // Wait for redirect to sys-admin or admin-ops
+    await page.waitForURL(/\/(sys-admin|admin-ops)/, { timeout: 15000 });
     await page.waitForTimeout(2000);
 
     // Ensure admin role in profile

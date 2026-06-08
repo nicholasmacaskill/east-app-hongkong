@@ -1,63 +1,60 @@
 import { createClient } from '@supabase/supabase-js';
-import * as dotenv from 'dotenv';
-import * as path from 'path';
+import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+dotenv.config({ path: path.resolve(__dirname, '../.env.test') });
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-const supabase = createClient(supabaseUrl!, supabaseKey!);
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-async function createTestSession() {
-    const email = 'nickmac1@gmail.com';
-    console.log(`--- CREATING TEST SESSION FOR ${email} ---`);
+async function main() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(10, 0, 0, 0); // 10:00 AM tomorrow
+  const startTime = tomorrow.toISOString();
+  
+  const end = new Date(tomorrow);
+  end.setHours(11, 0, 0, 0); // 11:00 AM tomorrow
+  const endTime = end.toISOString();
 
-    // 1. Get User ID
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name')
-        .eq('role', 'coach')
-        .filter('email', 'is', null) // Handle cases where email is not in profile
-        .single();
-    
-    // We'll search by first_name if email isn't there
-    const { data: users } = await supabase.auth.admin.listUsers();
-    const user = users.users.find(u => u.email === email);
-    
-    if (!user) {
-        console.error('User not found.');
-        return;
-    }
+  // 1. Create a dummy session type if needed (or just use generic)
+  const { data: service } = await supabaseAdmin
+      .from('session_types')
+      .insert({
+          title: 'Drag and Drop Test Class',
+          category: 'CLASS',
+          description: 'Testing the new UI',
+          image_url: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80'
+      })
+      .select()
+      .single();
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(10, 0, 0, 0);
-    
-    const end = new Date(tomorrow);
-    end.setHours(11, 0, 0, 0);
+  const serviceId = service?.id || 1; // Fallback to 1 if it fails
 
-    // 2. Insert Session
-    const { data: session, error: sError } = await supabase
-        .from('sessions')
-        .insert({
-            title: 'Drill Linking Verification',
-            instructor: 'Nick Coach',
-            start_time: tomorrow.toISOString(),
-            end_time: end.toISOString(),
-            status: 'scheduled'
-        })
-        .select()
-        .single();
+  // 2. Create the session with max_capacity = 1
+  const { data: session, error } = await supabaseAdmin
+      .from('sessions')
+      .insert({
+          title: 'Drag and Drop Test Class',
+          description: 'Try dragging both you and your child into this class to test the capacity block!',
+          start_time: startTime,
+          end_time: endTime,
+          category: 'CLASS',
+          session_type_id: serviceId,
+          max_capacity: 1, // STRICT LIMIT OF 1
+          status: 'active'
+      })
+      .select()
+      .single();
 
-    if (sError) {
-        console.error('Error creating session:', sError.message);
-    } else {
-        console.log('✅ Test Session Created Successfully!');
-        console.log(`Session ID: ${session.id}`);
-        console.log(`Title: ${session.title}`);
-        console.log(`Time: ${session.start_time}`);
-    }
+  if (error) {
+      console.error("Failed to create session:", error);
+  } else {
+      console.log(`✅ Successfully created session "${session.title}" for tomorrow at 10:00 AM!`);
+      console.log(`Strict Capacity Limit set to: ${session.max_capacity}`);
+  }
 }
 
-createTestSession();
+main();

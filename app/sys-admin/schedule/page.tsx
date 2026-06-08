@@ -726,7 +726,7 @@ export default function MasterSchedule() {
                                     </select>
                                     {editingSession.lockInstructor && <p className="text-[7px] text-[#28D160] mt-1 uppercase font-black italic flex items-center gap-1"><Info size={8} /> Coach is locked</p>}
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-4 items-end">
                                     <div>
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Max Capacity (Athletes)</label>
                                         <input type="number" value={editingSession.max_capacity} onChange={e => setEditingSession({ ...editingSession, max_capacity: parseInt(e.target.value) || 1 })} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] font-bold" />

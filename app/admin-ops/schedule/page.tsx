@@ -536,7 +536,7 @@ function ScheduleContent() {
                                         </select>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-6 items-end">
                                     <div className="md:col-span-1">
                                          <label className="text-[10px] font-black text-gray-700 uppercase tracking-widest px-2 mb-3 block">Credit Cost</label>
                                          <input type="number" value={editingSession.credit_cost} onChange={e => setEditingSession({ ...editingSession, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black/80 border border-white/5 p-5 rounded-2xl text-white font-black italic text-center" />

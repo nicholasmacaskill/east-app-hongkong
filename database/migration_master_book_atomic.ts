@@ -42,6 +42,8 @@ DECLARE
   
   v_attendee_id UUID;
   v_coach_available BOOLEAN;
+  v_actual_cost INT := 0;
+  v_success_count INT := 0;
   v_results JSONB := '[]'::JSONB;
 BEGIN
   -- 1. LOCK USER PROFILE
@@ -154,36 +156,54 @@ BEGIN
   FOREACH v_attendee_id IN ARRAY p_attendee_ids LOOP
     -- Book Facility / Existing Session
     IF p_origin = 'facilities' OR (p_origin = 'coaches' AND p_coach_id IS NULL) THEN
-      INSERT INTO public.registrations (session_id, user_id, payer_id, credits_paid)
-      VALUES (p_session_id, v_attendee_id, p_user_id, v_main_session_cost);
-      
-      v_results := v_results || jsonb_build_object('attendeeId', v_attendee_id, 'type', 'facility', 'success', true);
+      IF NOT EXISTS (SELECT 1 FROM public.registrations WHERE session_id = p_session_id AND user_id = v_attendee_id) THEN
+        INSERT INTO public.registrations (session_id, user_id, payer_id, credits_paid)
+        VALUES (p_session_id, v_attendee_id, p_user_id, v_main_session_cost);
+        
+        v_results := v_results || jsonb_build_object('attendeeId', v_attendee_id, 'type', 'facility', 'success', true);
+        v_actual_cost := v_actual_cost + v_main_session_cost;
+        v_success_count := v_success_count + 1;
+      ELSE
+        v_results := v_results || jsonb_build_object('attendeeId', v_attendee_id, 'type', 'facility', 'success', false, 'message', 'Already booked');
+      END IF;
     END IF;
 
     -- Book Coach (New Private Session)
     IF v_coach_session_id IS NOT NULL THEN
-      INSERT INTO public.registrations (session_id, user_id, payer_id, credits_paid)
-      VALUES (v_coach_session_id, v_attendee_id, p_user_id, v_coach_cost);
-      
-      v_results := v_results || jsonb_build_object('attendeeId', v_attendee_id, 'type', 'coach', 'success', true);
+      IF NOT EXISTS (SELECT 1 FROM public.registrations WHERE session_id = v_coach_session_id AND user_id = v_attendee_id) THEN
+        INSERT INTO public.registrations (session_id, user_id, payer_id, credits_paid)
+        VALUES (v_coach_session_id, v_attendee_id, p_user_id, v_coach_cost);
+        
+        v_results := v_results || jsonb_build_object('attendeeId', v_attendee_id, 'type', 'coach', 'success', true);
+        v_actual_cost := v_actual_cost + v_coach_cost;
+        v_success_count := v_success_count + 1;
+      ELSE
+        v_results := v_results || jsonb_build_object('attendeeId', v_attendee_id, 'type', 'coach', 'success', false, 'message', 'Already booked');
+      END IF;
     END IF;
   END LOOP;
 
   -- 10. DEDUCT TOTAL CREDITS
-  UPDATE public.profiles 
-  SET credits = credits - v_total_cost 
-  WHERE id = p_user_id;
+  IF v_actual_cost > 0 THEN
+    UPDATE public.profiles 
+    SET credits = credits - v_actual_cost 
+    WHERE id = p_user_id;
 
-  -- 11. LOG TRANSACTION
-  INSERT INTO public.transactions (user_id, amount, type, description)
-  VALUES (p_user_id, -v_total_cost, 'booking', 'Booking for ' || v_main_session_title || ' (' || array_length(p_attendee_ids, 1) || ' attendees)');
+    -- 11. LOG TRANSACTION
+    INSERT INTO public.transactions (user_id, amount, type, description)
+    VALUES (p_user_id, -v_actual_cost, 'booking', 'Booking for ' || v_main_session_title || ' (' || v_success_count || ' attendees)');
+  END IF;
 
-  RETURN jsonb_build_object('success', true, 'message', 'Booking successful', 'results', v_results);
+  IF v_success_count > 0 THEN
+    RETURN jsonb_build_object('success', true, 'message', 'Booking successful', 'results', v_results);
+  ELSE
+    RETURN jsonb_build_object('success', false, 'message', 'All selected attendees are already booked', 'code', 'ALREADY_BOOKED', 'results', v_results);
+  END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
     `;
 
-  const { error } = await supabase.rpc('run_sql', { sql });
+  const { error } = await supabase.rpc('run_sql', { sql_query: sql });
 
   if (error) {
     console.error('❌ RPC Creation Failed:', error);

@@ -287,7 +287,7 @@ export default function ManageServicesPage() {
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Service Title</label>
                                 <input type="text" value={currentService.title || ''} onChange={e => setCurrentService({ ...currentService, title: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160]" placeholder="e.g. Golf, Hyrox" />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4 items-end">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Credit Cost</label>
                                     <input type="number" value={currentService.credit_cost || 0} onChange={e => setCurrentService({ ...currentService, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160]" placeholder="100" />
