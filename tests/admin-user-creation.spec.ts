@@ -27,17 +27,7 @@ test.describe('Admin User Creation with Password', () => {
     });
 
     test('Admin can create a parent and they can login immediately', async ({ page, browser }) => {
-        // 1. LOGIN AS ADMIN (Using storage state from admin-chromium project)
-        // Note: For this test to work in this file, we assume we are running in the 'admin-chromium' project
-        // or we manually login. Let's manually login for maximum isolation.
-
-        await page.goto('/login');
-        await page.fill('input[type="email"]', 'admin@east.com');
-        await page.fill('input[type="password"]', 'EastAdmin2026!'); // Using the recovered admin credentials
-        await page.click('button[type="submit"]');
-        await expect(page).toHaveURL('/sys-admin');
-
-        // 2. NAVIGATE TO DIRECTORY
+        // 1. NAVIGATE TO DIRECTORY (Already authenticated via admin-chromium)
         await page.goto('/sys-admin/directory');
 
         // 3. CREATE NEW PARENT

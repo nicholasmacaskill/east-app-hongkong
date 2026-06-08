@@ -238,8 +238,9 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
             setHubMode('plans');
             fetchSinglePlan(planIdParam);
         } else if (!hasFetchedClient.current) {
-            if (initialDrills.length === 0) fetchDrills();
-            if (initialPlans.length === 0) fetchTrainingPlans();
+            // Always fetch fresh data on client to prevent stale SSR cache issues
+            fetchDrills();
+            fetchTrainingPlans();
             hasFetchedClient.current = true;
         }
     }, [sessionId, selectedAgeFilters, selectedWorkoutFilters, selectedHockeyFilters, drillIdParam, planIdParam]);
@@ -391,7 +392,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                 .single();
             if (error) throw error;
             if (data) {
-                track('Training Plan Created', { plan_id: data.id, title: data.title });
+                track('session_plan_created', { plan_id: data.id, title: data.title });
                 setTrainingPlans([data, ...trainingPlans]);
                 setSelectedPlanForEdit(data);
             }
@@ -1001,11 +1002,9 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                         onClick={() => {
                             if (selectedPlan) {
                                 if (planIdParam) {
-                                    if (window.history.length > 2) {
-                                        window.history.back();
-                                    } else {
-                                        window.location.href = '/';
-                                    }
+                                    router.replace('/drill-hub');
+                                    setHubMode('plans');
+                                    setSelectedPlan(null);
                                 } else {
                                     setSelectedPlan(null);
                                 }

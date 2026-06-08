@@ -15,7 +15,7 @@ import { getStripeSecretKey, getStripeWebhookSecret, getStripePriceId } from '@/
 // const supabaseAdmin = createClient(...) -> Removed top-level call
 
 // Export for testing
-export const PLAN_DETAILS: Record<string, { credits: number; tier: string }> = {};
+const PLAN_DETAILS: Record<string, { credits: number; tier: string }> = {};
 
 function populatePlanDetails() {
     const plans = [

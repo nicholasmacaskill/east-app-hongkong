@@ -6,11 +6,13 @@ import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
 import { ChevronLeft, Check, TrendingUp } from 'lucide-react';
 import { getStripePriceId } from '@/app/lib/stripe-config';
+import { useTracking } from '@/app/hooks/useTracking';
 
 
 export default function TopUpPage() {
     const router = useRouter();
     const { addToast } = useToast();
+    const { track } = useTracking();
 
     // --- DYNAMIC PRICE RESOLUTION ---
     const TOPUP_OPTIONS = React.useMemo(() => [
@@ -82,7 +84,13 @@ export default function TopUpPage() {
             });
 
             const data = await res.json();
-            if (data.url) window.location.replace(data.url);
+            if (data.url) {
+                track('checkout_started', { 
+                    priceId, 
+                    credits: TOPUP_OPTIONS.find(o => o.id === priceId)?.credits 
+                });
+                window.location.replace(data.url);
+            }
             else throw new Error(data.error || 'Checkout failed');
 
         } catch (e: any) {

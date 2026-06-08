@@ -39,6 +39,7 @@ export interface Message {
   image_url?: string;
   shared_event_id?: number;
   shared_event_title?: string; // For display
+  shared_plan_id?: string;
   created_at: string;
   is_me?: boolean; // Helper for UI
 }

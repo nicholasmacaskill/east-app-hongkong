@@ -138,13 +138,22 @@ test.describe('Drill Hub — Coach CMS', () => {
         await newDrillBtn.click();
 
         // Fill in the drill title
-        const titleInput = page.locator('input[placeholder*="title"], input[placeholder*="Title"], input[name="title"]').first();
+        const titleInput = page.locator('input[placeholder*="Power Slapshot"]').first();
         await expect(titleInput).toBeVisible({ timeout: 5000 });
         await titleInput.fill(`E2E Test Drill ${Date.now()}`);
 
-        // Save / Create
-        const saveBtn = page.getByRole('button', { name: /Save|Create|Add/i }).first();
-        await saveBtn.click();
+        // Go to Slides page
+        const buildSlidesBtn = page.getByRole('button', { name: /Build Slides/i }).first();
+        await buildSlidesBtn.click();
+        await page.waitForTimeout(1000);
+
+        // Fill in mandatory slide details
+        await page.locator('input[placeholder="e.g. The Windup"]').fill('Step 1 Title');
+        await page.locator('textarea[placeholder*="Describe exactly what"]').fill('Step 1 Instruction details here.');
+
+        // Publish
+        const publishBtn = page.getByRole('button', { name: /Publish Drill/i }).first();
+        await publishBtn.click();
         await page.waitForTimeout(2000);
 
         // Confirm the drill appears in the list

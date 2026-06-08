@@ -86,7 +86,6 @@ export default defineConfig({
         'tests/coach-workflow.spec.ts',
         'tests/stripe-payments.spec.ts',
         'tests/membership-tiers.spec.ts',
-        'tests/admin-user-creation.spec.ts',
         'tests/transaction-history.spec.ts',
         'tests/membership-lifecycle.spec.ts',
         'tests/public-flows.spec.ts',
@@ -108,7 +107,9 @@ export default defineConfig({
         'tests/ticket-19-qr-wallet.spec.ts',
         'tests/drill-hub-e2e.spec.ts',
         'tests/training-plans.spec.ts',
-        'tests/session-capacity.spec.ts'
+        'tests/session-capacity.spec.ts',
+        'tests/share-training-plan-logic.spec.ts',
+        'tests/share-training-plan-e2e.spec.ts'
       ],
     },
 
