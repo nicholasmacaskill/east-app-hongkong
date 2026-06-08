@@ -143,13 +143,16 @@ export default function ClassModal({
         const style = document.createElement('style');
         style.innerHTML = `
             .dnd-poly-drag-image {
-                opacity: 0.8 !important;
-                transform: scale(1.1) translateY(-10px) !important;
-                box-shadow: 0 20px 40px rgba(40, 209, 96, 0.4) !important;
+                opacity: 0.9 !important;
+                margin-top: -80px !important; /* Float above the finger */
+                margin-left: -24px !important;
+                box-shadow: 0 15px 30px rgba(40, 209, 96, 0.6) !important;
                 border-radius: 50% !important;
                 border: 3px solid #28D160 !important;
                 z-index: 9999 !important;
-                transition: transform 0.1s ease-out;
+                width: 48px !important;
+                height: 48px !important;
+                background-color: #000 !important;
             }
         `;
         document.head.appendChild(style);
