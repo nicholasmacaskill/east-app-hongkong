@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { supabase } from '@/app/lib/supabase';
 import { useSearchParams } from 'next/navigation';
 import { 
@@ -164,12 +165,17 @@ const ActivityGoals = ({ drill }: { drill: Drill }) => {
 };
 
 
-export default function DrillHubScreen() {
+interface DrillHubScreenProps {
+    initialDrills?: Drill[];
+    initialPlans?: TrainingPlan[];
+}
+
+export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }: DrillHubScreenProps) {
     const searchParams = useSearchParams();
     const sessionId = searchParams.get('session_id');
 
-    const [drills, setDrills] = useState<Drill[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [drills, setDrills] = useState<Drill[]>(initialDrills);
+    const [loading, setLoading] = useState(initialDrills.length === 0);
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
     const [showWhiteboard, setShowWhiteboard] = useState(false);
@@ -198,7 +204,7 @@ export default function DrillHubScreen() {
     const videoInputRef = useRef<HTMLInputElement>(null);
 
     const [hubMode, setHubMode] = useState<'drills' | 'plans'>('drills');
-    const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
+    const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>(initialPlans);
     const [selectedPlanForEdit, setSelectedPlanForEdit] = useState<TrainingPlan | null>(null);
     const [creatingPlan, setCreatingPlan] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState<TrainingPlan | null>(null);
@@ -225,10 +231,12 @@ export default function DrillHubScreen() {
         } else if (planIdParam && !hasActiveFilters) {
             setHubMode('plans');
             fetchSinglePlan(planIdParam);
-        } else {
+        } else if (initialDrills.length === 0) {
             fetchDrills();
         }
-        fetchTrainingPlans();
+        if (initialPlans.length === 0) {
+            fetchTrainingPlans();
+        }
     }, [sessionId, selectedAgeFilters, selectedWorkoutFilters, selectedHockeyFilters, searchParams]);
 
     const handleCloseDrill = () => {
@@ -240,6 +248,9 @@ export default function DrillHubScreen() {
             }
         } else {
             setSelectedDrill(null);
+            setDrillSteps([]);
+            setCurrentStepIndex(0);
+            setIsEditing(false);
             setShowSessionPicker(false);
         }
     };
@@ -307,6 +318,9 @@ export default function DrillHubScreen() {
         console.log('[DEBUG] fetchSingleDrill result:', data, 'error:', error);
         if (!error && data) {
             setSelectedDrill(data);
+            setDrillSteps([]);
+            setCurrentStepIndex(0);
+            setIsEditing(false);
             fetchDrillSteps(data.id);
         }
         setLoading(false);
@@ -446,6 +460,9 @@ export default function DrillHubScreen() {
     const handleSelectDrill = (drill: Drill) => {
         console.log('[DEBUG] handleSelectDrill calling for drill:', drill.title, 'id:', drill.id);
         setSelectedDrill(drill);
+        setDrillSteps([]);
+        setCurrentStepIndex(0);
+        setIsEditing(false);
         fetchDrillSteps(drill.id);
     };
 
@@ -682,10 +699,13 @@ export default function DrillHubScreen() {
                                 <div className="relative w-full max-w-[800px] aspect-video bg-[#0a0a0a] rounded-2xl sm:rounded-[2rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)] border border-white/5 overflow-hidden group flex items-center justify-center p-2 sm:p-6 lg:p-10">
                                     {activeTab === 'visual' ? (
                                         (currentStep.diagram_url || currentStep.tactical_data) ? (
-                                            <img 
+                                            <Image 
                                                 src={currentStep.diagram_url || currentStep.tactical_data} 
-                                                className="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-fadeIn" 
+                                                className="object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-fadeIn" 
                                                 alt="diagram" 
+                                                fill
+                                                priority={true}
+                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px"
                                             />
                                         ) : (
                                             <div className="flex flex-col items-center gap-4 sm:gap-6 opacity-20">
@@ -1279,10 +1299,13 @@ export default function DrillHubScreen() {
                                                 className="relative rounded-[2rem] border border-white/5 overflow-hidden cursor-pointer group transition-all duration-500 shadow-2xl hover:border-east-light hover:-translate-y-2 hover:shadow-[0_30px_60px_rgba(0,0,0,0.6)] aspect-[3/4]"
                                             >
                                                 <div className="absolute inset-0 bg-[#0a0a0a]">
-                                                    <img
+                                                    <Image
                                                         src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"}
-                                                        className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700"
+                                                        className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-700"
                                                         alt="drill"
+                                                        fill
+                                                        priority={true}
+                                                        sizes="(max-width: 768px) 50vw, 33vw"
                                                     />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                                                 </div>
@@ -1342,10 +1365,12 @@ export default function DrillHubScreen() {
                                                     className="shrink-0 w-56 sm:w-64 h-72 sm:h-80 rounded-[2.5rem] sm:rounded-[3rem] border border-white/5 relative overflow-hidden group transition-all duration-700 shadow-2xl cursor-pointer hover:border-east-light hover:-translate-y-4 hover:shadow-[0_40px_80px_rgba(0,0,0,0.6)]"
                                                 >
                                                     <div className="absolute inset-0 bg-[#0a0a0a]">
-                                                        <img
+                                                        <Image
                                                             src={drill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"}
-                                                            className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-1000"
+                                                            className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-1000"
                                                             alt="drill"
+                                                            fill
+                                                            sizes="(max-width: 768px) 250px, 300px"
                                                         />
                                                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
                                                     </div>
