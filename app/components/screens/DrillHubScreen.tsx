@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/app/lib/supabase';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useTracking } from '@/app/hooks/useTracking';
 import { 
     ChevronRight, 
     ChevronLeft, 
@@ -173,6 +174,7 @@ interface DrillHubScreenProps {
 export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }: DrillHubScreenProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
+    const { track } = useTracking();
     const sessionId = searchParams.get('session_id');
 
     const [drills, setDrills] = useState<Drill[]>(initialDrills);
@@ -389,6 +391,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                 .single();
             if (error) throw error;
             if (data) {
+                track('Training Plan Created', { plan_id: data.id, title: data.title });
                 setTrainingPlans([data, ...trainingPlans]);
                 setSelectedPlanForEdit(data);
             }
@@ -704,6 +707,8 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                                 alt="diagram" 
                                                 fill
                                                 priority={true}
+                                                draggable={false}
+                                                quality={100}
                                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px"
                                             />
                                         ) : (
@@ -1304,7 +1309,9 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                                         alt="drill"
                                                         fill
                                                         priority={true}
-                                                        sizes="(max-width: 768px) 50vw, 33vw"
+                                                        draggable={false}
+                                                        quality={100}
+                                                        sizes="(max-width: 768px) 100vw, 33vw"
                                                     />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                                                 </div>
@@ -1369,7 +1376,9 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                                             className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-1000"
                                                             alt="drill"
                                                             fill
-                                                            sizes="(max-width: 768px) 250px, 300px"
+                                                            draggable={false}
+                                                            quality={100}
+                                                            sizes="(max-width: 768px) 100vw, 300px"
                                                         />
                                                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
                                                     </div>
