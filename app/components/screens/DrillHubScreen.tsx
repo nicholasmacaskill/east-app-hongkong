@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { supabase } from '@/app/lib/supabase';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { 
     ChevronRight, 
     ChevronLeft, 
@@ -172,10 +172,11 @@ interface DrillHubScreenProps {
 
 export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }: DrillHubScreenProps) {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const sessionId = searchParams.get('session_id');
 
     const [drills, setDrills] = useState<Drill[]>(initialDrills);
-    const [loading, setLoading] = useState(initialDrills.length === 0);
+    const [loading, setLoading] = useState(initialDrills.length === 0 || !!searchParams.get('drill_id') || !!searchParams.get('plan_id') || !!searchParams.get('session_id'));
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [selectedDrill, setSelectedDrill] = useState<Drill | null>(null);
     const [showWhiteboard, setShowWhiteboard] = useState(false);
@@ -210,6 +211,8 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
     const [selectedPlan, setSelectedPlan] = useState<TrainingPlan | null>(null);
     const [planDrills, setPlanDrills] = useState<Drill[]>([]);
     const [loadingPlanDrills, setLoadingPlanDrills] = useState(false);
+    // Fetch client-side if server props are empty, but only once
+    const hasFetchedClient = useRef(false);
 
     useEffect(() => {
         const checkUser = async () => {
@@ -223,6 +226,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
         checkUser();
 
         const hasActiveFilters = selectedAgeFilters.length > 0 || selectedWorkoutFilters.length > 0 || selectedHockeyFilters.length > 0;
+        
         if (sessionId) {
             setIsSessionPlanMode(true);
             fetchSessionPlan(sessionId);
@@ -231,27 +235,22 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
         } else if (planIdParam && !hasActiveFilters) {
             setHubMode('plans');
             fetchSinglePlan(planIdParam);
-        } else if (initialDrills.length === 0) {
-            fetchDrills();
+        } else if (!hasFetchedClient.current) {
+            if (initialDrills.length === 0) fetchDrills();
+            if (initialPlans.length === 0) fetchTrainingPlans();
+            hasFetchedClient.current = true;
         }
-        if (initialPlans.length === 0) {
-            fetchTrainingPlans();
-        }
-    }, [sessionId, selectedAgeFilters, selectedWorkoutFilters, selectedHockeyFilters, searchParams]);
+    }, [sessionId, selectedAgeFilters, selectedWorkoutFilters, selectedHockeyFilters, drillIdParam, planIdParam]);
 
     const handleCloseDrill = () => {
-        if (drillIdParam || sessionId) {
-            if (window.history.length > 2) {
-                window.history.back();
-            } else {
-                window.location.href = '/';
-            }
-        } else {
-            setSelectedDrill(null);
-            setDrillSteps([]);
-            setCurrentStepIndex(0);
-            setIsEditing(false);
-            setShowSessionPicker(false);
+        setSelectedDrill(null);
+        setDrillSteps([]);
+        setCurrentStepIndex(0);
+        setIsEditing(false);
+        setShowSessionPicker(false);
+
+        if (drillIdParam || sessionId || planIdParam) {
+            router.replace('/drill-hub');
         }
     };
 
@@ -700,7 +699,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                     {activeTab === 'visual' ? (
                                         (currentStep.diagram_url || currentStep.tactical_data) ? (
                                             <Image 
-                                                src={currentStep.diagram_url || currentStep.tactical_data} 
+                                                src={currentStep.diagram_url || currentStep.tactical_data || ''} 
                                                 className="object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)] animate-fadeIn" 
                                                 alt="diagram" 
                                                 fill

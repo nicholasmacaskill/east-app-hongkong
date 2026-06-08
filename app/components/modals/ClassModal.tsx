@@ -115,11 +115,11 @@ export default function ClassModal({
             if (initialAttendeeId) {
                 setSelectedAttendeeIds([initialAttendeeId]);
                 setPendingAttendeeIds([initialAttendeeId]);
-            } else if (currentUserId && displaySession?.category === 'FACILITY') {
+            } else if (currentUserId && sessions?.[0]?.category === 'FACILITY') {
                 setSelectedAttendeeIds([currentUserId]);
             }
         }
-    }, [initialAttendeeId, currentUserId, displaySession]);
+    }, [initialAttendeeId, currentUserId, sessions]);
 
     // Lock Background Scroll & Init Polyfill
     useEffect(() => {
