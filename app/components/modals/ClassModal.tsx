@@ -715,7 +715,7 @@ export default function ClassModal({
                                                     className="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-black hover:shadow-lg transition-all group bg-white"
                                                 >
                                                     <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-gray-100 group-hover:border-east-light transition-colors">
-                                                        <img src={imgUrl || 'https://placehold.co/100'} className="w-full h-full object-cover" alt={instructorName} />
+                                                        <img draggable={false} src={imgUrl || 'https://placehold.co/100'} className="w-full h-full object-cover" alt={instructorName} />
                                                     </div>
                                                     <div className="text-center overflow-hidden w-full">
                                                         <h3 className="font-black italic uppercase text-[8px] leading-tight truncate px-1">{instructorName}</h3>
@@ -752,7 +752,7 @@ export default function ClassModal({
                                                     className="flex flex-col items-center gap-2 p-3 rounded-xl border border-gray-100 hover:border-black hover:shadow-lg transition-all group bg-white"
                                                 >
                                                     <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-gray-100 group-hover:border-east-light transition-colors">
-                                                        <img src={imgUrl || 'https://placehold.co/100'} className="w-full h-full object-cover" alt={title} />
+                                                        <img draggable={false} src={imgUrl || 'https://placehold.co/100'} className="w-full h-full object-cover" alt={title} />
                                                     </div>
                                                     <div className="text-center overflow-hidden w-full">
                                                         <h3 className="font-black italic uppercase text-[8px] leading-tight truncate px-1">{title}</h3>
@@ -876,7 +876,7 @@ export default function ClassModal({
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center border border-gray-300 shrink-0">
                                                                         {attendeeProfile.avatar_url ? (
-                                                                            <img src={attendeeProfile.avatar_url} alt={formattedName} className="w-full h-full object-cover" />
+                                                                            <img draggable={false} src={attendeeProfile.avatar_url} alt={formattedName} className="w-full h-full object-cover" />
                                                                         ) : (
                                                                             <span className="text-xs font-black text-gray-500">{initials}</span>
                                                                         )}
@@ -907,7 +907,7 @@ export default function ClassModal({
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center border border-[#28D160] shrink-0">
                                                                         {person.avatar_url ? (
-                                                                            <img src={person.avatar_url} alt={formattedName} className="w-full h-full object-cover" />
+                                                                            <img draggable={false} src={person.avatar_url} alt={formattedName} className="w-full h-full object-cover" />
                                                                         ) : (
                                                                             <span className="text-xs font-black text-[#28D160]">{initials}</span>
                                                                         )}
@@ -974,7 +974,7 @@ export default function ClassModal({
                                                 >
                                                     <div className="w-12 h-12 rounded-full border-2 border-black overflow-hidden bg-black flex items-center justify-center">
                                                         {parentProfile?.avatar_url ? (
-                                                            <img src={parentProfile.avatar_url} className="w-full h-full object-cover" alt="Me" />
+                                                            <img draggable={false} src={parentProfile.avatar_url} className="w-full h-full object-cover" alt="Me" />
                                                         ) : (
                                                             <span className="text-white font-black">{parentProfile?.first_name?.charAt(0) || 'P'}</span>
                                                         )}
@@ -995,7 +995,7 @@ export default function ClassModal({
                                                     >
                                                         <div className="w-12 h-12 rounded-full border-2 border-black overflow-hidden bg-black flex items-center justify-center">
                                                             {child.avatar_url ? (
-                                                                <img src={child.avatar_url} className="w-full h-full object-cover" alt={child.first_name} />
+                                                                <img draggable={false} src={child.avatar_url} className="w-full h-full object-cover" alt={child.first_name} />
                                                             ) : (
                                                                 <span className="text-white font-black">{child.first_name?.charAt(0) || 'C'}</span>
                                                             )}
@@ -1053,7 +1053,7 @@ export default function ClassModal({
                                                         className="flex-shrink-0 w-16 group relative"
                                                     >
                                                         <div className="w-16 h-16 rounded-2xl overflow-hidden border border-gray-100 group-hover:border-east-light transition-all shadow-sm">
-                                                            <img 
+                                                            <img draggable={false} 
                                                                 src={p.coach_drills?.image_url || 'https://placehold.co/100'} 
                                                                 className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all"
                                                                 alt={p.coach_drills?.title}
