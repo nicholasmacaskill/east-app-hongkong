@@ -640,7 +640,7 @@ export default function ClassModal({
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn overscroll-y-none">
-            <div className="w-full max-w-sm bg-white rounded-3xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl relative">
+            <div className="w-full max-w-sm bg-white rounded-3xl overflow-hidden flex flex-col max-h-[85dvh] shadow-2xl relative">
 
                 {/* Header */}
                 <div className="bg-gradient-to-r from-east-light to-east-dark p-4 flex justify-between items-center shrink-0">
@@ -694,7 +694,7 @@ export default function ClassModal({
                     <>
                         {/* Custom Header for Coach Select Mode */}
                         {viewMode === 'COACH_SELECT' ? (
-                            <div className="overflow-y-auto p-6 text-black hide-scrollbar">
+                            <div className="flex-1 min-h-0 overflow-y-auto p-6 text-black hide-scrollbar">
                                 <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{modalHeaderTitle}</h2>
                                 <p className="font-opensans text-[10px] font-bold text-gray-800 mb-6 leading-relaxed opacity-70">
                                     {serviceDescription || displaySession.description}
@@ -731,7 +731,7 @@ export default function ClassModal({
                                 </div>
                             </div>
                         ) : viewMode === 'SERVICE_SELECT' ? (
-                            <div className="overflow-y-auto p-6 text-black hide-scrollbar">
+                            <div className="flex-1 min-h-0 overflow-y-auto p-6 text-black hide-scrollbar">
                                 <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{coachName || "Coach"}</h2>
                                 <p className="font-opensans text-xs font-bold leading-relaxed mb-6 text-gray-800 italic">
                                     {coachBio ? `"${coachBio}"` : "Choose a service to see availability."}
@@ -771,7 +771,7 @@ export default function ClassModal({
                             /* --- SESSION SELECTION VIEW --- */
                             <>
                                 <div 
-                                    className="overflow-y-auto p-6 text-black hide-scrollbar"
+                                    className="flex-1 min-h-0 overflow-y-auto p-6 text-black hide-scrollbar"
                                     onDragOver={(e) => {
                                         // Allow dropping anywhere outside the slots to cancel
                                         if (e.dataTransfer.types.includes('cancel/plain')) {
