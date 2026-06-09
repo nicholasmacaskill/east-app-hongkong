@@ -257,6 +257,21 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
         }
     };
 
+    const handleDeleteDrill = async () => {
+        if (!selectedDrill) return;
+        if (!window.confirm('Are you sure you want to delete this drill? This action cannot be undone.')) return;
+        
+        try {
+            const { error } = await supabase.from('coach_drills').delete().eq('id', selectedDrill.id);
+            if (error) throw error;
+            
+            setDrills(drills.filter(d => d.id !== selectedDrill.id));
+            handleCloseDrill();
+        } catch (e: any) {
+            alert('Failed to delete drill: ' + e.message);
+        }
+    };
+
     useEffect(() => {
         if (userRole && !['coach', 'admin', 'sys-admin'].includes(userRole)) {
             setIsEditing(false);
@@ -657,23 +672,41 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                         )}
 
                         {isEditing && (
-                            <button 
-                                onClick={() => setIsEditing(false)}
-                                className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-white text-black border-none hover:scale-105"
-                            >
-                                <Save size={12} className="sm:w-3.5 sm:h-3.5" />
-                                SAVE DRILL
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => setIsEditing(false)}
+                                    className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-white text-black border-none hover:scale-105"
+                                >
+                                    <Save size={12} className="sm:w-3.5 sm:h-3.5" />
+                                    SAVE DRILL
+                                </button>
+                                <button 
+                                    onClick={handleDeleteDrill}
+                                    className="p-2.5 sm:p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 hover:bg-red-500/20 hover:text-red-400 transition-all"
+                                    title="Delete Drill"
+                                >
+                                    <Trash2 size={16} className="sm:w-4.5 sm:h-4.5" />
+                                </button>
+                            </div>
                         )}
                         
                         {!isEditing && (userRole === 'sys-admin' || (selectedDrill && currentUser?.id === selectedDrill.coach_id)) && (
-                            <button 
-                                onClick={() => setIsEditing(true)}
-                                className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-white/5 text-[#28D160] border border-[#28D160]/20 hover:bg-[#28D160]/10"
-                            >
-                                <Plus size={12} className="sm:w-3.5 sm:h-3.5" />
-                                EDIT DRILL
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => setIsEditing(true)}
+                                    className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-white/5 text-[#28D160] border border-[#28D160]/20 hover:bg-[#28D160]/10"
+                                >
+                                    <Plus size={12} className="sm:w-3.5 sm:h-3.5" />
+                                    EDIT DRILL
+                                </button>
+                                <button 
+                                    onClick={handleDeleteDrill}
+                                    className="p-2.5 sm:p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 hover:bg-red-500/20 hover:text-red-400 transition-all"
+                                    title="Delete Drill"
+                                >
+                                    <Trash2 size={16} className="sm:w-4.5 sm:h-4.5" />
+                                </button>
+                            </div>
                         )}
 
                         {(!['coach', 'admin', 'sys-admin'].includes(userRole || '') && selectedDrill?.coach_id) && (
