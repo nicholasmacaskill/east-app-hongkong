@@ -262,8 +262,11 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
         if (!window.confirm('Are you sure you want to delete this drill? This action cannot be undone.')) return;
         
         try {
-            const { error } = await supabase.from('coach_drills').delete().eq('id', selectedDrill.id);
+            const { data, error } = await supabase.from('coach_drills').delete().eq('id', selectedDrill.id).select();
             if (error) throw error;
+            if (!data || data.length === 0) {
+                throw new Error('Permission denied: You do not have access to delete this drill.');
+            }
             
             setDrills(drills.filter(d => d.id !== selectedDrill.id));
             handleCloseDrill();
