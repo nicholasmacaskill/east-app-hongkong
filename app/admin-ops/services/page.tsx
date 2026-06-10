@@ -287,7 +287,7 @@ export default function AdminOpsServicesPage() {
                                     <label className="px-1 block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Service Title</label>
                                     <input type="text" value={currentService.title || ''} onChange={e => setCurrentService({ ...currentService, title: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold placeholder:text-gray-800 focus:outline-none focus:border-[#28D160] transition-colors" placeholder="e.g. STRENGTH LAB" />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="px-1 block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Category</label>
                                         <select value={currentService.category} onChange={e => setCurrentService({ ...currentService, category: e.target.value as any })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold focus:outline-none focus:border-[#28D160] appearance-none">
@@ -300,7 +300,7 @@ export default function AdminOpsServicesPage() {
                                         <label className="px-1 block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Credits Cost</label>
                                         <input type="number" value={currentService.credit_cost || 0} onChange={e => setCurrentService({ ...currentService, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold focus:outline-none focus:border-[#28D160]" />
                                     </div>
-                                    <div className="col-span-2">
+                                    <div className="md:col-span-2">
                                         <label className="px-1 block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Default Capacity (Athletes per Class)</label>
                                         <input type="number" value={currentService.default_capacity || ''} onChange={e => setCurrentService({ ...currentService, default_capacity: parseInt(e.target.value) || undefined })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold focus:outline-none focus:border-[#28D160]" placeholder={currentService.category === 'CLASS' ? '10' : '1'} />
                                     </div>
