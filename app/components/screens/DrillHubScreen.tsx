@@ -690,7 +690,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                             </div>
                         )}
                         
-                        {!isEditing && (userRole === 'sys-admin' || (selectedDrill && currentUser?.id === selectedDrill.coach_id)) && (
+                        {!isEditing && (['coach', 'admin', 'sys-admin'].includes(userRole || '') || (selectedDrill && currentUser?.id === selectedDrill.coach_id)) && (
                             <div className="flex items-center gap-2">
                                 <button 
                                     onClick={() => setIsEditing(true)}
@@ -796,7 +796,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                         ) : (
                             <div className="flex flex-col items-center gap-6 text-center py-32">
                                 <Layers size={64} className="text-east-light opacity-20" />
-                                {(userRole === 'sys-admin' || (selectedDrill && currentUser?.id === selectedDrill.coach_id)) ? (
+                                {(['coach', 'admin', 'sys-admin'].includes(userRole || '') || (selectedDrill && currentUser?.id === selectedDrill.coach_id)) ? (
                                     <>
                                         <div>
                                             <h3 className="text-lg font-black italic uppercase text-gray-500 tracking-[0.3em] mb-2">No Steps Yet</h3>
