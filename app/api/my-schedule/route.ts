@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       user_id,
       status,
       sessions (
-        id, title, start_time, end_time, instructor, category, description, credit_cost, image_url, status,
+        id, title, start_time, end_time, instructor, category, description, credit_cost, image_url, status, max_capacity,
         session_drills (id)
       ),
       profiles!registrations_user_id_fkey (
