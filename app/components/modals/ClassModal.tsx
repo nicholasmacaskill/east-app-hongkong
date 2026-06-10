@@ -10,6 +10,7 @@ import { useToast } from '@/app/components/ui/Toast';
 import { getStripePriceId } from '@/app/lib/stripe-config';
 import { useTracking } from '@/app/hooks/useTracking';
 import { polyfill } from "mobile-drag-drop";
+import { scrollBehaviourDragImageTranslateOverride } from "mobile-drag-drop/scroll-behaviour";
 
 interface ClassModalProps {
     sessions: Session[];
@@ -128,7 +129,9 @@ export default function ClassModal({
         
         // Initialize mobile drag and drop polyfill
         polyfill({
-            dragImageCenterOnTouch: true
+            dragImageCenterOnTouch: true,
+            holdToDrag: 300,
+            dragImageTranslateOverride: scrollBehaviourDragImageTranslateOverride
         });
 
         // Optional: prevent default touch action to ensure drag works cleanly on iOS
