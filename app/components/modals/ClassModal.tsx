@@ -1255,7 +1255,9 @@ export default function ClassModal({
                                                         disabled={isProcessing || !selectedSessionId || selectedAttendeeIds.length === 0 || isFull}
                                                         className={`text-xs font-black italic px-6 py-3 rounded-full uppercase tracking-widest transition-all shadow-lg disabled:opacity-50 ${isFull ? 'bg-gray-600 text-gray-300' : 'bg-black text-white hover:bg-gray-800'}`}
                                                     >
-                                                        {isProcessing ? 'PROCESSING...' : (!selectedSessionId ? 'SELECT OPTION' : isFull ? 'CAPACITY MET' : `PAY ${totalCost} CREDITS`)}
+                                                        <span key={isProcessing ? 'processing' : 'idle'}>
+                                                            {isProcessing ? 'PROCESSING...' : (!selectedSessionId ? 'SELECT OPTION' : isFull ? 'CAPACITY MET' : `PAY ${totalCost} CREDITS`)}
+                                                        </span>
                                                     </button>
                                                 );
                                             })()
