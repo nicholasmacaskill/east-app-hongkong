@@ -63,9 +63,11 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId }: { cu
         if (myTeams) setTeams(myTeams);
 
         // Fetch Profiles for 1-on-1 chats
-        const { data: allProfiles } = await supabase.from('profiles').select('*').neq('id', currentUserId);
+        const { data: allProfiles, error: profilesError } = await supabase.from('profiles').select('*').neq('id', currentUserId);
+        if (profilesError) console.error('❌ Profiles fetch error:', profilesError);
         if (allProfiles) {
             let allowedProfiles = allProfiles;
+            console.log(`✅ Loaded ${allProfiles.length} profiles for DM list`);
             
             // Prevent players from messaging other players directly
             if (myProfile?.role === 'player') {

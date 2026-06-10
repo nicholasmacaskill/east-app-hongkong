@@ -23,7 +23,7 @@ export default function CreateTeamModal({ coachId, onClose, onSuccess }: CreateT
         const fetchProfiles = async () => {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, full_name, role, avatar_url')
+                .select('id, first_name, last_name, role, avatar_url')
                 .neq('role', 'sys-admin')
                 .neq('id', coachId); // don't list coach to themselves
 
@@ -146,7 +146,7 @@ export default function CreateTeamModal({ coachId, onClose, onSuccess }: CreateT
                                                     )}
                                                 </div>
                                                 <div className="text-left">
-                                                    <span className="block text-xs font-black text-white uppercase">{p.full_name || 'Unknown User'}</span>
+                                                    <span className="block text-xs font-black text-white uppercase">{`${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unknown User'}</span>
                                                     <span className="block text-[8px] font-bold text-gray-500 uppercase tracking-widest">{p.role}</span>
                                                 </div>
                                             </div>
