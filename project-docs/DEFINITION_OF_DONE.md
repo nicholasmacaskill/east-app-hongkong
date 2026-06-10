@@ -7,6 +7,9 @@ This checklist is **MANDATORY** for all future tasks. You must reference this fi
 - [ ] **Verification Robot**: Does a Playwright script (`tests/*.spec.ts`) exist and pass? (MANDATORY for Multi-Variate changes)
 - [ ] **Static Check**: Did `npx tsc` pass without errors?
 - [ ] **Schema Sync**: Are DB columns, types, and RLS policies updated?
+- [ ] **Schema Guessing**: Did I explicitly verify the exact column names in `current_schema.sql` instead of guessing?
+- [ ] **RLS Safety**: Does any new RLS policy prevent infinite recursion (e.g., using `SECURITY DEFINER` if referencing its own table)?
+- [ ] **Migration Check**: Is the corresponding SQL migration actually live in the target database environment?
 - [ ] **API Logic**: Does the backend route fetch/filter the new data correctly?
 - [ ] **Type Safety**: Are the TypeScript interfaces in `app/types` updated to match the DB?
 - [ ] **UI Data Flow**: Does the frontend component send the correct parameters to the API?
