@@ -693,7 +693,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                             </div>
                         )}
                         
-                        {!isEditing && (['coach', 'admin', 'sys-admin'].includes(userRole || '') || (selectedDrill && currentUser?.id === selectedDrill.coach_id)) && (
+                        {!isEditing && ['coach', 'admin', 'sys-admin'].includes(userRole || '') && (
                             <div className="flex items-center gap-2">
                                 <button 
                                     onClick={() => setIsEditing(true)}
@@ -755,10 +755,21 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                             </div>
                                         )
                                     ) : (
-                                        <div className="flex flex-col items-center gap-4 sm:gap-6 opacity-20">
-                                            <Video className="w-16 h-16 sm:w-24 sm:h-24 md:w-28 md:h-28 text-white" />
-                                            <span className="text-xs sm:text-sm font-black uppercase tracking-[0.4em] italic">No Video Uploaded</span>
-                                        </div>
+                                        currentStep?.video_url ? (
+                                            <video
+                                                key={currentStep.video_url}
+                                                src={currentStep.video_url}
+                                                controls
+                                                playsInline
+                                                className="w-full h-full object-contain rounded-2xl animate-fadeIn"
+                                                style={{ maxHeight: '100%' }}
+                                            />
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-4 sm:gap-6 opacity-20">
+                                                <Video className="w-16 h-16 sm:w-24 sm:h-24 md:w-28 md:h-28 text-white" />
+                                                <span className="text-xs sm:text-sm font-black uppercase tracking-[0.4em] italic">No Video Uploaded</span>
+                                            </div>
+                                        )
                                     )}
 
                                     <div className="absolute top-4 right-4 sm:top-8 sm:right-8 w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center">
@@ -799,7 +810,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                         ) : (
                             <div className="flex flex-col items-center gap-6 text-center py-32">
                                 <Layers size={64} className="text-east-light opacity-20" />
-                                {(['coach', 'admin', 'sys-admin'].includes(userRole || '') || (selectedDrill && currentUser?.id === selectedDrill.coach_id)) ? (
+                                {(['admin', 'sys-admin'].includes(userRole || '') || (selectedDrill && currentUser?.id === selectedDrill.coach_id)) ? (
                                     <>
                                         <div>
                                             <h3 className="text-lg font-black italic uppercase text-gray-500 tracking-[0.3em] mb-2">No Steps Yet</h3>
