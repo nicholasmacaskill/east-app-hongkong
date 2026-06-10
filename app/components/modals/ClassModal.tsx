@@ -79,6 +79,7 @@ export default function ClassModal({
     const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
     const [pendingAttendeeIds, setPendingAttendeeIds] = useState<string[]>([]);
     const [parentProfile, setParentProfile] = useState<any>(null);
+    const [selectedAthleteToDrop, setSelectedAthleteToDrop] = useState<string | null>(null);
 
     // Fetch parent profile for avatar and display
     useEffect(() => {
@@ -133,7 +134,7 @@ export default function ClassModal({
         // Optional: prevent default touch action to ensure drag works cleanly on iOS
         const preventTouchScroll = (e: TouchEvent) => {
             const target = e.target as HTMLElement;
-            if (target.getAttribute('draggable') === 'true') {
+            if (target.closest && target.closest('[draggable="true"]')) {
                 e.preventDefault();
             }
         };
@@ -799,7 +800,7 @@ export default function ClassModal({
                                     )}
 
                                     {/* Details */}
-                                    <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{modalHeaderTitle}</h2>
+                                    <h2 className="font-montserrat font-black italic text-2xl mb-1 uppercase leading-none">{selectedSession?.title || displaySession.title}</h2>
                                     {origin !== 'coaches' && displaySession.category !== 'FACILITY' && (
                                         <p className="font-montserrat font-bold text-[10px] mb-4 uppercase text-gray-500 tracking-wider">
                                             INSTRUCTOR: {selectedSession?.instructor || filterInstructor || 'VARIOUS'}
@@ -933,6 +934,12 @@ export default function ClassModal({
                                                         return (
                                                             <div
                                                                 key={`empty-${idx}`}
+                                                                onClick={() => {
+                                                                    if (selectedAthleteToDrop) {
+                                                                        handleDropToBook(selectedAthleteToDrop);
+                                                                        setSelectedAthleteToDrop(null);
+                                                                    }
+                                                                }}
                                                                 onDragOver={(e) => {
                                                                     e.preventDefault();
                                                                     setDragOverSlot(idx);
@@ -949,10 +956,12 @@ export default function ClassModal({
                                                                 className={`flex items-center justify-between p-4 rounded border-2 border-dashed transition-all ${
                                                                     isDragOver
                                                                         ? 'border-[#28D160] bg-[#28D160]/10 text-[#28D160] scale-[1.02]'
-                                                                        : 'border-[#28D160] text-gray-500 hover:border-[#28D160]/70 hover:bg-[#28D160]/5'
+                                                                        : selectedAthleteToDrop
+                                                                            ? 'border-[#28D160]/70 bg-[#28D160]/5 text-[#28D160] hover:border-[#28D160] cursor-pointer shadow-[0_0_15px_rgba(40,209,96,0.2)]'
+                                                                            : 'border-[#28D160] text-gray-500 hover:border-[#28D160]/70 hover:bg-[#28D160]/5'
                                                                 }`}
                                                             >
-                                                                <span className="text-sm font-medium">{timeString} - Drop Athlete Here</span>
+                                                                <span className="text-sm font-medium">{timeString} - {selectedAthleteToDrop ? 'Tap to Drop Athlete' : 'Drop Athlete Here'}</span>
                                                             </div>
                                                         );
                                                     }
@@ -972,7 +981,8 @@ export default function ClassModal({
                                                         e.dataTransfer.setData('text/plain', currentUserId!);
                                                         e.dataTransfer.effectAllowed = 'copy';
                                                     }}
-                                                    className="relative cursor-grab active:cursor-grabbing hover:scale-110 transition-transform touch-none"
+                                                    onClick={() => setSelectedAthleteToDrop(prev => prev === currentUserId ? null : currentUserId!)}
+                                                    className={`relative cursor-grab active:cursor-grabbing hover:scale-110 transition-transform touch-none ${selectedAthleteToDrop === currentUserId ? 'ring-4 ring-[#28D160] scale-110 rounded-full shadow-[0_0_15px_rgba(40,209,96,0.5)]' : ''}`}
                                                     title="Drag or tap to book yourself"
                                                 >
                                                     <div className="w-12 h-12 rounded-full border-2 border-black overflow-hidden bg-black flex items-center justify-center">
@@ -993,7 +1003,8 @@ export default function ClassModal({
                                                             e.dataTransfer.setData('text/plain', child.id);
                                                             e.dataTransfer.effectAllowed = 'copy';
                                                         }}
-                                                        className="relative cursor-grab active:cursor-grabbing hover:scale-110 transition-transform touch-none"
+                                                        onClick={() => setSelectedAthleteToDrop(prev => prev === child.id ? null : child.id)}
+                                                        className={`relative cursor-grab active:cursor-grabbing hover:scale-110 transition-transform touch-none ${selectedAthleteToDrop === child.id ? 'ring-4 ring-[#28D160] scale-110 rounded-full shadow-[0_0_15px_rgba(40,209,96,0.5)]' : ''}`}
                                                         title={`Drag or tap to book ${child.first_name}`}
                                                     >
                                                         <div className="w-12 h-12 rounded-full border-2 border-black overflow-hidden bg-black flex items-center justify-center">
