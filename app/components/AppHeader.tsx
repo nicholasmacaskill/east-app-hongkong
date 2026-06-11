@@ -113,7 +113,7 @@ export default function AppHeader({
                 )}
 
                 {onOpenSettings && (
-                    <button onClick={onOpenSettings} className="text-gray-400 hover:text-white transition-colors active:scale-90 duration-200">
+                    <button onClick={onOpenSettings} data-testid="settings-button" className="text-gray-400 hover:text-white transition-colors active:scale-90 duration-200">
                         <Settings size={18} className="stroke-[1.5px]" />
                     </button>
                 )}

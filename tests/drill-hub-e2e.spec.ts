@@ -127,12 +127,16 @@ test.describe('Drill Hub — Coach CMS', () => {
 
     test('CMS: Create a new drill', async ({ page }) => {
         await loginAs(page, coach.email, coach.password, 'coach');
-        await page.goto('/admin-ops/drills');
+        await page.goto('/drill-hub');
         await page.waitForTimeout(2000);
 
-        // Click New Drill button
-        const newDrillBtn = page.getByRole('button', { name: /New Drill/i });
-        await expect(newDrillBtn).toBeVisible({ timeout: 10000 });
+        // Click Add New button dropdown, then New Drill
+        const addNewBtn = page.getByRole('button', { name: /Add New/i });
+        await expect(addNewBtn).toBeVisible({ timeout: 10000 });
+        await addNewBtn.click();
+        
+        const newDrillBtn = page.locator('button').filter({ hasText: 'New Drill' }).first();
+        await expect(newDrillBtn).toBeVisible({ timeout: 5000 });
         await newDrillBtn.click();
 
         // Fill in the drill title
@@ -410,20 +414,17 @@ test.describe('Drill Hub — Athlete Experience', () => {
         // Step view should open — header shows drill title
         await expect(page.locator('h1').filter({ hasText: /E2E Player Drill/i }).first()).toBeVisible({ timeout: 10000 });
 
-        // "Explore More Drills" back button should be visible
-        await expect(page.getByRole('button', { name: /EXPLORE MORE DRILLS/i })).toBeVisible({ timeout: 5000 });
+        // "Back" button should be visible in the top left
+        await expect(page.locator('button').filter({ hasText: /^Back$/i }).first()).toBeVisible({ timeout: 5000 });
     });
 
     test('Settings menu shows Drill Hub link for player', async ({ page }) => {
         await loginAs(page, player.email, player.password);
         await page.waitForTimeout(2000);
 
-        // Settings/gear icon lives in the AppHeader top-right area
-        const settingsBtn = page.locator('button[title="Settings"], button[aria-label="Settings"], header button').filter({ hasText: '' }).nth(1);
-        // Try by title attribute first (most reliable), then fall back to any gear-like button in header
-        const byTitle = page.locator('button[title="Settings"]').first();
-        const byHeader = page.locator('header, nav').locator('button').filter({ hasNot: page.locator('svg[data-testid]') }).last();
-        const settingsIcon = (await byTitle.count()) > 0 ? byTitle : byHeader;
+        // Navigate to profile tab (where settings button lives)
+        // The settings gear icon lives in the AppHeader top-right area
+        const settingsIcon = page.locator('[data-testid="settings-button"]').first();
         await expect(settingsIcon).toBeVisible({ timeout: 15000 });
         await settingsIcon.click();
 
