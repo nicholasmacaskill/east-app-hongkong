@@ -136,12 +136,14 @@ test.describe('Drill Hub — Coach CMS', () => {
         await newDrillBtn.click();
 
         // Fill in the drill title
-        const titleInput = page.locator('input[placeholder*="Triangle Sprint"]').first();
+        const titleInput = page.locator('input[placeholder*="Triangle Sprint"], input[placeholder*="Power Slapshot"]').first();
         await expect(titleInput).toBeVisible({ timeout: 5000 });
         await titleInput.fill(`E2E Test Drill ${Date.now()}`);
 
-        // Go to Slides page
+        // Scroll Build Slides button into view and wait for it to be enabled (title must be non-empty)
         const buildSlidesBtn = page.getByRole('button', { name: /Build Slides/i }).first();
+        await buildSlidesBtn.scrollIntoViewIfNeeded();
+        await expect(buildSlidesBtn).toBeEnabled({ timeout: 5000 });
         await buildSlidesBtn.click();
         await page.waitForTimeout(1000);
 
@@ -151,6 +153,7 @@ test.describe('Drill Hub — Coach CMS', () => {
 
         // Publish
         const publishBtn = page.getByRole('button', { name: /Publish Drill/i }).first();
+        await publishBtn.scrollIntoViewIfNeeded();
         await publishBtn.click();
         await page.waitForTimeout(2000);
 
@@ -334,7 +337,17 @@ test.describe('Drill Hub — Athlete Experience', () => {
             .single();
         drillId = drill?.id ?? null;
 
-        // Link them
+        // Seed at least one step so the drill detail view renders slides (not 'Content Coming Soon')
+        if (drillId) {
+            await supabase.from('coach_drill_steps').insert({
+                drill_id: drillId,
+                step_number: 1,
+                title: 'E2E Step 1',
+                instruction: 'Test instruction for E2E player drill.',
+            });
+        }
+
+        // Link drill to session
         if (sessionId && drillId) {
             await supabase.from('session_drills').insert({
                 session_id: sessionId,
@@ -350,6 +363,7 @@ test.describe('Drill Hub — Athlete Experience', () => {
             await supabase.from('sessions').delete().eq('id', sessionId);
         }
         if (drillId) {
+            await supabase.from('coach_drill_steps').delete().eq('drill_id', drillId);
             await supabase.from('coach_drills').delete().eq('id', drillId);
         }
         await supabase.auth.admin.deleteUser(player.id);
@@ -360,8 +374,8 @@ test.describe('Drill Hub — Athlete Experience', () => {
         await page.goto('/drill-hub');
 
         await expect(page.locator('h1').filter({ hasText: /DRILL HUB/i }).first()).toBeVisible({ timeout: 15000 });
-        // Filter buttons should be visible in general mode
-        await expect(page.getByRole('button', { name: 'AGE' })).toBeVisible({ timeout: 5000 });
+        // Filters are now behind a toggle button — check the FILTERS button is visible in general mode
+        await expect(page.getByRole('button', { name: /FILTERS/i })).toBeVisible({ timeout: 5000 });
     });
 
     test('Drill Hub shows Training Plan view when session_id is provided', async ({ page }) => {
@@ -404,11 +418,14 @@ test.describe('Drill Hub — Athlete Experience', () => {
         await loginAs(page, player.email, player.password);
         await page.waitForTimeout(2000);
 
-        // Navigate to profile tab (where settings button lives)
-        // The schedule/home tabs — click the profile tab button
-        const profileTab = page.locator('[data-testid="settings-button"]').first();
-        await expect(profileTab).toBeVisible({ timeout: 15000 });
-        await profileTab.click();
+        // Settings/gear icon lives in the AppHeader top-right area
+        const settingsBtn = page.locator('button[title="Settings"], button[aria-label="Settings"], header button').filter({ hasText: '' }).nth(1);
+        // Try by title attribute first (most reliable), then fall back to any gear-like button in header
+        const byTitle = page.locator('button[title="Settings"]').first();
+        const byHeader = page.locator('header, nav').locator('button').filter({ hasNot: page.locator('svg[data-testid]') }).last();
+        const settingsIcon = (await byTitle.count()) > 0 ? byTitle : byHeader;
+        await expect(settingsIcon).toBeVisible({ timeout: 15000 });
+        await settingsIcon.click();
 
         await page.waitForTimeout(1000);
         // Drill Hub link should appear under Training section in SettingsModal
