@@ -21,16 +21,25 @@ export default function CreateTeamModal({ coachId, onClose, onSuccess }: CreateT
 
     useEffect(() => {
         const fetchProfiles = async () => {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('id, first_name, last_name, role, avatar_url')
-                .neq('role', 'sys-admin')
-                .neq('id', coachId); // don't list coach to themselves
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
 
-            if (!error && data) {
-                setProfiles(data);
+                const response = await fetch('/api/coach/team-roster', {
+                    headers: { 'Authorization': `Bearer ${session.access_token}` }
+                });
+                
+                const result = await response.json();
+                if (response.ok && result.data) {
+                    setProfiles(result.data);
+                } else {
+                    console.error('Failed to fetch team roster:', result.error);
+                }
+            } catch (err) {
+                console.error('Network error fetching team roster:', err);
+            } finally {
+                setFetchingProfiles(false);
             }
-            setFetchingProfiles(false);
         };
         fetchProfiles();
     }, [coachId]);
