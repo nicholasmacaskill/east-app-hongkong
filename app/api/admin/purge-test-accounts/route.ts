@@ -50,8 +50,8 @@ export async function POST(request: Request) {
       const toDeleteFromAuth = users.filter(u => {
         const email = u.email?.toLowerCase() || '';
         if (email.endsWith('@east.com')) return false;
-        const keywords = ['test', 'audit', 'qa', 'verify'];
-        return keywords.some(k => email.includes(k));
+        const keywords = ['test', 'audit', 'qa', 'verify', 'event watcher'];
+        return keywords.some(k => email.includes(k) || email.includes(k.replace(' ', '')));
       });
 
       for (const u of toDeleteFromAuth) {
@@ -80,12 +80,13 @@ export async function POST(request: Request) {
 
     if (profError) throw profError;
 
-    const keywords = ['test', 'audit', 'qa', 'verify'];
+    const keywords = ['test', 'audit', 'qa', 'verify', 'event watcher'];
     const toDeleteFromProfiles = (profiles || []).filter(p => {
       const email = (p.contact_email || '').toLowerCase();
       const user = (p.username || '').toLowerCase();
       const first = (p.first_name || '').toLowerCase();
       const last = (p.last_name || '').toLowerCase();
+      const fullName = `${first} ${last}`;
       
       if (email.endsWith('@east.com') || user.endsWith('@east.com')) {
          // CRITICAL: Still protect corporate @east.com unless it's a known test email
@@ -95,9 +96,11 @@ export async function POST(request: Request) {
 
       const match = keywords.some(k => 
         email.includes(k) || 
+        email.includes(k.replace(' ', '')) ||
         user.includes(k) || 
         first.includes(k) || 
-        last.includes(k)
+        last.includes(k) ||
+        fullName.includes(k)
       );
 
       return match;

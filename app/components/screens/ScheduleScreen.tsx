@@ -64,7 +64,7 @@ export default function ScheduleScreen({
       case 'ADULT': return { color: '#F8F9FF', border: 'border-blue-500', icon: '💪' };
       case 'COACH':
       case 'PRIVATE': return { color: '#D8B4FE', border: 'border-purple-400', icon: '🎯' };
-      case 'CLASS': return { color: '#BFDBFE', border: 'border-blue-400', icon: '🏀' };
+      case 'CLASS': return { color: '#BFDBFE', border: 'border-blue-400', icon: '🏋️' };
       case 'EVENT': return { color: '#FCA5A5', border: 'border-red-400', icon: '🎉' };
       case 'FACILITY': return { color: '#D1D5DB', border: 'border-gray-500', icon: '🏠' };
       case 'GOOGLE': return { color: '#4285F4', border: 'border-blue-400', icon: '📆' };
