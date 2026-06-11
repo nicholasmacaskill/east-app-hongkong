@@ -25,10 +25,12 @@ import {
     PenTool,
     Image as ImageIcon,
     Check,
-    MessageSquare
+    MessageSquare,
+    ClipboardList
 } from 'lucide-react';
 import WhiteboardModal from '../modals/WhiteboardModal';
 import TrainingPlanModal from '../modals/TrainingPlanModal';
+import CreateDrillModal from '../modals/CreateDrillModal';
 import { TrainingPlan } from '@/app/types';
 
 interface Drill {
@@ -213,6 +215,8 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
     const [selectedPlan, setSelectedPlan] = useState<TrainingPlan | null>(null);
     const [planDrills, setPlanDrills] = useState<Drill[]>([]);
     const [loadingPlanDrills, setLoadingPlanDrills] = useState(false);
+    const [showCreateMenu, setShowCreateMenu] = useState(false);
+    const [showCreateDrill, setShowCreateDrill] = useState(false);
     // Fetch client-side if server props are empty, but only once
     const hasFetchedClient = useRef(false);
 
@@ -1069,27 +1073,69 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-white transition-colors">Back</span>
                     </button>
                     <span className="text-[9px] sm:text-[10px] font-black tracking-[0.5em] text-east-light uppercase italic opacity-80">Evolution System</span>
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-6 flex-wrap">
                         <h1 className="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tighter leading-none brightness-125 drop-shadow-2xl">
                             {selectedPlan ? selectedPlan.title : isSessionPlanMode ? "Training Plan" : "Drill Hub"}
                         </h1>
                         
-                        {!isSessionPlanMode && !selectedPlan && (
-                            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 ml-4">
+                        <div className="flex items-center gap-4 flex-wrap">
+                            {!isSessionPlanMode && !selectedPlan && (
+                                <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 sm:ml-4">
+                                    <button 
+                                        onClick={() => setHubMode('drills')}
+                                        className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${hubMode === 'drills' ? 'bg-east-light text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                                    >
+                                        Drills
+                                    </button>
+                                    <button 
+                                        onClick={() => setHubMode('plans')}
+                                        className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${hubMode === 'plans' ? 'bg-east-light text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                                    >
+                                        Plans
+                                    </button>
+                                </div>
+                            )}
+
+                            {(!['coach', 'admin', 'sys-admin'].includes(userRole || '')) && (
                                 <button 
-                                    onClick={() => setHubMode('drills')}
-                                    className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${hubMode === 'drills' ? 'bg-east-light text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                                    onClick={() => window.location.href = '/?tab=community'}
+                                    className="flex items-center gap-2 px-4 py-2.5 bg-[#28D160]/10 text-[#28D160] border border-[#28D160]/30 rounded-xl hover:bg-[#28D160]/20 transition-all shadow-[0_0_15px_rgba(40,209,96,0.15)] active:scale-95"
                                 >
-                                    Drills
+                                    <MessageSquare size={16} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Inbox</span>
                                 </button>
-                                <button 
-                                    onClick={() => setHubMode('plans')}
-                                    className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${hubMode === 'plans' ? 'bg-east-light text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
-                                >
-                                    Plans
-                                </button>
-                            </div>
-                        )}
+                            )}
+
+                            {(['coach', 'admin', 'sys-admin'].includes(userRole || '')) && !isSessionPlanMode && !selectedPlan && (
+                                <div className="relative">
+                                    <button 
+                                        onClick={() => setShowCreateMenu(!showCreateMenu)}
+                                        aria-label="Add New"
+                                        className="flex items-center gap-2 px-4 py-2.5 bg-east-light text-black rounded-xl hover:bg-white transition-all shadow-[0_0_15px_rgba(40,209,96,0.3)] active:scale-95"
+                                    >
+                                        <Plus size={16} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Add New</span>
+                                    </button>
+                                    {showCreateMenu && (
+                                        <div className="absolute right-0 top-full mt-2 w-48 bg-[#121212] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                                            <button 
+                                                onClick={() => { setShowCreateMenu(false); setShowCreateDrill(true); }}
+                                                className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-300 hover:bg-white/5 hover:text-east-light transition-all flex items-center gap-2 border-b border-white/5"
+                                            >
+                                                <Layers size={14} /> New Drill
+                                            </button>
+                                            <button 
+                                                onClick={() => { setShowCreateMenu(false); handleCreatePlan(); }}
+                                                className="w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-gray-300 hover:bg-white/5 hover:text-east-light transition-all flex items-center gap-2"
+                                            >
+                                                {creatingPlan ? <Loader2 size={14} className="animate-spin" /> : <ClipboardList size={14} />}
+                                                New Plan
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -1269,16 +1315,6 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                             <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">{trainingPlans.length} PLANS</span>
                             <div className="h-px flex-1 bg-white/5" />
                         </div>
-                        {['coach', 'admin', 'sys-admin'].includes(userRole || '') && (
-                            <button
-                                onClick={handleCreatePlan}
-                                disabled={creatingPlan}
-                                className="px-6 py-2 bg-east-light text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all active:scale-95 flex items-center gap-2"
-                            >
-                                {creatingPlan ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-                                Create Plan
-                            </button>
-                        )}
                     </div>
                     {trainingPlans.length === 0 ? (
                         <div className="text-center py-24 opacity-40">
@@ -1489,6 +1525,18 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                             }
                         }
                     }} 
+                />
+            )}
+
+            {showCreateDrill && currentUser?.id && (
+                <CreateDrillModal 
+                    coachId={currentUser.id} 
+                    onClose={() => setShowCreateDrill(false)} 
+                    onSuccess={() => {
+                        setShowCreateDrill(false);
+                        fetchDrills();
+                        setHubMode('drills');
+                    }}
                 />
             )}
         </div>
