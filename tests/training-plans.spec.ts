@@ -97,14 +97,19 @@ test.describe('Training Plans CMS & Session Integration', () => {
         await plansTab.click();
         await page.waitForTimeout(1000);
 
-        // Click Create Plan
-        const createPlanBtn = page.getByRole('button', { name: 'Create Plan' });
-        await expect(createPlanBtn).toBeVisible();
-        await createPlanBtn.click();
+        // Click Add New and select New Plan
+        const addNewBtn = page.getByRole('button', { name: 'Add New' });
+        await expect(addNewBtn).toBeVisible();
+        await addNewBtn.click();
+        await page.waitForTimeout(500);
+
+        const newPlanBtn = page.getByRole('button', { name: 'New Plan' });
+        await expect(newPlanBtn).toBeVisible();
+        await newPlanBtn.click();
         await page.waitForTimeout(2000);
 
         // Training Plan modal should open
-        await expect(page.locator('text=Edit Plan Drills').first()).toBeVisible({ timeout: 10000 });
+        await expect(page.locator('text=Edit Training Plan').first()).toBeVisible({ timeout: 10000 });
 
         // Search and add drill
         const drillCard = page.locator('text=TP E2E Test Drill').first();
@@ -118,7 +123,7 @@ test.describe('Training Plans CMS & Session Integration', () => {
         await page.waitForTimeout(2000);
 
         // Modal closes and new plan shows in plans list
-        await expect(page.locator('text=Edit Plan Drills').first()).not.toBeVisible();
+        await expect(page.locator('text=Edit Training Plan').first()).not.toBeVisible();
         await expect(page.locator('text=New Training Plan').first()).toBeVisible({ timeout: 5000 });
 
         // Capture plan ID for cleanup

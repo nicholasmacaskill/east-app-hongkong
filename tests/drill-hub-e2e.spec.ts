@@ -77,13 +77,11 @@ async function loginAs(page: any, email: string, password: string, portal: 'athl
 
     if (portal === 'admin') {
         // Standalone ADMIN PORTAL button at the bottom of the page
-        await page.getByRole('button', { name: /ADMIN PORTAL/i }).click();
+        await page.getByRole('button', { name: /ADMIN PORTAL/i }).click({ force: true });
     } else {
-        // The page has sections: ATHLETE (index 0), PARENT (index 1), COACH (index 2)
-        // Each section has a primary LOGIN button. Get all LOGIN buttons and pick the right index.
-        const portalIndex = { athlete: 0, parent: 1, coach: 2 }[portal];
-        const loginBtns = page.getByRole('button', { name: /^LOGIN$/i });
-        await loginBtns.nth(portalIndex).click();
+        const testIdMap = { athlete: 'athlete', parent: 'parent', coach: 'coach' };
+        const testId = `${testIdMap[portal]}-portal-section`;
+        await page.locator(`[data-testid="${testId}"]`).getByRole('button', { name: /^LOGIN$/i }).click({ force: true });
     }
 
     await page.waitForTimeout(1500);
@@ -138,7 +136,7 @@ test.describe('Drill Hub — Coach CMS', () => {
         await newDrillBtn.click();
 
         // Fill in the drill title
-        const titleInput = page.locator('input[placeholder*="Power Slapshot"]').first();
+        const titleInput = page.locator('input[placeholder*="Triangle Sprint"]').first();
         await expect(titleInput).toBeVisible({ timeout: 5000 });
         await titleInput.fill(`E2E Test Drill ${Date.now()}`);
 

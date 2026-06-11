@@ -12,6 +12,7 @@
 ### 1. Agent A: Antigravity (The Executor & QA)
 - **Role:** Handles UI implementation, frontend verification, and terminal commands.
 - **Workflow:** 
+  - **DoD Lock Protocol (MANDATORY):** Antigravity MUST generate an `implementation_plan.md` artifact that includes the full `DEFINITION_OF_DONE.md` checklist at the bottom. Antigravity is strictly FORBIDDEN from writing code or executing commands until the user explicitly approves this plan.
   - Builds components, runs `npm run build`, fixes type errors.
   - **Recording:** Generates recorded video demonstrations of completed ticket items on the `test` branch for CEO review.
 
