@@ -25,7 +25,8 @@ import {
     PenTool,
     Image as ImageIcon,
     Check,
-    MessageSquare
+    MessageSquare,
+    Send
 } from 'lucide-react';
 import WhiteboardModal from '../modals/WhiteboardModal';
 import TrainingPlanModal from '../modals/TrainingPlanModal';
@@ -205,6 +206,8 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
     const planIdParam = searchParams.get('plan_id');
     const imageInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
+    const coverPhotoInputRef = useRef<HTMLInputElement>(null);
+    const [uploadingCoverPhoto, setUploadingCoverPhoto] = useState(false);
 
     const [hubMode, setHubMode] = useState<'drills' | 'plans'>('drills');
     const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>(initialPlans);
@@ -599,6 +602,69 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
         }
     };
 
+    const handleCoverPhotoChange = async (file: File) => {
+        if (!selectedDrill) return;
+        setUploadingCoverPhoto(true);
+        try {
+            const ext = file.name.split('.').pop();
+            const fileName = `drill-cover-${selectedDrill.id}-${Date.now()}.${ext}`;
+            
+            const { error: uploadErr } = await supabase.storage.from('uploads').upload(fileName, file);
+            if (uploadErr) throw uploadErr;
+
+            const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(fileName);
+            
+            const { error: dbErr } = await supabase
+                .from('coach_drills')
+                .update({ thumbnail_url: publicUrl })
+                .eq('id', selectedDrill.id);
+            if (dbErr) throw dbErr;
+
+            const updatedDrill = { ...selectedDrill, thumbnail_url: publicUrl };
+            setSelectedDrill(updatedDrill);
+            setDrills(prevDrills => prevDrills.map(d => d.id === selectedDrill.id ? updatedDrill : d));
+            
+            alert('Cover photo updated successfully!');
+        } catch (e: any) {
+            console.error(e);
+            alert(`Failed to update cover photo: ${e.message}`);
+        } finally {
+            setUploadingCoverPhoto(false);
+        }
+    };
+
+    const handleTagToggle = async (category: 'age' | 'workout' | 'hockey', tag: string) => {
+        if (!selectedDrill) return;
+        
+        let age_tags = selectedDrill.age_tags || [];
+        let group_tags = selectedDrill.group_tags || [];
+        let skill_tags = selectedDrill.skill_tags || [];
+        
+        if (category === 'age') {
+            age_tags = age_tags.includes(tag) ? age_tags.filter(t => t !== tag) : [...age_tags, tag];
+        } else if (category === 'workout') {
+            group_tags = group_tags.includes(tag) ? group_tags.filter(t => t !== tag) : [...group_tags, tag];
+        } else if (category === 'hockey') {
+            skill_tags = skill_tags.includes(tag) ? skill_tags.filter(t => t !== tag) : [...skill_tags, tag];
+        }
+        
+        try {
+            const { error } = await supabase
+                .from('coach_drills')
+                .update({ age_tags, group_tags, skill_tags })
+                .eq('id', selectedDrill.id);
+            
+            if (error) throw error;
+            
+            const updatedDrill = { ...selectedDrill, age_tags, group_tags, skill_tags };
+            setSelectedDrill(updatedDrill);
+            setDrills(prevDrills => prevDrills.map(d => d.id === selectedDrill.id ? updatedDrill : d));
+        } catch (e: any) {
+            console.error(e);
+            alert(`Failed to update tags: ${e.message}`);
+        }
+    };
+
     // Helper to check array overlap
     const arrayOverlap = (drillTags: string[] | undefined | null, filterTags: string[]) => {
         if (filterTags.length === 0) return true;
@@ -712,7 +778,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                             </div>
                         )}
 
-                        {(!['coach', 'admin', 'sys-admin'].includes(userRole || '') && selectedDrill?.coach_id) && (
+                        {(!['coach', 'admin', 'sys-admin'].includes(userRole || '') && selectedDrill?.coach_id) ? (
                             <button 
                                 onClick={() => window.location.href = `/?tab=community&chatWith=${selectedDrill.coach_id}`}
                                 className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-[#28D160]/10 text-[#28D160] border border-[#28D160]/30 hover:bg-[#28D160]/20 shadow-[0_0_15px_rgba(40,209,96,0.15)] active:scale-95"
@@ -720,7 +786,15 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                 <MessageSquare size={12} className="sm:w-3.5 sm:h-3.5" />
                                 MESSAGE COACH
                             </button>
-                        )}
+                        ) : (['coach', 'admin', 'sys-admin'].includes(userRole || '')) ? (
+                            <button 
+                                onClick={() => window.location.href = `/?tab=community&shareDrillId=${selectedDrill.id}`}
+                                className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-[#0A84FF]/10 text-[#0A84FF] border border-[#0A84FF]/30 hover:bg-[#0A84FF]/20 shadow-[0_0_15px_rgba(10,132,255,0.15)] active:scale-95"
+                            >
+                                <Send size={12} className="sm:w-3.5 sm:h-3.5" />
+                                SEND TO ATHLETES
+                            </button>
+                        ) : null}
 
                         <button 
                             onClick={handleCloseDrill}
@@ -844,12 +918,170 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
 
                     {/* Right: Instruction Sidebar (Redesigned with Dark Blue-Grey Glassmorphism) */}
                     <div className="w-full lg:w-[400px] lg:min-w-[400px] bg-[#0B132B]/80 backdrop-blur-2xl p-6 sm:p-8 flex flex-col gap-6 border-t lg:border-t-0 lg:border-l border-white/10 overflow-y-auto no-scrollbar">
+                        {/* Cover Photo / Thumbnail Area */}
+                        <div className="space-y-2 animate-slideInRight">
+                            <span className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Cover Photo</span>
+                            <div 
+                                onClick={() => isEditing && coverPhotoInputRef.current?.click()}
+                                className={`relative aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black/40 group ${isEditing ? 'cursor-pointer hover:border-[#28D160]/50 transition-all' : ''}`}
+                            >
+                                <Image
+                                    src={selectedDrill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"}
+                                    fill
+                                    className="object-cover opacity-80"
+                                    alt="Drill cover"
+                                />
+                                {isEditing && (
+                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 text-white">
+                                        {uploadingCoverPhoto ? (
+                                            <>
+                                                <Loader2 className="animate-spin text-east-light" size={20} />
+                                                <span className="text-[9px] font-black uppercase tracking-widest">Uploading...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Upload size={20} className="text-east-light" />
+                                                <span className="text-[9px] font-black uppercase tracking-widest">Change Cover Photo</span>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            {isEditing && (
+                                <input 
+                                    type="file" 
+                                    ref={coverPhotoInputRef} 
+                                    className="hidden" 
+                                    accept="image/*" 
+                                    onChange={(e) => e.target.files?.[0] && handleCoverPhotoChange(e.target.files[0])} 
+                                />
+                            )}
+                        </div>
+
                         {/* Redesigned Drill-wide Details (mockup matching) */}
                         <div className="space-y-6 animate-slideInRight">
-                            <ActivityDescription text={selectedDrill.description} />
-                            <AccessoriesList accessories={selectedDrill.accessories} />
-                            <ActivityGoals drill={selectedDrill} />
+                            {isEditing ? (
+                                <div className="space-y-4">
+                                    <div className="space-y-1.5">
+                                        <span className="block text-[10px] font-black text-east-light uppercase tracking-[0.3em] italic opacity-85">Description</span>
+                                        <textarea
+                                            value={selectedDrill.description || ''}
+                                            onChange={async (e) => {
+                                                const desc = e.target.value;
+                                                const updatedDrill = { ...selectedDrill, description: desc };
+                                                setSelectedDrill(updatedDrill);
+                                                setDrills(prevDrills => prevDrills.map(d => d.id === selectedDrill.id ? updatedDrill : d));
+                                                await supabase.from('coach_drills').update({ description: desc }).eq('id', selectedDrill.id);
+                                            }}
+                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white font-medium italic outline-none focus:border-[#28D160] transition-all min-h-[80px]"
+                                            placeholder="Add drill description..."
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <span className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Accessories</span>
+                                        <input
+                                            type="text"
+                                            value={(selectedDrill.accessories || []).join(', ')}
+                                            onChange={async (e) => {
+                                                const accArr = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                                                const updatedDrill = { ...selectedDrill, accessories: accArr };
+                                                setSelectedDrill(updatedDrill);
+                                                setDrills(prevDrills => prevDrills.map(d => d.id === selectedDrill.id ? updatedDrill : d));
+                                                await supabase.from('coach_drills').update({ accessories: accArr }).eq('id', selectedDrill.id);
+                                            }}
+                                            className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white font-medium outline-none focus:border-[#28D160] transition-all"
+                                            placeholder="e.g. Cones, Goal, Pucks"
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <ActivityDescription text={selectedDrill.description} />
+                                    <AccessoriesList accessories={selectedDrill.accessories} />
+                                </>
+                            )}
+
+                            {isEditing ? (
+                                <div className="space-y-4 pt-2 border-t border-white/5">
+                                    <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Edit Tags</h3>
+                                    
+                                    {/* Ages Tags */}
+                                    <div className="space-y-1.5">
+                                        <span className="block text-[8px] font-black text-[#BF5AF2] uppercase tracking-[0.2em] italic">Ages</span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {AGE_TAGS.map(tag => {
+                                                const active = (selectedDrill.age_tags || []).includes(tag);
+                                                return (
+                                                    <button
+                                                        key={tag}
+                                                        type="button"
+                                                        onClick={() => handleTagToggle('age', tag)}
+                                                        className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider border transition-all ${
+                                                            active 
+                                                                ? 'bg-[#BF5AF2] text-white border-[#BF5AF2] shadow-[0_0_8px_rgba(191,90,242,0.3)]' 
+                                                                : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20'
+                                                        }`}
+                                                    >
+                                                        {tag}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Workouts Tags */}
+                                    <div className="space-y-1.5">
+                                        <span className="block text-[8px] font-black text-[#28D160] uppercase tracking-[0.2em] italic">Workouts</span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {WORKOUT_TAGS.map(tag => {
+                                                const active = (selectedDrill.group_tags || []).includes(tag);
+                                                return (
+                                                    <button
+                                                        key={tag}
+                                                        type="button"
+                                                        onClick={() => handleTagToggle('workout', tag)}
+                                                        className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider border transition-all ${
+                                                            active 
+                                                                ? 'bg-[#28D160] text-black border-[#28D160] shadow-[0_0_8px_rgba(40,209,96,0.3)]' 
+                                                                : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20'
+                                                        }`}
+                                                    >
+                                                        {tag}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Hockey Tags */}
+                                    <div className="space-y-1.5">
+                                        <span className="block text-[8px] font-black text-[#0A84FF] uppercase tracking-[0.2em] italic">Hockey</span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {HOCKEY_TAGS.map(tag => {
+                                                const active = (selectedDrill.skill_tags || []).includes(tag);
+                                                return (
+                                                    <button
+                                                        key={tag}
+                                                        type="button"
+                                                        onClick={() => handleTagToggle('hockey', tag)}
+                                                        className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider border transition-all ${
+                                                            active 
+                                                                ? 'bg-[#0A84FF] text-white border-[#0A84FF] shadow-[0_0_8px_rgba(10,132,255,0.3)]' 
+                                                                : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20'
+                                                        }`}
+                                                    >
+                                                        {tag}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <ActivityGoals drill={selectedDrill} />
+                            )}
                         </div>
+
 
                         {drillSteps.length > 0 && (
                             <div className="space-y-6 animate-slideInRight">
@@ -1075,7 +1307,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                         </h1>
                         
                         {!isSessionPlanMode && !selectedPlan && (
-                            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 ml-4">
+                            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 sm:ml-4">
                                 <button 
                                     onClick={() => setHubMode('drills')}
                                     className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${hubMode === 'drills' ? 'bg-east-light text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
@@ -1089,6 +1321,16 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                     Plans
                                 </button>
                             </div>
+                        )}
+
+                        {(!['coach', 'admin', 'sys-admin'].includes(userRole || '')) && (
+                            <button 
+                                onClick={() => window.location.href = '/?tab=community'}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-[#28D160]/10 text-[#28D160] border border-[#28D160]/30 rounded-xl hover:bg-[#28D160]/20 transition-all shadow-[0_0_15px_rgba(40,209,96,0.15)] active:scale-95 sm:ml-4"
+                            >
+                                <MessageSquare size={16} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Inbox</span>
+                            </button>
                         )}
                     </div>
                 </div>
@@ -1202,6 +1444,17 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
 
             {selectedPlan ? (
                 <div className="px-4 sm:px-6 space-y-4">
+                    {['coach', 'admin', 'sys-admin'].includes(userRole || '') && (
+                        <div className="flex justify-end mb-4">
+                            <button 
+                                onClick={() => window.location.href = `/?tab=community&sharePlanId=${selectedPlan.id}`}
+                                className="px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-[#0A84FF]/10 text-[#0A84FF] border border-[#0A84FF]/30 hover:bg-[#0A84FF]/20 shadow-[0_0_15px_rgba(10,132,255,0.15)] active:scale-95"
+                            >
+                                <Send size={12} className="sm:w-3.5 sm:h-3.5" />
+                                SEND TO ATHLETES
+                            </button>
+                        </div>
+                    )}
                     {loadingPlanDrills ? (
                         <div className="py-20 text-center animate-pulse text-[#28D160] font-black uppercase text-sm tracking-widest">
                             Loading Plan Drills...

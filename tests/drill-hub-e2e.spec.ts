@@ -410,20 +410,17 @@ test.describe('Drill Hub — Athlete Experience', () => {
         // Step view should open — header shows drill title
         await expect(page.locator('h1').filter({ hasText: /E2E Player Drill/i }).first()).toBeVisible({ timeout: 10000 });
 
-        // "Explore More Drills" back button should be visible
-        await expect(page.getByRole('button', { name: /EXPLORE MORE DRILLS/i })).toBeVisible({ timeout: 5000 });
+        // "Back" button should be visible in the top left
+        await expect(page.locator('button').filter({ hasText: /^Back$/i }).first()).toBeVisible({ timeout: 5000 });
     });
 
     test('Settings menu shows Drill Hub link for player', async ({ page }) => {
         await loginAs(page, player.email, player.password);
         await page.waitForTimeout(2000);
 
-        // Settings/gear icon lives in the AppHeader top-right area
-        const settingsBtn = page.locator('button[title="Settings"], button[aria-label="Settings"], header button').filter({ hasText: '' }).nth(1);
-        // Try by title attribute first (most reliable), then fall back to any gear-like button in header
-        const byTitle = page.locator('button[title="Settings"]').first();
-        const byHeader = page.locator('header, nav').locator('button').filter({ hasNot: page.locator('svg[data-testid]') }).last();
-        const settingsIcon = (await byTitle.count()) > 0 ? byTitle : byHeader;
+        // Navigate to profile tab (where settings button lives)
+        // The settings gear icon lives in the AppHeader top-right area
+        const settingsIcon = page.locator('[data-testid="settings-button"]').first();
         await expect(settingsIcon).toBeVisible({ timeout: 15000 });
         await settingsIcon.click();
 
@@ -564,5 +561,83 @@ test.describe('Drill Hub — ClassModal Training Plan Integration', () => {
 
         // Drill detail / step view should appear
         await expect(page.locator('h1').filter({ hasText: /E2E ClassModal Drill/i }).first()).toBeVisible({ timeout: 10000 });
+    });
+});
+
+// ─────────────────────────────────────────────
+// SUITE 5: Coach — Drill Hub Inline Editing
+// ─────────────────────────────────────────────
+test.describe('Drill Hub — Inline Cover Photo & Tag Editing', () => {
+    let coach: { id: string; email: string; password: string };
+    let drillId: string | null = null;
+
+    test.beforeEach(async () => {
+        coach = await createCoach();
+
+        // Seed a published drill for the coach
+        const { data: drill } = await supabase
+            .from('coach_drills')
+            .insert({
+                title: 'E2E Editable Drill',
+                coach_id: coach.id,
+                status: 'published',
+                skill_tags: ['stickhandling'],
+                age_tags: ['Beginner'],
+                group_tags: ['speed'],
+            })
+            .select('id')
+            .single();
+        drillId = drill?.id ?? null;
+
+        if (drillId) {
+            await supabase.from('coach_drill_steps').insert({
+                drill_id: drillId,
+                step_number: 1,
+                title: 'Editable Step 1',
+                instruction: 'Test instruction details here.',
+            });
+        }
+    });
+
+    test.afterEach(async () => {
+        if (drillId) {
+            await supabase.from('coach_drill_steps').delete().eq('drill_id', drillId);
+            await supabase.from('coach_drills').delete().eq('id', drillId);
+        }
+        await supabase.auth.admin.deleteUser(coach.id);
+    });
+
+    test('Coach can open a drill and toggle tags in Studio Mode', async ({ page }) => {
+        if (!drillId) test.skip();
+
+        await loginAs(page, coach.email, coach.password, 'coach');
+        await page.goto(`/drill-hub?drill_id=${drillId}`);
+        await page.waitForTimeout(3000);
+
+        // Details modal/view should be open
+        await expect(page.locator('h1').filter({ hasText: /E2E Editable Drill/i }).first()).toBeVisible({ timeout: 15000 });
+
+        // Click Edit Drill button to enter studio mode
+        const editBtn = page.getByRole('button', { name: /EDIT DRILL/i }).first();
+        await expect(editBtn).toBeVisible({ timeout: 10000 });
+        await editBtn.click();
+        await page.waitForTimeout(1000);
+
+        // Edit Tags section should be visible
+        await expect(page.locator('text=Edit Tags').first()).toBeVisible({ timeout: 5000 });
+
+        // Click a tag to toggle it (e.g. toggling U9 age tag)
+        const u9TagBtn = page.getByRole('button', { name: /^U9$/ }).first();
+        await expect(u9TagBtn).toBeVisible({ timeout: 5000 });
+        await u9TagBtn.click();
+        await page.waitForTimeout(1000);
+
+        // Verify U9 tag is now saved in the database
+        const { data: updatedDrill } = await supabase
+            .from('coach_drills')
+            .select('age_tags')
+            .eq('id', drillId)
+            .single();
+        expect(updatedDrill?.age_tags).toContain('U9');
     });
 });
