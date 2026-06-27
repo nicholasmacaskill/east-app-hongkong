@@ -109,7 +109,9 @@ export default defineConfig({
         'tests/training-plans.spec.ts',
         'tests/session-capacity.spec.ts',
         'tests/share-training-plan-logic.spec.ts',
-        'tests/share-training-plan-e2e.spec.ts'
+        'tests/share-training-plan-e2e.spec.ts',
+        'tests/appheader-buttons.spec.ts',
+        'tests/player-profile-search.spec.ts'
       ],
     },
 

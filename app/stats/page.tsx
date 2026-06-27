@@ -4,44 +4,11 @@ import { Trophy, Flame, Star, Shield, Users, ChevronLeft, Flag, Target, Activity
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
 import { useTracking } from '@/app/hooks/useTracking';
-
-// Field configurations matching CMS
-const STAT_FIELDS = {
-    GOLF: [
-        { key: 'handicap', label: 'Handicap' },
-        { key: 'longest_drive', label: 'Longest Drive' },
-        { key: 'closest_to_pin', label: 'Closest to Pin' },
-        { key: 'tournament_wins', label: 'Tournament Wins' },
-        { key: 'league_wins', label: 'League Wins' }
-    ],
-    HYROX: [
-        { key: 'run_1km', label: '1KM Run' },
-        { key: 'ski_erg_1000m', label: 'Ski Erg' },
-        { key: 'sled_push_50m', label: 'Sled Push' },
-        { key: 'sled_pull_50m', label: 'Sled Pull' },
-        { key: 'burpee_broad_jumps_80m', label: 'Burpees' },
-        { key: 'row_1000m', label: 'Row' },
-        { key: 'farmers_carry_200m', label: 'Farmers' },
-        { key: 'sandbag_lunges_100m', label: 'Lunges' },
-        { key: 'wall_balls_100', label: 'Wall Balls' }
-    ],
-    hockey: [
-        { key: 'react_targets', label: 'React Targets (mm:ss.ms)' },
-        { key: 'classic_targets', label: 'Classic Targets' },
-        { key: 'total_pucks_shot', label: 'Total Pucks Shot' }
-    ],
-    HOCKEY: [
-        { key: 'react_targets', label: 'React Targets (mm:ss.ms)' },
-        { key: 'classic_targets', label: 'Classic Targets' },
-        { key: 'total_pucks_shot', label: 'Total Pucks Shot' }
-    ],
-    EAGL: [
-        { key: 'score', label: 'League Score' }
-    ]
-};
+import { STAT_FIELDS, SportCategory } from '@/app/lib/statFields';
+import PlayerSearch from '@/app/components/PlayerSearch';
 
 export default function LeaderboardPage() {
-    const [sport, setSport] = useState<'HOCKEY' | 'GOLF' | 'HYROX' | 'EAGL'>('GOLF');
+    const [sport, setSport] = useState<SportCategory>('GOLF');
     const [activeFilter, setActiveFilter] = useState<string>('handicap');
     const [activeDivision, setActiveDivision] = useState<string>('All');
     const [activeSeason, setActiveSeason] = useState<number | 'All'>('All');
@@ -56,7 +23,7 @@ export default function LeaderboardPage() {
 
     useEffect(() => {
         // Set default filter when sport changes
-        const fields = STAT_FIELDS[sport as keyof typeof STAT_FIELDS] || [];
+        const fields = STAT_FIELDS[sport] || [];
         setActiveFilter(fields[0]?.key || '');
         setActiveDivision('All');
         if (sport === 'EAGL') {
@@ -286,6 +253,8 @@ export default function LeaderboardPage() {
                     <h1 className="text-[4rem] sm:text-[5.5rem] leading-none font-black italic text-stroke-thin text-transparent uppercase opacity-5 absolute top-4 left-1/2 -translate-x-1/2 select-none whitespace-nowrap tracking-tighter w-full">LEADERBOARD</h1>
                     <h1 className="text-4xl sm:text-5xl font-black italic uppercase relative z-10 text-white tracking-tight drop-shadow-2xl">Leaderboard</h1>
 
+                    <PlayerSearch className="mt-8" />
+
                     {/* SPORT SELECTOR */}
                     <div className="flex justify-center gap-2 sm:gap-3 mt-8 flex-wrap">
                         {[
@@ -368,7 +337,7 @@ export default function LeaderboardPage() {
 
                     {/* STAT CATEGORY FILTERS */}
                     <div className="flex justify-start sm:justify-center gap-2 mt-8 mb-10 overflow-x-auto no-scrollbar pb-4 px-2 -mx-4 sm:mx-0 flex-nowrap sm:flex-wrap">
-                        {(STAT_FIELDS[sport as keyof typeof STAT_FIELDS] || []).map(field => (
+                        {(STAT_FIELDS[sport] || []).map(field => (
                             <button
                                 key={field.key}
                                 onClick={() => setActiveFilter(field.key)}
@@ -410,9 +379,10 @@ export default function LeaderboardPage() {
                                 {/* Entries */}
                                 <div className="flex flex-col gap-3">
                                     {checkInEntries.map((entry, i) => (
-                                        <div
-                                            key={i}
-                                            className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${entry.id === currentUserId
+                                        <Link
+                                            key={entry.id || i}
+                                            href={entry.id ? `/profile/${entry.id}` : '#'}
+                                            className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden cursor-pointer ${entry.id === currentUserId
                                                 ? 'bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]'
                                                 : i === 0
                                                     ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
@@ -452,7 +422,7 @@ export default function LeaderboardPage() {
                                                     {entry.score}
                                                 </div>
                                             </div>
-                                        </div>
+                                        </Link>
                                     ))}
                                 </div>
                             </>
@@ -484,9 +454,10 @@ export default function LeaderboardPage() {
                                 {/* Entries */}
                                 <div className="flex flex-col gap-3">
                                     {entries.map((entry, i) => (
-                                        <div
-                                            key={i}
-                                            className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden ${entry.id === currentUserId
+                                        <Link
+                                            key={entry.id || i}
+                                            href={entry.id ? `/profile/${entry.id}` : '#'}
+                                            className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden cursor-pointer ${entry.id === currentUserId
                                                 ? 'bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]'
                                                 : i === 0
                                                     ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
@@ -526,7 +497,7 @@ export default function LeaderboardPage() {
                                                     {entry.score}
                                                 </div>
                                             </div>
-                                        </div>
+                                        </Link>
                                     ))}
 
                                     {/* Personal Stats Section (if not in top 100) */}
@@ -538,7 +509,10 @@ export default function LeaderboardPage() {
                                                 <div className="flex-1 h-px bg-white/10" />
                                             </div>
 
-                                            <div className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]`}>
+                                            <Link
+                                                href={currentUserStats.id ? `/profile/${currentUserStats.id}` : '#'}
+                                                className="group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)] cursor-pointer"
+                                            >
                                                 {/* Rank */}
                                                 <div className={`w-8 font-black italic text-2xl text-[#28D160] group-hover:text-[#28D160] transition-colors`}>
                                                     {currentUserStats.rank}
@@ -570,7 +544,7 @@ export default function LeaderboardPage() {
                                                         {currentUserStats.score}
                                                     </div>
                                                 </div>
-                                            </div>
+                                            </Link>
                                         </>
                                     )}
                                 </div>

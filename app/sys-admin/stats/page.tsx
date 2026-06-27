@@ -4,60 +4,10 @@ import { supabase } from '@/app/lib/supabase';
 import { Search, Save, CheckCircle } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
 import { formatHK } from '@/app/lib/dateUtils';
-
-// Field configurations for each sport — synced with PlayerProfile.tsx display
-const STAT_FIELDS: Record<string, any[]> = {
-    GOLF: [
-        { key: 'handicap', label: 'Handicap', type: 'number', unit: '' },
-        { key: 'longest_drive', label: 'Longest Drive', type: 'number', unit: 'yds' },
-        { key: 'closest_to_pin', label: 'Closest to Pin', type: 'number', unit: 'ft' },
-        { key: 'tournament_wins', label: 'Tournament Wins', type: 'number', unit: '' },
-        { key: 'league_wins', label: 'League Wins', type: 'number', unit: '' }
-    ],
-    HYROX: [
-        { key: 'run_1km', label: '1KM Run Time', type: 'time', unit: 'mm:ss' },
-        { key: 'ski_erg_1000m', label: 'Ski Erg: 1,000m', type: 'time', unit: 'mm:ss' },
-        { key: 'sled_push_50m', label: 'Sled Push: 50m', type: 'time', unit: 'mm:ss' },
-        { key: 'sled_pull_50m', label: 'Sled Pull: 50m', type: 'time', unit: 'mm:ss' },
-        { key: 'burpee_broad_jumps_80m', label: 'Burpee Broad Jumps: 80m', type: 'time', unit: 'mm:ss' },
-        { key: 'row_1000m', label: 'Row: 1,000m', type: 'time', unit: 'mm:ss' },
-        { key: 'farmers_carry_200m', label: "Farmer's Carry: 200m", type: 'time', unit: 'mm:ss' },
-        { key: 'sandbag_lunges_100m', label: 'Sandbag Lunges: 100m', type: 'time', unit: 'mm:ss' },
-        { key: 'wall_balls_100', label: 'Wall Balls: 100 reps', type: 'time', unit: 'mm:ss' }
-    ],
-    HOCKEY: [
-        { key: 'react_targets', label: 'React Targets', type: 'time-ms', unit: 'mm:ss.ms' },
-        { key: 'classic_targets', label: 'Classic Targets', type: 'number', unit: '' },
-        { key: 'total_pucks_shot', label: 'Total Pucks Shot', type: 'number', unit: '' }
-    ],
-    EAGL: [
-        { 
-            key: 'season', 
-            label: 'Season', 
-            type: 'dropdown', 
-            options: ['1', '2', '3', '4', '5'],
-            unit: '' 
-        },
-        { 
-            key: 'division', 
-            label: 'Division', 
-            type: 'dropdown', 
-            options: ['Pro Men', 'Rec Men', 'Pro Women', 'Rec Women', 'Doubles Men', 'Doubles Women', 'Mixed Doubles', 'Parent - Child'],
-            unit: '' 
-        },
-        { 
-            key: 'week', 
-            label: 'Week', 
-            type: 'dropdown', 
-            options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
-            unit: '' 
-        },
-        { key: 'score', label: 'Score', type: 'number', unit: '' }
-    ]
-};
+import { STAT_FIELDS, SportCategory } from '@/app/lib/statFields';
 
 export default function StatsManagementPage() {
-    const [selectedSport, setSelectedSport] = useState<string>('GOLF');
+    const [selectedSport, setSelectedSport] = useState<SportCategory>('GOLF');
     const [players, setPlayers] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
@@ -96,7 +46,7 @@ export default function StatsManagementPage() {
                 setStats(data.stats);
             } else {
                 // Initialize empty stats for this sport
-                const fields = STAT_FIELDS[selectedSport as keyof typeof STAT_FIELDS] || [];
+                const fields = STAT_FIELDS[selectedSport] || [];
                 const emptyStats: Record<string, any> = {};
                 fields.forEach((field: any) => {
                     emptyStats[field.key] = field.type === 'number' ? 0 : '';
@@ -123,7 +73,7 @@ export default function StatsManagementPage() {
         if (!selectedPlayer) return;
 
         // Validate all time fields
-        const fields = STAT_FIELDS[selectedSport as keyof typeof STAT_FIELDS] || [];
+        const fields = STAT_FIELDS[selectedSport] || [];
         const timeFields = fields.filter((f: any) => f.type === 'time' || f.type === 'time-ms');
         for (const field of timeFields) {
             const value = stats[field.key];
@@ -257,7 +207,7 @@ export default function StatsManagementPage() {
 
                             {/* Dynamic Fields */}
                             <div className="grid grid-cols-2 gap-4 mb-8 max-h-[500px] overflow-y-auto pr-2">
-                                {(STAT_FIELDS[selectedSport as keyof typeof STAT_FIELDS] || []).map((field: any) => (
+                                {(STAT_FIELDS[selectedSport] || []).map((field: any) => (
                                     <div key={field.key} className={field.key === 'course_name' ? 'col-span-2' : ''}>
                                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">
                                             {field.label} {field.unit && `(${field.unit})`}

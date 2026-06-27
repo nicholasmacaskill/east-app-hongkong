@@ -4,45 +4,7 @@ import { Edit2, Activity, Award, Camera, Coins } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '../ui/Toast';
 import { compressImage } from '@/app/lib/image-utils';
-
-// Simple Card Wrapper
-const Card = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
-  <div className={`bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 overflow-hidden shadow-2xl ${className}`}>
-    {children}
-  </div>
-);
-
-const STAT_FIELDS: Record<string, any[]> = {
-  GOLF: [
-    { key: 'handicap', label: 'Handicap', type: 'number', unit: '' },
-    { key: 'longest_drive', label: 'Longest Drive', type: 'number', unit: 'yds' },
-    { key: 'closest_to_pin', label: 'Closest to Pin', type: 'number', unit: 'ft' },
-    { key: 'tournament_wins', label: 'Tournament Wins', type: 'number', unit: '' },
-    { key: 'league_wins', label: 'League Wins', type: 'number', unit: '' }
-  ],
-  HYROX: [
-    { key: 'run_1km', label: '1KM Run Time', type: 'time', unit: 'mm:ss' },
-    { key: 'ski_erg_1000m', label: 'Ski Erg: 1,000m', type: 'time', unit: 'mm:ss' },
-    { key: 'sled_push_50m', label: 'Sled Push: 50m', type: 'time', unit: 'mm:ss' },
-    { key: 'sled_pull_50m', label: 'Sled Pull: 50m', type: 'time', unit: 'mm:ss' },
-    { key: 'burpee_broad_jumps_80m', label: 'Burpee Broad Jumps: 80m', type: 'time', unit: 'mm:ss' },
-    { key: 'row_1000m', label: 'Row: 1,000m', type: 'time', unit: 'mm:ss' },
-    { key: 'farmers_carry_200m', label: 'Farmer\'s Carry: 200m', type: 'time', unit: 'mm:ss' },
-    { key: 'sandbag_lunges_100m', label: 'Sandbag Lunges: 100m', type: 'time', unit: 'mm:ss' },
-    { key: 'wall_balls_100', label: 'Wall Balls: 100 reps', type: 'time', unit: 'mm:ss' }
-  ],
-  HOCKEY: [
-    { key: 'react_targets', label: 'React Targets', type: 'time', unit: 'mm:ss.ms' },
-    { key: 'classic_targets', label: 'Classic Targets', type: 'number', unit: '' },
-    { key: 'total_pucks_shot', label: 'Total Pucks Shot', type: 'number', unit: '' }
-  ],
-  EAGL: [
-    { key: 'season', label: 'Season', type: 'number', unit: '' },
-    { key: 'division', label: 'Division', type: 'text', unit: '' },
-    { key: 'week', label: 'Week', type: 'number', unit: '' },
-    { key: 'score', label: 'Score', type: 'number', unit: '' }
-  ]
-};
+import { STAT_FIELDS, SPORT_CATEGORIES } from '@/app/lib/statFields';
 
 type PlayerStats = Record<string, any>;
 
@@ -304,8 +266,8 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
           {/* PERFORMANCE AREA */}
           <div className="w-full mt-4">
             <div className="flex flex-col gap-10 animate-fadeIn">
-              {Object.keys(STAT_FIELDS).some(cat => categoryStats[cat] && Object.keys(categoryStats[cat]).filter(k => categoryStats[cat][k] !== '' && categoryStats[cat][k] !== null).length > 0) ? (
-                Object.keys(STAT_FIELDS).map((cat) => {
+              {SPORT_CATEGORIES.some(cat => categoryStats[cat] && Object.keys(categoryStats[cat]).filter(k => categoryStats[cat][k] !== '' && categoryStats[cat][k] !== null).length > 0) ? (
+                SPORT_CATEGORIES.map((cat) => {
                   const stats = categoryStats[cat];
                   if (!stats || Object.keys(stats).filter(k => stats[k] !== '' && stats[k] !== null).length === 0) return null;
 
