@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { fetchSessions } from '@/app/services/dataFetcher';
 import { Session } from '@/app/types';
-import { Plus } from 'lucide-react';
+import { Plus, Trophy, Search } from 'lucide-react';
 import { useToast } from '../ui/Toast';
 import Link from 'next/link';
 import AppHeader from '../AppHeader';
@@ -329,6 +329,21 @@ export default function HomeScreen({
             </Link>
           </div>
         )}
+
+        <Link
+          href="/stats"
+          data-testid="home-leaderboard-search-card"
+          className="flex items-center gap-4 p-4 rounded-2xl border-2 border-[#28D160]/50 bg-[#28D160]/10 hover:bg-[#28D160]/20 transition-colors shadow-[0_0_24px_rgba(40,209,96,0.15)]"
+        >
+          <div className="w-12 h-12 rounded-xl bg-[#28D160]/20 border border-[#28D160]/40 flex items-center justify-center shrink-0">
+            <Trophy size={22} className="text-[#28D160]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-montserrat font-black italic text-sm text-white uppercase tracking-tight">Leaderboard & Player Search</p>
+            <p className="font-opensans text-[10px] text-gray-400 mt-1">Search athletes and view personal stats</p>
+          </div>
+          <Search size={18} className="text-[#28D160] shrink-0" />
+        </Link>
 
         {/* Breaking News */}
         <div>
