@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Edit2, Activity, Award, Camera, Coins } from 'lucide-react';
+import { Edit2, Activity, Award, Camera, Coins, Trophy } from 'lucide-react';
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '../ui/Toast';
 import { compressImage } from '@/app/lib/image-utils';
-import { STAT_FIELDS, SPORT_CATEGORIES } from '@/app/lib/statFields';
+import Link from 'next/link';
+import { STAT_FIELDS, SPORT_CATEGORIES, normalizeCategory } from '@/app/lib/statFields';
 
 type PlayerStats = Record<string, any>;
 
@@ -40,7 +41,9 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
         if (psData && psData.length > 0) {
           const statsMap: Record<string, any> = {};
           psData.forEach(row => {
-            statsMap[row.category] = row.stats || row;
+            const category = normalizeCategory(row.category) || row.category?.toUpperCase();
+            if (!category) return;
+            statsMap[category] = row.stats || row;
           });
           setCategoryStats(statsMap);
         } else {
@@ -265,6 +268,14 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
           {/* PERFORMANCE AREA */}
           <div className="w-full mt-4">
+            <Link
+              href="/stats"
+              data-testid="leaderboard-search-link"
+              className="mb-6 flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-white/10 bg-white/5 hover:border-[#28D160]/50 hover:bg-[#28D160]/10 transition-colors"
+            >
+              <Trophy size={16} className="text-[#28D160]" />
+              <span className="font-black italic text-[10px] text-white uppercase tracking-widest">Search Players & Leaderboard</span>
+            </Link>
             <div className="flex flex-col gap-10 animate-fadeIn">
               {SPORT_CATEGORIES.some(cat => categoryStats[cat] && Object.keys(categoryStats[cat]).filter(k => categoryStats[cat][k] !== '' && categoryStats[cat][k] !== null).length > 0) ? (
                 SPORT_CATEGORIES.map((cat) => {
