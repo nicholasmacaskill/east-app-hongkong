@@ -65,12 +65,14 @@ export default function PublicPlayerProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-black">
-            <PlayerProfile
-                onOpenSettings={() => { }} // No-op for public view
-                profileData={profileData}
-                isReadOnly={true}
-            />
+        <div className="min-h-screen bg-black text-white font-opensans select-none">
+            <div className="max-w-md mx-auto bg-black min-h-screen relative border-x border-gray-900 shadow-2xl">
+                <PlayerProfile
+                    onOpenSettings={() => { }}
+                    profileData={profileData}
+                    isReadOnly={true}
+                />
+            </div>
         </div>
     );
 }

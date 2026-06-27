@@ -73,7 +73,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
 
   return (
     <div className="min-h-screen bg-black text-white font-opensans select-none">
-      <div className="mx-auto bg-black min-h-screen relative border-x border-gray-900 shadow-2xl">
+      <div className="max-w-md mx-auto bg-black min-h-screen relative border-x border-gray-900 shadow-2xl">
         <Link
           href="/stats"
           className="absolute top-6 left-4 z-50 p-2 bg-black/50 rounded-full text-white hover:bg-[#28D160] hover:text-black transition-colors backdrop-blur-md"
