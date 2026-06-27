@@ -253,7 +253,12 @@ export default function LeaderboardPage() {
                     <h1 className="text-[4rem] sm:text-[5.5rem] leading-none font-black italic text-stroke-thin text-transparent uppercase opacity-5 absolute top-4 left-1/2 -translate-x-1/2 select-none whitespace-nowrap tracking-tighter w-full">LEADERBOARD</h1>
                     <h1 className="text-4xl sm:text-5xl font-black italic uppercase relative z-10 text-white tracking-tight drop-shadow-2xl">Leaderboard</h1>
 
-                    <PlayerSearch className="mt-8" />
+                    <div className="mt-8 px-2">
+                        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#28D160] mb-3 text-center">
+                            Search Players
+                        </p>
+                        <PlayerSearch />
+                    </div>
 
                     {/* SPORT SELECTOR */}
                     <div className="flex justify-center gap-2 sm:gap-3 mt-8 flex-wrap">

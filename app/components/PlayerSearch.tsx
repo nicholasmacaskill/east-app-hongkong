@@ -87,7 +87,7 @@ export default function PlayerSearch({
         onBlur={() => setTimeout(() => setIsOpen(false), 150)}
         placeholder={placeholder}
         data-testid="player-search-input"
-        className="w-full bg-black/60 border border-white/10 rounded-full py-3.5 pl-12 pr-4 text-white font-black italic text-xs uppercase tracking-widest placeholder:text-gray-600 focus:outline-none focus:border-east-light transition-colors"
+        className="w-full bg-[#111] border-2 border-[#28D160]/40 rounded-full py-4 pl-12 pr-4 text-white font-black italic text-xs uppercase tracking-widest placeholder:text-gray-500 focus:outline-none focus:border-[#28D160] focus:shadow-[0_0_20px_rgba(40,209,96,0.25)] transition-colors"
       />
 
       {showDropdown && (
