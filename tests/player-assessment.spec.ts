@@ -234,4 +234,31 @@ test.describe('Private Player Assessments', () => {
         await expect(page.getByText('Coach Notes')).toBeVisible();
         await expect(page.getByText('Quick release is improving.')).toBeVisible();
     });
+
+    test('Player: can view assessments from Settings menu', async ({ page }) => {
+        const { data: assessment, error: assessmentError } = await supabase
+            .from('player_assessments')
+            .insert({
+                coach_id: coach.id,
+                player_id: player.id,
+                title: 'Edge Work Breakdown',
+                notes: 'Inside edges need more depth on crossovers.',
+            })
+            .select()
+            .single();
+        if (assessmentError) throw assessmentError;
+
+        await loginPlayer(page, player.email, player.password);
+
+        await page.locator('[data-testid="settings-button"]').first().click();
+        await expect(page.getByTestId('menu-item-assessments')).toBeVisible();
+        await page.getByTestId('menu-item-assessments').click();
+
+        await expect(page.getByText('My Assessments')).toBeVisible();
+        await expect(page.getByText('Edge Work Breakdown')).toBeVisible();
+        await page.getByText('Edge Work Breakdown').click();
+
+        await expect(page.getByText('Coach Notes')).toBeVisible();
+        await expect(page.getByText('Inside edges need more depth on crossovers.')).toBeVisible();
+    });
 });

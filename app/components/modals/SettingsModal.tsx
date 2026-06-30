@@ -5,8 +5,9 @@ import { supabase } from '@/app/lib/supabase';
 import {
     X, ChevronLeft, ChevronRight, Edit2, ToggleLeft, ToggleRight,
     User as UserIcon, Bell, CreditCard, FileText, HelpCircle, Shield, LogOut, UserCog,
-    ChevronDown, Save, Camera, Target
+    ChevronDown, Save, Camera, Target, ClipboardCheck
 } from 'lucide-react';
+import PlayerAssessmentsScreen from '@/app/components/modals/PlayerAssessmentsScreen';
 import { useToast } from '@/app/components/ui/Toast';
 import { compressImage } from '@/app/lib/image-utils';
 
@@ -276,10 +277,19 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
     onShowHistory: () => void
 }) {
     const router = useRouter();
-    const [view, setView] = useState<'menu' | 'edit'>('menu');
+    const [view, setView] = useState<'menu' | 'edit' | 'assessments'>('menu');
     const { addToast } = useToast();
+    const isPlayer = profileData.role === 'player';
 
     if (view === 'edit') return <EditProfileScreen onBack={() => setView('menu')} profileData={profileData} setProfileData={setProfileData} onSave={onSave} />;
+
+    if (view === 'assessments') {
+        return (
+            <SettingsContainer>
+                <PlayerAssessmentsScreen onBack={() => setView('menu')} />
+            </SettingsContainer>
+        );
+    }
 
     return (
         <SettingsContainer>
@@ -305,6 +315,14 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
                 <SettingsMenuItem icon={Shield} label="Privacy Policy" onClick={() => router.push('/privacy')} />
                 <SettingsMenuItem icon={FileText} label="Terms & conditions" onClick={() => router.push('/terms')} />
                 <SettingsSectionTitle title="Training" />
+                {isPlayer && (
+                    <SettingsMenuItem
+                        icon={ClipboardCheck}
+                        label="My Assessments"
+                        onClick={() => setView('assessments')}
+                        testId="menu-item-assessments"
+                    />
+                )}
                 <SettingsMenuItem icon={Target} label="Drill Hub" onClick={() => { onClose(); router.push('/drill-hub'); }} />
                 <div className="mt-12 px-2">
                     <button onClick={onLogout} className="flex items-center gap-4 w-full py-4 text-red-500 hover:bg-red-500/10 transition-colors rounded-lg px-4">
