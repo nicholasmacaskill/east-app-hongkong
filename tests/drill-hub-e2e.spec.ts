@@ -640,4 +640,21 @@ test.describe('Drill Hub — Inline Cover Photo & Tag Editing', () => {
             .single();
         expect(updatedDrill?.age_tags).toContain('U9');
     });
+
+    test('Cover Photo hidden when step already has a diagram image', async ({ page }) => {
+        if (!drillId) test.skip();
+
+        const diagramUrl = 'https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800';
+        await supabase.from('coach_drill_steps').update({ diagram_url: diagramUrl }).eq('drill_id', drillId);
+        await supabase.from('coach_drills').update({ thumbnail_url: diagramUrl }).eq('id', drillId);
+
+        await loginAs(page, coach.email, coach.password, 'coach');
+        await page.goto(`/drill-hub?drill_id=${drillId}`);
+        await expect(page.locator('h1').filter({ hasText: /E2E Editable Drill/i }).first()).toBeVisible({ timeout: 15000 });
+
+        await expect(page.getByText('Cover Photo', { exact: true })).toHaveCount(0);
+
+        await page.getByRole('button', { name: /EDIT DRILL/i }).first().click();
+        await expect(page.getByText('Cover Photo', { exact: true })).toBeVisible({ timeout: 5000 });
+    });
 });

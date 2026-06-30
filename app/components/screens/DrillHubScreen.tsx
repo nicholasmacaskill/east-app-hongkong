@@ -685,6 +685,9 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
 
     if (selectedDrill) {
         const currentStep = drillSteps[currentStepIndex];
+        const hasStepVisuals = drillSteps.some((s) => !!(s.diagram_url || s.tactical_data));
+        // Cover photo is for library cards — hide when step carousel already shows the photo
+        const showCoverPhotoSection = isEditing || !hasStepVisuals;
         return (
             <div className="min-h-screen bg-[#050505] text-white animate-fadeIn font-montserrat select-none overflow-hidden relative flex flex-col">
                 <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
@@ -918,7 +921,8 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
 
                     {/* Right: Instruction Sidebar (Redesigned with Dark Blue-Grey Glassmorphism) */}
                     <div className="w-full lg:w-[400px] lg:min-w-[400px] bg-[#0B132B]/80 backdrop-blur-2xl p-6 sm:p-8 flex flex-col gap-6 border-t lg:border-t-0 lg:border-l border-white/10 overflow-y-auto no-scrollbar">
-                        {/* Cover Photo / Thumbnail Area */}
+                        {/* Cover Photo — library thumbnail; hidden when step visuals already shown */}
+                        {showCoverPhotoSection && (
                         <div className="space-y-2 animate-slideInRight">
                             <span className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Cover Photo</span>
                             <div 
@@ -957,6 +961,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                 />
                             )}
                         </div>
+                        )}
 
                         {/* Redesigned Drill-wide Details (mockup matching) */}
                         <div className="space-y-6 animate-slideInRight">
