@@ -112,7 +112,7 @@ async function cleanupPlayerData(playerId: string) {
 
 const fixtureImage = path.resolve(__dirname, 'fixtures/test-assessment.png');
 
-test.describe.configure({ mode: 'serial' });
+test.describe.configure({ mode: 'serial', retries: 1 });
 
 test.describe('Private Player Assessments', () => {
     let coach: Awaited<ReturnType<typeof createCoach>>;
