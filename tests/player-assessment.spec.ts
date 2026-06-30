@@ -63,35 +63,77 @@ async function loginCoach(page: import('@playwright/test').Page, email: string, 
     await page.waitForFunction(() => document.body.innerText.includes('EAST COACH'), { timeout: 20000 });
 }
 
-async function loginPlayer(page: import('@playwright/test').Page, email: string, password: string) {
+async function logout(page: import('@playwright/test').Page) {
     await page.goto(`${baseURL}/login`);
+    await page.waitForLoadState('domcontentloaded');
+    await page.evaluate(() => {
+        localStorage.clear();
+        sessionStorage.clear();
+    });
+}
+
+async function loginPlayer(page: import('@playwright/test').Page, email: string, password: string) {
+    await logout(page);
     await page.fill('input[type="email"]', email);
     await page.fill('input[type="password"]', password);
     await page.click('button[type="submit"]');
     await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 20000 });
 }
 
+async function getAccessToken(
+    request: import('@playwright/test').APIRequestContext,
+    email: string,
+    password: string
+) {
+    const loginRes = await request.post(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        headers: {
+            apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            'Content-Type': 'application/json',
+        },
+        data: { email, password },
+    });
+    expect(loginRes.ok()).toBeTruthy();
+    const { access_token } = await loginRes.json();
+    return access_token as string;
+}
+
+async function cleanupPlayerData(playerId: string) {
+    await supabase.from('messages').delete().eq('receiver_id', playerId);
+    const { data: assessments } = await supabase
+        .from('player_assessments')
+        .select('id')
+        .eq('player_id', playerId);
+    const ids = assessments?.map((r) => r.id) || [];
+    if (ids.length) {
+        await supabase.from('player_assessment_media').delete().in('assessment_id', ids);
+    }
+    await supabase.from('player_assessments').delete().eq('player_id', playerId);
+}
+
+const fixtureImage = path.resolve(__dirname, 'fixtures/test-assessment.png');
+
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Private Player Assessments', () => {
     let coach: Awaited<ReturnType<typeof createCoach>>;
     let player: Awaited<ReturnType<typeof createPlayer>>;
+    let otherPlayer: Awaited<ReturnType<typeof createPlayer>>;
     const testSuffix = Date.now();
 
     test.beforeAll(async () => {
         coach = await createCoach(testSuffix);
         player = await createPlayer(testSuffix);
+        otherPlayer = await createPlayer(testSuffix + 1);
     });
 
     test.afterAll(async () => {
         if (player?.id) {
-            await supabase.from('messages').delete().eq('receiver_id', player.id);
-            await supabase.from('player_assessment_media').delete().in(
-                'assessment_id',
-                (await supabase.from('player_assessments').select('id').eq('player_id', player.id)).data?.map((r) => r.id) || []
-            );
-            await supabase.from('player_assessments').delete().eq('player_id', player.id);
+            await cleanupPlayerData(player.id);
             await supabase.auth.admin.deleteUser(player.id);
+        }
+        if (otherPlayer?.id) {
+            await cleanupPlayerData(otherPlayer.id);
+            await supabase.auth.admin.deleteUser(otherPlayer.id);
         }
         if (coach?.id) {
             await supabase.auth.admin.deleteUser(coach.id);
@@ -155,20 +197,7 @@ test.describe('Private Player Assessments', () => {
             sort_order: 0,
         });
 
-        async function getToken(email: string, password: string) {
-            const loginRes = await request.post(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-                headers: {
-                    apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-                    'Content-Type': 'application/json',
-                },
-                data: { email, password },
-            });
-            expect(loginRes.ok()).toBeTruthy();
-            const { access_token } = await loginRes.json();
-            return access_token as string;
-        }
-
-        const playerToken = await getToken(player.email, player.password);
+        const playerToken = await getAccessToken(request, player.email, player.password);
         const listRes = await request.get(`${baseURL}/api/player/assessments`, {
             headers: { Authorization: `Bearer ${playerToken}` },
         });
@@ -191,7 +220,7 @@ test.describe('Private Player Assessments', () => {
         expect(item.created_at).toBeTruthy();
         expect(typeof item.notes).toBe('string');
 
-        const coachToken = await getToken(coach.email, coach.password);
+        const coachToken = await getAccessToken(request, coach.email, coach.password);
         const forbiddenRes = await request.get(`${baseURL}/api/player/assessments`, {
             headers: { Authorization: `Bearer ${coachToken}` },
         });
@@ -206,6 +235,134 @@ test.describe('Private Player Assessments', () => {
         expect(single.title).toBe('API List Test Assessment');
         expect(Array.isArray(single.media)).toBeTruthy();
         expect(single.media.length).toBe(1);
+    });
+
+    test('API: rejects unauthenticated and cross-player access', async ({ request }) => {
+        const coachToken = await getAccessToken(request, coach.email, coach.password);
+        const createRes = await request.post(`${baseURL}/api/coach/assessments`, {
+            headers: {
+                Authorization: `Bearer ${coachToken}`,
+                'Content-Type': 'application/json',
+            },
+            data: {
+                playerId: player.id,
+                title: 'Privacy Boundary Test',
+                notes: 'Only the assigned player should read this.',
+                media: [],
+                sendToPlayer: false,
+            },
+        });
+        expect(createRes.ok()).toBeTruthy();
+        const created = await createRes.json();
+
+        const unauthList = await request.get(`${baseURL}/api/player/assessments`);
+        expect(unauthList.status()).toBe(401);
+
+        const unauthSingle = await request.get(`${baseURL}/api/player/assessments?assessmentId=${created.id}`);
+        expect(unauthSingle.status()).toBe(401);
+
+        const otherToken = await getAccessToken(request, otherPlayer.email, otherPlayer.password);
+        const forbiddenSingle = await request.get(`${baseURL}/api/player/assessments?assessmentId=${created.id}`, {
+            headers: { Authorization: `Bearer ${otherToken}` },
+        });
+        expect(forbiddenSingle.status()).toBe(403);
+
+        const otherListRes = await request.get(`${baseURL}/api/player/assessments`, {
+            headers: { Authorization: `Bearer ${otherToken}` },
+        });
+        expect(otherListRes.ok()).toBeTruthy();
+        const otherList = await otherListRes.json();
+        expect(otherList.find((a: { id: string }) => a.id === created.id)).toBeFalsy();
+    });
+
+    test('API: JWT-only round trip without service role reads', async ({ request }) => {
+        const coachToken = await getAccessToken(request, coach.email, coach.password);
+        const title = `JWT Round Trip ${testSuffix}`;
+
+        const createRes = await request.post(`${baseURL}/api/coach/assessments`, {
+            headers: {
+                Authorization: `Bearer ${coachToken}`,
+                'Content-Type': 'application/json',
+            },
+            data: {
+                playerId: player.id,
+                title,
+                notes: 'Created and read using player JWT only.',
+                media: [],
+                sendToPlayer: true,
+            },
+        });
+        expect(createRes.ok()).toBeTruthy();
+        const created = await createRes.json();
+
+        const playerToken = await getAccessToken(request, player.email, player.password);
+        const listRes = await request.get(`${baseURL}/api/player/assessments`, {
+            headers: { Authorization: `Bearer ${playerToken}` },
+        });
+        expect(listRes.ok()).toBeTruthy();
+        const list = await listRes.json();
+        const listed = list.find((a: { id: string }) => a.id === created.id);
+        expect(listed).toBeTruthy();
+        expect(listed.title).toBe(title);
+
+        const singleRes = await request.get(`${baseURL}/api/player/assessments?assessmentId=${created.id}`, {
+            headers: { Authorization: `Bearer ${playerToken}` },
+        });
+        expect(singleRes.ok()).toBeTruthy();
+        const single = await singleRes.json();
+        expect(single.notes).toBe('Created and read using player JWT only.');
+        expect(single.player_id).toBe(player.id);
+    });
+
+    test('E2E: coach sends assessment via Drill Hub UI with image upload', async ({ page }) => {
+        test.setTimeout(180000);
+        const title = `Drill Hub UI Send ${testSuffix}`;
+        const notes = 'Full UI flow with compressed image upload.';
+
+        await loginCoach(page, coach.email, coach.password);
+        await page.getByRole('button', { name: 'Drill Hub', exact: true }).first().click();
+        await page.getByRole('button', { name: /Player Assessment/i }).click();
+
+        await page.locator('select').selectOption(player.id);
+        await page.getByPlaceholder('e.g. Skating stride review').fill(title);
+        await page.getByPlaceholder('Coaching feedback, strengths, areas to improve...').fill(notes);
+        await page.locator('input[type="file"]').setInputFiles(fixtureImage);
+        await expect(page.locator('img[alt=""]').first()).toBeVisible({ timeout: 10000 });
+
+        const createResponse = page.waitForResponse(
+            (res) => res.url().includes('/api/coach/assessments') && res.request().method() === 'POST'
+        );
+        await page.getByRole('button', { name: 'Send Assessment to Player' }).click();
+        const response = await createResponse;
+        expect(response.ok()).toBeTruthy();
+
+        await expect(page.getByRole('button', { name: 'Send Assessment to Player' })).not.toBeVisible({ timeout: 30000 });
+
+        await logout(page);
+        await page.fill('input[type="email"]', player.email);
+        await page.fill('input[type="password"]', player.password);
+        await page.click('button[type="submit"]');
+        await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 20000 });
+
+        await page.goto(`${baseURL}/?tab=community&chatWith=${coach.id}`);
+        const assessmentCard = page.locator('div.cursor-pointer')
+            .filter({ hasText: 'Private Assessment' })
+            .filter({ hasText: title })
+            .first();
+        await expect(assessmentCard).toBeVisible({ timeout: 15000 });
+        await assessmentCard.click();
+        await expect(page.getByText(notes)).toBeVisible();
+        await expect(page.getByText('Media')).toBeVisible();
+        await expect(page.locator('img[alt=""]').first()).toBeVisible({ timeout: 10000 });
+
+        await page.goto(`${baseURL}/`);
+        await expect(page.locator('[data-testid="settings-button"]').first()).toBeVisible({ timeout: 15000 });
+        await page.locator('[data-testid="settings-button"]').first().click();
+        await page.getByTestId('menu-item-assessments').click();
+        await expect(page.getByText(title)).toBeVisible();
+        await page.getByText(title).click();
+        await expect(page.getByText('Coach Notes')).toBeVisible();
+        await expect(page.getByText(notes)).toBeVisible();
     });
 
     test('Drill Hub: shows Player Assessment button and opens modal', async ({ page }) => {
