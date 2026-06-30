@@ -8,7 +8,15 @@ export interface StatField {
   options?: string[];
 }
 
-export type SportCategory = 'GOLF' | 'HYROX' | 'HOCKEY' | 'EAGL';
+export type SportCategory = 'GOLF' | 'HYROX' | 'HOCKEY' | 'EAGL' | 'FITNESS_TEST';
+
+export const CATEGORY_LABELS: Record<SportCategory, string> = {
+  GOLF: 'GOLF',
+  HYROX: 'HYROX',
+  HOCKEY: 'HOCKEY',
+  EAGL: 'EAGL',
+  FITNESS_TEST: 'FITNESS TEST',
+};
 
 export const STAT_FIELDS: Record<SportCategory, StatField[]> = {
   GOLF: [
@@ -58,9 +66,41 @@ export const STAT_FIELDS: Record<SportCategory, StatField[]> = {
     },
     { key: 'score', label: 'Score', type: 'number', unit: '' },
   ],
+  FITNESS_TEST: [
+    { key: 'test', label: 'Test', type: 'text', unit: '' },
+    { key: 'agility', label: 'Agility', type: 'time', unit: 'mm:ss' },
+    { key: 'skating', label: 'Skating', type: 'time', unit: 'mm:ss' },
+    { key: 'critical_power', label: 'Critical Power', type: 'time', unit: 'mm:ss' },
+    { key: 'pushups', label: 'Pushups', type: 'number', unit: '#' },
+    { key: 'long_jump', label: 'Long Jump', type: 'number', unit: 'cm' },
+    { key: 'height', label: 'Height', type: 'number', unit: 'cm' },
+    { key: 'weight', label: 'Weight', type: 'number', unit: 'kg' },
+    { key: 'targets', label: 'Targets', type: 'number', unit: '#' },
+    { key: 'squat_1rm', label: '1RM Squat', type: 'number', unit: 'kg' },
+    { key: 'bench_press_1rm', label: '1RM Bench Press', type: 'number', unit: 'kg' },
+    { key: 'deadlift_1rm', label: '1RM Deadlift', type: 'number', unit: 'kg' },
+    { key: 'clean_1rm', label: '1RM Clean', type: 'number', unit: 'kg' },
+    { key: 'vald_grip', label: 'VALD Grip', type: 'number', unit: '#' },
+    { key: 'vald_drop_jump', label: 'VALD Drop Jump', type: 'number', unit: '#' },
+    { key: 'vald_cmj', label: 'VALD CMJ', type: 'number', unit: '#' },
+    { key: 'vald_cmj_sl', label: 'VALD CMJ SL', type: 'number', unit: '#' },
+  ],
 };
 
 export const SPORT_CATEGORIES = Object.keys(STAT_FIELDS) as SportCategory[];
+
+export function getLeaderboardFields(category: SportCategory): StatField[] {
+  return (STAT_FIELDS[category] || []).filter((field) => field.type !== 'text');
+}
+
+export function isLowerBetter(category: SportCategory, fieldKey: string): boolean {
+  const field = STAT_FIELDS[category]?.find((f) => f.key === fieldKey);
+  if (!field) return false;
+  if (field.type === 'time' || field.type === 'time-ms') return true;
+  if (category === 'GOLF' && (fieldKey === 'handicap' || fieldKey.includes('round'))) return true;
+  if (category === 'EAGL' && fieldKey === 'score') return true;
+  return false;
+}
 
 export interface PersonalStat {
   key: string;

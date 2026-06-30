@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Trophy, Flame, Star, Shield, Users, ChevronLeft, Flag, Target, Activity, User } from 'lucide-react';
+import { Trophy, Flame, Star, Shield, Users, ChevronLeft, Flag, Target, Activity, User, Dumbbell } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
 import { useTracking } from '@/app/hooks/useTracking';
-import { STAT_FIELDS, SportCategory } from '@/app/lib/statFields';
+import { STAT_FIELDS, SportCategory, getLeaderboardFields, isLowerBetter } from '@/app/lib/statFields';
 import PlayerSearch from '@/app/components/PlayerSearch';
 
 export default function LeaderboardPage() {
@@ -23,7 +23,7 @@ export default function LeaderboardPage() {
 
     useEffect(() => {
         // Set default filter when sport changes
-        const fields = STAT_FIELDS[sport] || [];
+        const fields = getLeaderboardFields(sport);
         setActiveFilter(fields[0]?.key || '');
         setActiveDivision('All');
         if (sport === 'EAGL') {
@@ -176,19 +176,13 @@ export default function LeaderboardPage() {
                 const aVal = a.score;
                 const bVal = b.score;
 
-                // For time-based stats (mm:ss), lower is better
-                if (typeof aVal === 'string' && aVal.includes(':')) {
-                    const aSeconds = timeToSeconds(aVal);
-                    const bSeconds = timeToSeconds(bVal);
-                    return aSeconds - bSeconds;
-                }
-
-                // For golf/EAGL scores, lower is better
-                if ((sport === 'GOLF' || sport === 'EAGL') && (activeFilter === 'handicap' || activeFilter === 'score' || activeFilter.includes('round'))) {
+                if (isLowerBetter(sport, activeFilter)) {
+                    if (typeof aVal === 'string' && aVal.includes(':')) {
+                        return timeToSeconds(aVal) - timeToSeconds(bVal);
+                    }
                     return (parseFloat(aVal) || 999) - (parseFloat(bVal) || 999);
                 }
 
-                // For everything else, higher is better
                 return (parseFloat(bVal) || 0) - (parseFloat(aVal) || 0);
             });
 
@@ -266,7 +260,8 @@ export default function LeaderboardPage() {
                             { id: 'HOCKEY', icon: <Shield size={14} />, label: 'Hockey' },
                             { id: 'GOLF', icon: <Flag size={14} />, label: 'Golf' },
                             { id: 'HYROX', icon: <Activity size={14} />, label: 'Hyrox' },
-                            { id: 'EAGL', icon: <Trophy size={14} />, label: 'EAGL' }
+                            { id: 'EAGL', icon: <Trophy size={14} />, label: 'EAGL' },
+                            { id: 'FITNESS_TEST', icon: <Dumbbell size={14} />, label: 'Fitness Test' }
                         ].map(item => (
                             <button
                                 key={item.id}
@@ -342,7 +337,7 @@ export default function LeaderboardPage() {
 
                     {/* STAT CATEGORY FILTERS */}
                     <div className="flex justify-start sm:justify-center gap-2 mt-8 mb-10 overflow-x-auto no-scrollbar pb-4 px-2 -mx-4 sm:mx-0 flex-nowrap sm:flex-wrap">
-                        {(STAT_FIELDS[sport] || []).map(field => (
+                        {getLeaderboardFields(sport).map(field => (
                             <button
                                 key={field.key}
                                 onClick={() => setActiveFilter(field.key)}

@@ -207,7 +207,7 @@ export default function AdminDashboard() {
                             <div>
                                 <h2 className="text-xl font-black italic uppercase mb-2">Stats Management</h2>
                                 <p className="text-gray-400 text-sm leading-relaxed">
-                                    Manage player stats for Golf, HYROX, and Hockey. Enter stats that appear on the public leaderboard.
+                                    Manage player stats for Golf, HYROX, Hockey, EAGL, and Fitness Test. Enter stats that appear on the public leaderboard.
                                 </p>
                             </div>
 

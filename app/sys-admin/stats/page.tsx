@@ -133,7 +133,8 @@ export default function StatsManagementPage() {
                     { id: 'GOLF', label: 'Golf', icon: '⛳' },
                     { id: 'HYROX', label: 'HYROX', icon: '🏃' },
                     { id: 'HOCKEY', label: 'Hockey', icon: '🏒' },
-                    { id: 'EAGL', label: 'EAGL', icon: '🦅' }
+                    { id: 'EAGL', label: 'EAGL', icon: '🦅' },
+                    { id: 'FITNESS_TEST', label: 'Fitness Test', icon: '💪' }
                 ].map(sport => (
                     <button
                         key={sport.id}

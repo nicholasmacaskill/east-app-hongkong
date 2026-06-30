@@ -5,7 +5,7 @@ import { supabase } from '@/app/lib/supabase';
 import { useToast } from '../ui/Toast';
 import { compressImage } from '@/app/lib/image-utils';
 import Link from 'next/link';
-import { STAT_FIELDS, SPORT_CATEGORIES, normalizeCategory } from '@/app/lib/statFields';
+import { STAT_FIELDS, SPORT_CATEGORIES, CATEGORY_LABELS, normalizeCategory } from '@/app/lib/statFields';
 
 type PlayerStats = Record<string, any>;
 
@@ -284,7 +284,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
                   return (
                     <div key={cat} className="flex flex-col gap-3">
-                      <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest text-center">{cat} PERFORMANCE</h3>
+                      <h3 className="font-black italic text-[10px] text-white/40 uppercase tracking-widest text-center">{CATEGORY_LABELS[cat] || cat} PERFORMANCE</h3>
                       <div className="bg-gradient-to-r from-[#28D160]/50 to-[#1a8e41]/50 rounded-2xl overflow-hidden shadow-2xl border border-white/10">
                         <div className="grid grid-cols-2">
                           {(() => {

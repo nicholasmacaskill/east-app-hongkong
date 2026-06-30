@@ -112,7 +112,8 @@ export default defineConfig({
         'tests/share-training-plan-e2e.spec.ts',
         'tests/appheader-buttons.spec.ts',
         'tests/player-profile-search.spec.ts',
-        'tests/player-profile-search-player-role.spec.ts'
+        'tests/player-profile-search-player-role.spec.ts',
+        'tests/fitness-test-stats.spec.ts'
       ],
     },
 
