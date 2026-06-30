@@ -135,6 +135,79 @@ test.describe('Private Player Assessments', () => {
         expect(messages?.length).toBe(1);
     });
 
+    test('API: player list endpoint returns assessments with expected shape', async ({ request }) => {
+        const { data: assessment, error: assessmentError } = await supabase
+            .from('player_assessments')
+            .insert({
+                coach_id: coach.id,
+                player_id: player.id,
+                title: 'API List Test Assessment',
+                notes: 'Verifying list endpoint shape.',
+            })
+            .select()
+            .single();
+        if (assessmentError) throw assessmentError;
+
+        await supabase.from('player_assessment_media').insert({
+            assessment_id: assessment!.id,
+            media_type: 'image',
+            media_url: 'https://example.com/test-image.jpg',
+            sort_order: 0,
+        });
+
+        async function getToken(email: string, password: string) {
+            const loginRes = await request.post(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+                headers: {
+                    apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                    'Content-Type': 'application/json',
+                },
+                data: { email, password },
+            });
+            expect(loginRes.ok()).toBeTruthy();
+            const { access_token } = await loginRes.json();
+            return access_token as string;
+        }
+
+        const playerToken = await getToken(player.email, player.password);
+        const listRes = await request.get(`${baseURL}/api/player/assessments`, {
+            headers: { Authorization: `Bearer ${playerToken}` },
+        });
+        expect(listRes.ok()).toBeTruthy();
+
+        const list = await listRes.json();
+        expect(Array.isArray(list)).toBeTruthy();
+        expect(list.length).toBeGreaterThanOrEqual(1);
+
+        const item = list.find((a: { title: string }) => a.title === 'API List Test Assessment');
+        expect(item).toBeTruthy();
+        expect(item).toMatchObject({
+            id: assessment!.id,
+            title: 'API List Test Assessment',
+            coach_id: coach.id,
+            coach_name: coach.name,
+            media_count: 1,
+            has_video: false,
+        });
+        expect(item.created_at).toBeTruthy();
+        expect(typeof item.notes).toBe('string');
+
+        const coachToken = await getToken(coach.email, coach.password);
+        const forbiddenRes = await request.get(`${baseURL}/api/player/assessments`, {
+            headers: { Authorization: `Bearer ${coachToken}` },
+        });
+        expect(forbiddenRes.status()).toBe(403);
+
+        const singleRes = await request.get(`${baseURL}/api/player/assessments?assessmentId=${assessment!.id}`, {
+            headers: { Authorization: `Bearer ${playerToken}` },
+        });
+        expect(singleRes.ok()).toBeTruthy();
+        const single = await singleRes.json();
+        expect(single.id).toBe(assessment!.id);
+        expect(single.title).toBe('API List Test Assessment');
+        expect(Array.isArray(single.media)).toBeTruthy();
+        expect(single.media.length).toBe(1);
+    });
+
     test('Drill Hub: shows Player Assessment button and opens modal', async ({ page }) => {
         await loginCoach(page, coach.email, coach.password);
 
