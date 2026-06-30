@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { supabase } from '@/app/lib/supabase';
 import posthog from 'posthog-js';
 import { useRouter } from 'next/navigation';
-import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send, Play, MessageSquare, ClipboardList, Plus, ArrowRight } from 'lucide-react';
+import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send, Play, MessageSquare, ClipboardList, Plus, ArrowRight, ClipboardCheck } from 'lucide-react';
 import { TrainingPlan } from '@/app/types';
 import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 import { safeFetch } from '@/app/lib/apiUtils';
@@ -14,6 +14,7 @@ import CreateDrillModal from '@/app/components/modals/CreateDrillModal';
 import DrillDetailsModal from '@/app/components/modals/DrillDetailsModal';
 import CommunityScreen from '@/app/components/CommunityScreen';
 import PrivateMessenger from '@/app/components/PrivateMessenger';
+import CreateAssessmentModal, { AssessmentPlayerOption } from '@/app/components/modals/CreateAssessmentModal';
 
 interface Attendee {
     id: string;
@@ -55,6 +56,8 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
     const [drills, setDrills] = useState<any[]>([]);
     const [drillsLoading, setDrillsLoading] = useState(false);
     const [showCreateDrill, setShowCreateDrill] = useState(false);
+    const [showCreateAssessment, setShowCreateAssessment] = useState(false);
+    const [assessmentPlayers, setAssessmentPlayers] = useState<AssessmentPlayerOption[]>([]);
     const [selectedDrill, setSelectedDrill] = useState<any | null>(null);
 
     const toggleDate = (date: string) => {
@@ -114,10 +117,28 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
         setPlansLoading(false);
     };
 
+    const fetchAssessmentPlayers = async () => {
+        const { data } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name')
+            .eq('role', 'player')
+            .order('first_name');
+
+        if (data) {
+            setAssessmentPlayers(
+                data.map((p) => ({
+                    id: p.id,
+                    name: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Player',
+                }))
+            );
+        }
+    };
+
     useEffect(() => {
         fetchSchedule();
         fetchDrills();
         fetchTrainingPlans();
+        fetchAssessmentPlayers();
     }, [currentUserId]);
 
     // Filter Logic
@@ -409,14 +430,22 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                     </div>
                 ) : viewMode === 'drill_hub' ? (
                     <div className="animate-fadeIn space-y-8">
-                        <div className="flex justify-between items-center px-2">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 px-2">
                             <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white brightness-125">Drill Library</h2>
-                            <button 
-                                onClick={() => setShowCreateDrill(true)}
-                                className="px-6 py-2 bg-east-light text-black rounded-full text-[10px] font-black uppercase italic hover:bg-white transition-all shadow-[0_0_20px_rgba(40,209,96,0.3)] active:scale-95"
-                            >
-                                + Publish New
-                            </button>
+                            <div className="flex flex-wrap gap-2">
+                                <button
+                                    onClick={() => setShowCreateDrill(true)}
+                                    className="px-5 py-2 bg-east-light text-black rounded-full text-[10px] font-black uppercase italic hover:bg-white transition-all shadow-[0_0_20px_rgba(40,209,96,0.3)] active:scale-95"
+                                >
+                                    + Publish Drill
+                                </button>
+                                <button
+                                    onClick={() => setShowCreateAssessment(true)}
+                                    className="px-5 py-2 bg-white/10 text-white border border-white/20 rounded-full text-[10px] font-black uppercase italic hover:border-east-light hover:text-east-light transition-all active:scale-95 flex items-center gap-1.5"
+                                >
+                                    <ClipboardCheck size={12} /> + Player Assessment
+                                </button>
+                            </div>
                         </div>
 
                         {drillsLoading ? (
@@ -590,6 +619,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                                                                 <button
                                                                                     onClick={(e) => { e.stopPropagation(); openNoteModal(a); }}
                                                                                     className="p-1.5 rounded bg-white/5 hover:bg-east-light hover:text-black text-gray-400 transition-all border border-white/5"
+                                                                                    title="Private notes"
                                                                                 >
                                                                                     <FileText size={12} />
                                                                                 </button>
@@ -679,6 +709,15 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showCreateAssessment && (
+                <CreateAssessmentModal
+                    coachId={currentUserId}
+                    players={assessmentPlayers}
+                    onClose={() => setShowCreateAssessment(false)}
+                    onSuccess={() => setShowCreateAssessment(false)}
+                />
             )}
 
             {/* DRILL MODALS */}

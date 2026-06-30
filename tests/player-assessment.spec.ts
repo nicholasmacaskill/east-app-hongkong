@@ -1,0 +1,237 @@
+import { test, expect } from '@playwright/test';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+async function createCoach(suffix: number) {
+    const email = `assessment-coach-${suffix}@east.com`;
+    const password = 'TestPassword123!';
+    const firstName = `AssessC${suffix}`;
+    const lastName = 'Coach';
+    const { data, error } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { role: 'coach', first_name: firstName, last_name: lastName },
+    });
+    if (error || !data.user) throw error;
+    await supabase.from('profiles').upsert({
+        id: data.user.id,
+        role: 'coach',
+        first_name: firstName,
+        last_name: lastName,
+    });
+    return { id: data.user.id, email, password, name: `${firstName} ${lastName}` };
+}
+
+async function createPlayer(suffix: number) {
+    const email = `assessment-player-${suffix}@east.com`;
+    const password = 'TestPassword123!';
+    const firstName = `AssessP${suffix}`;
+    const lastName = 'Player';
+    const { data, error } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { role: 'player', first_name: firstName, last_name: lastName },
+    });
+    if (error || !data.user) throw error;
+    await supabase.from('profiles').upsert({
+        id: data.user.id,
+        role: 'player',
+        first_name: firstName,
+        last_name: lastName,
+        username: `assessplayer${suffix}`,
+    });
+    return { id: data.user.id, email, password, name: `${firstName} ${lastName}` };
+}
+
+const baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL || 'http://localhost:3000';
+
+async function loginCoach(page: import('@playwright/test').Page, email: string, password: string) {
+    await page.goto(`${baseURL}/login`);
+    await page.fill('input[type="email"]', email);
+    await page.fill('input[type="password"]', password);
+    await page.click('button[type="submit"]');
+    await page.waitForFunction(() => document.body.innerText.includes('EAST COACH'), { timeout: 20000 });
+}
+
+async function loginPlayer(page: import('@playwright/test').Page, email: string, password: string) {
+    await page.goto(`${baseURL}/login`);
+    await page.fill('input[type="email"]', email);
+    await page.fill('input[type="password"]', password);
+    await page.click('button[type="submit"]');
+    await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 20000 });
+}
+
+test.describe.configure({ mode: 'serial' });
+
+test.describe('Private Player Assessments', () => {
+    let coach: Awaited<ReturnType<typeof createCoach>>;
+    let player: Awaited<ReturnType<typeof createPlayer>>;
+    const testSuffix = Date.now();
+
+    test.beforeAll(async () => {
+        coach = await createCoach(testSuffix);
+        player = await createPlayer(testSuffix);
+    });
+
+    test.afterAll(async () => {
+        if (player?.id) {
+            await supabase.from('messages').delete().eq('receiver_id', player.id);
+            await supabase.from('player_assessment_media').delete().in(
+                'assessment_id',
+                (await supabase.from('player_assessments').select('id').eq('player_id', player.id)).data?.map((r) => r.id) || []
+            );
+            await supabase.from('player_assessments').delete().eq('player_id', player.id);
+            await supabase.auth.admin.deleteUser(player.id);
+        }
+        if (coach?.id) {
+            await supabase.auth.admin.deleteUser(coach.id);
+        }
+    });
+
+    test('API: coach can create assessment and player receives message', async ({ request }) => {
+        const loginRes = await request.post(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+            headers: {
+                apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                'Content-Type': 'application/json',
+            },
+            data: { email: coach.email, password: coach.password },
+        });
+        expect(loginRes.ok()).toBeTruthy();
+        const { access_token: token } = await loginRes.json();
+
+        const createRes = await request.post(`${baseURL}/api/coach/assessments`, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            data: {
+                playerId: player.id,
+                title: 'Skating Stride Review',
+                notes: 'Great knee bend, work on arm swing.',
+                media: [],
+                sendToPlayer: true,
+            },
+        });
+        expect(createRes.ok()).toBeTruthy();
+        const assessment = await createRes.json();
+        expect(assessment.title).toBe('Skating Stride Review');
+        expect(assessment.player_id).toBe(player.id);
+
+        const { data: messages } = await supabase
+            .from('messages')
+            .select('*')
+            .eq('receiver_id', player.id)
+            .eq('shared_assessment_id', assessment.id);
+        expect(messages?.length).toBe(1);
+    });
+
+    test('Drill Hub: shows Player Assessment button and opens modal', async ({ page }) => {
+        await loginCoach(page, coach.email, coach.password);
+
+        await page.getByRole('button', { name: 'Drill Hub', exact: true }).first().click();
+        await expect(page.getByRole('button', { name: /Player Assessment/i })).toBeVisible();
+        await expect(page.getByRole('button', { name: /Publish Drill/i })).toBeVisible();
+
+        await page.getByRole('button', { name: /Player Assessment/i }).click();
+        await expect(page.getByText('Video Assessment')).toBeVisible();
+        await expect(page.locator('select')).toBeVisible();
+        await expect(page.locator('select option').first()).toHaveText('Select a player...');
+        await expect(page.getByText('Private only — not saved to public drill hub')).toBeVisible();
+    });
+
+    test('Messages: coach sees assessment button in 1-on-1 player chat', async ({ page }) => {
+        await loginCoach(page, coach.email, coach.password);
+
+        await page.getByRole('button', { name: 'Messages' }).click();
+        await page.getByPlaceholder('Search teams, players, or parents...').fill(player.name);
+        await page.getByRole('button', { name: player.name }).click();
+
+        const assessmentBtn = page.getByTitle('Send private assessment');
+        await expect(assessmentBtn).toBeVisible();
+        await assessmentBtn.click();
+
+        await expect(page.getByText('Video Assessment')).toBeVisible();
+        await expect(page.getByText(`Private • ${player.name}`)).toBeVisible();
+        await expect(page.locator('select')).toHaveCount(0);
+    });
+
+    test('Schedule: no video assessment icon on attendees', async ({ page }) => {
+        const sessionTitle = `Assessment Schedule Test ${testSuffix}`;
+        const sessionStart = new Date(Date.now() + 3600000).toISOString();
+        const sessionEnd = new Date(Date.now() + 7200000).toISOString();
+
+        const { data: session, error: sessionError } = await supabase.from('sessions').insert({
+            title: sessionTitle,
+            category: 'HOCKEY',
+            instructor: coach.name,
+            start_time: sessionStart,
+            end_time: sessionEnd,
+            credit_cost: 50,
+            max_capacity: 10,
+        }).select().single();
+        if (sessionError) throw sessionError;
+
+        await supabase.from('registrations').insert({
+            user_id: player.id,
+            session_id: session.id,
+        });
+
+        await loginCoach(page, coach.email, coach.password);
+        await page.getByRole('button', { name: 'Master View' }).click();
+
+        const responsePromise = page.waitForResponse('**/api/coach/master-schedule');
+        await page.locator('button svg.lucide-refresh-cw').click();
+        await responsePromise;
+
+        await page.getByText('Expand All').click();
+        await expect(page.getByText(sessionTitle)).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText(player.name).first()).toBeVisible();
+
+        await expect(page.getByTitle('Private notes').first()).toBeVisible();
+        await expect(page.getByTitle('Video assessment')).toHaveCount(0);
+        await expect(page.getByTitle('Send private assessment')).toHaveCount(0);
+
+        await supabase.from('registrations').delete().eq('session_id', session.id);
+        await supabase.from('sessions').delete().eq('id', session.id);
+    });
+
+    test('Player: can view assessment sent via message', async ({ page }) => {
+        const { data: assessment, error: assessmentError } = await supabase
+            .from('player_assessments')
+            .insert({
+                coach_id: coach.id,
+                player_id: player.id,
+                title: 'Shot Release Analysis',
+                notes: 'Quick release is improving.',
+            })
+            .select()
+            .single();
+        if (assessmentError) throw assessmentError;
+
+        await supabase.from('messages').insert({
+            sender_id: coach.id,
+            receiver_id: player.id,
+            content: 'New video assessment: Shot Release Analysis',
+            shared_assessment_id: assessment!.id,
+        });
+
+        await loginPlayer(page, player.email, player.password);
+
+        await page.goto(`${baseURL}/?tab=community&chatWith=${coach.id}`);
+        const assessmentCard = page.locator('div.cursor-pointer').filter({ hasText: 'Private Assessment' }).filter({ hasText: 'Shot Release Analysis' }).first();
+        await expect(assessmentCard).toBeVisible({ timeout: 15000 });
+        await assessmentCard.click();
+        await expect(page.getByText('Coach Notes')).toBeVisible();
+        await expect(page.getByText('Quick release is improving.')).toBeVisible();
+    });
+});

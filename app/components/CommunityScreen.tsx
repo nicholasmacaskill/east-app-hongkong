@@ -99,7 +99,9 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
     const { addToast } = useToast();
     const searchParams = useSearchParams();
     const chatWithParam = searchParams.get('chatWith');
-    const [viewMode, setViewMode] = useState<'feed' | 'messenger-list' | 'chat-detail'>(chatWithParam ? 'chat-detail' : 'messenger-list');
+    const shareDrillIdParam = searchParams.get('shareDrillId');
+    const sharePlanIdParam = searchParams.get('sharePlanId');
+    const [viewMode, setViewMode] = useState<'feed' | 'messenger-list' | 'chat-detail'>(chatWithParam || shareDrillIdParam || sharePlanIdParam ? 'chat-detail' : 'messenger-list');
 
     const [posts, setPosts] = useState<Post[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -396,8 +398,8 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
 
                 <div className="relative mb-8">
                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         placeholder="SEARCH PLAYERS OR TEAMS..."
                         className="w-full bg-[#111] border border-gray-800 rounded-full py-3.5 pl-12 pr-4 text-white font-black italic text-xs uppercase tracking-widest placeholder:text-gray-600 focus:outline-none focus:border-east-light transition-colors"
                     />
@@ -623,7 +625,7 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
 
     return (
         <div className="h-[100dvh] pb-24 bg-black flex flex-col relative">
-            <PrivateMessenger currentUserId={currentUserId} chatWithUserId={chatWithParam} />
+            <PrivateMessenger currentUserId={currentUserId} chatWithUserId={chatWithParam} shareDrillId={shareDrillIdParam} sharePlanId={sharePlanIdParam} />
         </div>
     );
 }

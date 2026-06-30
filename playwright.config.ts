@@ -113,7 +113,8 @@ export default defineConfig({
         'tests/appheader-buttons.spec.ts',
         'tests/player-profile-search.spec.ts',
         'tests/player-profile-search-player-role.spec.ts',
-        'tests/fitness-test-stats.spec.ts'
+        'tests/fitness-test-stats.spec.ts',
+        'tests/player-assessment.spec.ts'
       ],
     },
 

@@ -1,9 +1,11 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/app/lib/supabase';
-import { Search, Users, MessageSquare, Plus, Video, Layers, Send, X, ChevronLeft } from 'lucide-react';
+import { Search, Users, MessageSquare, Plus, Video, Layers, Send, X, ChevronLeft, ClipboardCheck } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
 import CreateTeamModal from '@/app/components/modals/CreateTeamModal';
+import AssessmentViewModal from '@/app/components/modals/AssessmentViewModal';
+import CreateAssessmentModal from '@/app/components/modals/CreateAssessmentModal';
 
 export default function PrivateMessenger({ currentUserId, chatWithUserId, shareDrillId, sharePlanId }: { currentUserId: string, chatWithUserId?: string | null, shareDrillId?: string | null, sharePlanId?: string | null }) {
     const { addToast } = useToast();
@@ -39,6 +41,22 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
 
     const [trainingPlans, setTrainingPlans] = useState<any[]>([]);
     const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
+    const [viewingAssessmentId, setViewingAssessmentId] = useState<string | null>(null);
+    const [showCreateAssessment, setShowCreateAssessment] = useState(false);
+
+    const isCoachUser =
+        currentUserProfile?.role === 'coach' ||
+        currentUserProfile?.role === 'admin' ||
+        currentUserProfile?.role === 'sys-admin';
+
+    const activeChatProfile = !isTeamChat && activeChatId
+        ? profiles.find((p) => p.id === activeChatId)
+        : null;
+
+    const canCreateAssessment =
+        isCoachUser &&
+        !isTeamChat &&
+        activeChatProfile?.role === 'player';
 
     useEffect(() => {
         fetchTeamsAndProfiles();
@@ -364,6 +382,22 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                             </div>
                                         </div>
                                     )}
+                                    {msg.shared_assessment_id && (
+                                        <div
+                                            onClick={() => setViewingAssessmentId(msg.shared_assessment_id)}
+                                            className="mt-2 p-3 bg-black/50 rounded-xl flex items-center gap-3 border border-[#28D160]/30 cursor-pointer hover:bg-[#28D160]/10 transition group"
+                                        >
+                                            <div className="w-10 h-10 rounded-lg bg-[#28D160]/20 flex items-center justify-center border border-[#28D160]/30 group-hover:scale-110 transition shrink-0">
+                                                <ClipboardCheck size={20} className="text-[#28D160]" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <span className="text-[10px] font-black uppercase text-[#28D160] block leading-none mb-1">Private Assessment</span>
+                                                <span className="text-xs font-bold text-white block truncate">
+                                                    {msg.content?.replace('New video assessment: ', '') || 'View Assessment'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -470,6 +504,15 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                         <button onClick={() => setShowContentPicker(!showContentPicker)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl transition shrink-0 ${selectedDrill || selectedPlan ? 'bg-[#28D160]/20 text-[#28D160] border border-[#28D160]/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`} title="Attach Content">
                             <Plus size={18} className="md:w-5 md:h-5" />
                         </button>
+                        {canCreateAssessment && (
+                            <button
+                                onClick={() => setShowCreateAssessment(true)}
+                                className="p-3 md:p-4 rounded-xl md:rounded-2xl transition shrink-0 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-east-light border border-white/10 hover:border-east-light/30"
+                                title="Send private assessment"
+                            >
+                                <ClipboardCheck size={18} className="md:w-5 md:h-5" />
+                            </button>
+                        )}
                         <button onClick={() => videoFileRef.current?.click()} className={`p-3 md:p-4 rounded-xl md:rounded-2xl transition shrink-0 ${selectedVideo ? 'bg-[#28D160]/20 text-[#28D160] border border-[#28D160]/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`} title="Attach Video">
                             <Video size={18} className="md:w-5 md:h-5" />
                         </button>
@@ -487,6 +530,27 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                         </button>
                     </div>
                 </div>
+
+                {viewingAssessmentId && (
+                    <AssessmentViewModal
+                        assessmentId={viewingAssessmentId}
+                        isCoach={isCoachUser}
+                        onClose={() => setViewingAssessmentId(null)}
+                    />
+                )}
+
+                {showCreateAssessment && activeChatProfile && (
+                    <CreateAssessmentModal
+                        coachId={currentUserId}
+                        playerId={activeChatProfile.id}
+                        playerName={`${activeChatProfile.first_name || ''} ${activeChatProfile.last_name || ''}`.trim() || 'Player'}
+                        onClose={() => setShowCreateAssessment(false)}
+                        onSuccess={() => {
+                            setShowCreateAssessment(false);
+                            if (activeChatId) fetchMessages(activeChatId, false);
+                        }}
+                    />
+                )}
             </div>
         );
     }
@@ -583,6 +647,14 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                         setShowCreateTeam(false);
                         fetchTeamsAndProfiles();
                     }}
+                />
+            )}
+
+            {viewingAssessmentId && (
+                <AssessmentViewModal
+                    assessmentId={viewingAssessmentId}
+                    isCoach={isCoachUser}
+                    onClose={() => setViewingAssessmentId(null)}
                 />
             )}
         </div>
