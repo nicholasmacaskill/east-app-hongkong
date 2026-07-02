@@ -63,6 +63,8 @@ test.describe('Fitness Test Stats', () => {
     test('statFields defines all fitness test leaderboard metrics', () => {
         const fields = STAT_FIELDS.FITNESS_TEST.map((f) => f.label);
         expect(fields).toContain('Agility');
+        expect(fields).toContain('On Ice Agility with Puck');
+        expect(fields).toContain('On Ice Agility');
         expect(fields).toContain('Skating');
         expect(fields).toContain('Critical Power');
         expect(fields).toContain('Pushups');
@@ -72,14 +74,14 @@ test.describe('Fitness Test Stats', () => {
 
         const leaderboardFields = getLeaderboardFields('FITNESS_TEST');
         expect(leaderboardFields.some((f) => f.key === 'test')).toBe(false);
-        expect(leaderboardFields.length).toBe(16);
+        expect(leaderboardFields.length).toBe(18);
     });
 
     const selectFitnessTest = async (page: import('@playwright/test').Page) => {
         const fitnessTab = page.locator('button').filter({ hasText: /^Fitness Test$/ });
         await fitnessTab.click();
         await expect(fitnessTab).toHaveClass(/bg-east-light/);
-        await expect(page.getByRole('button', { name: 'Agility' })).toBeVisible({ timeout: 10000 });
+        await expect(page.getByRole('button', { name: 'Agility', exact: true })).toBeVisible({ timeout: 10000 });
     };
 
     test('leaderboard shows Fitness Test tab and stat filters', async ({ page }) => {
@@ -89,6 +91,8 @@ test.describe('Fitness Test Stats', () => {
         await selectFitnessTest(page);
 
         await expect(page.getByRole('button', { name: 'Pushups' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'On Ice Agility with Puck' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'On Ice Agility', exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: '1RM Squat' })).toBeVisible();
         await expect(page.getByRole('button', { name: 'VALD CMJ', exact: true })).toBeVisible();
     });

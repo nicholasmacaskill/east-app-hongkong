@@ -100,25 +100,29 @@ export default function AppHeader({
             </div>
 
             {/* Right Area - Flex-1 ensures it shares space equally with Left Area */}
-            <div className="flex-1 flex justify-end gap-3 items-center z-10 scale-90 sm:scale-100 origin-right">
+            <div className="flex-1 flex justify-end gap-2 sm:gap-3 items-center z-10">
                 {!onBack && !isBypass && setTab && (
                     <button onClick={() => setTab('community')} className="text-gray-400 hover:text-[#28D160] transition-colors active:scale-90 duration-200" title="Messages">
-                        <MessageSquare size={18} className="stroke-[1.5px]" />
+                        <MessageSquare size={16} className="sm:hidden stroke-[1.5px]" />
+                        <MessageSquare size={18} className="hidden sm:block stroke-[1.5px]" />
                     </button>
                 )}
                 {!onBack && (
                     <Link href="/stats" className="text-gray-400 hover:text-east-light transition-colors active:scale-90 duration-200">
-                        <Trophy size={18} className="stroke-[1.5px]" />
+                        <Trophy size={16} className="sm:hidden stroke-[1.5px]" />
+                        <Trophy size={18} className="hidden sm:block stroke-[1.5px]" />
                     </Link>
                 )}
 
                 {onOpenSettings && (
                     <button onClick={onOpenSettings} data-testid="settings-button" className="text-gray-400 hover:text-white transition-colors active:scale-90 duration-200">
-                        <Settings size={18} className="stroke-[1.5px]" />
+                        <Settings size={16} className="sm:hidden stroke-[1.5px]" />
+                        <Settings size={18} className="hidden sm:block stroke-[1.5px]" />
                     </button>
                 )}
                 <Link href="/faq" className="text-gray-400 hover:text-east-light transition-colors active:scale-90 duration-200">
-                    <HelpCircle size={17} className="stroke-[1.5px]" />
+                    <HelpCircle size={15} className="sm:hidden stroke-[1.5px]" />
+                    <HelpCircle size={17} className="hidden sm:block stroke-[1.5px]" />
                 </Link>
             </div>
         </div>

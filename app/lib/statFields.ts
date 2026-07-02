@@ -69,6 +69,8 @@ export const STAT_FIELDS: Record<SportCategory, StatField[]> = {
   FITNESS_TEST: [
     { key: 'test', label: 'Test', type: 'text', unit: '' },
     { key: 'agility', label: 'Agility', type: 'time', unit: 'mm:ss' },
+    { key: 'on_ice_agility_with_puck', label: 'On Ice Agility with Puck', type: 'time', unit: 'mm:ss' },
+    { key: 'on_ice_agility', label: 'On Ice Agility', type: 'time', unit: 'mm:ss' },
     { key: 'skating', label: 'Skating', type: 'time', unit: 'mm:ss' },
     { key: 'critical_power', label: 'Critical Power', type: 'time', unit: 'mm:ss' },
     { key: 'pushups', label: 'Pushups', type: 'number', unit: '#' },
