@@ -91,6 +91,223 @@ export const STAT_FIELDS: Record<SportCategory, StatField[]> = {
 
 export const SPORT_CATEGORIES = Object.keys(STAT_FIELDS) as SportCategory[];
 
+export type StatAccent = 'cyan' | 'amber' | 'rose' | 'violet' | 'sky' | 'emerald' | 'orange' | 'lime';
+
+export interface StatGroupConfig {
+  title: string;
+  emoji: string;
+  accent: StatAccent;
+  keys: string[];
+}
+
+export const STAT_FIELD_EMOJI: Record<string, string> = {
+  test: '📋',
+  agility: '⚡',
+  on_ice_agility: '⛸️',
+  on_ice_agility_with_puck: '🏒',
+  skating: '🔄',
+  critical_power: '🔋',
+  pushups: '💪',
+  long_jump: '🦘',
+  height: '📏',
+  weight: '⚖️',
+  targets: '🎯',
+  squat_1rm: '🏋️',
+  bench_press_1rm: '🏋️',
+  deadlift_1rm: '🏋️',
+  clean_1rm: '🏋️',
+  vald_grip: '✊',
+  vald_drop_jump: '⬇️',
+  vald_cmj: '⬆️',
+  vald_cmj_sl: '🦵',
+  handicap: '⛳',
+  longest_drive: '🚀',
+  closest_to_pin: '📍',
+  tournament_wins: '🏆',
+  league_wins: '🥇',
+  run_1km: '🏃',
+  ski_erg_1000m: '⛷️',
+  sled_push_50m: '🛷',
+  sled_pull_50m: '🔗',
+  burpee_broad_jumps_80m: '🤸',
+  row_1000m: '🚣',
+  farmers_carry_200m: '🧺',
+  sandbag_lunges_100m: '🎒',
+  wall_balls_100: '🏐',
+  react_targets: '⚡',
+  classic_targets: '🎯',
+  total_pucks_shot: '🏒',
+  season: '📅',
+  division: '🏅',
+  week: '📆',
+  score: '💯',
+};
+
+export const STAT_CATEGORY_GROUPS: Partial<Record<SportCategory, StatGroupConfig[]>> = {
+  FITNESS_TEST: [
+    {
+      title: 'On Ice',
+      emoji: '🏒',
+      accent: 'cyan',
+      keys: ['on_ice_agility', 'on_ice_agility_with_puck', 'skating', 'critical_power'],
+    },
+    {
+      title: 'Speed & Agility',
+      emoji: '⚡',
+      accent: 'amber',
+      keys: ['agility'],
+    },
+    {
+      title: 'Strength',
+      emoji: '💪',
+      accent: 'rose',
+      keys: ['pushups', 'squat_1rm', 'bench_press_1rm', 'deadlift_1rm', 'clean_1rm'],
+    },
+    {
+      title: 'Power & Jump',
+      emoji: '🚀',
+      accent: 'violet',
+      keys: ['long_jump', 'targets', 'vald_grip', 'vald_drop_jump', 'vald_cmj', 'vald_cmj_sl'],
+    },
+    {
+      title: 'Body',
+      emoji: '📏',
+      accent: 'sky',
+      keys: ['height', 'weight'],
+    },
+  ],
+  GOLF: [
+    {
+      title: 'Performance',
+      emoji: '⛳',
+      accent: 'emerald',
+      keys: ['handicap', 'longest_drive', 'closest_to_pin'],
+    },
+    {
+      title: 'Competition',
+      emoji: '🏆',
+      accent: 'lime',
+      keys: ['tournament_wins', 'league_wins'],
+    },
+  ],
+  HYROX: [
+    {
+      title: 'Race Stations',
+      emoji: '🏃',
+      accent: 'orange',
+      keys: [
+        'run_1km',
+        'ski_erg_1000m',
+        'sled_push_50m',
+        'sled_pull_50m',
+        'burpee_broad_jumps_80m',
+        'row_1000m',
+        'farmers_carry_200m',
+        'sandbag_lunges_100m',
+        'wall_balls_100',
+      ],
+    },
+  ],
+  HOCKEY: [
+    {
+      title: 'Shooting',
+      emoji: '🏒',
+      accent: 'cyan',
+      keys: ['react_targets', 'classic_targets', 'total_pucks_shot'],
+    },
+  ],
+  EAGL: [
+    {
+      title: 'League',
+      emoji: '🦅',
+      accent: 'amber',
+      keys: ['season', 'division', 'week', 'score'],
+    },
+  ],
+};
+
+export interface DisplayStatRow {
+  field: StatField;
+  value: string | number;
+  emoji: string;
+}
+
+export interface DisplayStatGroup {
+  title: string;
+  emoji: string;
+  accent: StatAccent;
+  rows: DisplayStatRow[];
+}
+
+function isActiveStatValue(value: unknown): value is string | number {
+  return value !== undefined && value !== null && value !== '';
+}
+
+function buildRow(category: SportCategory, field: StatField, value: string | number): DisplayStatRow {
+  return {
+    field,
+    value,
+    emoji: STAT_FIELD_EMOJI[field.key] || '📊',
+  };
+}
+
+export function getDisplayStatGroups(
+  category: SportCategory,
+  stats: Record<string, unknown>
+): { subtitle?: string; groups: DisplayStatGroup[] } {
+  const fieldsByKey = Object.fromEntries((STAT_FIELDS[category] || []).map((field) => [field.key, field]));
+  const groupsConfig = STAT_CATEGORY_GROUPS[category];
+  const usedKeys = new Set<string>();
+  const groups: DisplayStatGroup[] = [];
+
+  let subtitle: string | undefined;
+  const testValue = stats.test;
+  if (isActiveStatValue(testValue) && typeof testValue === 'string') {
+    subtitle = testValue;
+    usedKeys.add('test');
+  }
+
+  if (groupsConfig) {
+    for (const group of groupsConfig) {
+      const rows: DisplayStatRow[] = [];
+      for (const key of group.keys) {
+        const field = fieldsByKey[key];
+        const value = stats[key];
+        if (!field || !isActiveStatValue(value)) continue;
+        rows.push(buildRow(category, field, value));
+        usedKeys.add(key);
+      }
+      if (rows.length > 0) {
+        groups.push({
+          title: group.title,
+          emoji: group.emoji,
+          accent: group.accent,
+          rows,
+        });
+      }
+    }
+  }
+
+  const remainingRows: DisplayStatRow[] = [];
+  for (const field of STAT_FIELDS[category] || []) {
+    if (usedKeys.has(field.key)) continue;
+    const value = stats[field.key];
+    if (!isActiveStatValue(value)) continue;
+    remainingRows.push(buildRow(category, field, value));
+  }
+
+  if (remainingRows.length > 0) {
+    groups.push({
+      title: groupsConfig ? 'Other' : 'Stats',
+      emoji: '📊',
+      accent: 'emerald',
+      rows: remainingRows,
+    });
+  }
+
+  return { subtitle, groups };
+}
+
 export function getLeaderboardFields(category: SportCategory): StatField[] {
   return (STAT_FIELDS[category] || []).filter((field) => field.type !== 'text');
 }

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
-import { getLeaderboardFields, STAT_FIELDS } from '../app/lib/statFields';
+import { getLeaderboardFields, STAT_FIELDS, getDisplayStatGroups } from '../app/lib/statFields';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
@@ -58,6 +58,20 @@ test.describe('Fitness Test Stats', () => {
             await supabase.from('players_stats').delete().eq('player_id', testUserId);
             await supabase.auth.admin.deleteUser(testUserId);
         }
+    });
+
+    test('getDisplayStatGroups groups fitness stats into labeled sections', () => {
+        const { subtitle, groups } = getDisplayStatGroups('FITNESS_TEST', {
+            test: 'Spring Combine 2026',
+            on_ice_agility: '00:30',
+            pushups: 45,
+            height: 180,
+        });
+
+        expect(subtitle).toBe('Spring Combine 2026');
+        expect(groups.map((g) => g.title)).toEqual(['On Ice', 'Strength', 'Body']);
+        expect(groups[0].rows.map((r) => r.field.key)).toEqual(['on_ice_agility']);
+        expect(groups[1].rows.map((r) => r.field.key)).toEqual(['pushups']);
     });
 
     test('statFields defines all fitness test leaderboard metrics', () => {
