@@ -143,7 +143,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
       {/* Background Image Layer - Premium Blur Overlay */}
       <div className="fixed inset-0 z-0 overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1541534741688-6078c64b550d?auto=format&fit=crop&q=80&w=1200"
+          src="/EAST-BLACK-BACKGROUND.png"
           className="object-cover opacity-20 grayscale scale-110"
           fill
           alt="Premium background"
