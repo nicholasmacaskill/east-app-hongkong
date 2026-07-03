@@ -152,119 +152,109 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
       </div>
 
       <div className="relative z-10 w-full mx-auto px-4">
-        <div className="flex flex-col pt-8">
+        <div className="flex flex-col pt-4">
           {/* PROFILE INFO HEADER */}
-          <div className="w-full">
-            {/* HEADER CONTAINER */}
-            <div className="flex flex-col">
-              {/* 1. TOP VISUALS */}
-              <div className="relative h-[250px] w-full shrink-0">
-                {!isReadOnly && (
-                  <div className="absolute top-4 right-6 z-30 flex gap-2">
-                    <button data-testid="settings-button" onClick={onOpenSettings} className="bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-colors border border-white/10">
-                      <Edit2 size={20} className="text-gray-400" />
-                    </button>
-                  </div>
-                )}
-
-                <div className="absolute left-6 top-16 z-10">
-                  <div
-                    className={`w-44 h-44 rounded-full border-[6px] border-white/10 bg-white/5 overflow-hidden shadow-2xl backdrop-blur-sm relative ${isReadOnly ? '' : 'cursor-pointer group'}`}
-                    onClick={(e) => {
-                      if (!isReadOnly) {
-                        e.stopPropagation();
-                        avatarInputRef.current?.click();
-                      }
-                    }}
-                  >
-                    <Image
-                      src={profileData.avatar_url || "https://images.pexels.com/photos/6550836/pexels-photo-6550836.jpeg"}
-                      className={`object-cover transition-opacity ${isReadOnly ? '' : 'group-hover:opacity-40'} ${uploading ? 'opacity-20' : 'opacity-90'}`}
-                      fill
-                      alt="profile"
-                    />
-                    {!isReadOnly && (
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        {uploading ? (
-                          <div className="w-8 h-8 border-4 border-east-light border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Camera size={32} className="text-white" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
-                </div>
+          <div className="w-full relative">
+            {!isReadOnly && (
+              <div className="absolute top-2 right-2 z-30">
+                <button data-testid="settings-button" onClick={onOpenSettings} className="bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-colors border border-white/10">
+                  <Edit2 size={16} className="text-gray-400" />
+                </button>
               </div>
+            )}
 
-              {/* 2. MIDDLE CONTENT */}
-              <div className="px-6 pb-8 flex flex-col gap-8 items-center w-full mt-4">
-                <div className="w-full flex flex-col items-center pt-2">
-                  <h2 className="font-black italic text-2xl text-white uppercase tracking-tighter leading-tight text-center">
-                    {profileData.name || 'PLAYER'} <span className="text-east-light">{profileData.surname || 'ELITE'}</span>
-                  </h2>
-                  {profileData.username && (
-                    <p className="font-bold text-xs text-gray-500 uppercase tracking-widest mt-2">@{profileData.username}</p>
-                  )}
-                </div>
-
-                {/* Bio Section */}
-                {profileData.bio && (
-                  <div className="w-full bg-white/5 backdrop-blur-xl p-5 rounded-2xl border border-white/10 shadow-2xl relative z-20 text-center">
-                    <p className="text-white text-xs font-bold italic leading-relaxed opacity-90">"{profileData.bio}"</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 w-full gap-3 mt-2">
-                  {[
-                    { l: 'CREDITS', l2: 'AVAILABLE', v: profileData.credits || 0, icon: Coins, action: onShowHistory },
-                    { l: 'GYM VISITS', l2: 'LIFETIME', v: checkInCount !== null ? checkInCount : '-', icon: Activity },
-                    { l: 'TOP SCORER', l2: '(TEAM)', v: 'soon', icon: Award },
-                    { l: 'MOST SHOTS', l2: '(TEAM)', v: 'soon', icon: Award },
-                  ].map((badge: any, i) => (
-                    <div
-                      key={i}
-                      onClick={badge.action}
-                      className={`flex flex-col items-center p-3 bg-white/5 rounded-2xl border border-white/10 group hover:border-[#28D160]/50 transition-colors ${badge.action ? 'cursor-pointer' : ''} min-h-[90px] justify-center`}
-                    >
-                      <div className="w-10 h-10 rounded-full border border-east-light/30 bg-black/40 flex items-center justify-center mb-2 shadow-lg group-hover:scale-110 transition-transform flex-shrink-0">
-                        <badge.icon size={20} className="text-[#28D160] drop-shadow-md" />
-                      </div>
-                      {badge.v === 'soon' ? (
-                        <div className="flex flex-col items-center gap-0.5">
-                          <span className="text-[8px] font-black uppercase text-center leading-none text-gray-400 group-hover:text-white transition-colors">{badge.l}</span>
-                          <span className="text-[8px] font-black uppercase text-center leading-none text-gray-400 group-hover:text-white transition-colors mb-1">{badge.l2}</span>
-                          <span className="text-[9px] text-white/40 lowercase italic leading-none">{badge.v}</span>
-                        </div>
+            {/* Split Header Row (Avatar Left, Info Right) */}
+            <div className="flex items-center gap-4 w-full pt-4">
+              {/* Left: Avatar */}
+              <div className="relative shrink-0">
+                <div
+                  className={`w-32 h-32 rounded-full border-4 border-white/10 bg-white/5 overflow-hidden shadow-xl backdrop-blur-sm relative ${isReadOnly ? '' : 'cursor-pointer group'}`}
+                  onClick={(e) => {
+                    if (!isReadOnly) {
+                      e.stopPropagation();
+                      avatarInputRef.current?.click();
+                    }
+                  }}
+                >
+                  <Image
+                    src={profileData.avatar_url || "https://images.pexels.com/photos/6550836/pexels-photo-6550836.jpeg"}
+                    className={`object-cover transition-opacity ${isReadOnly ? '' : 'group-hover:opacity-40'} ${uploading ? 'opacity-20' : 'opacity-90'}`}
+                    fill
+                    alt="profile"
+                  />
+                  {!isReadOnly && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      {uploading ? (
+                        <div className="w-6 h-6 border-3 border-east-light border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <div className="flex flex-col items-center gap-0.5">
-                          <span className="font-black text-xl text-white italic leading-none">{badge.v}</span>
-                          <span className="text-[8px] font-black uppercase text-center leading-none text-gray-400 group-hover:text-white transition-colors mt-1">{badge.l}</span>
-                          <span className="text-[8px] font-black uppercase text-center leading-none text-gray-400 group-hover:text-white transition-colors">{badge.l2}</span>
-                        </div>
+                        <Camera size={24} className="text-white" />
                       )}
                     </div>
-                  ))}
+                  )}
                 </div>
+                <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} className="absolute w-0 h-0 opacity-0 pointer-events-none" accept="image/*" />
               </div>
 
-              {/* 3. METADATA BANNER */}
-              <div className="w-full bg-black/60 backdrop-blur-xl py-5 px-2 grid grid-cols-3 gap-1 shadow-2xl border-y border-white/5 relative z-30 mb-8 mt-4 rounded-xl group hover:border-[#28D160]/30 transition-colors">
-                <div className="absolute inset-0 bg-gradient-to-r from-[#28D160]/5 via-transparent to-[#28D160]/5 opacity-50 rounded-xl" />
-                <div className="flex flex-col items-center justify-center border-r border-white/10 relative z-10">
-                  <div className="font-black italic text-[9px] text-[#28D160] tracking-widest uppercase mb-1">AGE</div>
-                  <span className="text-[10px] text-white font-black italic lowercase leading-none drop-shadow-md">soon</span>
-                </div>
-                <div className="flex flex-col items-center justify-center border-r border-white/10 relative z-10">
-                  <div className="font-black italic text-[9px] text-[#28D160] tracking-widest uppercase mb-1">SEASON</div>
-                  <span className="text-[10px] text-white font-black italic lowercase leading-none drop-shadow-md">soon</span>
-                </div>
-                <div className="flex flex-col items-center justify-center relative z-10">
-                  <div className="font-black italic text-[9px] text-[#28D160] tracking-widest uppercase mb-1">TEAM</div>
-                  <span className="text-[10px] text-white font-black italic lowercase leading-none drop-shadow-md">soon</span>
+              {/* Right: Name, Username, Metadata pills */}
+              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <h2 className="font-black italic text-xl text-white uppercase tracking-tight truncate">
+                  {profileData.name || 'PLAYER'} <span className="text-east-light">{profileData.surname || 'ELITE'}</span>
+                </h2>
+                {profileData.username && (
+                  <p className="font-bold text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">@{profileData.username}</p>
+                )}
+
+                {/* Inline Metadata Pills */}
+                <div className="flex flex-wrap gap-1 mt-2">
+                  <span className="text-[7px] font-black text-[#28D160] bg-[#28D160]/10 border border-[#28D160]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    AGE: soon
+                  </span>
+                  <span className="text-[7px] font-black text-[#28D160] bg-[#28D160]/10 border border-[#28D160]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    SEASON: soon
+                  </span>
+                  <span className="text-[7px] font-black text-[#28D160] bg-[#28D160]/10 border border-[#28D160]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    TEAM: soon
+                  </span>
                 </div>
               </div>
             </div>
+
+            {/* Bio Block */}
+            {profileData.bio && (
+              <div className="mt-3 px-2 border-l-2 border-[#28D160]/40 pl-3">
+                <p className="text-white/70 text-[11px] font-medium italic leading-relaxed">
+                  "{profileData.bio}"
+                </p>
+              </div>
+            )}
+
+            {/* Divider and Horizontal Badge Row */}
+            <div className="w-full h-px bg-white/5 my-3" />
+            <div className="flex items-center justify-between w-full gap-1">
+              {[
+                { l: 'CREDITS', v: profileData.credits || 0, icon: Coins, action: onShowHistory },
+                { l: 'VISITS', v: checkInCount !== null ? checkInCount : '-', icon: Activity },
+                { l: 'SCORER', v: 'soon', icon: Award },
+                { l: 'SHOTS', v: 'soon', icon: Award },
+              ].map((badge: any, i) => (
+                <div
+                  key={i}
+                  onClick={badge.action}
+                  className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
+                    badge.action ? 'cursor-pointer hover:scale-105 group' : ''
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-full border border-east-light/20 bg-white/5 flex items-center justify-center mb-1.5 shadow-md group-hover:border-[#28D160]/40 transition-colors">
+                    <badge.icon size={18} className="text-[#28D160] drop-shadow-md" />
+                  </div>
+                  <span className="font-black text-sm text-white italic leading-none">{badge.v}</span>
+                  <span className="text-[7px] font-black text-gray-500 uppercase tracking-widest mt-1 text-center truncate w-full">
+                    {badge.l}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="w-full h-px bg-white/5 mt-3 mb-6" />
           </div>
 
           {/* PERFORMANCE AREA */}
