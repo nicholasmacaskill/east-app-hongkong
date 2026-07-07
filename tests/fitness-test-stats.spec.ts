@@ -80,7 +80,8 @@ test.describe('Fitness Test Stats', () => {
         expect(fields).toContain('On Ice Agility with Puck');
         expect(fields).toContain('On Ice Agility');
         expect(fields).toContain('Skating');
-        expect(fields).toContain('Critical Power');
+        expect(fields).toContain('Critical Power (Max)');
+        expect(fields).toContain('Critical Power (Fatigue)');
         expect(fields).toContain('Pushups');
         expect(fields).toContain('Long Jump');
         expect(fields).toContain('1RM Squat');
@@ -88,7 +89,7 @@ test.describe('Fitness Test Stats', () => {
 
         const leaderboardFields = getLeaderboardFields('FITNESS_TEST');
         expect(leaderboardFields.some((f) => f.key === 'test')).toBe(false);
-        expect(leaderboardFields.length).toBe(18);
+        expect(leaderboardFields.length).toBe(19);
     });
 
     const selectFitnessTest = async (page: import('@playwright/test').Page) => {
