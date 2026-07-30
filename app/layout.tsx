@@ -15,6 +15,14 @@ const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-opensans" });
 export const metadata: Metadata = {
   title: "EAST Sports Group",
   description: "Official application for EAST Sports Group",
+  icons: {
+    icon: [
+      {
+        url: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚡</text></svg>',
+        type: 'image/svg+xml',
+      },
+    ],
+  },
   openGraph: {
     title: "EAST Sports Group",
     description: "Official application for EAST Sports Group",
