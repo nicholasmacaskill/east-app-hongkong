@@ -597,7 +597,6 @@ function AppContent() {
                           body: JSON.stringify({
                             firstName: child.first,
                             lastName: child.last,
-                            email: child.email,
                             sport: child.sport,
                             parentId: currentUserId
                           })
@@ -607,11 +606,11 @@ function AppContent() {
                           addToast(`Error: ${data.error}`, 'error');
                         } else {
                           track('child_added');
-                          addToast('Child added successfully!', 'success');
+                          addToast('Athlete registered successfully!', 'success');
                           setRefreshKey(prev => prev + 1);
                         }
                       } catch (e: any) {
-                        addToast(`Failed to add child: ${e.message}`, 'error');
+                        addToast(`Failed to add athlete: ${e.message}`, 'error');
                       }
                     }}
                   />

@@ -1,98 +1,82 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
-
-
+import crypto from 'crypto';
 
 export async function POST(request: Request) {
     try {
-        const { firstName, lastName, email, sport, parentId } = await request.json();
+        const { firstName, lastName, sport, parentId } = await request.json();
 
-        if (!email || !parentId) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        if (!firstName || !parentId) {
+            return NextResponse.json({ error: 'Missing required fields: firstName and parentId' }, { status: 400 });
         }
 
-        console.log(`[ADD CHILD] Request: ${firstName} ${lastName} (${email}) linked to ${parentId}`);
         const supabaseAdmin = getSupabaseAdmin();
 
-        // 0. Validate Parent Exists
-        let { data: parentExists, error: parentCheckErr } = await supabaseAdmin
+        // 0. Validate Parent Exists & Fetch Parent Details
+        let { data: parentProfile, error: parentCheckErr } = await supabaseAdmin
             .from('profiles')
-            .select('id')
+            .select('*')
             .eq('id', parentId)
             .single();
 
-        if (parentCheckErr || !parentExists) {
+        if (parentCheckErr || !parentProfile) {
             console.warn(`[ADD CHILD] Parent ID ${parentId} not found in profiles. Checking Auth...`);
             const { data: authResult } = await supabaseAdmin.auth.admin.getUserById(parentId);
 
             if (authResult?.user) {
                 console.log(`[ADD CHILD] Parent found in Auth. Healing profile...`);
-                await supabaseAdmin.from('profiles').upsert({
+                const { data: healedProfile } = await supabaseAdmin.from('profiles').upsert({
                     id: parentId,
                     first_name: authResult.user.user_metadata?.first_name || 'Parent',
                     last_name: authResult.user.user_metadata?.last_name || '',
                     username: authResult.user.email,
                     contact_email: authResult.user.email,
                     role: 'parent'
-                });
+                }).select().single();
+                parentProfile = healedProfile;
             } else {
                 return NextResponse.json({ error: `Parent account invalid: ${parentId}` }, { status: 400 });
             }
         }
 
-        // 1. Create OR Fetch Auth User
-        let childId: string;
+        const resolvedLastName = lastName || parentProfile?.last_name || '';
+        const parentContactEmail = parentProfile?.contact_email || parentProfile?.username || '';
+        const parentPhone = parentProfile?.phone || null;
 
-        // Attempt to create
+        console.log(`[ADD CHILD] Request: ${firstName} ${resolvedLastName} linked to parent ${parentId} (${parentContactEmail})`);
+
+        // 1. Create Internal Auth User to satisfy Foreign Key constraints
+        const internalEmail = `child_${crypto.randomUUID()}@east.internal`;
+        const tempPassword = crypto.randomUUID();
+
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-            email: email,
+            email: internalEmail,
             email_confirm: true,
-            user_metadata: { first_name: firstName, last_name: lastName, role: 'player' },
-            password: 'password123'
+            user_metadata: { first_name: firstName, last_name: resolvedLastName, role: 'player' },
+            password: tempPassword
         });
 
-        if (authError) {
-            // Check if user already exists
-            if (authError.message?.includes('registered') || authError.message?.includes('exists')) {
-                console.log(`[ADD CHILD] User ${email} already exists. Linking existing account.`);
-                // Fetch existing user
-                // query by email is not directly exposed on admin client easily without listUsers
-                // But we can try getAllUser or listUsers. 
-                // A better way is using listUsers ({ params }) with filter? No, standard API doesn't support email filter well.
-                // WE will rely on creating a "Soft Fail".
-
-                // WORKAROUND: We can't easily get ID by email via Admin API without iterating.
-                // But we CAN Just fail gracefully if we can't find them, OR (better)
-                // Use the generateLink trick or just accept we might not be able to link if we don't know the ID.
-
-                // Actually, supabaseAdmin.rpc might have a function? No.
-                // Let's iterate? No, too slow.
-                // Wait, logic check: if they exist, is it "OUR" child?
-                // If the user manually added them before?
-
-                // BETTER APPROACH FOR NOW: Return 409 Conflict so the UI tells the user.
-                return NextResponse.json({ error: 'User with this email already exists. Please contact support to link them.' }, { status: 409 });
-            }
-
+        if (authError || !authData?.user) {
             console.error('[ADD CHILD] Auth Error:', authError);
-            return NextResponse.json({ error: authError.message }, { status: 500 });
-        } else {
-            childId = authData.user.id;
+            return NextResponse.json({ error: authError?.message || 'Failed to create child account' }, { status: 500 });
         }
 
-        // 2. Create/Update Profile
+        const childId = authData.user.id;
+        const sanitizedFirst = firstName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const generatedUsername = `${sanitizedFirst}_${Math.floor(1000 + Math.random() * 9000)}`;
+
+        // 2. Create Profile with Parent's Contact Email
         const { error: profileError } = await supabaseAdmin
             .from('profiles')
             .upsert({
                 id: childId,
                 first_name: firstName,
-                last_name: lastName,
-                username: email,
-                contact_email: email,
+                last_name: resolvedLastName,
+                username: generatedUsername,
+                contact_email: parentContactEmail,
                 parent_id: parentId,
                 role: 'player',
-                bio: sport ? `${sport} Player` : 'Athlete',
+                bio: sport ? `${sport} Athlete` : 'Athlete',
                 credits: 0
             });
 
@@ -101,8 +85,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: profileError.message }, { status: 500 });
         }
 
-        // 3. Create Relationship (Upsert to prevent duplicate unique key error)
-        // We use onConflict on columns (parent_id, child_id) if the constraint exists
+        // 3. Create Player Relationship
         const { error: relError } = await supabaseAdmin.from('player_relationships').upsert({
             parent_id: parentId,
             child_id: childId,
@@ -111,11 +94,22 @@ export async function POST(request: Request) {
 
         if (relError) {
             console.error('[ADD CHILD] Relationship Error:', relError);
-            // Non-critical if profile linked
         }
 
-        console.log(`[ADD CHILD] Success: ${childId}`);
-        return NextResponse.json({ success: true, childId });
+        console.log(`[ADD CHILD] Successfully registered child ${childId} under parent ${parentId}`);
+        return NextResponse.json({ 
+            success: true, 
+            childId,
+            child: {
+                id: childId,
+                first_name: firstName,
+                last_name: resolvedLastName,
+                contact_email: parentContactEmail,
+                phone: parentPhone,
+                bio: sport ? `${sport} Athlete` : 'Athlete',
+                credits: 0
+            }
+        });
 
     } catch (err: any) {
         console.error('[ADD CHILD] SERVER ERROR:', err);
