@@ -115,6 +115,7 @@ export default function AdminLayout({
                             <AdminNavLink href="/check-in" icon={QrCode} label="Scanner" />
                             <AdminNavLink href="/sys-admin/qr" icon={QrCode} label="QR Gen" />
                             <AdminNavLink href="/sys-admin/news" icon={Newspaper} label="News" />
+                            <AdminNavLink href="/sys-admin/payments" icon={CreditCard} label="Payments" />
                             <AdminNavLink href="/sys-admin/bookings" icon={CreditCard} label="Booking Logs" />
                             <AdminNavLink href="/sys-admin/audit" icon={Shield} label="Audit Logs" />
                             <AdminNavLink href="/sys-admin/metrics" icon={BarChart3} label="Metrics" />
@@ -202,6 +203,13 @@ function MobileMenu() {
                             className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors"
                         >
                             <Newspaper size={16} /> News
+                        </Link>
+                        <Link
+                            href="/sys-admin/payments"
+                            onClick={() => setIsOpen(false)}
+                            className="px-6 py-4 hover:bg-white/5 flex items-center gap-4 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors"
+                        >
+                            <CreditCard size={16} /> Payments
                         </Link>
                         <Link
                             href="/sys-admin/bookings"

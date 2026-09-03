@@ -46,7 +46,9 @@
     "website",
     "scripts",
     "project-docs",
-    "tests"
+    "tests",
+    "scratch",
+    "check_drills_policies.ts"
   ],
   // ⬅️ THIS BLOCK IS THE FIX FOR @/app ALIASES
   "ts-node": {

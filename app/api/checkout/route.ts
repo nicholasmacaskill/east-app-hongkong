@@ -3,6 +3,12 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { BASE_URL } from '@/app/lib/email';
 import { getStripeSecretKey, getStripePriceId } from '@/app/lib/stripe-config';
+import {
+  buildCheckoutPriceData,
+  getActiveConnectedAccountId,
+  resolvePlanKeyFromPriceId,
+  stripeAccountRequestOptions,
+} from '@/app/lib/stripe-connect';
 
 export async function POST(request: Request) {
   try {
@@ -50,8 +56,13 @@ export async function POST(request: Request) {
 
     const topUpAmount = TOPUP_MAP[priceId] || 0;
     const isTopUp = !isRecurring && topUpAmount > 0;
+    const planKey = resolvePlanKeyFromPriceId(priceId);
+    const connectedAccountId = await getActiveConnectedAccountId();
+    const stripeAccountOptions = stripeAccountRequestOptions(connectedAccountId);
 
-    console.log(`Session Mode: ${mode} | Recurring: ${isRecurring} | TopUp Amount: ${topUpAmount}`);
+    console.log(
+      `Session Mode: ${mode} | Recurring: ${isRecurring} | TopUp Amount: ${topUpAmount} | Connect: ${connectedAccountId || 'platform-direct'}`
+    );
 
     // Default URLs if not provided
     const referer = request.headers.get('referer');
@@ -71,15 +82,18 @@ export async function POST(request: Request) {
     const sessionConfig: Stripe.Checkout.SessionCreateParams = {
       mode: mode,
       payment_method_types: ['card'],
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: connectedAccountId
+        ? [{ price_data: buildCheckoutPriceData(price, planKey), quantity: 1 }]
+        : [{ price: priceId, quantity: 1 }],
       success_url: finalSuccessUrl,
       cancel_url: finalCancelUrl,
       customer_email: userEmail,
       metadata: {
         userId: userId,
         target_user_id: userId,
-        credit_amount: topUpAmount.toString()
-      }
+        credit_amount: topUpAmount.toString(),
+        ...(planKey ? { plan_key: planKey } : {}),
+      },
     };
 
     // For subscriptions, ensure metadata is passed to the subscription object
@@ -87,11 +101,15 @@ export async function POST(request: Request) {
       sessionConfig.subscription_data = {
         metadata: {
           userId: userId,
-        }
+          ...(planKey ? { plan_key: planKey } : {}),
+        },
       };
     }
 
-    const session = await stripe.checkout.sessions.create(sessionConfig);
+    const session = await stripe.checkout.sessions.create(
+      sessionConfig,
+      stripeAccountOptions
+    );
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {

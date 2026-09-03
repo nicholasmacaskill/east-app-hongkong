@@ -8,6 +8,7 @@ import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 // 1. Setup Stripe
 // Webhook secrets and Stripe clients are resolved dynamically in the handler
 import { getStripeSecretKey, getStripeWebhookSecret, getStripePriceId } from '@/app/lib/stripe-config';
+import { refreshConnectedAccountStatus } from '@/app/lib/stripe-connect';
 
 
 // 2. Setup Supabase Admin (Bypass RLS)
@@ -16,6 +17,7 @@ import { getStripeSecretKey, getStripeWebhookSecret, getStripePriceId } from '@/
 
 // Export for testing
 const PLAN_DETAILS: Record<string, { credits: number; tier: string }> = {};
+const PLAN_BY_KEY: Record<string, { credits: number; tier: string }> = {};
 
 function populatePlanDetails() {
     const plans = [
@@ -30,6 +32,8 @@ function populatePlanDetails() {
     ];
 
     plans.forEach(plan => {
+        PLAN_BY_KEY[plan.key] = { credits: plan.credits, tier: plan.tier };
+
         // Add both test and live IDs to the lookup map
         const testId = process.env[`NEXT_PUBLIC_STRIPE_PRICE_${plan.key}_TEST`];
         const liveId = process.env[`NEXT_PUBLIC_STRIPE_PRICE_${plan.key}_LIVE`];
@@ -39,6 +43,16 @@ function populatePlanDetails() {
         if (liveId) PLAN_DETAILS[liveId] = { credits: plan.credits, tier: plan.tier };
         if (legacyId) PLAN_DETAILS[legacyId] = { credits: plan.credits, tier: plan.tier };
     });
+}
+
+function resolvePlan(planKey?: string | null, priceId?: string | null) {
+    if (planKey && PLAN_BY_KEY[planKey]) {
+        return PLAN_BY_KEY[planKey];
+    }
+    if (priceId && PLAN_DETAILS[priceId]) {
+        return PLAN_DETAILS[priceId];
+    }
+    return { credits: 1000, tier: 'individual' };
 }
 
 populatePlanDetails();
@@ -107,6 +121,17 @@ export async function POST(request: Request) {
             }, { status: 200 });
         }
 
+        const connectedAccountId = event.account || undefined;
+        const stripeRequestOptions = connectedAccountId
+            ? { stripeAccount: connectedAccountId }
+            : undefined;
+
+        if (event.type === 'account.updated') {
+            const account = event.data.object as Stripe.Account;
+            await refreshConnectedAccountStatus(account.id);
+            return NextResponse.json({ received: true });
+        }
+
         // 4. Processing Handlers
         // ====================================================
         // A. Handle Initial Subscription Purchase (Checkout)
@@ -126,7 +151,7 @@ export async function POST(request: Request) {
 
                 if (isTest && session.metadata?.test_price_id) {
                     priceId = session.metadata.test_price_id;
-                    plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
+                    plan = resolvePlan(session.metadata?.plan_key, priceId);
                     expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // +30 days
                     console.log(`🧪 TEST MODE: Using test_price_id: ${priceId}`);
                 } else {
@@ -135,7 +160,10 @@ export async function POST(request: Request) {
                     let periodEnd;
 
                     for (let attempt = 0; attempt < 3; attempt++) {
-                        subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                        subscription = await stripe.subscriptions.retrieve(
+                            subscriptionId,
+                            stripeRequestOptions
+                        );
                         periodEnd = (subscription as any).current_period_end;
 
                         if (periodEnd && typeof periodEnd === 'number') {
@@ -149,7 +177,7 @@ export async function POST(request: Request) {
                     }
 
                     priceId = subscription!.items.data[0].price.id;
-                    plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
+                    plan = resolvePlan(session.metadata?.plan_key, priceId);
 
                     if (!periodEnd || typeof periodEnd !== 'number') {
                         console.warn(`⚠️ Subscription still missing current_period_end after retries. Using default (+30 days). Subscription:`, subscriptionId);
@@ -242,7 +270,10 @@ export async function POST(request: Request) {
 
                 let priceId = 'test_price';
                 if (!isTest) {
-                    const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+                    const lineItems = await stripe.checkout.sessions.listLineItems(
+                        session.id,
+                        stripeRequestOptions
+                    );
                     priceId = lineItems.data[0]?.price?.id || 'unknown';
                 }
 
@@ -291,13 +322,16 @@ export async function POST(request: Request) {
 
                 if (isTest && invoice.metadata?.test_price_id) {
                     const testPriceId = invoice.metadata.test_price_id;
-                    plan = PLAN_DETAILS[testPriceId] || { credits: 1000, tier: 'individual' };
+                    plan = resolvePlan(invoice.metadata?.plan_key, testPriceId);
                     currentPeriodEnd = Math.floor((Date.now() + 30 * 24 * 60 * 60 * 1000) / 1000);
                     console.log(`🧪 TEST MODE: Processing renewal for test_price_id: ${testPriceId}`);
                 } else {
-                    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                    const subscription = await stripe.subscriptions.retrieve(
+                        subscriptionId,
+                        stripeRequestOptions
+                    );
                     const priceId = subscription.items.data[0].price.id;
-                    plan = PLAN_DETAILS[priceId] || { credits: 1000, tier: 'individual' };
+                    plan = resolvePlan(subscription.metadata?.plan_key, priceId);
                     currentPeriodEnd = (subscription as any).current_period_end;
                 }
 
