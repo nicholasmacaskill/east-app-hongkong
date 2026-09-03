@@ -4,11 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 const authFile = 'playwright/.auth/admin.json';
 
 setup('authenticate as admin', async ({ page }) => {
-    page.on('console', msg => console.log('BROWSER:', msg.text()));
-    page.on('pageerror', err => console.log('BROWSER ERROR:', err.message));
-
     setup.setTimeout(120000);
-    // 1. Create Test Admin via Admin API
+    
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -22,7 +19,7 @@ setup('authenticate as admin', async ({ page }) => {
     const email = `test-admin-${timestamp}@east.com`;
     const password = 'test-password-123';
 
-    // Create User with auto-confirmation and sys-admin role
+    // 1. Create User with auto-confirmation and sys-admin role
     const { data: user, error } = await supabase.auth.admin.createUser({
         email,
         password,
@@ -30,15 +27,13 @@ setup('authenticate as admin', async ({ page }) => {
         user_metadata: {
             first_name: 'Test',
             last_name: 'Admin',
-            role: 'sys-admin' // Critical: Set role to sys-admin
+            role: 'sys-admin'
         }
     });
 
     if (error || !user.user) throw error;
 
-    // Explicitly update profile role to sys-admin to ensure DB sync
-    // (In case trigger doesn't pick up metadata correctly or just to be safe)
-    // Explicitly upset profile to ensure it exists and has sys-admin role
+    // 2. Explicitly upsert profile to ensure sys-admin role and credits
     const { error: updateError } = await supabase
         .from('profiles')
         .upsert({
@@ -46,33 +41,23 @@ setup('authenticate as admin', async ({ page }) => {
             contact_email: email,
             first_name: 'Test',
             last_name: 'Admin',
-            role: 'sys-admin'
+            role: 'sys-admin',
+            credits: 1000
         });
 
     if (updateError) console.error('Failed to set admin role:', updateError);
 
     console.log(`Created test admin: ${email} (${user.user.id})`);
 
-    // 2. Login via UI (Admin Protocol)
-    // Small delay to ensure DB propagation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    await page.goto('/');
-
-    // Select ADMIN PORTAL
-    const adminButton = page.locator('button:has-text("ADMIN PORTAL")');
-    await adminButton.scrollIntoViewIfNeeded();
-    await adminButton.click();
-
-    // Enter Credentials
+    // 3. Login via /login
+    await page.goto('/login');
     await page.fill('input[name="email"]', email);
     await page.fill('input[name="password"]', password);
     await page.click('button:has-text("LOGIN")');
 
-    // 3. Wait for redirect to Admin Dashboard
-    // Admin dashboard usually /sys-admin
-    await page.waitForURL(/\/sys-admin/);
+    // 4. Wait for redirect to /sys-admin
+    await page.waitForURL(/\/sys-admin/, { timeout: 15000 });
 
-    // 4. Save state
+    // 5. Save state
     await page.context().storageState({ path: authFile });
 });

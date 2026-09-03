@@ -1,63 +1,37 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
+import { scanAndPurgeTestAccounts } from './helpers/db-cleanup';
 
 const isProd = process.env.PLAYWRIGHT_ENV === 'production';
-const envFile = isProd ? '../.env.production.latest' : '../.env.test';
-dotenv.config({ path: path.resolve(__dirname, envFile) });
+const baseURL = process.env.PLAYWRIGHT_TEST_BASE_URL || (isProd ? 'https://app.eastsportsgroup.com' : 'https://test-branch-east.vercel.app');
+
+let envFile = '.env.test';
+if (isProd || baseURL.includes('app.eastsportsgroup.com')) {
+    envFile = '.env.production.latest';
+} else if (baseURL.includes('localhost') || baseURL.includes('127.0.0.1')) {
+    envFile = '.env.local';
+}
+
+dotenv.config({ path: path.resolve(__dirname, '../', envFile), override: true });
 
 async function globalTeardown() {
-    console.log('\n🧹 Starting Global Test Data Cleanup...');
+    console.log('\n🧹 [GLOBAL TEARDOWN] Initiating post-test cascade cleanup...');
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+        console.warn('⚠️ [GLOBAL TEARDOWN] Supabase credentials not found in env.');
+        return;
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
         auth: { autoRefreshToken: false, persistSession: false }
     });
 
-    try {
-        const { data: { users }, error: listError } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-        if (listError) throw listError;
-
-        const keywords = ['test', 'qa', 'reminder'];
-        const protectedEmails = ['admin@east.com', 'rick@dynevents.com', 'nicholasmacaskill@proton.me'];
-
-        const usersToDelete = users.filter(user => {
-            const email = (user.email || '').toLowerCase();
-            const isProtected = protectedEmails.includes(email);
-            const matchesMatch = keywords.some(k => email.includes(k));
-            return matchesMatch && !isProtected;
-        });
-
-        console.log(`Found ${usersToDelete.length} test accounts to delete.`);
-
-        const ids = usersToDelete.map(u => u.id);
-        if (ids.length > 0) {
-            // Clear dependencies first
-            await Promise.all([
-                supabase.from('admin_audit_logs').delete().in('admin_id', ids),
-                supabase.from('announcements').delete().in('created_by', ids),
-                supabase.from('likes').delete().in('user_id', ids),
-                supabase.from('posts').delete().in('user_id', ids),
-                supabase.from('players_stats').update({ verified_by: null }).in('verified_by', ids),
-                supabase.from('transactions').delete().in('user_id', ids),
-            ]);
-            
-            await supabase.from('profiles').delete().in('id', ids);
-
-            for (const user of usersToDelete) {
-                console.log(`Deleting: ${user.email}`);
-                const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
-                if (deleteError) {
-                    console.error(`❌ Failed to delete auth user ${user.id}:`, deleteError.message);
-                }
-            }
-        }
-
-        console.log('✨ Cleanup complete.\n');
-    } catch (error) {
-        console.error('❌ Global Teardown Error:', error);
-    }
+    await scanAndPurgeTestAccounts(supabase);
+    console.log('✨ [GLOBAL TEARDOWN] Complete.\n');
 }
 
 export default globalTeardown;

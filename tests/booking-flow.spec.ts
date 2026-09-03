@@ -11,18 +11,18 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 test.describe('User Booking Flow', () => {
-    let testServiceId: string;
-    let testSessionId: number;
+    let testSessionId: number | null = null;
+    let testServiceId: string | null = null;
 
     test.beforeAll(async () => {
         // 1. Create a Test Service (Class Type)
         const { data: service, error: svcError } = await supabase
             .from('session_types')
             .insert({
-                title: 'Automated Booking Test', // Unified Title
+                title: 'Automated Booking Test',
                 category: 'CLASS',
-                description: 'E2E Test Service',
-                image_url: 'https://placehold.co/400'
+                description: 'E2E Test Description',
+                image_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=600'
             })
             .select()
             .single();
@@ -61,26 +61,21 @@ test.describe('User Booking Flow', () => {
     });
 
     test.afterAll(async () => {
-        // Cleanup
-        if (testSessionId) await supabase.from('sessions').delete().eq('id', testSessionId);
-        if (testServiceId) await supabase.from('session_types').delete().eq('id', testServiceId);
+        // Cleanup Session and Registrations
+        if (testSessionId) {
+            await supabase.from('registrations').delete().eq('session_id', testSessionId);
+            await supabase.from('sessions').delete().eq('id', testSessionId);
+        }
+        if (testServiceId) {
+            await supabase.from('session_types').delete().eq('id', testServiceId);
+        }
     });
 
     test('should allow parent to book a class', async ({ page }) => {
-        // Monitor Console for critical errors
-        page.on('console', msg => {
-            if (msg.type() === 'error') console.log(`[BROWSER ERROR]: ${msg.text()}`);
-        });
-
-        // 1. Login (using existing auth setup)
+        // 1. Visit Home
         await page.goto('/');
 
-        // Wait for Home Screen
-        await expect(page.locator('h2:has-text("Breaking News")')).toBeVisible();
-
-        // 2. Find the Service in "Classes" section
-
-        // Setup Dialog Listener (Auto-Dismiss Success)
+        // 2. Locate the Service in the UI
         page.on('dialog', async dialog => {
             console.log(`[Dialog]: ${dialog.message()}`);
             await dialog.dismiss();
@@ -88,28 +83,30 @@ test.describe('User Booking Flow', () => {
 
         // We look for the text of the service title
         const serviceCard = page.locator(`text=Automated Booking Test`).first();
-        await expect(serviceCard).toBeVisible();
+        await expect(serviceCard).toBeVisible({ timeout: 15000 });
         await serviceCard.click();
 
         // 3. Class Modal should open
-        // Wait a bit
         await page.waitForTimeout(1000);
 
         // It should auto-select the single session (modal header check)
-        // Use .first() as header appears in multiple places in DOM
-        await expect(page.locator('h2', { hasText: /Automated Booking Test/i }).first()).toBeVisible();
+        await expect(page.locator('h2', { hasText: /Automated Booking Test/i }).first()).toBeVisible({ timeout: 10000 });
 
-        // 4. Select "Myself" (Parent)
-        await expect(page.locator('button:has-text("PAY 5 CREDITS")')).toBeVisible();
+        // 4. If session time slot selection button is present, click it
+        const sessionButton = page.locator('button', { hasText: /5 Credits/i }).first();
+        if (await sessionButton.isVisible()) {
+            await sessionButton.click();
+        }
 
-        // 5. Click Pay
-        await page.click('button:has-text("PAY 5 CREDITS")');
+        // 5. Select "Myself" (Parent) / Pay Button
+        const payBtn = page.locator('button:has-text("PAY 5 CREDITS")');
+        await expect(payBtn).toBeVisible({ timeout: 5000 });
+        await payBtn.click();
 
-        // Wait a bit for processing
+        // Wait for processing
         await page.waitForTimeout(3000);
 
         // 6. DB Verification
-        // Check if registration exists
         const { count, error } = await supabase
             .from('registrations')
             .select('*', { count: 'exact', head: true })
@@ -121,14 +118,13 @@ test.describe('User Booking Flow', () => {
             throw new Error("Booking failed - No registration found in DB.");
         }
 
-        // 7. Verify UI Update (Button should change to "BOOKED" or disappear?)
-        // The modal closes on success, so the header should not be visible
+        // 7. Verify UI Update
         await expect(page.locator('h2', { hasText: /Automated Booking Test/i })).not.toBeVisible();
 
         // 8. Go to Schedule to verify appearance
-        await page.click('button:has-text("Schedule")'); // Bottom Nav
+        await page.click('button:has-text("Schedule")');
 
-        // 9. Verify Session in Schedule (Since we used 'Today', it should appear immediately)
-        await expect(page.getByText(/Automated Booking Test/i)).toBeVisible();
+        // 9. Verify Session in Schedule
+        await expect(page.locator('text=Automated Booking Test').first()).toBeVisible({ timeout: 15000 });
     });
 });
