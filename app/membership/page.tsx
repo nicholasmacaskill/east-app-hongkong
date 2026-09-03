@@ -28,7 +28,7 @@ const BENEFITS = [
         items: [
             { label: 'FACILITY', value: '7D' },
             { label: 'COACH', value: '7D' },
-            { label: 'CLASS', value: '7D' }
+            { label: 'CLASS', value: '30D' }
         ]
     },
     {
@@ -336,7 +336,7 @@ function MembershipContent() {
                                     {section.items.map((item, i) => (
                                         <div key={i} className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0 overflow-hidden">
                                             <span className="font-bold text-[11px] text-gray-700 uppercase tracking-tight truncate mr-2">{item.label}</span>
-                                            {item.value === 'YES' || item.value === '7D' ? (
+                                            {item.value === 'YES' || item.value === '7D' || item.value === '30D' ? (
                                                 <Check size={14} className="text-[#28D160]" strokeWidth={4} />
                                             ) : (
                                                 <span className="font-black text-[11px] uppercase italic text-black shrink-0">{item.value}</span>

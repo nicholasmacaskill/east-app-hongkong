@@ -38,9 +38,9 @@ export async function GET(request: Request) {
     return NextResponse.json(registrations);
   }
 
-  // Fetch sessions that are in the future, ordered by time
-  const tenDaysLater = new Date();
-  tenDaysLater.setDate(tenDaysLater.getDate() + 10);
+  // Fetch sessions that are in the future (within a 30-day / 1-month booking window), ordered by time
+  const thirtyDaysLater = new Date();
+  thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30);
 
   const { data, error } = await supabaseAdmin
     .from('sessions')
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
     `)
     .neq('status', 'cancelled') // Exclude cancelled sessions
     .gt('start_time', new Date().toISOString())
-    .lte('start_time', tenDaysLater.toISOString()) // 10-Day Limit
+    .lte('start_time', thirtyDaysLater.toISOString()) // 30-Day (Full Month) Limit
     .order('start_time', { ascending: true });
 
   if (error) {

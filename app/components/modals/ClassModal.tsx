@@ -117,11 +117,12 @@ export default function ClassModal({
             if (initialAttendeeId) {
                 setSelectedAttendeeIds([initialAttendeeId]);
                 setPendingAttendeeIds([initialAttendeeId]);
-            } else if (currentUserId && sessions?.[0]?.category === 'FACILITY') {
+            } else if (currentUserId && (sessions?.[0]?.category === 'FACILITY' || myChildren.length === 0)) {
                 setSelectedAttendeeIds([currentUserId]);
+                setPendingAttendeeIds([currentUserId]);
             }
         }
-    }, [initialAttendeeId, currentUserId, sessions]);
+    }, [initialAttendeeId, currentUserId, sessions, myChildren]);
 
     // Lock Background Scroll & Init Polyfill
     useEffect(() => {
@@ -1102,7 +1103,7 @@ export default function ClassModal({
                                                         {Array.from(new Set(filteredSessions.map(s => {
                                                             const d = safeDate(s.start_time);
                                                             return d ? d.toISOString().split('T')[0] : '';
-                                                        }).filter(d => !!d))).slice(0, 7).map((dateISO) => {
+                                                        }).filter(d => !!d))).map((dateISO) => {
                                                             const dateObj = safeDate(`${dateISO}T00:00:00`);
                                                             if (!dateObj) return null;
                                                             const daySessions = filteredSessions.filter(s => {
@@ -1138,7 +1139,7 @@ export default function ClassModal({
                                                         {Array.from(new Set(filteredSessions.map(s => {
                                                             const d = safeDate(s.start_time);
                                                             return d ? d.toISOString().split('T')[0] : '';
-                                                        }).filter(d => !!d))).slice(0, 7).map(dateISO => {
+                                                        }).filter(d => !!d))).map(dateISO => {
                                                             const daySessions = filteredSessions.filter(s => {
                                                                 const d = safeDate(s.start_time);
                                                                 return d && d.toISOString().split('T')[0] === dateISO;
