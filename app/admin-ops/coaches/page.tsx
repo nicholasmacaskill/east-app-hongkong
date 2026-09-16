@@ -46,7 +46,7 @@ export default function AdminOpsCoachesPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-2">
-                        Coach <span className="text-[#28D160]">Roster</span>
+                        Coach <span className="text-east-light">Roster</span>
                     </h1>
                     <p className="text-gray-400 text-sm font-medium">Manage your elite team of instructors and their availability.</p>
                 </div>
@@ -56,7 +56,7 @@ export default function AdminOpsCoachesPage() {
                         <input 
                             type="text" 
                             placeholder="Find a coach..." 
-                            className="bg-[#1a1a1a] border border-white/5 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-[#28D160] transition-colors w-64"
+                            className="bg-[#1a1a1a] border border-white/5 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-east-light transition-colors w-64"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -78,7 +78,7 @@ export default function AdminOpsCoachesPage() {
                     </div>
                 ) : (
                     filteredCoaches.map(coach => (
-                        <div key={coach.id} className="bg-[#1a1a1a] border border-white/5 rounded-3xl p-6 flex flex-col gap-6 group hover:border-[#28D160] transition-all relative overflow-hidden shadow-xl">
+                        <div key={coach.id} className="bg-[#1a1a1a] border border-white/5 rounded-3xl p-6 flex flex-col gap-6 group hover:border-east-light transition-all relative overflow-hidden shadow-xl">
                             <div className="flex items-center gap-4">
                                 <div className="w-20 h-20 bg-black/40 rounded-2xl overflow-hidden flex-shrink-0 border border-white/5 relative">
                                     {coach.avatar_url ? (
@@ -89,13 +89,13 @@ export default function AdminOpsCoachesPage() {
                                         </div>
                                     )}
                                     <div className="absolute top-1 right-1">
-                                        <div className="w-2 h-2 bg-[#28D160] rounded-full shadow-[0_0_8px_#28D160]" />
+                                        <div className="w-2 h-2 bg-east-light rounded-full shadow-[0_0_8px_#28D160]" />
                                     </div>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="text-xl font-black uppercase italic tracking-tight mb-1 group-hover:text-[#28D160] transition-colors truncate">{coach.first_name} {coach.last_name}</h3>
+                                    <h3 className="text-xl font-black uppercase italic tracking-tight mb-1 group-hover:text-east-light transition-colors truncate">{coach.first_name} {coach.last_name}</h3>
                                     <div className="flex items-center gap-2 mb-2">
-                                        <Star size={10} className="text-[#28D160] fill-[#28D160]" />
+                                        <Star size={10} className="text-east-light fill-[#28D160]" />
                                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pro Coach</span>
                                     </div>
                                     <div className="flex items-center gap-2 text-[10px] text-gray-500 font-bold italic">
@@ -112,7 +112,7 @@ export default function AdminOpsCoachesPage() {
                                 </div>
                                 <div className="bg-black/40 rounded-xl p-3 border border-white/5">
                                     <p className="text-[8px] font-black text-gray-600 uppercase mb-1">Efficiency</p>
-                                    <p className="text-sm font-black italic text-[#28D160]">94%</p>
+                                    <p className="text-sm font-black italic text-east-light">94%</p>
                                 </div>
                             </div>
 
@@ -121,7 +121,7 @@ export default function AdminOpsCoachesPage() {
                                     setSelectedCoach(coach);
                                     setShowAvailability(true);
                                 }}
-                                className="w-full bg-white/5 border border-white/5 hover:bg-[#28D160] hover:text-black hover:border-transparent rounded-xl py-4 px-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
+                                className="w-full bg-white/5 border border-white/5 hover:bg-east-light hover:text-black hover:border-transparent rounded-xl py-4 px-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"
                             >
                                 <Calendar size={14} /> Handle Availability
                             </button>

@@ -230,7 +230,7 @@ export default function DrillHubCMSPage() {
                             type="button"
                             onClick={() => toggleSelection(selected, setSelected, opt)}
                             className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${
-                                active ? 'bg-[#28D160] text-black shadow-lg shadow-[#28D160]/20' : 'bg-black/40 border border-white/10 text-gray-400 hover:border-white/30'
+                                active ? 'bg-east-light text-black shadow-lg shadow-[#28D160]/20' : 'bg-black/40 border border-white/10 text-gray-400 hover:border-white/30'
                             }`}
                         >
                             {opt}
@@ -251,7 +251,7 @@ export default function DrillHubCMSPage() {
                 {!isCreating && (
                     <button 
                         onClick={() => { resetForm(); setIsCreating(true); }}
-                        className="bg-[#28D160] hover:bg-white text-black px-6 py-3 rounded-xl font-black uppercase italic tracking-tighter text-sm flex items-center gap-2 shadow-xl hover:scale-105 transition-transform"
+                        className="bg-east-light hover:bg-white text-black px-6 py-3 rounded-xl font-black uppercase italic tracking-tighter text-sm flex items-center gap-2 shadow-xl hover:scale-105 transition-transform"
                     >
                         <Plus size={18} /> New Drill
                     </button>
@@ -283,7 +283,7 @@ export default function DrillHubCMSPage() {
                                     value={title}
                                     onChange={(e) => setTitle(e.target.value)}
                                     placeholder="e.g. Triangle Sprint..."
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 focus:outline-none focus:border-[#28D160] text-lg font-bold transition-colors"
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 focus:outline-none focus:border-east-light text-lg font-bold transition-colors"
                                 />
                             </div>
 
@@ -293,7 +293,7 @@ export default function DrillHubCMSPage() {
                                     required
                                     value={coachId}
                                     onChange={(e) => setCoachId(e.target.value)}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 focus:outline-none focus:border-[#28D160] uppercase tracking-tighter text-sm italic font-bold appearance-none transition-colors"
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 focus:outline-none focus:border-east-light uppercase tracking-tighter text-sm italic font-bold appearance-none transition-colors"
                                 >
                                     <option value="">Select a Coach...</option>
                                     {coaches.map(c => (
@@ -304,7 +304,7 @@ export default function DrillHubCMSPage() {
 
                             <button
                                 type="submit"
-                                className="mt-4 bg-[#28D160] text-black w-full py-4 rounded-xl font-black uppercase italic tracking-tighter text-sm hover:bg-white transition-colors flex items-center justify-center gap-2"
+                                className="mt-4 bg-east-light text-black w-full py-4 rounded-xl font-black uppercase italic tracking-tighter text-sm hover:bg-white transition-colors flex items-center justify-center gap-2"
                             >
                                 <Save size={18} /> {editingDrill ? 'Update Meta' : 'Initialize Drill'}
                             </button>
@@ -323,7 +323,7 @@ export default function DrillHubCMSPage() {
                     {/* Step Editor Component */}
                     {editingDrill && (
                         <div className="mt-12 pt-12 border-t border-white/10">
-                            <h2 className="text-xl font-black italic uppercase tracking-tighter mb-4 text-[#28D160]">Drill Steps & Diagrams</h2>
+                            <h2 className="text-xl font-black italic uppercase tracking-tighter mb-4 text-east-light">Drill Steps & Diagrams</h2>
                             <p className="text-sm text-gray-400 mb-6">Manage the phase-by-phase breakdown for {editingDrill.title}.</p>
                             
                             <div className="space-y-6 mb-8">
@@ -347,7 +347,7 @@ export default function DrillHubCMSPage() {
                                             </div>
                                             
                                             <div className="flex-1">
-                                                <div className="text-[10px] font-black text-[#28D160] uppercase tracking-widest mb-1">Phase {step.step_number}</div>
+                                                <div className="text-[10px] font-black text-east-light uppercase tracking-widest mb-1">Phase {step.step_number}</div>
                                                 <h3 className="text-lg font-bold uppercase text-white mb-2">{step.title || 'Untitled Phase'}</h3>
                                                 <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-wrap">{step.instruction}</p>
                                             </div>
@@ -364,22 +364,22 @@ export default function DrillHubCMSPage() {
                                     <div className="flex flex-col gap-4">
                                         <div>
                                             <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Phase Title</label>
-                                            <input type="text" required value={newStepTitle} onChange={(e) => setNewStepTitle(e.target.value)} placeholder="e.g. Zone Entry" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-[#28D160] text-sm font-bold text-white" />
+                                            <input type="text" required value={newStepTitle} onChange={(e) => setNewStepTitle(e.target.value)} placeholder="e.g. Zone Entry" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-east-light text-sm font-bold text-white" />
                                         </div>
                                         <div>
                                             <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Coach Instructions</label>
-                                            <textarea required value={newStepInstruction} onChange={(e) => setNewStepInstruction(e.target.value)} placeholder="Explain the mechanics..." rows={4} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-[#28D160] text-sm text-white" />
+                                            <textarea required value={newStepInstruction} onChange={(e) => setNewStepInstruction(e.target.value)} placeholder="Explain the mechanics..." rows={4} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-east-light text-sm text-white" />
                                         </div>
                                     </div>
                                     
                                     <div>
                                         <label className="block text-[10px] font-black uppercase tracking-widest text-gray-500 mb-2">Whiteboard Photo (Optional)</label>
-                                        <div className="relative h-32 md:h-full min-h-[160px] bg-black/40 border-2 border-white/10 border-dashed rounded-xl flex items-center justify-center hover:border-[#28D160]/50 transition-colors cursor-pointer overflow-hidden group">
+                                        <div className="relative h-32 md:h-full min-h-[160px] bg-black/40 border-2 border-white/10 border-dashed rounded-xl flex items-center justify-center hover:border-east-light/50 transition-colors cursor-pointer overflow-hidden group">
                                             <input type="file" accept="image/*" onChange={handleImageSelect} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                                             {newStepImagePreview ? (
                                                 <img src={newStepImagePreview} className="w-full h-full object-contain p-2" alt="Preview" />
                                             ) : (
-                                                <div className="text-center text-gray-500 group-hover:text-[#28D160] transition-colors">
+                                                <div className="text-center text-gray-500 group-hover:text-east-light transition-colors">
                                                     <Upload size={24} className="mx-auto mb-2" />
                                                     <span className="text-[10px] font-black uppercase tracking-widest block">Tap to Snap Photo</span>
                                                 </div>
@@ -388,7 +388,7 @@ export default function DrillHubCMSPage() {
                                     </div>
                                 </div>
                                 
-                                <button type="submit" disabled={uploadingStep} className="mt-6 bg-white/10 hover:bg-[#28D160] text-white hover:text-black w-full py-3 rounded-xl font-black uppercase italic tracking-tighter text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                                <button type="submit" disabled={uploadingStep} className="mt-6 bg-white/10 hover:bg-east-light text-white hover:text-black w-full py-3 rounded-xl font-black uppercase italic tracking-tighter text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                                     {uploadingStep ? 'Uploading Phase...' : <><Plus size={16} /> Save Phase</>}
                                 </button>
                             </form>
@@ -398,7 +398,7 @@ export default function DrillHubCMSPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
                     {loading ? (
-                        <div className="col-span-full py-20 flex justify-center text-[#28D160]">
+                        <div className="col-span-full py-20 flex justify-center text-east-light">
                             <div className="w-8 h-8 border-4 border-current border-t-transparent rounded-full animate-spin" />
                         </div>
                     ) : drills.length === 0 ? (
@@ -409,7 +409,7 @@ export default function DrillHubCMSPage() {
                         </div>
                     ) : (
                         drills.map((drill) => (
-                            <div key={drill.id} className="bg-[#1e1e1e] border-2 border-white/5 rounded-3xl p-6 group hover:border-[#28D160] transition-all relative overflow-hidden flex flex-col">
+                            <div key={drill.id} className="bg-[#1e1e1e] border-2 border-white/5 rounded-3xl p-6 group hover:border-east-light transition-all relative overflow-hidden flex flex-col">
                                 <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                                     <button onClick={() => openEdit(drill)} className="bg-white/10 p-2 rounded-lg hover:bg-white/20 text-white transition-colors">
                                         <Edit2 size={14} />
@@ -420,7 +420,7 @@ export default function DrillHubCMSPage() {
                                 </div>
 
                                 <div className="flex-1">
-                                    <div className="text-[10px] font-bold text-[#28D160] uppercase tracking-widest mb-1">
+                                    <div className="text-[10px] font-bold text-east-light uppercase tracking-widest mb-1">
                                         {drill.coach ? `${drill.coach.first_name} ${drill.coach.last_name}` : 'Unknown Coach'}
                                     </div>
                                     <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-4 line-clamp-2">
@@ -440,7 +440,7 @@ export default function DrillHubCMSPage() {
                                     <span className="text-[10px] uppercase font-bold tracking-widest">
                                         {new Date(drill.created_at).toLocaleDateString()}
                                     </span>
-                                    <button onClick={() => openEdit(drill)} className="text-[#28D160] hover:text-white transition-colors flex items-center gap-1 text-xs font-black italic uppercase tracking-tighter">
+                                    <button onClick={() => openEdit(drill)} className="text-east-light hover:text-white transition-colors flex items-center gap-1 text-xs font-black italic uppercase tracking-tighter">
                                         Manage Steps <ArrowRight size={14} />
                                     </button>
                                 </div>

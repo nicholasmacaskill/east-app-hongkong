@@ -143,7 +143,7 @@ export default function ShopManagementPage() {
                     </div>
                     <button
                         onClick={openNew}
-                        className="flex items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg flex-shrink-0"
+                        className="flex items-center gap-2 bg-east-light text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg flex-shrink-0"
                     >
                         <Plus size={14} /> Add Item
                     </button>
@@ -172,7 +172,7 @@ export default function ShopManagementPage() {
                 <div className="text-center py-16 bg-[#1e1e1e] rounded-2xl border border-white/5">
                     <Package size={32} className="mx-auto text-gray-700 mb-3" />
                     <p className="text-gray-500 text-sm">No active items yet.</p>
-                    <button onClick={openNew} className="mt-4 text-[#28D160] text-xs font-bold uppercase tracking-widest hover:underline">
+                    <button onClick={openNew} className="mt-4 text-east-light text-xs font-bold uppercase tracking-widest hover:underline">
                         + Add your first item
                     </button>
                 </div>
@@ -209,7 +209,7 @@ export default function ShopManagementPage() {
                             <div className="flex items-end justify-between mt-auto pt-4 border-t border-white/5">
                                 <div>
                                     <div className="text-[9px] font-black uppercase tracking-widest text-gray-600 mb-0.5">Price</div>
-                                    <div className="font-montserrat font-black italic text-[#28D160] text-2xl">
+                                    <div className="font-montserrat font-black italic text-east-light text-2xl">
                                         {item.price_credits}
                                         <span className="text-xs text-gray-500 ml-1 not-italic font-bold">cr</span>
                                     </div>
@@ -244,7 +244,7 @@ export default function ShopManagementPage() {
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     placeholder="e.g. Infusion - Salty Berry"
-                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-east-light outline-none transition-all"
                                     required
                                 />
                             </div>
@@ -257,7 +257,7 @@ export default function ShopManagementPage() {
                                     onChange={e => setFormData({ ...formData, price_credits: e.target.value })}
                                     placeholder="16"
                                     min={1}
-                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all font-mono"
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-east-light outline-none transition-all font-mono"
                                     required
                                 />
                             </div>
@@ -267,7 +267,7 @@ export default function ShopManagementPage() {
                                 <select
                                     value={formData.category}
                                     onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-east-light outline-none transition-all"
                                 >
                                     {CATEGORIES.map(c => (
                                         <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
@@ -290,7 +290,7 @@ export default function ShopManagementPage() {
                                 <button
                                     type="submit"
                                     disabled={saving}
-                                    className="flex-1 bg-[#28D160] hover:bg-white text-black px-4 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all disabled:opacity-50"
+                                    className="flex-1 bg-east-light hover:bg-white text-black px-4 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all disabled:opacity-50"
                                 >
                                     {saving ? 'Saving...' : editingItem ? 'Update' : 'Add Item'}
                                 </button>

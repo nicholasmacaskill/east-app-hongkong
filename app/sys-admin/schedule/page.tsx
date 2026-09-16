@@ -340,7 +340,7 @@ export default function MasterSchedule() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <Link href="/sys-admin" className="p-2 bg-[#1e1e1e] rounded-lg hover:bg-[#28D160] hover:text-black transition-colors">
+                    <Link href="/sys-admin" className="p-2 bg-[#1e1e1e] rounded-lg hover:bg-east-light hover:text-black transition-colors">
                         <ChevronLeft size={20} />
                     </Link>
                     <div>
@@ -354,14 +354,14 @@ export default function MasterSchedule() {
                             <ChevronLeft size={16} />
                         </button>
                         <div className="px-3 py-1 flex flex-col items-center min-w-[120px]">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[#28D160]">{format(new Date(selectedDate), 'MMMM yyyy')}</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-east-light">{format(new Date(selectedDate), 'MMMM yyyy')}</span>
                         </div>
                         <button onClick={handleNextWeek} className="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-500 hover:text-white">
                             <ChevronRight size={16} />
                         </button>
                     </div>
                     <button onClick={fetchSchedule} className="p-3 bg-[#1e1e1e] rounded-xl hover:bg-white/10 transition-colors border border-white/5">
-                        <RefreshCw size={18} className={loading ? 'animate-spin text-[#28D160]' : 'text-gray-400'} />
+                        <RefreshCw size={18} className={loading ? 'animate-spin text-east-light' : 'text-gray-400'} />
                     </button>
                     {selectedSessionIds.size > 0 && (
                         <button
@@ -389,7 +389,7 @@ export default function MasterSchedule() {
                                 className={`
                                     flex flex-col items-center justify-center py-3 rounded-xl transition-all border
                                     ${isSelected
-                                        ? 'bg-[#28D160] border-[#28D160] text-black shadow-lg shadow-[#28D160]/20 z-10'
+                                        ? 'bg-east-light border-east-light text-black shadow-lg shadow-[#28D160]/20 z-10'
                                         : 'bg-black/20 border-transparent text-gray-500 hover:border-white/10 hover:bg-white/5'}
                                 `}
                             >
@@ -401,7 +401,7 @@ export default function MasterSchedule() {
                                 </span>
                                 {/* Fixed height indicator slot to prevent jitter */}
                                 <div className="h-1 mt-1 flex items-center justify-center">
-                                    {isToday && !isSelected && <div className="w-1 h-1 bg-[#28D160] rounded-full animate-pulse" />}
+                                    {isToday && !isSelected && <div className="w-1 h-1 bg-east-light rounded-full animate-pulse" />}
                                 </div>
                             </button>
                         );
@@ -414,7 +414,7 @@ export default function MasterSchedule() {
                 {/* Category Toggles */}
                 <div className="flex overflow-x-auto no-scrollbar gap-2 w-full md:w-auto">
                     {['ALL', 'PRIVATE', 'FACILITY', 'CLASS', 'EVENT'].map(cat => (
-                        <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${activeCategory === cat ? 'bg-[#28D160] border-[#28D160] text-black shadow-lg shadow-[#28D160]/20' : 'bg-[#1e1e1e] border-white/5 text-gray-500 hover:border-white/20'}`}>
+                        <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${activeCategory === cat ? 'bg-east-light border-east-light text-black shadow-lg shadow-[#28D160]/20' : 'bg-[#1e1e1e] border-white/5 text-gray-500 hover:border-white/20'}`}>
                             {cat === 'ALL' ? 'Everything' : cat.replace('_', ' ')}
                         </button>
                     ))}
@@ -425,7 +425,7 @@ export default function MasterSchedule() {
                     <select
                         value={filterFacilityId}
                         onChange={(e) => setFilterFacilityId(e.target.value)}
-                        className="bg-[#1e1e1e] border border-white/10 text-white text-[10px] font-bold uppercase p-2 rounded-xl outline-none focus:border-[#28D160] flex-1 md:w-48"
+                        className="bg-[#1e1e1e] border border-white/10 text-white text-[10px] font-bold uppercase p-2 rounded-xl outline-none focus:border-east-light flex-1 md:w-48"
                     >
                         <option value="ALL">All Facilities</option>
                         {Array.from(new Set(services.filter(s => s.category === 'FACILITY').map(s => s.title))).map(title => (
@@ -437,7 +437,7 @@ export default function MasterSchedule() {
                     <select
                         value={filterCoachId}
                         onChange={(e) => setFilterCoachId(e.target.value)}
-                        className="bg-[#1e1e1e] border border-white/10 text-white text-[10px] font-bold uppercase p-2 rounded-xl outline-none focus:border-[#28D160] flex-1 md:w-48"
+                        className="bg-[#1e1e1e] border border-white/10 text-white text-[10px] font-bold uppercase p-2 rounded-xl outline-none focus:border-east-light flex-1 md:w-48"
                     >
                         <option value="ALL">All Coaches</option>
                         {coaches.map(c => (
@@ -566,7 +566,7 @@ export default function MasterSchedule() {
                             <div className="text-center py-20 bg-[#1e1e1e] rounded-3xl border border-dashed border-white/10">
                                 <Plus size={48} className="mx-auto mb-4 text-gray-700" />
                                 <h3 className="text-xl font-black italic uppercase text-gray-500">No {activeCategory !== 'ALL' ? activeCategory.toLowerCase() : ''} items scheduled</h3>
-                                <button onClick={() => handleCellClick("09:00")} className="mt-4 bg-[#28D160]/10 text-[#28D160] px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest hover:bg-[#28D160]/20 transition-colors">Add First Entry</button>
+                                <button onClick={() => handleCellClick("09:00")} className="mt-4 bg-east-light/10 text-east-light px-6 py-2 rounded-full font-black text-xs uppercase tracking-widest hover:bg-east-light/20 transition-colors">Add First Entry</button>
                             </div>
                         );
                     }
@@ -606,12 +606,12 @@ export default function MasterSchedule() {
                                                 handleSessionClick(item);
                                             }
                                         }}
-                                            className={`group flex items-center gap-4 p-4 rounded-2xl transition-all cursor-pointer border ${isSlot ? 'bg-black/20 border-white/5 border-dashed hover:border-[#28D160]/30' : 'bg-[#1e1e1e] border-white/10 hover:border-[#28D160] hover:shadow-xl hover:shadow-[#28D160]/5'} ${item.status === 'cancelled' ? 'opacity-40 grayscale-[0.5]' : ''} ${!isSlot && selectedSessionIds.has(item.id) ? 'border-[#28D160] bg-[#28D160]/5 ring-1 ring-[#28D160]/20' : ''}`}
+                                            className={`group flex items-center gap-4 p-4 rounded-2xl transition-all cursor-pointer border ${isSlot ? 'bg-black/20 border-white/5 border-dashed hover:border-east-light/30' : 'bg-[#1e1e1e] border-white/10 hover:border-east-light hover:shadow-xl hover:shadow-[#28D160]/5'} ${item.status === 'cancelled' ? 'opacity-40 grayscale-[0.5]' : ''} ${!isSlot && selectedSessionIds.has(item.id) ? 'border-east-light bg-east-light/5 ring-1 ring-[#28D160]/20' : ''}`}
                                         >
                                             {!isSlot && (
                                                 <div
                                                     onClick={(e) => toggleSessionSelection(item.id, e)}
-                                                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all shrink-0 ${selectedSessionIds.has(item.id) ? 'bg-[#28D160] border-[#28D160] text-black' : 'border-white/10 group-hover:border-white/30'}`}
+                                                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all shrink-0 ${selectedSessionIds.has(item.id) ? 'bg-east-light border-east-light text-black' : 'border-white/10 group-hover:border-white/30'}`}
                                                 >
                                                     {selectedSessionIds.has(item.id) && <RefreshCw size={12} className="animate-spin-slow" />}
                                                     {!selectedSessionIds.has(item.id) && <div className="w-2 h-2 rounded-sm bg-white/5" />}
@@ -625,7 +625,7 @@ export default function MasterSchedule() {
                                                 <div className="flex justify-between items-start mb-1">
                                                     <div className="flex items-center gap-2">
                                                         <h3 className={`font-black uppercase tracking-tight text-sm ${isSlot ? 'text-gray-600 italic' : (item.status === 'cancelled' ? 'text-gray-500 line-through decoration-red-500/50' : 'text-white')}`}>{item.title}</h3>
-                                                        {!isSlot && <span className={`${item.category === 'FACILITY' ? 'bg-[#28D160]/10 text-[#28D160]' : 'bg-blue-500/10 text-blue-400'} text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter`}>{item.category}</span>}
+                                                        {!isSlot && <span className={`${item.category === 'FACILITY' ? 'bg-east-light/10 text-east-light' : 'bg-blue-500/10 text-blue-400'} text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter`}>{item.category}</span>}
                                                         {item.status === 'cancelled' && <span className="bg-red-500/20 text-red-500 text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter animate-pulse">CANCELLED</span>}
                                                         {isSlot && item.category === 'FACILITY' && (
                                                             <span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-tighter ${item.availableBays > 0 ? 'bg-orange-500/20 text-orange-400' : 'bg-red-500/20 text-red-500'}`}>
@@ -637,12 +637,12 @@ export default function MasterSchedule() {
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex flex-col gap-1">
                                                         <div className="flex items-center gap-2">
-                                                            <User size={12} className={isSlot ? 'text-gray-700' : 'text-[#28D160]'} />
+                                                            <User size={12} className={isSlot ? 'text-gray-700' : 'text-east-light'} />
                                                             <span className={`text-[10px] font-bold uppercase tracking-widest ${isSlot ? 'text-gray-600' : 'text-gray-300'}`}>{item.instructor || 'Unassigned'}</span>
                                                         </div>
                                                         {!isSlot && item.registrations && item.registrations.length > 0 && (
                                                             <div className="flex items-center gap-1 ml-5">
-                                                                <span className="text-[9px] text-[#28D160] font-bold uppercase tracking-wider">
+                                                                <span className="text-[9px] text-east-light font-bold uppercase tracking-wider">
                                                                     Booked by: {item.registrations.map((r: any) => `${r.profiles?.first_name || ''} ${r.profiles?.last_name || ''}`).join(', ')}
                                                                 </span>
                                                             </div>
@@ -655,7 +655,7 @@ export default function MasterSchedule() {
                                                                     {item.total_facility_bays} <span className="text-[8px] not-italic text-gray-600 uppercase">Bays</span>
                                                                 </span>
                                                             )!!}
-                                                            <span className="text-[10px] font-black italic text-[#28D160]">{item.credit_cost} <span className="text-[8px] not-italic text-gray-600 uppercase">Credits</span></span>
+                                                            <span className="text-[10px] font-black italic text-east-light">{item.credit_cost} <span className="text-[8px] not-italic text-gray-600 uppercase">Credits</span></span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -674,7 +674,7 @@ export default function MasterSchedule() {
                     <div className="bg-[#1e1e1e] p-8 rounded-[2rem] w-full max-w-lg border border-white/10 shadow-2xl overflow-y-auto max-h-[90vh]">
                         <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h2 className="font-black italic text-2xl uppercase tracking-tighter text-[#28D160]">{modalAction === 'CREATE' ? 'Add Session' : 'Edit Session'}</h2>
+                                <h2 className="font-black italic text-2xl uppercase tracking-tighter text-east-light">{modalAction === 'CREATE' ? 'Add Session' : 'Edit Session'}</h2>
                                 <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest">Global Resource Allocation</p>
                             </div>
                             <button onClick={() => setShowModal(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-500 hover:text-white"><X size={24} /></button>
@@ -683,12 +683,12 @@ export default function MasterSchedule() {
                         <div className="space-y-5">
                             <div className="space-y-4 bg-black/20 p-4 rounded-2xl border border-white/5">
                                 <div>
-                                    <label className="text-[10px] font-black text-[#28D160] uppercase tracking-widest ml-1 mb-1 block">Select Service Type</label>
+                                    <label className="text-[10px] font-black text-east-light uppercase tracking-widest ml-1 mb-1 block">Select Service Type</label>
                                     <select value={editingSession.session_type_id || ''} onChange={e => {
                                         const svc = services.find(s => s.id === e.target.value);
                                         if (svc) setEditingSession({ ...editingSession, session_type_id: svc.id, category: svc.category, title: svc.title });
                                         else setEditingSession({ ...editingSession, session_type_id: undefined, category: 'FACILITY' });
-                                    }} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-sm font-bold">
+                                    }} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-east-light text-sm font-bold">
                                         <option value="">-- CUSTOM / FACILITY --</option>
                                         <optgroup label="CLASSES">{services.filter(s => s.category === 'CLASS').map(s => <option key={s.id} value={s.id}>{s.title}</option>)}</optgroup>
                                         <optgroup label="PRIVATE LESSONS">{services.filter(s => s.category === 'PRIVATE').map(s => <option key={s.id} value={s.id}>{s.title}</option>)}</optgroup>
@@ -697,16 +697,16 @@ export default function MasterSchedule() {
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Public Display Title</label>
-                                    <input value={editingSession.title} onChange={e => setEditingSession({ ...editingSession, title: e.target.value })} placeholder="e.g. U14 Shooting Drills" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] transition-colors font-bold" />
+                                    <input value={editingSession.title} onChange={e => setEditingSession({ ...editingSession, title: e.target.value })} placeholder="e.g. U14 Shooting Drills" className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-east-light transition-colors font-bold" />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block flex items-center gap-1"><Info size={10} /> Description</label>
-                                    <textarea value={editingSession.description || ''} onChange={e => setEditingSession({ ...editingSession, description: e.target.value })} placeholder="Event details, location, etc." rows={3} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-sm" />
+                                    <textarea value={editingSession.description || ''} onChange={e => setEditingSession({ ...editingSession, description: e.target.value })} placeholder="Event details, location, etc." rows={3} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-east-light text-sm" />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block flex items-center gap-1"><Upload size={10} /> Promo Image URL</label>
                                     <div className="flex gap-2">
-                                        <input value={editingSession.image_url || ''} onChange={e => setEditingSession({ ...editingSession, image_url: e.target.value })} placeholder="https://..." className="flex-1 bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] text-xs" />
+                                        <input value={editingSession.image_url || ''} onChange={e => setEditingSession({ ...editingSession, image_url: e.target.value })} placeholder="https://..." className="flex-1 bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-east-light text-xs" />
                                         {editingSession.image_url && <div className="w-12 h-12 rounded-lg border border-white/10 overflow-hidden shrink-0"><img src={editingSession.image_url} className="w-full h-full object-cover" /></div>}
                                     </div>
                                 </div>
@@ -715,7 +715,7 @@ export default function MasterSchedule() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Assign Coach</label>
-                                    <select value={editingSession.instructor} onChange={e => setEditingSession({ ...editingSession, instructor: e.target.value })} disabled={editingSession.lockInstructor} className={`w-full bg-black/50 border border-white/10 p-3 rounded-xl text-xs font-bold outline-none focus:border-[#28D160] ${editingSession.lockInstructor ? 'opacity-50 cursor-not-allowed border-east-light/30' : ''}`}>
+                                    <select value={editingSession.instructor} onChange={e => setEditingSession({ ...editingSession, instructor: e.target.value })} disabled={editingSession.lockInstructor} className={`w-full bg-black/50 border border-white/10 p-3 rounded-xl text-xs font-bold outline-none focus:border-east-light ${editingSession.lockInstructor ? 'opacity-50 cursor-not-allowed border-east-light/30' : ''}`}>
                                         <option value="">No Coach (Staff)</option>
                                         {coaches.filter(c => {
                                             const fullName = `${c.first_name} ${c.last_name}`;
@@ -724,24 +724,24 @@ export default function MasterSchedule() {
                                             return coachServices.some(cs => cs.coach_id === c.id && cs.session_type_id === editingSession.session_type_id);
                                         }).map(c => <option key={c.id} value={`${c.first_name} ${c.last_name}`}>{c.first_name} {c.last_name}</option>)}
                                     </select>
-                                    {editingSession.lockInstructor && <p className="text-[7px] text-[#28D160] mt-1 uppercase font-black italic flex items-center gap-1"><Info size={8} /> Coach is locked</p>}
+                                    {editingSession.lockInstructor && <p className="text-[7px] text-east-light mt-1 uppercase font-black italic flex items-center gap-1"><Info size={8} /> Coach is locked</p>}
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 items-end">
                                     <div>
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">Max Capacity (Athletes)</label>
-                                        <input type="number" value={editingSession.max_capacity} onChange={e => setEditingSession({ ...editingSession, max_capacity: parseInt(e.target.value) || 1 })} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] font-bold" />
+                                        <input type="number" value={editingSession.max_capacity} onChange={e => setEditingSession({ ...editingSession, max_capacity: parseInt(e.target.value) || 1 })} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-east-light font-bold" />
                                     </div>
                                     <div>
                                         <label className="text-[10px] font-black text-orange-400 uppercase tracking-widest ml-1 mb-1 block">Total Bays</label>
-                                        <input type="number" value={editingSession.total_facility_bays} onChange={e => setEditingSession({ ...editingSession, total_facility_bays: parseInt(e.target.value) || 0 })} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] font-bold" />
+                                        <input type="number" value={editingSession.total_facility_bays} onChange={e => setEditingSession({ ...editingSession, total_facility_bays: parseInt(e.target.value) || 0 })} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-east-light font-bold" />
                                     </div>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 gap-4">
                                 <div>
-                                    <label className="text-[10px] font-black text-[#28D160] uppercase tracking-widest ml-1 mb-1 block">$ Credit Cost</label>
-                                    <input type="number" value={editingSession.credit_cost} onChange={e => setEditingSession({ ...editingSession, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] font-bold" />
+                                    <label className="text-[10px] font-black text-east-light uppercase tracking-widest ml-1 mb-1 block">$ Credit Cost</label>
+                                    <input type="number" value={editingSession.credit_cost} onChange={e => setEditingSession({ ...editingSession, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-east-light font-bold" />
                                 </div>
                             </div>
 
@@ -772,13 +772,13 @@ export default function MasterSchedule() {
                                 <div className="space-y-4 bg-black/20 p-4 rounded-2xl border border-white/5">
                                     <div className="flex items-center justify-between">
                                         <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2"><RefreshCw size={12} /> Repeat Session</label>
-                                        <button onClick={() => setRecurring(!recurring)} className={`w-10 h-5 rounded-full transition-colors relative ${recurring ? 'bg-[#28D160]' : 'bg-white/10'}`}><div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${recurring ? 'right-1' : 'left-1'}`} /></button>
+                                        <button onClick={() => setRecurring(!recurring)} className={`w-10 h-5 rounded-full transition-colors relative ${recurring ? 'bg-east-light' : 'bg-white/10'}`}><div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${recurring ? 'right-1' : 'left-1'}`} /></button>
                                     </div>
                                     {recurring && (
                                         <div className="space-y-4 animate-fadeIn">
                                             <div className="flex justify-between gap-1">
                                                 {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-                                                    <button key={i} onClick={() => setRepeatDays(repeatDays.includes(i) ? repeatDays.filter(d => d !== i) : [...repeatDays, i])} className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all border ${repeatDays.includes(i) ? 'bg-[#28D160] border-[#28D160] text-black shadow-lg shadow-[#28D160]/20' : 'bg-black/50 border-white/10 text-gray-600'}`}>{day}</button>
+                                                    <button key={i} onClick={() => setRepeatDays(repeatDays.includes(i) ? repeatDays.filter(d => d !== i) : [...repeatDays, i])} className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all border ${repeatDays.includes(i) ? 'bg-east-light border-east-light text-black shadow-lg shadow-[#28D160]/20' : 'bg-black/50 border-white/10 text-gray-600'}`}>{day}</button>
                                                 ))}
                                             </div>
                                             <div className="flex items-center justify-center gap-4">
@@ -817,7 +817,7 @@ export default function MasterSchedule() {
                             )}
 
                             <div className="flex gap-4 mt-8">
-                                <button onClick={handleSaveSession} className="flex-1 bg-[#28D160] text-black font-black italic uppercase text-sm py-4 rounded-xl hover:bg-white transition-all shadow-xl shadow-[#28D160]/10 flex items-center justify-center gap-2"><Save size={18} /> Save Session</button>
+                                <button onClick={handleSaveSession} className="flex-1 bg-east-light text-black font-black italic uppercase text-sm py-4 rounded-xl hover:bg-white transition-all shadow-xl shadow-[#28D160]/10 flex items-center justify-center gap-2"><Save size={18} /> Save Session</button>
                                 {modalAction === 'EDIT' && <button onClick={handleDeleteSession} className="bg-red-600/20 text-red-500 border border-red-500/30 p-4 rounded-xl hover:bg-red-500 hover:text-white transition-all"><Trash2 size={18} /></button>}
                             </div>
                         </div>

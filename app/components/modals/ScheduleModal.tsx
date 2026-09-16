@@ -205,7 +205,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
     // Sub-components
     const Menu = () => (
         <div className="flex flex-col gap-4 mt-8">
-            <button onClick={() => setView('manual')} className="bg-[#1e1e1e] p-6 rounded-2xl flex items-center justify-between group hover:bg-[#28D160] transition-colors">
+            <button onClick={() => setView('manual')} className="bg-[#1e1e1e] p-6 rounded-2xl flex items-center justify-between group hover:bg-east-light transition-colors">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-black/40 flex items-center justify-center group-hover:bg-white/20">
                         <Calendar className="text-white" size={24} />
@@ -218,7 +218,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
                 <ChevronRight className="text-gray-600 group-hover:text-white" />
             </button>
 
-            <button onClick={() => setView('photo')} className="bg-[#1e1e1e] p-6 rounded-2xl flex items-center justify-between group hover:bg-[#28D160] transition-colors">
+            <button onClick={() => setView('photo')} className="bg-[#1e1e1e] p-6 rounded-2xl flex items-center justify-between group hover:bg-east-light transition-colors">
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-black/40 flex items-center justify-center group-hover:bg-white/20">
                         <ImageIcon className="text-white" size={24} />
@@ -262,7 +262,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
                                 const day = new Date(e.target.value).getDay();
                                 if (!selectedDays.includes(day)) setSelectedDays([...selectedDays, day]);
                             }
-                        }} className="w-full bg-black/40 border-b border-gray-700 text-white p-2 rounded focus:border-[#28D160] outline-none font-bold" />
+                        }} className="w-full bg-black/40 border-b border-gray-700 text-white p-2 rounded focus:border-east-light outline-none font-bold" />
                     </div>
                     <div className="flex gap-4">
                         <div className="flex-1 flex flex-col gap-2">
@@ -272,7 +272,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
                                     <button
                                         key={t}
                                         onClick={() => setStartTime(t)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${startTime === t ? 'bg-[#28D160] text-black' : 'bg-black/40 text-gray-400 hover:bg-white/10'}`}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${startTime === t ? 'bg-east-light text-black' : 'bg-black/40 text-gray-400 hover:bg-white/10'}`}
                                     >
                                         {t}
                                     </button>
@@ -286,7 +286,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
                                     <button
                                         key={t}
                                         onClick={() => setEndTime(t)}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${endTime === t ? 'bg-[#28D160] text-black' : 'bg-black/40 text-gray-400 hover:bg-white/10'}`}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${endTime === t ? 'bg-east-light text-black' : 'bg-black/40 text-gray-400 hover:bg-white/10'}`}
                                     >
                                         {t}
                                     </button>
@@ -298,7 +298,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
                     {/* RECURRING TOGGLE */}
                     <div className="flex flex-col gap-3 mt-2 bg-black/20 p-3 rounded-xl border border-white/5">
                         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setIsRepeating(!isRepeating)}>
-                            <div className={`w-4 h-4 rounded border flex items-center justify-center ${isRepeating ? 'bg-[#28D160] border-[#28D160]' : 'border-gray-500'}`}>
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center ${isRepeating ? 'bg-east-light border-east-light' : 'border-gray-500'}`}>
                                 {isRepeating && <div className="w-2 h-2 bg-black rounded-full" />}
                             </div>
                             <span className="text-xs font-bold text-white uppercase select-none">Repeat this slot?</span>
@@ -316,7 +316,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
                                                 onClick={() => {
                                                     setSelectedDays(prev => prev.includes(i) ? prev.filter(day => day !== i) : [...prev, i])
                                                 }}
-                                                className={`w-8 h-8 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${selectedDays.includes(i) ? 'bg-[#28D160] text-black' : 'bg-white/10 text-gray-500 hover:bg-white/20'}`}
+                                                className={`w-8 h-8 rounded-full text-[10px] font-black flex items-center justify-center transition-all ${selectedDays.includes(i) ? 'bg-east-light text-black' : 'bg-white/10 text-gray-500 hover:bg-white/20'}`}
                                             >
                                                 {d}
                                             </button>
@@ -326,13 +326,13 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
                                 {/* Until Date */}
                                 <div>
                                     <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">UNTIL</label>
-                                    <input type="date" value={repeatUntil} onChange={e => setRepeatUntil(e.target.value)} className="w-full bg-black/40 border-b border-gray-700 text-white p-2 rounded focus:border-[#28D160] outline-none font-bold" />
+                                    <input type="date" value={repeatUntil} onChange={e => setRepeatUntil(e.target.value)} className="w-full bg-black/40 border-b border-gray-700 text-white p-2 rounded focus:border-east-light outline-none font-bold" />
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <button onClick={handleAddSlot} disabled={loading} className="mt-2 w-full bg-[#28D160] text-black font-black italic uppercase py-3 rounded-xl hover:bg-white transition-colors">
+                    <button onClick={handleAddSlot} disabled={loading} className="mt-2 w-full bg-east-light text-black font-black italic uppercase py-3 rounded-xl hover:bg-white transition-colors">
                         {loading ? 'ADDING...' : (isRepeating ? 'ADD RECURRING SLOTS' : 'ADD SLOT')}
                     </button>
                     <div className="text-center">
@@ -349,7 +349,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
                     {slots.map(slot => (
                         <div key={slot.id} className="bg-[#1e1e1e] p-4 rounded-xl flex justify-between items-center border border-white/5 group">
                             <div className="flex flex-col">
-                                <span className="text-[#28D160] font-black italic text-md uppercase">{safetoLocaleDateString(safeDate(slot.start_time), 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                                <span className="text-east-light font-black italic text-md uppercase">{safetoLocaleDateString(safeDate(slot.start_time), 'en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                                 <span className="text-white font-bold text-xs mt-1">
                                     {formatHK(slot.start_time, 'h:mm a')} - {formatHK(slot.end_time, 'h:mm a')}
                                 </span>
@@ -367,7 +367,7 @@ export default function ScheduleModal({ onClose, coachId, onScheduleUpdate }: {
     const PhotoUpload = () => (
         <div className="flex flex-col items-center mt-8 px-4">
             <div
-                className="w-full aspect-[3/4] bg-[#1e1e1e] rounded-2xl border-2 border-dashed border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:border-[#28D160] hover:bg-[#28D160]/10 transition-all relative overflow-hidden group"
+                className="w-full aspect-[3/4] bg-[#1e1e1e] rounded-2xl border-2 border-dashed border-gray-700 flex flex-col items-center justify-center cursor-pointer hover:border-east-light hover:bg-east-light/10 transition-all relative overflow-hidden group"
                 onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
             >
                 {photoUrl ? (

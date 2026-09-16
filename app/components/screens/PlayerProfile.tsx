@@ -7,6 +7,7 @@ import { compressImage } from '@/app/lib/image-utils';
 import Link from 'next/link';
 import { SPORT_CATEGORIES, CATEGORY_LABELS, normalizeCategory, getDisplayStatGroups } from '@/app/lib/statFields';
 import StatDisplayList from '@/app/components/ui/StatDisplayList';
+import { useTenant } from '@/app/providers/TenantProvider';
 
 type PlayerStats = Record<string, any>;
 
@@ -135,7 +136,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
   };
 
   // Safety Check
-  if (!profileData) return <div className="min-h-screen bg-black flex items-center justify-center text-white font-montserrat font-bold animate-pulse uppercase tracking-widest">Loading Player Profile...</div>;
+  const { tenant } = useTenant();
 
   return (
     <div className="animate-fadeIn bg-black min-h-screen pb-24 relative overflow-hidden font-montserrat">
@@ -143,7 +144,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
       {/* Background Image Layer - Premium Blur Overlay */}
       <div className="fixed inset-0 z-0 overflow-hidden">
         <Image
-          src="/EAST-BLACK-BACKGROUND.png"
+          src={tenant.assets.bannerUrl || tenant.assets.logoUrl}
           className="object-cover opacity-20 grayscale scale-110"
           fill
           alt="Premium background"
@@ -206,13 +207,13 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
                 {/* Inline Metadata Pills */}
                 <div className="flex flex-wrap gap-1 mt-2">
-                  <span className="text-[7px] font-black text-[#28D160] bg-[#28D160]/10 border border-[#28D160]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  <span className="text-[7px] font-black text-east-light bg-east-light/10 border border-east-light/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
                     AGE: soon
                   </span>
-                  <span className="text-[7px] font-black text-[#28D160] bg-[#28D160]/10 border border-[#28D160]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  <span className="text-[7px] font-black text-east-light bg-east-light/10 border border-east-light/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
                     SEASON: soon
                   </span>
-                  <span className="text-[7px] font-black text-[#28D160] bg-[#28D160]/10 border border-[#28D160]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  <span className="text-[7px] font-black text-east-light bg-east-light/10 border border-east-light/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
                     TEAM: soon
                   </span>
                 </div>
@@ -221,7 +222,7 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
 
             {/* Bio Block */}
             {profileData.bio && (
-              <div className="mt-3 px-2 border-l-2 border-[#28D160]/40 pl-3">
+              <div className="mt-3 px-2 border-l-2 border-east-light/40 pl-3">
                 <p className="text-white/70 text-[11px] font-medium italic leading-relaxed">
                   "{profileData.bio}"
                 </p>
@@ -244,8 +245,8 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
                     badge.action ? 'cursor-pointer hover:scale-105 group' : ''
                   }`}
                 >
-                  <div className="w-10 h-10 rounded-full border border-east-light/20 bg-white/5 flex items-center justify-center mb-1.5 shadow-md group-hover:border-[#28D160]/40 transition-colors">
-                    <badge.icon size={18} className="text-[#28D160] drop-shadow-md" />
+                  <div className="w-10 h-10 rounded-full border border-east-light/20 bg-white/5 flex items-center justify-center mb-1.5 shadow-md group-hover:border-east-light/40 transition-colors">
+                    <badge.icon size={18} className="text-east-light drop-shadow-md" />
                   </div>
                   <span className="font-black text-sm text-white italic leading-none">{badge.v}</span>
                   <span className="text-[7px] font-black text-gray-500 uppercase tracking-widest mt-1 text-center truncate w-full">
@@ -262,9 +263,9 @@ export default function PlayerProfile({ onOpenSettings, profileData, stats: init
             <Link
               href="/stats"
               data-testid="leaderboard-search-link"
-              className="mb-6 flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-white/10 bg-white/5 hover:border-[#28D160]/50 hover:bg-[#28D160]/10 transition-colors"
+              className="mb-6 flex items-center justify-center gap-2 w-full py-3 rounded-2xl border border-white/10 bg-white/5 hover:border-east-light/50 hover:bg-east-light/10 transition-colors"
             >
-              <Trophy size={16} className="text-[#28D160]" />
+              <Trophy size={16} className="text-east-light" />
               <span className="font-black italic text-[10px] text-white uppercase tracking-widest">Search Players & Leaderboard</span>
             </Link>
             <div className="flex flex-col gap-10 animate-fadeIn">

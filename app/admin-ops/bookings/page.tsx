@@ -58,7 +58,7 @@ export default function BookingLogPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-2">
-                        Booking <span className="text-[#28D160]">Log</span>
+                        Booking <span className="text-east-light">Log</span>
                     </h1>
                     <p className="text-gray-400 text-sm font-medium">
                         History of all bookings and cancellations attributed to your admin account.
@@ -70,7 +70,7 @@ export default function BookingLogPage() {
                         <input 
                             type="text" 
                             placeholder="Search logs..." 
-                            className="bg-[#1a1a1a] border border-white/5 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-[#28D160] transition-colors w-64"
+                            className="bg-[#1a1a1a] border border-white/5 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-east-light transition-colors w-64"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -89,7 +89,7 @@ export default function BookingLogPage() {
             <div className="bg-[#1a1a1a] border border-white/5 rounded-3xl min-h-[400px] overflow-hidden shadow-2xl">
                 {loading ? (
                     <div className="p-20 flex flex-col items-center justify-center gap-4">
-                        <div className="w-8 h-8 border-2 border-[#28D160] border-t-transparent rounded-full animate-spin" />
+                        <div className="w-8 h-8 border-2 border-east-light border-t-transparent rounded-full animate-spin" />
                         <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Loading History...</span>
                     </div>
                 ) : filteredTransactions.length === 0 ? (
@@ -123,14 +123,14 @@ export default function BookingLogPage() {
                                         </td>
                                         <td className="px-6 py-5 whitespace-nowrap">
                                             <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-tighter ${
-                                                t.type === 'booking' ? 'bg-[#28D160]/10 text-[#28D160]' : 'bg-orange-500/10 text-orange-500'
+                                                t.type === 'booking' ? 'bg-east-light/10 text-east-light' : 'bg-orange-500/10 text-orange-500'
                                             }`}>
                                                 {t.type}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5 whitespace-nowrap">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-black text-[#28D160]">
+                                                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-black text-east-light">
                                                     {t.profiles?.first_name?.[0]}{t.profiles?.last_name?.[0]}
                                                 </div>
                                                 <div>
@@ -146,12 +146,12 @@ export default function BookingLogPage() {
                                             </p>
                                         </td>
                                         <td className="px-6 py-5 text-right whitespace-nowrap">
-                                            <div className={`text-sm font-black italic ${t.amount < 0 ? 'text-white' : 'text-[#28D160]'}`}>
+                                            <div className={`text-sm font-black italic ${t.amount < 0 ? 'text-white' : 'text-east-light'}`}>
                                                 {t.amount > 0 ? '+' : ''}{t.amount}
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 text-right">
-                                            <ChevronRight size={14} className="text-gray-700 group-hover:text-[#28D160] transition-colors" />
+                                            <ChevronRight size={14} className="text-gray-700 group-hover:text-east-light transition-colors" />
                                         </td>
                                     </tr>
                                 ))}

@@ -118,26 +118,29 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
             let allowedProfiles = allProfiles;
             console.log(`✅ Loaded ${allProfiles.length} profiles for DM list`);
 
-            // Prevent players from messaging other players directly
-            // Players can only see and message coaches, parents, admins, and sys-admins
-            if (myProfile?.role === 'player') {
-                allowedProfiles = allProfiles.filter(p => p.role !== 'player');
+            // Regular people (parents and players/athletes) can only message coaches (and admins/staff for support),
+            // and cannot directly message other parents or players/athletes.
+            const isRegularUser = myProfile?.role === 'parent' || myProfile?.role === 'player';
+            if (isRegularUser) {
+                allowedProfiles = allProfiles.filter(p => p.role === 'coach' || p.role === 'admin' || p.role === 'sys-admin');
             }
 
             setProfiles(allowedProfiles);
 
             if (chatWithUserId) {
-                // Check if the target user exists AND is allowed (not a player if current user is a player)
+                // Check if the target user exists AND is allowed
                 const targetUser = allProfiles.find(p => p.id === chatWithUserId);
                 if (targetUser) {
-                    // If current user is a player, only allow chatting with non-players
-                    if (myProfile?.role === 'player' && targetUser.role === 'player') {
-                        console.warn('❌ Players cannot message other players');
+                    if (isRegularUser && targetUser.role !== 'coach' && targetUser.role !== 'admin' && targetUser.role !== 'sys-admin') {
+                        console.warn('❌ Regular users can only message coaches or teams');
+                        setView('list');
                     } else {
                         setActiveChatId(chatWithUserId);
                         setIsTeamChat(false);
                         fetchMessages(chatWithUserId, false);
                     }
+                } else {
+                    setView('list');
                 }
             }
         }
@@ -220,12 +223,13 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
     };
 
     const handleOpenChat = (id: string, isTeam: boolean) => {
-        // Prevent players from opening DMs with other players
-        if (!isTeam && currentUserProfile?.role === 'player') {
+        // Prevent regular users (parents and players) from opening DMs with other parents or players
+        const isRegularUser = currentUserProfile?.role === 'parent' || currentUserProfile?.role === 'player';
+        if (!isTeam && isRegularUser) {
             const targetProfile = profiles.find(p => p.id === id);
-            if (targetProfile?.role === 'player') {
-                console.warn('❌ Blocked: Players cannot open chat with other players');
-                addToast('You cannot message other players', 'error');
+            if (targetProfile && targetProfile.role !== 'coach' && targetProfile.role !== 'admin' && targetProfile.role !== 'sys-admin') {
+                console.warn('❌ Blocked: Regular users can only message coaches or teams');
+                addToast('You can only message coaches or teams', 'error');
                 return;
             }
         }
@@ -246,12 +250,13 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
     const handleSendMessage = async () => {
         if ((!messageInput.trim() && !selectedVideo && !selectedDrill && !selectedPlan) || !activeChatId) return;
 
-        // Prevent players from sending DMs to other players (server-side check)
-        if (!isTeamChat && currentUserProfile?.role === 'player') {
+        // Prevent regular users (parents and players) from sending DMs to other parents or players
+        const isRegularUser = currentUserProfile?.role === 'parent' || currentUserProfile?.role === 'player';
+        if (!isTeamChat && isRegularUser) {
             const targetProfile = profiles.find(p => p.id === activeChatId);
-            if (targetProfile?.role === 'player') {
-                console.warn('❌ Blocked: Players cannot message other players');
-                addToast('You cannot message other players', 'error');
+            if (targetProfile && targetProfile.role !== 'coach' && targetProfile.role !== 'admin' && targetProfile.role !== 'sys-admin') {
+                console.warn('❌ Blocked: Regular users can only message coaches or teams');
+                addToast('You can only message coaches or teams', 'error');
                 setIsUploading(false);
                 return;
             }
@@ -342,7 +347,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                         const senderProfile = profiles.find(p => p.id === msg.sender_id);
                         return (
                             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[80%] rounded-2xl p-4 ${isMe ? 'bg-[#28D160]/20 border border-[#28D160]/30 rounded-tr-none' : 'bg-white/5 border border-white/10 rounded-tl-none'}`}>
+                                <div className={`max-w-[80%] rounded-2xl p-4 ${isMe ? 'bg-east-light/20 border border-east-light/30 rounded-tr-none' : 'bg-white/5 border border-white/10 rounded-tl-none'}`}>
                                     {!isMe && isTeamChat && senderProfile && (
                                         <p className="text-[9px] font-black uppercase text-gray-500 mb-1">{senderProfile.first_name} {senderProfile.last_name}</p>
                                     )}
@@ -353,16 +358,16 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                         </div>
                                     )}
                                     {msg.shared_drill_id && (
-                                        <div onClick={() => window.open(`/drill-hub?drill_id=${msg.shared_drill_id}`, '_blank')} className="mt-2 p-3 bg-black/50 rounded-xl flex items-center gap-3 border border-[#28D160]/30 cursor-pointer hover:bg-[#28D160]/10 transition group">
-                                            <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center border border-white/10 group-hover:border-[#28D160]/50 transition overflow-hidden shrink-0">
+                                        <div onClick={() => window.open(`/drill-hub?drill_id=${msg.shared_drill_id}`, '_blank')} className="mt-2 p-3 bg-black/50 rounded-xl flex items-center gap-3 border border-east-light/30 cursor-pointer hover:bg-east-light/10 transition group">
+                                            <div className="w-10 h-10 rounded-lg bg-black flex items-center justify-center border border-white/10 group-hover:border-east-light/50 transition overflow-hidden shrink-0">
                                                 {coachDrills.find(d => d.id === msg.shared_drill_id)?.thumbnail_url ? (
                                                     <img src={coachDrills.find(d => d.id === msg.shared_drill_id)?.thumbnail_url} className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <Layers size={20} className="text-[#28D160]" />
+                                                    <Layers size={20} className="text-east-light" />
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <span className="text-[10px] font-black uppercase text-[#28D160] block leading-none mb-1">Attached Drill</span>
+                                                <span className="text-[10px] font-black uppercase text-east-light block leading-none mb-1">Attached Drill</span>
                                                 <span className="text-xs font-bold text-white block truncate">
                                                     {coachDrills.find(d => d.id === msg.shared_drill_id)?.title || 'View Drill'}
                                                 </span>
@@ -370,12 +375,12 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                         </div>
                                     )}
                                     {msg.shared_plan_id && (
-                                        <div onClick={() => window.open(`/drill-hub?plan_id=${msg.shared_plan_id}`, '_blank')} className="mt-2 p-3 bg-black/50 rounded-xl flex items-center gap-3 border border-[#28D160]/30 cursor-pointer hover:bg-[#28D160]/10 transition group">
-                                            <div className="w-10 h-10 rounded-lg bg-[#28D160]/20 flex items-center justify-center border border-[#28D160]/30 group-hover:scale-110 transition shrink-0">
-                                                <Layers size={20} className="text-[#28D160]" />
+                                        <div onClick={() => window.open(`/drill-hub?plan_id=${msg.shared_plan_id}`, '_blank')} className="mt-2 p-3 bg-black/50 rounded-xl flex items-center gap-3 border border-east-light/30 cursor-pointer hover:bg-east-light/10 transition group">
+                                            <div className="w-10 h-10 rounded-lg bg-east-light/20 flex items-center justify-center border border-east-light/30 group-hover:scale-110 transition shrink-0">
+                                                <Layers size={20} className="text-east-light" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <span className="text-[10px] font-black uppercase text-[#28D160] block leading-none mb-1">Training Plan</span>
+                                                <span className="text-[10px] font-black uppercase text-east-light block leading-none mb-1">Training Plan</span>
                                                 <span className="text-xs font-bold text-white block truncate">
                                                     {trainingPlans.find(p => p.id === msg.shared_plan_id)?.title || 'View Training Plan'}
                                                 </span>
@@ -385,13 +390,13 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                     {msg.shared_assessment_id && (
                                         <div
                                             onClick={() => setViewingAssessmentId(msg.shared_assessment_id)}
-                                            className="mt-2 p-3 bg-black/50 rounded-xl flex items-center gap-3 border border-[#28D160]/30 cursor-pointer hover:bg-[#28D160]/10 transition group"
+                                            className="mt-2 p-3 bg-black/50 rounded-xl flex items-center gap-3 border border-east-light/30 cursor-pointer hover:bg-east-light/10 transition group"
                                         >
-                                            <div className="w-10 h-10 rounded-lg bg-[#28D160]/20 flex items-center justify-center border border-[#28D160]/30 group-hover:scale-110 transition shrink-0">
-                                                <ClipboardCheck size={20} className="text-[#28D160]" />
+                                            <div className="w-10 h-10 rounded-lg bg-east-light/20 flex items-center justify-center border border-east-light/30 group-hover:scale-110 transition shrink-0">
+                                                <ClipboardCheck size={20} className="text-east-light" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <span className="text-[10px] font-black uppercase text-[#28D160] block leading-none mb-1">Private Assessment</span>
+                                                <span className="text-[10px] font-black uppercase text-east-light block leading-none mb-1">Private Assessment</span>
                                                 <span className="text-xs font-bold text-white block truncate">
                                                     {msg.content?.replace('New video assessment: ', '') || 'View Assessment'}
                                                 </span>
@@ -414,8 +419,8 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                     <button onClick={() => setShowContentPicker(false)} className="text-gray-500 hover:text-white"><X size={14} /></button>
                                 </div>
                                 <div className="flex gap-2 p-1 bg-white/5 rounded-xl">
-                                    <button onClick={() => setPickerTab('drills')} className={`flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg transition ${pickerTab === 'drills' ? 'bg-[#28D160]/20 text-[#28D160]' : 'text-gray-500 hover:text-white'}`}>Drills</button>
-                                    <button onClick={() => setPickerTab('plans')} className={`flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg transition ${pickerTab === 'plans' ? 'bg-[#28D160]/20 text-[#28D160]' : 'text-gray-500 hover:text-white'}`}>Plans</button>
+                                    <button onClick={() => setPickerTab('drills')} className={`flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg transition ${pickerTab === 'drills' ? 'bg-east-light/20 text-east-light' : 'text-gray-500 hover:text-white'}`}>Drills</button>
+                                    <button onClick={() => setPickerTab('plans')} className={`flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg transition ${pickerTab === 'plans' ? 'bg-east-light/20 text-east-light' : 'text-gray-500 hover:text-white'}`}>Plans</button>
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto space-y-2 p-3 no-scrollbar">
@@ -432,7 +437,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <span className="text-xs font-bold text-white block truncate">{drill.title}</span>
-                                                    <span className="text-[9px] font-black text-[#28D160] uppercase">{drill.category}</span>
+                                                    <span className="text-[9px] font-black text-east-light uppercase">{drill.category}</span>
                                                 </div>
                                             </button>
                                         ))}
@@ -447,8 +452,8 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                                 onClick={() => { setSelectedPlan(plan); setShowContentPicker(false); setSelectedDrill(null); }}
                                                 className="w-full text-left flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition"
                                             >
-                                                <div className="w-10 h-10 rounded-lg bg-[#28D160]/10 flex items-center justify-center border border-[#28D160]/30 shrink-0">
-                                                    <Layers size={16} className="text-[#28D160]" />
+                                                <div className="w-10 h-10 rounded-lg bg-east-light/10 flex items-center justify-center border border-east-light/30 shrink-0">
+                                                    <Layers size={16} className="text-east-light" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <span className="text-xs font-bold text-white block truncate">{plan.title}</span>
@@ -468,7 +473,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                             {selectedVideo && (
                                 <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Video size={16} className="text-[#28D160]" />
+                                        <Video size={16} className="text-east-light" />
                                         <span className="text-xs font-medium text-gray-300 truncate max-w-[200px]">{selectedVideo.name}</span>
                                     </div>
                                     <button onClick={() => setSelectedVideo(null)} className="p-1 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-red-400">
@@ -477,9 +482,9 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                 </div>
                             )}
                             {selectedDrill && (
-                                <div className="p-3 bg-white/5 rounded-xl border border-[#28D160]/30 flex items-center justify-between">
+                                <div className="p-3 bg-white/5 rounded-xl border border-east-light/30 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Layers size={16} className="text-[#28D160]" />
+                                        <Layers size={16} className="text-east-light" />
                                         <span className="text-xs font-medium text-white truncate max-w-[200px]">{selectedDrill.title}</span>
                                     </div>
                                     <button onClick={() => setSelectedDrill(null)} className="p-1 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-red-400">
@@ -488,9 +493,9 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                 </div>
                             )}
                             {selectedPlan && (
-                                <div className="p-3 bg-white/5 rounded-xl border border-[#28D160]/30 flex items-center justify-between">
+                                <div className="p-3 bg-white/5 rounded-xl border border-east-light/30 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <Layers size={16} className="text-[#28D160]" />
+                                        <Layers size={16} className="text-east-light" />
                                         <span className="text-xs font-medium text-white truncate max-w-[200px]">{selectedPlan.title}</span>
                                     </div>
                                     <button onClick={() => setSelectedPlan(null)} className="p-1 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-red-400">
@@ -501,7 +506,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                         </div>
                     )}
                     <div className="flex gap-2 items-center">
-                        <button onClick={() => setShowContentPicker(!showContentPicker)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl transition shrink-0 ${selectedDrill || selectedPlan ? 'bg-[#28D160]/20 text-[#28D160] border border-[#28D160]/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`} title="Attach Content">
+                        <button onClick={() => setShowContentPicker(!showContentPicker)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl transition shrink-0 ${selectedDrill || selectedPlan ? 'bg-east-light/20 text-east-light border border-east-light/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`} title="Attach Content">
                             <Plus size={18} className="md:w-5 md:h-5" />
                         </button>
                         {canCreateAssessment && (
@@ -513,7 +518,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                 <ClipboardCheck size={18} className="md:w-5 md:h-5" />
                             </button>
                         )}
-                        <button onClick={() => videoFileRef.current?.click()} className={`p-3 md:p-4 rounded-xl md:rounded-2xl transition shrink-0 ${selectedVideo ? 'bg-[#28D160]/20 text-[#28D160] border border-[#28D160]/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`} title="Attach Video">
+                        <button onClick={() => videoFileRef.current?.click()} className={`p-3 md:p-4 rounded-xl md:rounded-2xl transition shrink-0 ${selectedVideo ? 'bg-east-light/20 text-east-light border border-east-light/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`} title="Attach Video">
                             <Video size={18} className="md:w-5 md:h-5" />
                         </button>
                         <input type="file" accept="video/*" ref={videoFileRef} onChange={handleVideoSelect} className="hidden" />
@@ -523,9 +528,9 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                             onChange={e => setMessageInput(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
                             placeholder="Type a message..."
-                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl md:rounded-2xl px-4 md:px-6 py-3 outline-none focus:border-[#28D160]/50 transition text-sm"
+                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl md:rounded-2xl px-4 md:px-6 py-3 outline-none focus:border-east-light/50 transition text-sm"
                         />
-                        <button disabled={isUploading || (!messageInput.trim() && !selectedVideo && !selectedDrill && !selectedPlan)} onClick={handleSendMessage} className="p-3 md:p-4 bg-[#28D160] text-black rounded-xl md:rounded-2xl shrink-0 hover:bg-white transition hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button disabled={isUploading || (!messageInput.trim() && !selectedVideo && !selectedDrill && !selectedPlan)} onClick={handleSendMessage} className="p-3 md:p-4 bg-east-light text-black rounded-xl md:rounded-2xl shrink-0 hover:bg-white transition hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                             {isUploading ? <span className="text-[10px] font-black uppercase">Wait</span> : <Send size={18} className="md:w-5 md:h-5" />}
                         </button>
                     </div>
@@ -564,7 +569,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Private Coaching Threads</p>
                     </div>
                     {(currentUserProfile?.role === 'coach' || currentUserProfile?.role === 'sys-admin') && (
-                        <button onClick={() => setShowCreateTeam(true)} className="p-3 bg-[#28D160]/10 text-[#28D160] rounded-xl hover:bg-[#28D160]/20 transition flex items-center gap-2 border border-[#28D160]/30">
+                        <button onClick={() => setShowCreateTeam(true)} className="p-3 bg-east-light/10 text-east-light rounded-xl hover:bg-east-light/20 transition flex items-center gap-2 border border-east-light/30">
                             <Plus size={16} /> <span className="text-[10px] font-black uppercase">New Team</span>
                         </button>
                     )}
@@ -576,8 +581,8 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                         type="text"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        placeholder="Search teams, players, or parents..."
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-[#28D160]/50 transition text-sm"
+                        placeholder={currentUserProfile?.role === 'coach' || currentUserProfile?.role === 'sys-admin' || currentUserProfile?.role === 'admin' ? "Search teams, players, or parents..." : "Search teams or coaches..."}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 outline-none focus:border-east-light/50 transition text-sm"
                     />
                 </div>
             </div>
@@ -592,8 +597,8 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                 const isUnread = latestMsg && latestMsg.sender_id !== currentUserId && readReceipts[team.id] !== latestMsg.id.toString();
                                 return (
                                     <button key={team.id} onClick={() => handleOpenChat(team.id, true)} className="w-full p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-4 hover:border-white/20 transition group text-left relative">
-                                        <div className="w-12 h-12 rounded-xl bg-[#28D160]/20 flex items-center justify-center border border-[#28D160]/30 group-hover:scale-110 transition-transform">
-                                            <Users size={20} className="text-[#28D160]" />
+                                        <div className="w-12 h-12 rounded-xl bg-east-light/20 flex items-center justify-center border border-east-light/30 group-hover:scale-110 transition-transform">
+                                            <Users size={20} className="text-east-light" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <h4 className="font-black italic uppercase truncate">{team.name}</h4>
@@ -621,7 +626,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                     <div className="flex-1 min-w-0">
                                         <h4 className="font-black italic uppercase truncate">{p.first_name} {p.last_name}</h4>
                                         <div className="flex items-center gap-2">
-                                            <p className="text-[10px] text-[#28D160] font-bold uppercase shrink-0">{p.role}</p>
+                                            <p className="text-[10px] text-east-light font-bold uppercase shrink-0">{p.role}</p>
                                             {latestMsg && <p className="text-[10px] text-gray-500 font-bold uppercase truncate border-l border-white/10 pl-2 ml-2">{latestMsg.content || 'Attachment'}</p>}
                                         </div>
                                     </div>

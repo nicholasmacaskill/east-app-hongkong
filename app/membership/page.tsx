@@ -337,7 +337,7 @@ function MembershipContent() {
                                         <div key={i} className="flex justify-between items-center py-1 border-b border-gray-50 last:border-0 overflow-hidden">
                                             <span className="font-bold text-[11px] text-gray-700 uppercase tracking-tight truncate mr-2">{item.label}</span>
                                             {item.value === 'YES' || item.value === '7D' || item.value === '30D' ? (
-                                                <Check size={14} className="text-[#28D160]" strokeWidth={4} />
+                                                <Check size={14} className="text-east-light" strokeWidth={4} />
                                             ) : (
                                                 <span className="font-black text-[11px] uppercase italic text-black shrink-0">{item.value}</span>
                                             )}

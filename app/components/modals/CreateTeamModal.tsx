@@ -111,19 +111,19 @@ export default function CreateTeamModal({ coachId, onClose, onSuccess }: CreateT
                 <div className="p-6 overflow-y-auto no-scrollbar space-y-6">
                     {/* Team Name */}
                     <div>
-                        <label className="text-[9px] font-black text-[#28D160] uppercase tracking-[0.2em] mb-2 block">Team Name</label>
+                        <label className="text-[9px] font-black text-east-light uppercase tracking-[0.2em] mb-2 block">Team Name</label>
                         <input
                             type="text"
                             value={teamName}
                             onChange={(e) => setTeamName(e.target.value)}
                             placeholder="e.g. U14 Selects"
-                            className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-sm font-bold text-white placeholder:text-gray-600 focus:border-[#28D160]/50 outline-none transition-colors"
+                            className="w-full bg-[#111] border border-white/10 rounded-xl p-4 text-sm font-bold text-white placeholder:text-gray-600 focus:border-east-light/50 outline-none transition-colors"
                         />
                     </div>
 
                     {/* Members List */}
                     <div>
-                        <label className="text-[9px] font-black text-[#28D160] uppercase tracking-[0.2em] mb-2 block">
+                        <label className="text-[9px] font-black text-east-light uppercase tracking-[0.2em] mb-2 block">
                             Select Members ({selectedMemberIds.length})
                         </label>
                         {fetchingProfiles ? (
@@ -140,7 +140,7 @@ export default function CreateTeamModal({ coachId, onClose, onSuccess }: CreateT
                                             onClick={() => toggleMember(p.id)}
                                             className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
                                                 isSelected 
-                                                    ? 'bg-[#28D160]/10 border-[#28D160]/30 shadow-[0_0_15px_rgba(40,209,96,0.1)]' 
+                                                    ? 'bg-east-light/10 border-east-light/30 shadow-[0_0_15px_rgba(40,209,96,0.1)]' 
                                                     : 'bg-white/5 border-white/5 hover:border-white/10'
                                             }`}
                                         >
@@ -160,7 +160,7 @@ export default function CreateTeamModal({ coachId, onClose, onSuccess }: CreateT
                                                 </div>
                                             </div>
                                             <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
-                                                isSelected ? 'bg-[#28D160] text-black' : 'bg-black/50 border border-white/20 text-transparent'
+                                                isSelected ? 'bg-east-light text-black' : 'bg-black/50 border border-white/20 text-transparent'
                                             }`}>
                                                 <Check size={12} strokeWidth={4} />
                                             </div>
@@ -177,7 +177,7 @@ export default function CreateTeamModal({ coachId, onClose, onSuccess }: CreateT
                     <button
                         onClick={handleCreateTeam}
                         disabled={loading || !teamName.trim() || selectedMemberIds.length === 0}
-                        className="w-full bg-[#28D160] text-black font-black italic uppercase tracking-tighter py-4 rounded-xl hover:bg-[#2fe86d] active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                        className="w-full bg-east-light text-black font-black italic uppercase tracking-tighter py-4 rounded-xl hover:bg-[#2fe86d] active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
                     >
                         {loading ? 'Creating...' : 'Create Team'}
                     </button>

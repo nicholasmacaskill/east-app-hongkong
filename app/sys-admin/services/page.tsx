@@ -211,7 +211,7 @@ export default function ManageServicesPage() {
                 </div>
                 <button
                     onClick={openNew}
-                    className="flex w-full md:w-auto justify-center items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-lg font-bold uppercase tracking-wider hover:bg-[#20aa4f] transition-colors self-start md:self-auto"
+                    className="flex w-full md:w-auto justify-center items-center gap-2 bg-east-light text-black px-4 py-2 rounded-lg font-bold uppercase tracking-wider hover:bg-[#20aa4f] transition-colors self-start md:self-auto"
                 >
                     <Plus size={18} /> Add Service
                 </button>
@@ -229,7 +229,7 @@ export default function ManageServicesPage() {
                     </div>
                 ) : (
                     services.map(service => (
-                        <div key={service.id} className="bg-[#1e1e1e] border border-white/5 rounded-xl p-4 flex flex-col items-start gap-4 group hover:border-[#28D160] transition-colors relative">
+                        <div key={service.id} className="bg-[#1e1e1e] border border-white/5 rounded-xl p-4 flex flex-col items-start gap-4 group hover:border-east-light transition-colors relative">
                             <div className="flex w-full gap-4">
                                 <div className="w-16 h-16 bg-gray-900 rounded-lg overflow-hidden flex-shrink-0 relative">
                                     {service.image_url ? (
@@ -245,7 +245,7 @@ export default function ManageServicesPage() {
                                     <div className="flex flex-wrap gap-1">
                                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded text-black uppercase whitespace-nowrap ${service.category === 'CLASS' ? 'bg-blue-400' :
                                             service.category === 'PRIVATE' ? 'bg-purple-400' :
-                                                'bg-[#28D160]'
+                                                'bg-east-light'
                                             }`}>
                                             {service.category}
                                         </span>
@@ -256,7 +256,7 @@ export default function ManageServicesPage() {
                             <div className="flex w-full justify-between items-center border-t border-white/5 pt-3 mt-1">
                                 <button
                                     onClick={() => openGenerator(service)}
-                                    className="text-[10px] font-bold uppercase tracking-wider text-[#28D160] hover:text-white flex items-center gap-1 transition-colors"
+                                    className="text-[10px] font-bold uppercase tracking-wider text-east-light hover:text-white flex items-center gap-1 transition-colors"
                                 >
                                     <Sparkles size={12} /> Generate Schedule
                                 </button>
@@ -285,22 +285,22 @@ export default function ManageServicesPage() {
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Service Title</label>
-                                <input type="text" value={currentService.title || ''} onChange={e => setCurrentService({ ...currentService, title: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160]" placeholder="e.g. Golf, Hyrox" />
+                                <input type="text" value={currentService.title || ''} onChange={e => setCurrentService({ ...currentService, title: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-east-light" placeholder="e.g. Golf, Hyrox" />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Credit Cost</label>
-                                    <input type="number" value={currentService.credit_cost || 0} onChange={e => setCurrentService({ ...currentService, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160]" placeholder="100" />
+                                    <input type="number" value={currentService.credit_cost || 0} onChange={e => setCurrentService({ ...currentService, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-east-light" placeholder="100" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Default Capacity (Athletes per Class)</label>
-                                    <input type="number" value={currentService.default_capacity || ''} onChange={e => setCurrentService({ ...currentService, default_capacity: parseInt(e.target.value) || undefined })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160]" placeholder={currentService.category === 'CLASS' ? '10' : '1'} />
+                                    <input type="number" value={currentService.default_capacity || ''} onChange={e => setCurrentService({ ...currentService, default_capacity: parseInt(e.target.value) || undefined })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-east-light" placeholder={currentService.category === 'CLASS' ? '10' : '1'} />
                                 </div>
                             </div>
                             {/* ... (Rest of existing edit modal fields) ... */}
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Description</label>
-                                <textarea value={currentService.description || ''} onChange={e => setCurrentService({ ...currentService, description: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160] min-h-[80px]" placeholder="Describe this service..." />
+                                <textarea value={currentService.description || ''} onChange={e => setCurrentService({ ...currentService, description: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-east-light min-h-[80px]" placeholder="Describe this service..." />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Category</label>
@@ -312,31 +312,31 @@ export default function ManageServicesPage() {
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Image URL</label>
-                                <input type="text" value={currentService.image_url || ''} onChange={e => setCurrentService({ ...currentService, image_url: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-[#28D160]" placeholder="https://..." />
+                                <input type="text" value={currentService.image_url || ''} onChange={e => setCurrentService({ ...currentService, image_url: e.target.value })} className="w-full bg-black border border-white/10 rounded-lg p-3 text-white focus:outline-none focus:border-east-light" placeholder="https://..." />
                             </div>
 
                             {/* Coach Selection */}
                             <div className="border-t border-white/5 pt-4">
                                 <div className="flex justify-between items-center mb-2">
                                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Assign Coaches</label>
-                                    <span className="text-[10px] text-[#28D160] font-black uppercase">{selectedCoachIds.length} Selected</span>
+                                    <span className="text-[10px] text-east-light font-black uppercase">{selectedCoachIds.length} Selected</span>
                                 </div>
-                                <input type="text" placeholder="Search coaches..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-black border border-white/10 rounded-lg p-2 text-xs mb-3 focus:border-[#28D160] outline-none" />
+                                <input type="text" placeholder="Search coaches..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-black border border-white/10 rounded-lg p-2 text-xs mb-3 focus:border-east-light outline-none" />
                                 <div className="max-h-40 overflow-y-auto space-y-1 pr-2 custom-scrollbar">
                                     {allCoaches.filter(c => `${c.first_name} ${c.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())).map(coach => {
                                         const isSelected = selectedCoachIds.includes(coach.id);
                                         return (
-                                            <button key={coach.id} onClick={() => isSelected ? setSelectedCoachIds(selectedCoachIds.filter(id => id !== coach.id)) : setSelectedCoachIds([...selectedCoachIds, coach.id])} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors border ${isSelected ? 'bg-[#28D160]/10 border-[#28D160]/30' : 'bg-black/40 border-transparent hover:bg-white/5'}`}>
+                                            <button key={coach.id} onClick={() => isSelected ? setSelectedCoachIds(selectedCoachIds.filter(id => id !== coach.id)) : setSelectedCoachIds([...selectedCoachIds, coach.id])} className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors border ${isSelected ? 'bg-east-light/10 border-east-light/30' : 'bg-black/40 border-transparent hover:bg-white/5'}`}>
                                                 <div className="w-6 h-6 rounded-full bg-gray-800 overflow-hidden flex-shrink-0">{coach.avatar_url ? <img src={coach.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-east-light/20" />}</div>
                                                 <span className={`text-xs font-bold ${isSelected ? 'text-white' : 'text-gray-400'}`}>{coach.first_name} {coach.last_name}</span>
-                                                {isSelected && <div className="ml-auto w-2 h-2 bg-[#28D160] rounded-full shadow-[0_0_8px_#28D160]" />}
+                                                {isSelected && <div className="ml-auto w-2 h-2 bg-east-light rounded-full shadow-[0_0_8px_#28D160]" />}
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
 
-                            <button onClick={handleSave} className="w-full bg-[#28D160] text-black font-bold uppercase py-4 rounded-xl mt-4 hover:bg-[#20aa4f] transition-colors shadow-lg active:scale-95 transition-transform">{currentService.id ? 'Update Service' : 'Create Service'}</button>
+                            <button onClick={handleSave} className="w-full bg-east-light text-black font-bold uppercase py-4 rounded-xl mt-4 hover:bg-[#20aa4f] transition-colors shadow-lg active:scale-95 transition-transform">{currentService.id ? 'Update Service' : 'Create Service'}</button>
                         </div>
                     </div>
                 </div>
@@ -349,7 +349,7 @@ export default function ManageServicesPage() {
                         <button onClick={() => setShowGenerator(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white"><X size={24} /></button>
 
                         <div className="mb-6">
-                            <h2 className="text-xl font-black italic uppercase tracking-tighter text-[#28D160]">Generate Schedule</h2>
+                            <h2 className="text-xl font-black italic uppercase tracking-tighter text-east-light">Generate Schedule</h2>
                             <p className="text-gray-400 text-xs font-bold uppercase tracking-wider">{generatorConfig.serviceTitle}</p>
                         </div>
 
@@ -358,11 +358,11 @@ export default function ManageServicesPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5 flex items-center gap-1"><Calendar size={10} /> Start Date</label>
-                                    <input type="date" value={generatorConfig.startDate} onChange={e => setGeneratorConfig({ ...generatorConfig, startDate: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160]" />
+                                    <input type="date" value={generatorConfig.startDate} onChange={e => setGeneratorConfig({ ...generatorConfig, startDate: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-east-light" />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5 flex items-center gap-1"><Calendar size={10} /> End Date</label>
-                                    <input type="date" value={generatorConfig.endDate} onChange={e => setGeneratorConfig({ ...generatorConfig, endDate: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160]" />
+                                    <input type="date" value={generatorConfig.endDate} onChange={e => setGeneratorConfig({ ...generatorConfig, endDate: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-east-light" />
                                 </div>
                             </div>
 
@@ -371,16 +371,16 @@ export default function ManageServicesPage() {
                                 <div>
                                     <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5 flex items-center gap-1"><Clock size={10} /> Window (e.g. 08:00 - 20:30)</label>
                                     <div className="flex gap-2">
-                                        <input type="text" value={generatorConfig.startTime} onChange={e => setGeneratorConfig({ ...generatorConfig, startTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-[10px] text-white text-center font-bold outline-none focus:border-[#28D160]" placeholder="08:00" />
+                                        <input type="text" value={generatorConfig.startTime} onChange={e => setGeneratorConfig({ ...generatorConfig, startTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-[10px] text-white text-center font-bold outline-none focus:border-east-light" placeholder="08:00" />
                                         <span className="text-gray-500 self-center">-</span>
-                                        <input type="text" value={generatorConfig.endTime} onChange={e => setGeneratorConfig({ ...generatorConfig, endTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-[10px] text-white text-center font-bold outline-none focus:border-[#28D160]" placeholder="20:00" />
+                                        <input type="text" value={generatorConfig.endTime} onChange={e => setGeneratorConfig({ ...generatorConfig, endTime: e.target.value })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-[10px] text-white text-center font-bold outline-none focus:border-east-light" placeholder="20:00" />
                                     </div>
                                 </div>
                             </div>
                             
                             <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1.5">Slot Duration</label>
-                                <select value={generatorConfig.durationMinutes} onChange={e => setGeneratorConfig({ ...generatorConfig, durationMinutes: parseInt(e.target.value) })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-white text-center outline-none focus:border-[#28D160] appearance-none cursor-pointer">
+                                <select value={generatorConfig.durationMinutes} onChange={e => setGeneratorConfig({ ...generatorConfig, durationMinutes: parseInt(e.target.value) })} className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl p-3 text-white text-center outline-none focus:border-east-light appearance-none cursor-pointer">
                                     <option value="30">30 Minutes</option>
                                     <option value="60">60 Minutes</option>
                                     <option value="90">90 Minutes</option>
@@ -396,7 +396,7 @@ export default function ManageServicesPage() {
                                         <button key={d} onClick={() => {
                                             const days = generatorConfig.daysOfWeek.includes(i) ? generatorConfig.daysOfWeek.filter(x => x !== i) : [...generatorConfig.daysOfWeek, i];
                                             setGeneratorConfig({ ...generatorConfig, daysOfWeek: days });
-                                        }} className={`flex-1 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase transition-all ${generatorConfig.daysOfWeek.includes(i) ? 'bg-[#28D160] text-black' : 'bg-black/40 text-gray-500 hover:bg-white/10'}`}>
+                                        }} className={`flex-1 h-8 rounded-lg flex items-center justify-center text-[10px] font-black uppercase transition-all ${generatorConfig.daysOfWeek.includes(i) ? 'bg-east-light text-black' : 'bg-black/40 text-gray-500 hover:bg-white/10'}`}>
                                             {d.charAt(0)}
                                         </button>
                                     ))}
@@ -411,7 +411,7 @@ export default function ManageServicesPage() {
                                 <select
                                     value={generatorConfig.coachId}
                                     onChange={e => setGeneratorConfig({ ...generatorConfig, coachId: e.target.value })}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#28D160]"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-east-light"
                                 >
                                     <option value="">No Specific Coach (Facility/Staff)</option>
                                     {allCoaches.map(coach => (
@@ -423,10 +423,10 @@ export default function ManageServicesPage() {
                             </div>
 
                             {/* Append Mode Toggle */}
-                            <div className={`rounded-xl p-4 border transition-all ${generatorConfig.appendMode ? 'bg-[#28D160]/10 border-[#28D160]/40' : 'bg-orange-500/10 border-orange-500/30'}`}>
+                            <div className={`rounded-xl p-4 border transition-all ${generatorConfig.appendMode ? 'bg-east-light/10 border-east-light/40' : 'bg-orange-500/10 border-orange-500/30'}`}>
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
-                                        <p className={`text-[11px] font-black uppercase tracking-wider ${generatorConfig.appendMode ? 'text-[#28D160]' : 'text-orange-400'}`}>
+                                        <p className={`text-[11px] font-black uppercase tracking-wider ${generatorConfig.appendMode ? 'text-east-light' : 'text-orange-400'}`}>
                                             {generatorConfig.appendMode ? '✅ Append Mode — Safe' : '⚠️ Replace Mode — Will overwrite'}
                                         </p>
                                         <p className="text-[10px] text-gray-500 mt-0.5">
@@ -437,14 +437,14 @@ export default function ManageServicesPage() {
                                     </div>
                                     <button
                                         onClick={() => setGeneratorConfig(c => ({ ...c, appendMode: !c.appendMode }))}
-                                        className={`shrink-0 w-12 h-6 rounded-full transition-all relative ${generatorConfig.appendMode ? 'bg-[#28D160]' : 'bg-gray-700'}`}
+                                        className={`shrink-0 w-12 h-6 rounded-full transition-all relative ${generatorConfig.appendMode ? 'bg-east-light' : 'bg-gray-700'}`}
                                     >
                                         <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${generatorConfig.appendMode ? 'left-7' : 'left-1'}`} />
                                     </button>
                                 </div>
                             </div>
 
-                            <button onClick={handleGenerate} disabled={generating} className="w-full bg-[#28D160] text-black font-black uppercase py-4 rounded-xl hover:bg-white transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2">
+                            <button onClick={handleGenerate} disabled={generating} className="w-full bg-east-light text-black font-black uppercase py-4 rounded-xl hover:bg-white transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2">
                                 {generating ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
                                 {generating ? 'Generating Content...' : generatorConfig.appendMode ? 'Add New Slots' : 'Replace & Generate'}
                             </button>

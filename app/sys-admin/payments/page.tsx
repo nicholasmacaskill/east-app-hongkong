@@ -91,7 +91,7 @@ export default function PaymentsSettingsPage() {
               <div
                 className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
                   isConnected
-                    ? 'bg-[#28D160]/20 text-[#28D160]'
+                    ? 'bg-east-light/20 text-east-light'
                     : isPending
                       ? 'bg-amber-500/20 text-amber-400'
                       : 'bg-white/5 text-gray-400'
@@ -142,7 +142,7 @@ export default function PaymentsSettingsPage() {
                 <button
                   onClick={handleConnect}
                   disabled={connecting}
-                  className="inline-flex items-center justify-center gap-2 bg-[#28D160] text-black font-black italic uppercase px-6 py-4 rounded-xl hover:bg-white transition-colors disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 bg-east-light text-black font-black italic uppercase px-6 py-4 rounded-xl hover:bg-white transition-colors disabled:opacity-50"
                 >
                   {connecting ? <Loader2 className="animate-spin" size={18} /> : <ExternalLink size={18} />}
                   {isPending ? 'Continue Stripe Setup' : 'Connect with Stripe'}
@@ -171,7 +171,7 @@ export default function PaymentsSettingsPage() {
         </ul>
         <Link
           href="/sys-admin/directory"
-          className="inline-flex items-center gap-2 text-[#28D160] text-xs font-black uppercase tracking-widest hover:text-white transition-colors pt-2"
+          className="inline-flex items-center gap-2 text-east-light text-xs font-black uppercase tracking-widest hover:text-white transition-colors pt-2"
         >
           Grant demo credits manually <ArrowRight size={14} />
         </Link>
@@ -184,7 +184,7 @@ function StatusPill({ label, active }: { label: string; active: boolean }) {
   return (
     <div
       className={`rounded-full border px-3 py-2 text-center ${
-        active ? 'border-[#28D160]/40 bg-[#28D160]/10 text-[#28D160]' : 'border-white/10 text-gray-600'
+        active ? 'border-east-light/40 bg-east-light/10 text-east-light' : 'border-white/10 text-gray-600'
       }`}
     >
       {label}

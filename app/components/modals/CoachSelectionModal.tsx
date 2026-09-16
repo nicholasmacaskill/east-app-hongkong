@@ -43,9 +43,9 @@ export default function CoachSelectionModal({ serviceTitle, coaches, onSelect, o
                             <button
                                 key={coach.id}
                                 onClick={() => onSelect(coach)}
-                                className="w-full flex items-center gap-4 p-4 bg-black/40 border border-white/5 rounded-2xl hover:border-[#28D160] hover:bg-black/60 transition-all group text-left"
+                                className="w-full flex items-center gap-4 p-4 bg-black/40 border border-white/5 rounded-2xl hover:border-east-light hover:bg-black/60 transition-all group text-left"
                             >
-                                <div className="w-14 h-14 rounded-full bg-gray-800 overflow-hidden relative border border-white/10 group-hover:border-[#28D160] transition-colors">
+                                <div className="w-14 h-14 rounded-full bg-gray-800 overflow-hidden relative border border-white/10 group-hover:border-east-light transition-colors">
                                     <img
                                         src={coach.avatar_url || 'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?w=400'}
                                         alt={coach.first_name}
@@ -53,12 +53,12 @@ export default function CoachSelectionModal({ serviceTitle, coaches, onSelect, o
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="font-bold text-white text-lg group-hover:text-[#28D160] transition-colors">
+                                    <h3 className="font-bold text-white text-lg group-hover:text-east-light transition-colors">
                                         {coach.first_name} {coach.last_name}
                                     </h3>
                                     <p className="text-xs text-gray-500 uppercase tracking-widest font-bold">Available</p>
                                 </div>
-                                <ChevronRight className="text-gray-600 group-hover:text-[#28D160] transition-colors" size={20} />
+                                <ChevronRight className="text-gray-600 group-hover:text-east-light transition-colors" size={20} />
                             </button>
                         ))
                     )}

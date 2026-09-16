@@ -716,9 +716,9 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                     <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full md:w-auto justify-start md:justify-end">
                         {['coach', 'admin', 'sys-admin'].includes(userRole || '') && (
                             linkedSession ? (
-                                <div className="bg-[#28D160]/10 border border-[#28D160]/30 rounded-2xl px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-3 sm:gap-4 animate-fadeIn">
+                                <div className="bg-east-light/10 border border-east-light/30 rounded-2xl px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-3 sm:gap-4 animate-fadeIn">
                                     <div className="flex flex-col">
-                                        <span className="text-[7px] font-black italic text-[#28D160] uppercase tracking-widest">Active Plan</span>
+                                        <span className="text-[7px] font-black italic text-east-light uppercase tracking-widest">Active Plan</span>
                                         <h3 className="text-[10px] font-black uppercase text-white truncate max-w-[100px] sm:max-w-[120px]">{linkedSession.title}</h3>
                                     </div>
                                     <button 
@@ -735,7 +735,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                         setShowSessionPicker(true);
                                     }}
                                     disabled={showSessionPicker}
-                                    className={`px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${showSessionPicker ? 'bg-white/5 text-gray-500 border border-white/10' : 'bg-[#28D160] text-black border-none hover:shadow-[0_0_20px_#28D16066]'}`}
+                                    className={`px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${showSessionPicker ? 'bg-white/5 text-gray-500 border border-white/10' : 'bg-east-light text-black border-none hover:shadow-[0_0_20px_#28D16066]'}`}
                                 >
                                     <Calendar size={12} className="sm:w-3.5 sm:h-3.5" />
                                     {showSessionPicker ? 'SELECT SESSION...' : 'SCHEDULE DRILL'}
@@ -766,7 +766,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                             <div className="flex items-center gap-2">
                                 <button 
                                     onClick={() => setIsEditing(true)}
-                                    className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-white/5 text-[#28D160] border border-[#28D160]/20 hover:bg-[#28D160]/10"
+                                    className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-white/5 text-east-light border border-east-light/20 hover:bg-east-light/10"
                                 >
                                     <Plus size={12} className="sm:w-3.5 sm:h-3.5" />
                                     EDIT DRILL
@@ -784,7 +784,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                         {(!['coach', 'admin', 'sys-admin'].includes(userRole || '') && selectedDrill?.coach_id) ? (
                             <button 
                                 onClick={() => window.location.href = `/?tab=community&chatWith=${selectedDrill.coach_id}`}
-                                className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-[#28D160]/10 text-[#28D160] border border-[#28D160]/30 hover:bg-[#28D160]/20 shadow-[0_0_15px_rgba(40,209,96,0.15)] active:scale-95"
+                                className="px-4 py-2.5 sm:px-6 sm:py-3 rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 bg-east-light/10 text-east-light border border-east-light/30 hover:bg-east-light/20 shadow-[0_0_15px_rgba(40,209,96,0.15)] active:scale-95"
                             >
                                 <MessageSquare size={12} className="sm:w-3.5 sm:h-3.5" />
                                 MESSAGE COACH
@@ -927,7 +927,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                             <span className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Cover Photo</span>
                             <div 
                                 onClick={() => isEditing && coverPhotoInputRef.current?.click()}
-                                className={`relative aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black/40 group ${isEditing ? 'cursor-pointer hover:border-[#28D160]/50 transition-all' : ''}`}
+                                className={`relative aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black/40 group ${isEditing ? 'cursor-pointer hover:border-east-light/50 transition-all' : ''}`}
                             >
                                 <Image
                                     src={selectedDrill.thumbnail_url || "https://images.unsplash.com/photo-1580748141549-71748ddf0bdc?auto=format&fit=crop&q=80&w=800"}
@@ -978,7 +978,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                                 setDrills(prevDrills => prevDrills.map(d => d.id === selectedDrill.id ? updatedDrill : d));
                                                 await supabase.from('coach_drills').update({ description: desc }).eq('id', selectedDrill.id);
                                             }}
-                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white font-medium italic outline-none focus:border-[#28D160] transition-all min-h-[80px]"
+                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white font-medium italic outline-none focus:border-east-light transition-all min-h-[80px]"
                                             placeholder="Add drill description..."
                                         />
                                     </div>
@@ -994,7 +994,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                                 setDrills(prevDrills => prevDrills.map(d => d.id === selectedDrill.id ? updatedDrill : d));
                                                 await supabase.from('coach_drills').update({ accessories: accArr }).eq('id', selectedDrill.id);
                                             }}
-                                            className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white font-medium outline-none focus:border-[#28D160] transition-all"
+                                            className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white font-medium outline-none focus:border-east-light transition-all"
                                             placeholder="e.g. Cones, Goal, Pucks"
                                         />
                                     </div>
@@ -1036,7 +1036,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
 
                                     {/* Workouts Tags */}
                                     <div className="space-y-1.5">
-                                        <span className="block text-[8px] font-black text-[#28D160] uppercase tracking-[0.2em] italic">Workouts</span>
+                                        <span className="block text-[8px] font-black text-east-light uppercase tracking-[0.2em] italic">Workouts</span>
                                         <div className="flex flex-wrap gap-1.5">
                                             {WORKOUT_TAGS.map(tag => {
                                                 const active = (selectedDrill.group_tags || []).includes(tag);
@@ -1047,7 +1047,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                                         onClick={() => handleTagToggle('workout', tag)}
                                                         className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-wider border transition-all ${
                                                             active 
-                                                                ? 'bg-[#28D160] text-black border-[#28D160] shadow-[0_0_8px_rgba(40,209,96,0.3)]' 
+                                                                ? 'bg-east-light text-black border-east-light shadow-[0_0_8px_rgba(40,209,96,0.3)]' 
                                                                 : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20'
                                                         }`}
                                                     >
@@ -1114,7 +1114,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                                 setDrillSteps(newSteps);
                                                 supabase.from('coach_drill_steps').update({ instruction: e.target.value }).eq('id', currentStep.id).then();
                                             }}
-                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white font-medium italic outline-none focus:border-[#28D160] transition-all min-h-[100px]"
+                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white font-medium italic outline-none focus:border-east-light transition-all min-h-[100px]"
                                         />
                                     ) : (
                                         <p className="text-sm text-gray-300 font-medium leading-relaxed italic border-l-2 border-east-light/30 pl-4 py-2 bg-gradient-to-r from-east-light/5 to-transparent rounded-r-3xl">
@@ -1126,7 +1126,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                 <div className="flex flex-col gap-3 pt-2">
                                     <button 
                                         onClick={() => setActiveTab('visual')}
-                                        className={`w-full py-3.5 px-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'visual' ? 'bg-[#28D160] text-black border-[#28D160] shadow-[0_20px_40px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
+                                        className={`w-full py-3.5 px-5 rounded-2xl font-black italic text-[10px] uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-between border ${activeTab === 'visual' ? 'bg-east-light text-black border-east-light shadow-[0_20px_40px_rgba(40,209,96,0.3)]' : 'bg-white/5 text-gray-500 border-white/5 hover:border-white/20 hover:text-white'}`}
                                     >
                                         <div className="flex items-center gap-3">
                                             <span>Diagram / Photo</span>
@@ -1331,7 +1331,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                         {(!['coach', 'admin', 'sys-admin'].includes(userRole || '')) && (
                             <button 
                                 onClick={() => window.location.href = '/?tab=community'}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-[#28D160]/10 text-[#28D160] border border-[#28D160]/30 rounded-xl hover:bg-[#28D160]/20 transition-all shadow-[0_0_15px_rgba(40,209,96,0.15)] active:scale-95 sm:ml-4"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-east-light/10 text-east-light border border-east-light/30 rounded-xl hover:bg-east-light/20 transition-all shadow-[0_0_15px_rgba(40,209,96,0.15)] active:scale-95 sm:ml-4"
                             >
                                 <MessageSquare size={16} />
                                 <span className="text-[10px] font-black uppercase tracking-widest">Inbox</span>
@@ -1461,7 +1461,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                         </div>
                     )}
                     {loadingPlanDrills ? (
-                        <div className="py-20 text-center animate-pulse text-[#28D160] font-black uppercase text-sm tracking-widest">
+                        <div className="py-20 text-center animate-pulse text-east-light font-black uppercase text-sm tracking-widest">
                             Loading Plan Drills...
                         </div>
                     ) : planDrills.length === 0 ? (
@@ -1477,7 +1477,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                 className="bg-[#121212] border border-white/10 rounded-2xl p-4 flex items-center justify-between cursor-pointer active:scale-95 transition-all shadow-xl"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/5 rounded-xl flex items-center justify-center text-[#28D160] font-black italic text-lg sm:text-xl">
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/5 rounded-xl flex items-center justify-center text-east-light font-black italic text-lg sm:text-xl">
                                         {idx + 1}
                                     </div>
                                     <div>
@@ -1506,7 +1506,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                             className="bg-[#121212] border border-white/10 rounded-2xl p-4 flex items-center justify-between cursor-pointer active:scale-95 transition-all shadow-xl"
                         >
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/5 rounded-xl flex items-center justify-center text-[#28D160] font-black italic text-lg sm:text-xl">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/5 rounded-xl flex items-center justify-center text-east-light font-black italic text-lg sm:text-xl">
                                     {idx + 1}
                                 </div>
                                 <div>
@@ -1626,7 +1626,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                                     {allTags.length > 0 && (
                                                         <div className="flex flex-wrap gap-1">
                                                             {allTags.map((tag, i) => {
-                                                                let colorClass = 'text-[#28D160] border-[#28D160]/40 bg-[#28D160]/10';
+                                                                let colorClass = 'text-east-light border-east-light/40 bg-east-light/10';
                                                                 if (drill.skill_tags?.includes(tag)) colorClass = 'text-[#0A84FF] border-[#0A84FF]/40 bg-[#0A84FF]/10';
                                                                 else if (drill.age_tags?.includes(tag)) colorClass = 'text-[#BF5AF2] border-[#BF5AF2]/40 bg-[#BF5AF2]/10';
                                                                 return (
@@ -1701,7 +1701,7 @@ export default function DrillHubScreen({ initialDrills = [], initialPlans = [] }
                                                         {allTags.length > 0 && (
                                                             <div className="flex flex-wrap gap-1.5">
                                                                 {allTags.map((tag, i) => {
-                                                                    let colorClass = 'text-[#28D160] border-[#28D160]/40 bg-[#28D160]/10 shadow-[0_0_8px_rgba(40,209,96,0.15)]';
+                                                                    let colorClass = 'text-east-light border-east-light/40 bg-east-light/10 shadow-[0_0_8px_rgba(40,209,96,0.15)]';
                                                                     if (drill.skill_tags?.includes(tag)) colorClass = 'text-[#0A84FF] border-[#0A84FF]/40 bg-[#0A84FF]/10 shadow-[0_0_8px_rgba(10,132,255,0.15)]';
                                                                     else if (drill.age_tags?.includes(tag)) colorClass = 'text-[#BF5AF2] border-[#BF5AF2]/40 bg-[#BF5AF2]/10 shadow-[0_0_8px_rgba(191,90,242,0.15)]';
                                                                     return (

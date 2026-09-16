@@ -51,7 +51,7 @@ const STATUS_COLUMNS: { id: TicketStatus; label: string; icon: any; color: strin
     { id: 'open', label: 'Backlog', icon: AlertCircle, color: 'text-gray-400' },
     { id: 'in_progress', label: 'Development', icon: Clock, color: 'text-blue-400' },
     { id: 'verify', label: 'Verify (Test Env)', icon: Shield, color: 'text-orange-400' },
-    { id: 'done', label: 'Production / Done', icon: CheckCircle2, color: 'text-[#28D160]' }
+    { id: 'done', label: 'Production / Done', icon: CheckCircle2, color: 'text-east-light' }
 ];
 
 const PRIORITY_COLORS: Record<TicketPriority, string> = {
@@ -206,7 +206,7 @@ export default function DashboardContent() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="w-8 h-8 border-2 border-[#28D160] border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-east-light border-t-transparent rounded-full animate-spin" />
             </div>
         );
     }
@@ -220,7 +220,7 @@ export default function DashboardContent() {
                         Engineering <ChevronRight size={10} /> Issue Dashboard
                     </div>
                     <h1 className="text-4xl font-black italic uppercase tracking-tighter flex items-center gap-3">
-                        <Shield className="text-[#28D160]" size={32} />
+                        <Shield className="text-east-light" size={32} />
                         EAST JIRA-LITE
                     </h1>
                     <p className="text-gray-400">Agentic Bug Tracking & Verification Control</p>
@@ -232,14 +232,14 @@ export default function DashboardContent() {
                         <input 
                             type="text"
                             placeholder="Search #ticket or title..."
-                            className="bg-[#1e1e1e] border border-white/5 rounded-full pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-[#28D160] transition-colors w-64"
+                            className="bg-[#1e1e1e] border border-white/5 rounded-full pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-east-light transition-colors w-64"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                     <button 
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="bg-[#28D160] text-black px-6 py-2.5 rounded-full font-black uppercase italic tracking-tighter text-sm flex items-center gap-2 hover:bg-white transition-colors"
+                        className="bg-east-light text-black px-6 py-2.5 rounded-full font-black uppercase italic tracking-tighter text-sm flex items-center gap-2 hover:bg-white transition-colors"
                     >
                         <Plus size={18} strokeWidth={3} /> Report Bug
                     </button>
@@ -276,12 +276,12 @@ export default function DashboardContent() {
                                             <span className="text-[10px] text-gray-600 font-bold tracking-tighter">#{ticket.id}</span>
                                         </div>
 
-                                        <h4 className="font-bold text-sm mb-3 group-hover:text-[#28D160] transition-colors line-clamp-2">{ticket.title}</h4>
+                                        <h4 className="font-bold text-sm mb-3 group-hover:text-east-light transition-colors line-clamp-2">{ticket.title}</h4>
                                         
                                         {ticket.resolution && (
-                                            <div className="mb-4 p-3 bg-[#28D160]/5 rounded-xl border border-[#28D160]/20 text-[10px] leading-relaxed relative group/summary">
-                                                <div className="absolute -left-1 top-2 w-0.5 h-6 bg-[#28D160] rounded-full" />
-                                                <div className="text-[#28D160] font-black uppercase tracking-widest mb-1 opacity-90 flex items-center gap-1">
+                                            <div className="mb-4 p-3 bg-east-light/5 rounded-xl border border-east-light/20 text-[10px] leading-relaxed relative group/summary">
+                                                <div className="absolute -left-1 top-2 w-0.5 h-6 bg-east-light rounded-full" />
+                                                <div className="text-east-light font-black uppercase tracking-widest mb-1 opacity-90 flex items-center gap-1">
                                                     <Check size={10} strokeWidth={4} /> Resolution Summary
                                                 </div>
                                                 <p className="text-gray-300 line-clamp-4 italic">
@@ -305,7 +305,7 @@ export default function DashboardContent() {
                                             </div>
                                             <div className="flex items-center gap-1.5">
                                                 {ticket.resolution && (
-                                                    <div className="w-4 h-4 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                                                    <div className="w-4 h-4 rounded-full bg-east-light/20 flex items-center justify-center text-east-light">
                                                         <Check size={10} strokeWidth={4} />
                                                     </div>
                                                 )}
@@ -318,7 +318,7 @@ export default function DashboardContent() {
                                         {/* Status specific indicators */}
                                         {ticket.coo_approval && ticket.ceo_approval && ticket.cto_approval && (
                                             <div className="absolute top-0 right-0 p-1">
-                                                <div className="bg-[#28D160]/20 text-[#28D160] rounded-bl-xl p-1">
+                                                <div className="bg-east-light/20 text-east-light rounded-bl-xl p-1">
                                                     <Check size={12} strokeWidth={4} />
                                                 </div>
                                             </div>
@@ -362,12 +362,12 @@ export default function DashboardContent() {
                             {/* Screenshot */}
                             {selectedTicket.screenshot_url && (
                                 <div className="flex flex-col gap-3">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[#28D160]">Screenshot</h3>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-east-light">Screenshot</h3>
                                     <a 
                                         href={selectedTicket.screenshot_url} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
-                                        className="block bg-black/20 p-4 rounded-2xl border border-white/5 hover:border-[#28D160]/50 transition-colors"
+                                        className="block bg-black/20 p-4 rounded-2xl border border-white/5 hover:border-east-light/50 transition-colors"
                                     >
                                         <img 
                                             src={selectedTicket.screenshot_url} 
@@ -381,7 +381,7 @@ export default function DashboardContent() {
 
                              {/* Description */}
                             <div className="flex flex-col gap-3">
-                                <h3 className="text-[10px] font-black uppercase tracking-widest text-[#28D160]">Summary & Context</h3>
+                                <h3 className="text-[10px] font-black uppercase tracking-widest text-east-light">Summary & Context</h3>
                                 <div className="bg-black/20 p-6 rounded-2xl border border-white/5 text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
                                     {selectedTicket.description || 'No description provided.'}
                                 </div>
@@ -403,9 +403,9 @@ export default function DashboardContent() {
                                     />
                                 </div>
                                 <div className="flex flex-col gap-3">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-[#28D160]">Resolution</h3>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-east-light">Resolution</h3>
                                     <textarea 
-                                        className="bg-black/40 border border-white/5 rounded-2xl p-4 text-xs text-gray-400 h-24 resize-none focus:outline-none focus:border-[#28D160]/50"
+                                        className="bg-black/40 border border-white/5 rounded-2xl p-4 text-xs text-gray-400 h-24 resize-none focus:outline-none focus:border-east-light/50"
                                         placeholder="Document the solution..."
                                         value={selectedTicket.resolution || ''}
                                         onChange={(e) => setSelectedTicket({...selectedTicket, resolution: e.target.value})}
@@ -422,7 +422,7 @@ export default function DashboardContent() {
                                 <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/5">
                                     <span className="text-[9px] font-black uppercase text-gray-500 tracking-widest block mb-2">Assigned Agent</span>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-lg bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                                        <div className="w-6 h-6 rounded-lg bg-east-light/20 flex items-center justify-center text-east-light">
                                             <Shield size={14} />
                                         </div>
                                         <span className="text-sm font-bold italic">{selectedTicket.assigned_agent}</span>
@@ -464,37 +464,37 @@ export default function DashboardContent() {
 
                             {/* Approval Gates */}
                             <div className="flex flex-col gap-3">
-                                <h3 className="text-[10px] font-black uppercase tracking-widest text-[#28D160]">Executive Approval Gate</h3>
+                                <h3 className="text-[10px] font-black uppercase tracking-widest text-east-light">Executive Approval Gate</h3>
                                 <div className="grid grid-cols-3 gap-4">
                                     <div 
                                         onClick={() => updateTicket(selectedTicket.id, { coo_approval: !selectedTicket.coo_approval })}
-                                        className={`p-6 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2 ${selectedTicket.coo_approval ? 'bg-[#28D160]/10 border-[#28D160]/40' : 'bg-white/[0.02] border-white/5 opacity-50'}`}
+                                        className={`p-6 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2 ${selectedTicket.coo_approval ? 'bg-east-light/10 border-east-light/40' : 'bg-white/[0.02] border-white/5 opacity-50'}`}
                                     >
                                         <div className="flex items-center justify-between">
                                             <span className="text-xs font-black uppercase italic tracking-tighter">COO Approval</span>
-                                            {selectedTicket.coo_approval ? <CheckCircle2 className="text-[#28D160]" size={18} /> : <div className="w-4 h-4 rounded-full border border-white/20" />}
+                                            {selectedTicket.coo_approval ? <CheckCircle2 className="text-east-light" size={18} /> : <div className="w-4 h-4 rounded-full border border-white/20" />}
                                         </div>
                                         <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Fiona</p>
                                     </div>
 
                                     <div 
                                         onClick={() => updateTicket(selectedTicket.id, { ceo_approval: !selectedTicket.ceo_approval })}
-                                        className={`p-6 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2 ${selectedTicket.ceo_approval ? 'bg-[#28D160]/10 border-[#28D160]/40' : 'bg-white/[0.02] border-white/5 opacity-50'}`}
+                                        className={`p-6 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2 ${selectedTicket.ceo_approval ? 'bg-east-light/10 border-east-light/40' : 'bg-white/[0.02] border-white/5 opacity-50'}`}
                                     >
                                         <div className="flex items-center justify-between">
                                             <span className="text-xs font-black uppercase italic tracking-tighter">CEO Approval</span>
-                                            {selectedTicket.ceo_approval ? <CheckCircle2 className="text-[#28D160]" size={18} /> : <div className="w-4 h-4 rounded-full border border-white/20" />}
+                                            {selectedTicket.ceo_approval ? <CheckCircle2 className="text-east-light" size={18} /> : <div className="w-4 h-4 rounded-full border border-white/20" />}
                                         </div>
                                         <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Ben</p>
                                     </div>
 
                                     <div 
                                         onClick={() => updateTicket(selectedTicket.id, { cto_approval: !selectedTicket.cto_approval })}
-                                        className={`p-6 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2 ${selectedTicket.cto_approval ? 'bg-[#28D160]/10 border-[#28D160]/40' : 'bg-white/[0.02] border-white/5 opacity-50'}`}
+                                        className={`p-6 rounded-2xl border transition-all cursor-pointer flex flex-col gap-2 ${selectedTicket.cto_approval ? 'bg-east-light/10 border-east-light/40' : 'bg-white/[0.02] border-white/5 opacity-50'}`}
                                     >
                                         <div className="flex items-center justify-between">
                                             <span className="text-xs font-black uppercase italic tracking-tighter">CTO Approval</span>
-                                            {selectedTicket.cto_approval ? <CheckCircle2 className="text-[#28D160]" size={18} /> : <div className="w-4 h-4 rounded-full border border-white/20" />}
+                                            {selectedTicket.cto_approval ? <CheckCircle2 className="text-east-light" size={18} /> : <div className="w-4 h-4 rounded-full border border-white/20" />}
                                         </div>
                                         <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Nic</p>
                                     </div>
@@ -530,7 +530,7 @@ export default function DashboardContent() {
                             {selectedTicket.status === 'verify' && selectedTicket.coo_approval && selectedTicket.ceo_approval && selectedTicket.cto_approval && (
                                 <button 
                                     onClick={() => updateTicket(selectedTicket.id, { status: 'done' })}
-                                    className="bg-[#28D160] text-black px-6 py-2.5 rounded-full font-black uppercase italic tracking-tighter text-sm flex items-center gap-2 shadow-xl hover:scale-105 transition-transform"
+                                    className="bg-east-light text-black px-6 py-2.5 rounded-full font-black uppercase italic tracking-tighter text-sm flex items-center gap-2 shadow-xl hover:scale-105 transition-transform"
                                 >
                                     Promote to Production <ChevronRight size={18} />
                                 </button>
@@ -556,7 +556,7 @@ export default function DashboardContent() {
                                 name="title" 
                                 required
                                 placeholder="Short description of the bug..."
-                                className="bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[#28D160] transition-colors"
+                                className="bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-east-light transition-colors"
                             />
                         </div>
 
@@ -566,7 +566,7 @@ export default function DashboardContent() {
                                 name="description"
                                 rows={4}
                                 placeholder="What happened? What was expected?"
-                                className="bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[#28D160] transition-colors resize-none"
+                                className="bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-east-light transition-colors resize-none"
                             />
                         </div>
 
@@ -592,7 +592,7 @@ export default function DashboardContent() {
                                 />
                                 <label
                                     htmlFor="screenshot-upload"
-                                    className="flex items-center justify-center gap-2 bg-black/40 border border-white/5 border-dashed rounded-2xl px-5 py-4 cursor-pointer hover:border-[#28D160] transition-colors"
+                                    className="flex items-center justify-center gap-2 bg-black/40 border border-white/5 border-dashed rounded-2xl px-5 py-4 cursor-pointer hover:border-east-light transition-colors"
                                 >
                                     {screenshotPreview ? (
                                         <img src={screenshotPreview} alt="Preview" className="h-20 object-contain rounded" />
@@ -621,7 +621,7 @@ export default function DashboardContent() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-2">
                                 <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Priority</label>
-                                <select name="priority" className="bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-[#28D160] transition-colors appearance-none font-bold italic uppercase tracking-tighter">
+                                <select name="priority" className="bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-sm focus:outline-none focus:border-east-light transition-colors appearance-none font-bold italic uppercase tracking-tighter">
                                     <option value="low">Low</option>
                                     <option value="medium" selected>Medium</option>
                                     <option value="high">High</option>
@@ -632,7 +632,7 @@ export default function DashboardContent() {
                                 <button 
                                     type="submit" 
                                     disabled={isSubmitting}
-                                    className="bg-[#28D160] text-black h-full rounded-2xl font-black uppercase italic tracking-tighter text-sm hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    className="bg-east-light text-black h-full rounded-2xl font-black uppercase italic tracking-tighter text-sm hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {isSubmitting ? (
                                         <>

@@ -51,18 +51,18 @@ export default function AdminOpsDashboard() {
     );
 
     const MenuButton = ({ href, title, description, icon: Icon }: any) => (
-        <Link href={href} className="group bg-[#1a1a1a] border border-white/5 p-8 rounded-3xl hover:border-[#28D160] transition-all flex flex-col gap-6 relative overflow-hidden">
+        <Link href={href} className="group bg-[#1a1a1a] border border-white/5 p-8 rounded-3xl hover:border-east-light transition-all flex flex-col gap-6 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity">
                 <Icon size={120} />
             </div>
-            <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center group-hover:bg-[#28D160] transition-colors">
+            <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center group-hover:bg-east-light transition-colors">
                 <Icon size={28} className="text-gray-400 group-hover:text-black transition-colors" />
             </div>
             <div>
-                <h3 className="text-xl font-black uppercase italic tracking-tighter mb-2 group-hover:text-[#28D160] transition-colors">{title}</h3>
+                <h3 className="text-xl font-black uppercase italic tracking-tighter mb-2 group-hover:text-east-light transition-colors">{title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{description}</p>
             </div>
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#28D160] opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-east-light opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
                 Manage Now <ArrowRight size={12} />
             </div>
         </Link>
@@ -74,7 +74,7 @@ export default function AdminOpsDashboard() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none mb-4">
-                        Empire <span className="text-[#28D160]">Admin</span>
+                        Empire <span className="text-east-light">Admin</span>
                     </h1>
                     <p className="text-gray-400 font-medium max-w-lg">
                         Manage your team, define your services, and orchestrate the ultimate athlete experience from one unified cockpit.

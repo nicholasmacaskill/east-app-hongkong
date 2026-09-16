@@ -2,12 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { UserRole } from '@/app/types';
+import { useTenant } from '@/app/providers/TenantProvider';
 
 interface LandingScreenProps {
     onSelectAuth: (role: UserRole, step: 'login' | 'register') => void;
 }
 
 export default function LandingScreen({ onSelectAuth }: LandingScreenProps) {
+    const { tenant } = useTenant();
     const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
@@ -16,36 +18,37 @@ export default function LandingScreen({ onSelectAuth }: LandingScreenProps) {
     }, []);
 
     return (
-        <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden font-montserrat select-none">
+        <div className="relative min-h-screen w-full flex flex-col items-center justify-center py-12 sm:py-16 overflow-y-auto font-montserrat select-none">
             {/* 1. SOLID BLACK BACKGROUND */}
             <div className="absolute inset-0 z-0 bg-black" />
 
             {/* 2. CONTENT CONTAINER */}
-            <div className="relative z-10 flex flex-col items-center w-full max-w-sm px-6">
+            <div className="relative z-10 flex flex-col items-center w-full max-w-sm px-6 my-auto">
                 {/* LOGO */}
-                <div className={`mb-10 transition-opacity duration-[2000ms] ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
+                <div className={`mb-6 sm:mb-8 transition-opacity duration-[2000ms] ${isLoaded ? 'opacity-100' : 'opacity-0'}`}>
                     <img
-                        src="/east-logo-transparent.png"
-                        alt="East Sports Group"
-                        className="w-[200px] h-auto object-contain"
+                        src={tenant.assets.logoUrl}
+                        alt={tenant.assets.logoAlt}
+                        className="w-[145px] h-[145px] sm:w-[165px] sm:h-[165px] object-contain transition-all duration-500 hover:scale-105"
+                        style={{ filter: `drop-shadow(0 0 35px ${tenant.colors.glow})` }}
                     />
                 </div>
 
                 {/* CALL TO ACTION */}
                 <div className={`w-full transition-all duration-[2000ms] delay-1000 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-                    <div className="flex flex-col items-center mb-12">
-                        <p className="text-[10px] font-bold tracking-[0.5em] text-white/50 uppercase mb-4">
-                            East Sports Group • Hong Kong
+                    <div className="flex flex-col items-center mb-8">
+                        <p className="text-[10px] font-bold tracking-[0.5em] text-white/50 uppercase mb-3 text-center">
+                            {tenant.name} • {tenant.location}
                         </p>
                         <h2 className="text-[13px] font-black tracking-[0.6em] text-white/80 uppercase text-center">
                             Select Your Portal
                         </h2>
                     </div>
 
-                    <div className="flex flex-col gap-10">
+                    <div className="flex flex-col gap-6 sm:gap-7">
                         {/* ATHLETE SECTION */}
                         <div className="animate-fadeIn" style={{ animationDelay: '0ms' }} data-testid="athlete-portal-section">
-                            <p className="text-[14px] font-black tracking-[0.3em] text-white uppercase mb-4 text-center">athlete</p>
+                            <p className="text-[13px] font-black tracking-[0.3em] text-white uppercase mb-3 text-center">athlete</p>
                             <div className="grid grid-cols-2 gap-3">
                                 <LoginButton
                                     label="LOGIN"
@@ -62,7 +65,7 @@ export default function LandingScreen({ onSelectAuth }: LandingScreenProps) {
 
                         {/* PARENT SECTION */}
                         <div className="animate-fadeIn" style={{ animationDelay: '200ms' }} data-testid="parent-portal-section">
-                            <p className="text-[14px] font-black tracking-[0.3em] text-white uppercase mb-4 text-center">parent</p>
+                            <p className="text-[13px] font-black tracking-[0.3em] text-white uppercase mb-3 text-center">parent</p>
                             <div className="grid grid-cols-2 gap-3">
                                 <LoginButton
                                     label="LOGIN"
@@ -79,7 +82,7 @@ export default function LandingScreen({ onSelectAuth }: LandingScreenProps) {
 
                         {/* COACH SECTION */}
                         <div className="animate-fadeIn" style={{ animationDelay: '400ms' }} data-testid="coach-portal-section">
-                            <p className="text-[14px] font-black tracking-[0.3em] text-white uppercase mb-4 text-center">coach</p>
+                            <p className="text-[13px] font-black tracking-[0.3em] text-white uppercase mb-3 text-center">coach</p>
                             <LoginButton
                                 label="LOGIN"
                                 onClick={() => onSelectAuth('coach', 'login')}
@@ -88,7 +91,7 @@ export default function LandingScreen({ onSelectAuth }: LandingScreenProps) {
                         </div>
 
                         {/* ADMIN SECTION */}
-                        <div className="pt-12 mt-4 border-t border-white/10 w-full animate-fadeIn" style={{ animationDelay: '600ms' }}>
+                        <div className="pt-6 mt-2 border-t border-white/10 w-full animate-fadeIn" style={{ animationDelay: '600ms' }}>
                             <LoginButton
                                 label="ADMIN PORTAL"
                                 onClick={() => onSelectAuth('sys-admin', 'login')}
@@ -97,9 +100,6 @@ export default function LandingScreen({ onSelectAuth }: LandingScreenProps) {
                         </div>
                     </div>
                 </div>
-
-                {/* FOOTER - Spacer */}
-                <div className="mt-20 h-8" />
             </div>
 
             <style jsx global>{`

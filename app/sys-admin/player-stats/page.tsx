@@ -169,7 +169,7 @@ export default function PlayerStatsAdmin() {
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
-                    <Link href="/sys-admin" className="p-2 bg-[#1e1e1e] rounded-lg hover:bg-[#28D160] hover:text-black transition-colors">
+                    <Link href="/sys-admin" className="p-2 bg-[#1e1e1e] rounded-lg hover:bg-east-light hover:text-black transition-colors">
                         <ChevronLeft size={20} />
                     </Link>
                     <div>
@@ -185,7 +185,7 @@ export default function PlayerStatsAdmin() {
                 <select
                     value={selectedPlayerId}
                     onChange={(e) => setSelectedPlayerId(e.target.value)}
-                    className="w-full bg-black border border-white/10 p-4 rounded-xl text-white outline-none focus:border-[#28D160] transition-colors"
+                    className="w-full bg-black border border-white/10 p-4 rounded-xl text-white outline-none focus:border-east-light transition-colors"
                 >
                     <option value="">-- Select Player --</option>
                     {players.map(p => (
@@ -199,16 +199,16 @@ export default function PlayerStatsAdmin() {
             {selectedPlayerId && (
                 <>
                     {/* OCR Upload Section */}
-                    <div className="mb-8 bg-gradient-to-r from-[#28D160]/10 to-blue-500/10 p-6 rounded-2xl border border-[#28D160]/30">
+                    <div className="mb-8 bg-gradient-to-r from-[#28D160]/10 to-blue-500/10 p-6 rounded-2xl border border-east-light/30">
                         <h2 className="text-lg font-black italic uppercase mb-4 flex items-center gap-2">
-                            <Camera size={20} className="text-[#28D160]" />
+                            <Camera size={20} className="text-east-light" />
                             Upload Stats Card (OCR)
                         </h2>
 
                         <label className="cursor-pointer">
-                            <div className="border-2 border-dashed border-white/20 rounded-xl p-8 hover:border-[#28D160]/50 transition-colors text-center">
+                            <div className="border-2 border-dashed border-white/20 rounded-xl p-8 hover:border-east-light/50 transition-colors text-center">
                                 {ocrProcessing ? (
-                                    <div className="text-[#28D160] font-bold">Processing image...</div>
+                                    <div className="text-east-light font-bold">Processing image...</div>
                                 ) : uploadedImage ? (
                                     <div className="flex flex-col items-center gap-4">
                                         <img src={uploadedImage} alt="Uploaded" className="max-h-64 rounded-lg" />
@@ -234,7 +234,7 @@ export default function PlayerStatsAdmin() {
                     {/* Manual Entry Form */}
                     <div className="bg-[#1e1e1e] p-6 rounded-2xl border border-white/10 mb-8">
                         <h2 className="text-lg font-black italic uppercase mb-6 flex items-center gap-2">
-                            <Edit2 size={20} className="text-[#28D160]" />
+                            <Edit2 size={20} className="text-east-light" />
                             Stats Fields {loading && <span className="text-xs text-gray-500">(Loading...)</span>}
                         </h2>
 
@@ -246,7 +246,7 @@ export default function PlayerStatsAdmin() {
                                         type={type}
                                         value={stats[field as keyof PlayerStats] ?? ''}
                                         onChange={(e) => updateStat(field as keyof PlayerStats, type === 'number' ? (e.target.value ? parseFloat(e.target.value) : null) : e.target.value)}
-                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-[#28D160] transition-colors"
+                                        className="w-full bg-black/50 border border-white/10 p-3 rounded-xl text-white outline-none focus:border-east-light transition-colors"
                                         placeholder={type === 'number' ? '0' : 'Enter value'}
                                     />
                                 </div>
@@ -258,7 +258,7 @@ export default function PlayerStatsAdmin() {
                     <button
                         onClick={handleSaveStats}
                         disabled={saveStatus === 'saving'}
-                        className="w-full bg-[#28D160] text-black font-black italic uppercase text-sm py-4 rounded-xl hover:bg-white transition-all shadow-xl flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full bg-east-light text-black font-black italic uppercase text-sm py-4 rounded-xl hover:bg-white transition-all shadow-xl flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {saveStatus === 'saving' && <div className="animate-spin">⏳</div>}
                         {saveStatus === 'success' && <CheckCircle2 size={18} />}

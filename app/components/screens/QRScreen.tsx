@@ -322,7 +322,7 @@ export default function QRScreen({ credits, currentUserId, subscriptionStatus, a
   );
 
   const renderSuccess = () => (
-    <div className="p-8 flex flex-col items-center justify-center h-full bg-[#28D160] text-black min-h-[500px] animate-fadeIn">
+    <div className="p-8 flex flex-col items-center justify-center h-full bg-east-light text-black min-h-[500px] animate-fadeIn">
       <CheckCircle2 size={80} className="text-black mb-6" strokeWidth={1.5} />
       <h2 className="font-montserrat font-black italic text-4xl uppercase tracking-tighter mb-2 text-center leading-none">PURCHASE<br/>SUCCESS</h2>
       <p className="text-sm font-bold opacity-80 mb-8 max-w-[200px] text-center">Paid {selectedItem?.price_credits} credits for {selectedItem?.name}</p>
@@ -338,7 +338,7 @@ export default function QRScreen({ credits, currentUserId, subscriptionStatus, a
           // Reload page to refresh credits
           window.location.reload();
         }}
-        className="w-full bg-black text-[#28D160] font-montserrat font-black italic text-sm py-4 rounded-full uppercase tracking-wider shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
+        className="w-full bg-black text-east-light font-montserrat font-black italic text-sm py-4 rounded-full uppercase tracking-wider shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
       >
         Done
       </button>

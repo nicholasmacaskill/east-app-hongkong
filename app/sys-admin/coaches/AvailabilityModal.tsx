@@ -224,7 +224,7 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                 <div className="flex justify-between items-center p-6 border-b border-white/10 shrink-0 bg-[#1e1e1e] z-50">
                     <div>
                         <h2 className="text-2xl font-black italic uppercase tracking-tighter text-white">
-                            Availability: <span className="text-[#28D160]">{coach.first_name} {coach.last_name}</span>
+                            Availability: <span className="text-east-light">{coach.first_name} {coach.last_name}</span>
                         </h2>
                         <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">Manage monthly schedule</p>
                     </div>
@@ -249,7 +249,7 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => setShowBulkTool(!showBulkTool)}
-                            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-colors ${showBulkTool ? 'bg-[#28D160] text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold uppercase flex items-center gap-2 transition-colors ${showBulkTool ? 'bg-east-light text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
                         >
                             <Plus size={14} /> Bulk Add
                         </button>
@@ -295,7 +295,7 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                         <button key={d} onClick={() => {
                                             const newDays = bulkConfig.selectedDays.includes(d) ? bulkConfig.selectedDays.filter(x => x !== d) : [...bulkConfig.selectedDays, d];
                                             setBulkConfig({ ...bulkConfig, selectedDays: newDays });
-                                        }} className={`w-6 h-6 rounded text-[9px] font-bold ${bulkConfig.selectedDays.includes(d) ? 'bg-[#28D160] text-black' : 'bg-black/50 text-gray-500'}`}>
+                                        }} className={`w-6 h-6 rounded text-[9px] font-bold ${bulkConfig.selectedDays.includes(d) ? 'bg-east-light text-black' : 'bg-black/50 text-gray-500'}`}>
                                             {['S', 'M', 'T', 'W', 'T', 'F', 'S'][d]}
                                         </button>
                                     ))}
@@ -330,7 +330,7 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                                 <input type="number" value={bulkConfig.capacity} onChange={e => setBulkConfig({ ...bulkConfig, capacity: parseInt(e.target.value) || 1 })} className="bg-black/50 border border-white/10 rounded px-2 py-1 text-xs text-white w-full" />
                             </div>
                         </div>
-                        <button onClick={generateBulkSlots} className="bg-[#28D160] text-black font-black uppercase text-xs px-4 py-1.5 rounded hover:bg-white transition-colors">
+                        <button onClick={generateBulkSlots} className="bg-east-light text-black font-black uppercase text-xs px-4 py-1.5 rounded hover:bg-white transition-colors">
                             Generate
                         </button>
                     </div>
@@ -484,7 +484,7 @@ export default function AvailabilityModal({ coach, onClose }: AvailabilityModalP
                         <button onClick={onClose} className="px-6 py-3 bg-white/5 text-white font-bold uppercase text-xs rounded-xl hover:bg-white/10 transition-colors">
                             Cancel
                         </button>
-                        <button onClick={handleSave} disabled={saving} className="px-8 py-3 bg-[#28D160] text-black font-black uppercase italic text-xs rounded-xl hover:bg-white transition-colors flex items-center gap-2 disabled:opacity-50">
+                        <button onClick={handleSave} disabled={saving} className="px-8 py-3 bg-east-light text-black font-black uppercase italic text-xs rounded-xl hover:bg-white transition-colors flex items-center gap-2 disabled:opacity-50">
                             {saving ? 'Saving...' : <><Save size={16} /> Save Changes</>}
                         </button>
                     </div>

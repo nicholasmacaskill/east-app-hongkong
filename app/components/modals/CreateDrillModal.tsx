@@ -558,7 +558,7 @@ export default function CreateDrillModal({ coachId, onClose, onSuccess }: Create
                                                 onClick={() => updateStep(activeStepIndex, 'media_type', tab.id as any)}
                                                 className={`w-full flex items-center justify-between px-6 py-4 rounded-xl border transition-all ${
                                                     isActive 
-                                                        ? 'bg-[#28D160] border-white text-black shadow-[0_0_20px_rgba(40,209,96,0.4)]' 
+                                                        ? 'bg-east-light border-white text-black shadow-[0_0_20px_rgba(40,209,96,0.4)]' 
                                                         : 'bg-[#1C2541]/40 border-white/10 text-gray-500 hover:border-white/20 hover:text-white'
                                                 }`}
                                             >

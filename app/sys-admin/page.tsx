@@ -19,13 +19,13 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Unified People Directory Card */}
                 <Link href="/sys-admin/directory" className="group col-span-1 md:col-span-2">
-                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
+                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-east-light transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Users size={120} />
                         </div>
 
                         <div className="relative z-10 flex flex-col h-full gap-4">
-                            <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                            <div className="w-12 h-12 rounded-full bg-east-light/20 flex items-center justify-center text-east-light">
                                 <Users size={24} />
                             </div>
 
@@ -36,7 +36,7 @@ export default function AdminDashboard() {
                                 </p>
                             </div>
 
-                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-east-light text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
                                 Open Unified Directory <ArrowRight size={14} />
                             </div>
                         </div>
@@ -44,19 +44,19 @@ export default function AdminDashboard() {
                 </Link>
 
                 {/* Manage Services */}
-                <div onClick={() => router.push('/sys-admin/services')} className="bg-[#1a1a1a] p-6 rounded-2xl border border-white/5 hover:border-[#28D160] transition-colors cursor-pointer group relative overflow-hidden h-full">
+                <div onClick={() => router.push('/sys-admin/services')} className="bg-[#1a1a1a] p-6 rounded-2xl border border-white/5 hover:border-east-light transition-colors cursor-pointer group relative overflow-hidden h-full">
                     <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                         <LayoutGrid size={120} />
                     </div>
                     <div className="relative z-10 flex flex-col h-full gap-4">
-                        <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                        <div className="w-12 h-12 rounded-full bg-east-light/20 flex items-center justify-center text-east-light">
                             <LayoutGrid size={24} />
                         </div>
                         <div>
                             <h2 className="text-xl font-black italic uppercase mb-2">Manage Services</h2>
                             <p className="text-gray-400 text-sm leading-relaxed">Add/Edit Class & Private Lesson Types</p>
                         </div>
-                        <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
+                        <div className="mt-auto pt-4 flex items-center gap-2 text-east-light text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
                             Open Service Manager <ArrowRight size={14} />
                         </div>
                     </div>
@@ -64,13 +64,13 @@ export default function AdminDashboard() {
 
                 {/* Master Schedule Card */}
                 <Link href="/sys-admin/schedule" className="group">
-                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
+                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-east-light transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Calendar size={120} />
                         </div>
 
                         <div className="relative z-10 flex flex-col h-full gap-4">
-                            <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                            <div className="w-12 h-12 rounded-full bg-east-light/20 flex items-center justify-center text-east-light">
                                 <Calendar size={24} />
                             </div>
 
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
                                 </p>
                             </div>
 
-                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-east-light text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
                                 Open Master GRID <ArrowRight size={14} />
                             </div>
                         </div>
@@ -90,13 +90,13 @@ export default function AdminDashboard() {
 
                 {/* QR Generator Card */}
                 <Link href="/sys-admin/qr" className="group">
-                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
+                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-east-light transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <QrCode size={120} />
                         </div>
 
                         <div className="relative z-10 flex flex-col h-full gap-4">
-                            <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                            <div className="w-12 h-12 rounded-full bg-east-light/20 flex items-center justify-center text-east-light">
                                 <QrCode size={24} />
                             </div>
 
@@ -107,7 +107,7 @@ export default function AdminDashboard() {
                                 </p>
                             </div>
 
-                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-east-light text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
                                 Open Generator <ArrowRight size={14} />
                             </div>
                         </div>
@@ -116,24 +116,24 @@ export default function AdminDashboard() {
 
                 {/* Check-In Scanner Card */}
                 <Link href="/check-in" className="group">
-                    <div className="bg-[#1e1e1e] border border-[#28D160]/30 rounded-2xl p-6 hover:bg-[#28D160]/5 transition-colors relative overflow-hidden h-full shadow-[0_0_15px_rgba(40,209,96,0.1)]">
+                    <div className="bg-[#1e1e1e] border border-east-light/30 rounded-2xl p-6 hover:bg-east-light/5 transition-colors relative overflow-hidden h-full shadow-[0_0_15px_rgba(40,209,96,0.1)]">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-30 transition-opacity">
                             <QrCode size={120} />
                         </div>
 
                         <div className="relative z-10 flex flex-col h-full gap-4">
-                            <div className="w-12 h-12 rounded-full bg-[#28D160] flex items-center justify-center text-black">
+                            <div className="w-12 h-12 rounded-full bg-east-light flex items-center justify-center text-black">
                                 <QrCode size={24} />
                             </div>
 
                             <div>
-                                <h2 className="text-xl font-black italic uppercase mb-2 text-[#28D160]">Launch Scanner</h2>
+                                <h2 className="text-xl font-black italic uppercase mb-2 text-east-light">Launch Scanner</h2>
                                 <p className="text-gray-400 text-sm leading-relaxed">
                                     Open the camera to scan athlete wallets for facility entry or to charge their account directly.
                                 </p>
                             </div>
 
-                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-black uppercase tracking-wider group-hover:text-white transition-colors">
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-east-light text-xs font-black uppercase tracking-wider group-hover:text-white transition-colors">
                                 Open Camera <ArrowRight size={14} />
                             </div>
                         </div>
@@ -142,13 +142,13 @@ export default function AdminDashboard() {
 
                 {/* News Management Card */}
                 <Link href="/sys-admin/news" className="group">
-                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
+                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-east-light transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Calendar size={120} />
                         </div>
 
                         <div className="relative z-10 flex flex-col h-full gap-4">
-                            <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                            <div className="w-12 h-12 rounded-full bg-east-light/20 flex items-center justify-center text-east-light">
                                 <Calendar size={24} />
                             </div>
 
@@ -159,7 +159,7 @@ export default function AdminDashboard() {
                                 </p>
                             </div>
 
-                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-east-light text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
                                 Open News Editor <ArrowRight size={14} />
                             </div>
                         </div>
@@ -168,13 +168,13 @@ export default function AdminDashboard() {
 
                 {/* Stripe Connect */}
                 <Link href="/sys-admin/payments" className="group">
-                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
+                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-east-light transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <CreditCard size={120} />
                         </div>
 
                         <div className="relative z-10 flex flex-col h-full gap-4">
-                            <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                            <div className="w-12 h-12 rounded-full bg-east-light/20 flex items-center justify-center text-east-light">
                                 <CreditCard size={24} />
                             </div>
 
@@ -185,7 +185,7 @@ export default function AdminDashboard() {
                                 </p>
                             </div>
 
-                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-east-light text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
                                 Open Payments Setup <ArrowRight size={14} />
                             </div>
                         </div>
@@ -194,13 +194,13 @@ export default function AdminDashboard() {
 
                 {/* Financial Oversight Card */}
                 <Link href="/sys-admin/transactions" className="group">
-                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
+                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-east-light transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Coins size={120} />
                         </div>
 
                         <div className="relative z-10 flex flex-col h-full gap-4">
-                            <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                            <div className="w-12 h-12 rounded-full bg-east-light/20 flex items-center justify-center text-east-light">
                                 <Coins size={24} />
                             </div>
 
@@ -211,7 +211,7 @@ export default function AdminDashboard() {
                                 </p>
                             </div>
 
-                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-east-light text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
                                 View Transactions <ArrowRight size={14} />
                             </div>
                         </div>
@@ -220,13 +220,13 @@ export default function AdminDashboard() {
 
                 {/* Stats Management Card */}
                 <Link href="/sys-admin/stats" className="group">
-                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
+                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-east-light transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Trophy size={120} />
                         </div>
 
                         <div className="relative z-10 flex flex-col h-full gap-4">
-                            <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                            <div className="w-12 h-12 rounded-full bg-east-light/20 flex items-center justify-center text-east-light">
                                 <Trophy size={24} />
                             </div>
 
@@ -237,7 +237,7 @@ export default function AdminDashboard() {
                                 </p>
                             </div>
 
-                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-east-light text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
                                 Manage Stats <ArrowRight size={14} />
                             </div>
                         </div>
@@ -246,13 +246,13 @@ export default function AdminDashboard() {
 
                 {/* Key Metrics Dashboard Card */}
                 <Link href="/sys-admin/metrics" className="group">
-                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
+                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-east-light transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bar-chart-3"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
                         </div>
 
                         <div className="relative z-10 flex flex-col h-full gap-4">
-                            <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                            <div className="w-12 h-12 rounded-full bg-east-light/20 flex items-center justify-center text-east-light">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bar-chart-3"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>
                             </div>
 
@@ -263,7 +263,7 @@ export default function AdminDashboard() {
                                 </p>
                             </div>
 
-                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-east-light text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
                                 View Dashboard <ArrowRight size={14} />
                             </div>
                         </div>
@@ -272,13 +272,13 @@ export default function AdminDashboard() {
 
                 {/* Audit Logs Card */}
                 <Link href="/sys-admin/audit" className="group">
-                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-[#28D160] transition-colors relative overflow-hidden h-full">
+                    <div className="bg-[#1e1e1e] rounded-2xl p-6 border border-white/5 hover:border-east-light transition-colors relative overflow-hidden h-full">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <Shield size={120} />
                         </div>
 
                         <div className="relative z-10 flex flex-col h-full gap-4">
-                            <div className="w-12 h-12 rounded-full bg-[#28D160]/20 flex items-center justify-center text-[#28D160]">
+                            <div className="w-12 h-12 rounded-full bg-east-light/20 flex items-center justify-center text-east-light">
                                 <Shield size={24} />
                             </div>
 
@@ -289,7 +289,7 @@ export default function AdminDashboard() {
                                 </p>
                             </div>
 
-                            <div className="mt-auto pt-4 flex items-center gap-2 text-[#28D160] text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
+                            <div className="mt-auto pt-4 flex items-center gap-2 text-east-light text-xs font-bold uppercase tracking-wider group-hover:text-white transition-colors">
                                 View Audit Trail <ArrowRight size={14} />
                             </div>
                         </div>
@@ -298,13 +298,13 @@ export default function AdminDashboard() {
 
                 {/* Bug Tracker Card */}
                 <Link href="/sys-admin/tickets" className="group col-span-1 md:col-span-2">
-                    <div className="bg-gradient-to-br from-[#1e1e1e] to-[#252525] rounded-2xl p-8 border border-white/5 hover:border-[#28D160] transition-all relative overflow-hidden h-full shadow-2xl">
+                    <div className="bg-gradient-to-br from-[#1e1e1e] to-[#252525] rounded-2xl p-8 border border-white/5 hover:border-east-light transition-all relative overflow-hidden h-full shadow-2xl">
                         <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-30 transition-opacity">
                             <Shield size={160} />
                         </div>
 
                         <div className="relative z-10 flex flex-col h-full gap-6">
-                            <div className="w-14 h-14 rounded-2xl bg-[#28D160]/20 flex items-center justify-center text-[#28D160] shadow-inner">
+                            <div className="w-14 h-14 rounded-2xl bg-east-light/20 flex items-center justify-center text-east-light shadow-inner">
                                 <Shield size={32} />
                             </div>
 
@@ -315,7 +315,7 @@ export default function AdminDashboard() {
                                 </p>
                             </div>
 
-                            <div className="mt-auto pt-6 flex items-center gap-3 text-[#28D160] text-sm font-black uppercase tracking-widest group-hover:text-white transition-all transform group-hover:translate-x-1">
+                            <div className="mt-auto pt-6 flex items-center gap-3 text-east-light text-sm font-black uppercase tracking-widest group-hover:text-white transition-all transform group-hover:translate-x-1">
                                 Open Jira-Lite Dashboard <ArrowRight size={18} />
                             </div>
                         </div>

@@ -64,7 +64,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
         <p className="text-gray-500 uppercase tracking-widest text-xs">
           The requested player profile could not be loaded.
         </p>
-        <Link href="/stats" className="text-[#28D160] font-bold underline">
+        <Link href="/stats" className="text-east-light font-bold underline">
           Return to Leaderboard
         </Link>
       </div>
@@ -76,7 +76,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
       <div className="max-w-md mx-auto bg-black min-h-screen relative border-x border-gray-900 shadow-2xl">
         <Link
           href="/stats"
-          className="absolute top-6 left-4 z-50 p-2 bg-black/50 rounded-full text-white hover:bg-[#28D160] hover:text-black transition-colors backdrop-blur-md"
+          className="absolute top-6 left-4 z-50 p-2 bg-black/50 rounded-full text-white hover:bg-east-light hover:text-black transition-colors backdrop-blur-md"
         >
           <ChevronLeft size={24} />
         </Link>

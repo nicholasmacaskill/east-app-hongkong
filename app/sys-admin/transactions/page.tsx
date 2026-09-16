@@ -103,7 +103,7 @@ export default function AdminTransactionsPage() {
                     </div>
                     <button
                         onClick={handleDownloadCSV}
-                        className="flex items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg"
+                        className="flex items-center gap-2 bg-east-light text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg"
                     >
                         <Download size={14} /> Export CSV
                     </button>
@@ -117,7 +117,7 @@ export default function AdminTransactionsPage() {
                         <input
                             type="text"
                             placeholder="Search by name, type, or description..."
-                            className="w-full bg-black border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                            className="w-full bg-black border border-white/10 rounded-xl py-3 pl-12 pr-4 text-sm focus:border-east-light outline-none transition-all"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -155,7 +155,7 @@ export default function AdminTransactionsPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col">
-                                            <span className="text-sm font-bold text-white group-hover:text-[#28D160] transition-colors">
+                                            <span className="text-sm font-bold text-white group-hover:text-east-light transition-colors">
                                                 {t.profiles?.first_name} {t.profiles?.last_name}
                                             </span>
                                             <span className="text-[10px] text-gray-500 uppercase">{t.profiles?.email}</span>
@@ -174,7 +174,7 @@ export default function AdminTransactionsPage() {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="flex items-center gap-1.5 font-bold italic text-[#28D160]">
+                                        <div className="flex items-center gap-1.5 font-bold italic text-east-light">
                                             <Coins size={14} />
                                             {t.amount > 0 ? `+${t.amount}` : t.amount}
                                         </div>

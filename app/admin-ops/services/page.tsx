@@ -192,13 +192,13 @@ export default function AdminOpsServicesPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-2">
-                        Manage <span className="text-[#28D160]">Services</span>
+                        Manage <span className="text-east-light">Services</span>
                     </h1>
                     <p className="text-gray-400 text-sm font-medium"> Roster of all classes, private lessons, and facility access types.</p>
                 </div>
                 <button
                     onClick={openNew}
-                    className="flex items-center gap-2 bg-[#28D160] text-black px-6 py-3 rounded-xl font-black uppercase italic tracking-wider hover:bg-white transition-all shadow-[0_0_20px_rgba(40,209,96,0.3)] active:scale-95"
+                    className="flex items-center gap-2 bg-east-light text-black px-6 py-3 rounded-xl font-black uppercase italic tracking-wider hover:bg-white transition-all shadow-[0_0_20px_rgba(40,209,96,0.3)] active:scale-95"
                 >
                     <Plus size={20} /> Add New Service
                 </button>
@@ -218,7 +218,7 @@ export default function AdminOpsServicesPage() {
                     </div>
                 ) : (
                     services.map(service => (
-                        <div key={service.id} className="bg-[#1a1a1a] border border-white/5 rounded-3xl p-6 flex flex-col gap-6 group hover:border-[#28D160] transition-all relative overflow-hidden shadow-xl">
+                        <div key={service.id} className="bg-[#1a1a1a] border border-white/5 rounded-3xl p-6 flex flex-col gap-6 group hover:border-east-light transition-all relative overflow-hidden shadow-xl">
                             <div className="flex gap-4">
                                 <div className="w-20 h-20 bg-black/40 rounded-2xl overflow-hidden flex-shrink-0 border border-white/5">
                                     {service.image_url ? (
@@ -230,12 +230,12 @@ export default function AdminOpsServicesPage() {
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="text-xl font-black uppercase italic tracking-tight mb-2 group-hover:text-[#28D160] transition-colors truncate">{service.title}</h3>
+                                    <h3 className="text-xl font-black uppercase italic tracking-tight mb-2 group-hover:text-east-light transition-colors truncate">{service.title}</h3>
                                     <div className="flex items-center gap-2">
                                         <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
                                             service.category === 'CLASS' ? 'bg-blue-500/20 text-blue-400' :
                                             service.category === 'PRIVATE' ? 'bg-purple-500/20 text-purple-400' :
-                                            'bg-[#28D160]/20 text-[#28D160]'
+                                            'bg-east-light/20 text-east-light'
                                         }`}>
                                             {service.category}
                                         </span>
@@ -249,7 +249,7 @@ export default function AdminOpsServicesPage() {
                             <div className="flex flex-col gap-3">
                                 <button
                                     onClick={() => openGenerator(service)}
-                                    className="w-full bg-white/5 border border-white/5 hover:bg-[#28D160] hover:text-black hover:border-transparent rounded-xl py-3 px-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+                                    className="w-full bg-white/5 border border-white/5 hover:bg-east-light hover:text-black hover:border-transparent rounded-xl py-3 px-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
                                 >
                                     <Sparkles size={14} /> Generate Schedule
                                 </button>
@@ -275,7 +275,7 @@ export default function AdminOpsServicesPage() {
                         <button onClick={() => setIsEditing(false)} className="absolute top-8 right-8 text-gray-500 hover:text-white transition-colors border border-white/5 p-2 rounded-full"><X size={20} /></button>
                         
                         <div className="mb-8">
-                            <h2 className="text-3xl font-black italic uppercase tracking-tighter text-[#28D160]">
+                            <h2 className="text-3xl font-black italic uppercase tracking-tighter text-east-light">
                                 {currentService.id ? 'Refine Service' : 'Blueprint New Service'}
                             </h2>
                             <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-2 px-1">Service Specification</p>
@@ -285,12 +285,12 @@ export default function AdminOpsServicesPage() {
                             <div className="grid grid-cols-1 gap-6">
                                 <div>
                                     <label className="px-1 block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Service Title</label>
-                                    <input type="text" value={currentService.title || ''} onChange={e => setCurrentService({ ...currentService, title: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold placeholder:text-gray-800 focus:outline-none focus:border-[#28D160] transition-colors" placeholder="e.g. STRENGTH LAB" />
+                                    <input type="text" value={currentService.title || ''} onChange={e => setCurrentService({ ...currentService, title: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold placeholder:text-gray-800 focus:outline-none focus:border-east-light transition-colors" placeholder="e.g. STRENGTH LAB" />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label className="px-1 block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Category</label>
-                                        <select value={currentService.category} onChange={e => setCurrentService({ ...currentService, category: e.target.value as any })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold focus:outline-none focus:border-[#28D160] appearance-none">
+                                        <select value={currentService.category} onChange={e => setCurrentService({ ...currentService, category: e.target.value as any })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold focus:outline-none focus:border-east-light appearance-none">
                                             <option value="CLASS">CLASS</option>
                                             <option value="PRIVATE">PRIVATE</option>
                                             <option value="FACILITY">FACILITY</option>
@@ -298,45 +298,45 @@ export default function AdminOpsServicesPage() {
                                     </div>
                                     <div>
                                         <label className="px-1 block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Credits Cost</label>
-                                        <input type="number" value={currentService.credit_cost || 0} onChange={e => setCurrentService({ ...currentService, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold focus:outline-none focus:border-[#28D160]" />
+                                        <input type="number" value={currentService.credit_cost || 0} onChange={e => setCurrentService({ ...currentService, credit_cost: parseInt(e.target.value) || 0 })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold focus:outline-none focus:border-east-light" />
                                     </div>
                                     <div className="md:col-span-2">
                                         <label className="px-1 block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Default Capacity (Athletes per Class)</label>
-                                        <input type="number" value={currentService.default_capacity || ''} onChange={e => setCurrentService({ ...currentService, default_capacity: parseInt(e.target.value) || undefined })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold focus:outline-none focus:border-[#28D160]" placeholder={currentService.category === 'CLASS' ? '10' : '1'} />
+                                        <input type="number" value={currentService.default_capacity || ''} onChange={e => setCurrentService({ ...currentService, default_capacity: parseInt(e.target.value) || undefined })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-bold focus:outline-none focus:border-east-light" placeholder={currentService.category === 'CLASS' ? '10' : '1'} />
                                     </div>
                                 </div>
                             </div>
 
                             <div>
                                 <label className="px-1 block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Service Description</label>
-                                <textarea value={currentService.description || ''} onChange={e => setCurrentService({ ...currentService, description: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-medium text-sm min-h-[100px] focus:outline-none focus:border-[#28D160] transition-colors" placeholder="Mission briefing for this service..." />
+                                <textarea value={currentService.description || ''} onChange={e => setCurrentService({ ...currentService, description: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-2xl p-4 text-white font-medium text-sm min-h-[100px] focus:outline-none focus:border-east-light transition-colors" placeholder="Mission briefing for this service..." />
                             </div>
 
                             {/* Coach Assignment in Modal */}
                             <div className="bg-black/40 border border-white/5 rounded-3xl p-6">
                                 <div className="flex justify-between items-center mb-4">
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Assign Operational Coaches</label>
-                                    <span className="text-[10px] text-[#28D160] font-black uppercase">{selectedCoachIds.length} Recruited</span>
+                                    <span className="text-[10px] text-east-light font-black uppercase">{selectedCoachIds.length} Recruited</span>
                                 </div>
                                 <div className="relative mb-4">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700" size={14} />
-                                    <input type="text" placeholder="Filter Roster..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl py-3 pl-10 pr-4 text-xs focus:border-[#28D160] outline-none" />
+                                    <input type="text" placeholder="Filter Roster..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl py-3 pl-10 pr-4 text-xs focus:border-east-light outline-none" />
                                 </div>
                                 <div className="max-h-48 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                                     {allCoaches.filter(c => `${c.first_name} ${c.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())).map(coach => {
                                         const isSelected = selectedCoachIds.includes(coach.id);
                                         return (
-                                            <button key={coach.id} onClick={() => isSelected ? setSelectedCoachIds(selectedCoachIds.filter(id => id !== coach.id)) : setSelectedCoachIds([...selectedCoachIds, coach.id])} className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all border ${isSelected ? 'bg-[#28D160]/10 border-[#28D160]/30' : 'bg-black/40 border-transparent hover:border-white/10'}`}>
+                                            <button key={coach.id} onClick={() => isSelected ? setSelectedCoachIds(selectedCoachIds.filter(id => id !== coach.id)) : setSelectedCoachIds([...selectedCoachIds, coach.id])} className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all border ${isSelected ? 'bg-east-light/10 border-east-light/30' : 'bg-black/40 border-transparent hover:border-white/10'}`}>
                                                 <div className="w-8 h-8 rounded-xl bg-gray-900 overflow-hidden flex-shrink-0 border border-white/5">{coach.avatar_url ? <img src={coach.avatar_url} className="w-full h-full object-cover grayscale" /> : <div className="w-full h-full bg-white/5" />}</div>
-                                                <span className={`text-xs font-black uppercase italic ${isSelected ? 'text-[#28D160]' : 'text-gray-500'}`}>{coach.first_name} {coach.last_name}</span>
-                                                {isSelected && <div className="ml-auto w-2 h-2 bg-[#28D160] rounded-full shadow-[0_0_10px_#28D160]" />}
+                                                <span className={`text-xs font-black uppercase italic ${isSelected ? 'text-east-light' : 'text-gray-500'}`}>{coach.first_name} {coach.last_name}</span>
+                                                {isSelected && <div className="ml-auto w-2 h-2 bg-east-light rounded-full shadow-[0_0_10px_#28D160]" />}
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
 
-                            <button onClick={handleSave} className="w-full bg-[#28D160] text-black font-black uppercase italic py-5 rounded-2xl mt-4 hover:bg-white transition-all shadow-2xl active:scale-95 disabled:opacity-50">DEPLOY SERVICE CHANGES</button>
+                            <button onClick={handleSave} className="w-full bg-east-light text-black font-black uppercase italic py-5 rounded-2xl mt-4 hover:bg-white transition-all shadow-2xl active:scale-95 disabled:opacity-50">DEPLOY SERVICE CHANGES</button>
                         </div>
                     </div>
                 </div>
@@ -349,7 +349,7 @@ export default function AdminOpsServicesPage() {
                         <button onClick={() => setShowGenerator(false)} className="absolute top-8 right-8 text-gray-500 hover:text-white transition-colors border border-white/5 p-2 rounded-full"><X size={20} /></button>
 
                         <div className="mb-8">
-                            <h2 className="text-3xl font-black italic uppercase tracking-tighter text-[#28D160]">Generate Slots</h2>
+                            <h2 className="text-3xl font-black italic uppercase tracking-tighter text-east-light">Generate Slots</h2>
                             <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest mt-2 px-1">{generatorConfig.serviceTitle}</p>
                         </div>
 
@@ -357,11 +357,11 @@ export default function AdminOpsServicesPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-[10px] font-black text-gray-600 uppercase block mb-2 px-1">Window Start</label>
-                                    <input type="date" value={generatorConfig.startDate} onChange={e => setGeneratorConfig({ ...generatorConfig, startDate: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl px-4 py-3 text-xs text-white font-bold outline-none focus:border-[#28D160]" />
+                                    <input type="date" value={generatorConfig.startDate} onChange={e => setGeneratorConfig({ ...generatorConfig, startDate: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl px-4 py-3 text-xs text-white font-bold outline-none focus:border-east-light" />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black text-gray-600 uppercase block mb-2 px-1">Window End</label>
-                                    <input type="date" value={generatorConfig.endDate} onChange={e => setGeneratorConfig({ ...generatorConfig, endDate: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl px-4 py-3 text-xs text-white font-bold outline-none focus:border-[#28D160]" />
+                                    <input type="date" value={generatorConfig.endDate} onChange={e => setGeneratorConfig({ ...generatorConfig, endDate: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl px-4 py-3 text-xs text-white font-bold outline-none focus:border-east-light" />
                                 </div>
                             </div>
 
@@ -370,16 +370,16 @@ export default function AdminOpsServicesPage() {
                                 <div>
                                     <label className="text-[10px] font-black text-gray-600 uppercase block mb-2 px-1 text-center">Operational Range (e.g. 19:30)</label>
                                     <div className="flex gap-2">
-                                        <input type="text" value={generatorConfig.startTime} onChange={e => setGeneratorConfig({ ...generatorConfig, startTime: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-[10px] text-white text-center font-bold outline-none focus:border-[#28D160]" placeholder="08:00" />
+                                        <input type="text" value={generatorConfig.startTime} onChange={e => setGeneratorConfig({ ...generatorConfig, startTime: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-[10px] text-white text-center font-bold outline-none focus:border-east-light" placeholder="08:00" />
                                         <span className="text-gray-800 self-center">/</span>
-                                        <input type="text" value={generatorConfig.endTime} onChange={e => setGeneratorConfig({ ...generatorConfig, endTime: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-[10px] text-white text-center font-bold outline-none focus:border-[#28D160]" placeholder="20:00" />
+                                        <input type="text" value={generatorConfig.endTime} onChange={e => setGeneratorConfig({ ...generatorConfig, endTime: e.target.value })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-[10px] text-white text-center font-bold outline-none focus:border-east-light" placeholder="20:00" />
                                     </div>
                                 </div>
                             </div>
                             
                             <div>
                                 <label className="text-[10px] font-black text-gray-600 uppercase block mb-2 px-1 text-center">Unit Duration</label>
-                                <select value={generatorConfig.durationMinutes} onChange={e => setGeneratorConfig({ ...generatorConfig, durationMinutes: parseInt(e.target.value) })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-xs text-white font-bold text-center outline-none focus:border-[#28D160] appearance-none cursor-pointer">
+                                <select value={generatorConfig.durationMinutes} onChange={e => setGeneratorConfig({ ...generatorConfig, durationMinutes: parseInt(e.target.value) })} className="w-full bg-black/60 border border-white/5 rounded-xl py-3 text-xs text-white font-bold text-center outline-none focus:border-east-light appearance-none cursor-pointer">
                                     <option value="30">30 MIN</option>
                                     <option value="60">60 MIN</option>
                                     <option value="90">90 MIN</option>
@@ -394,14 +394,14 @@ export default function AdminOpsServicesPage() {
                                         <button key={i} onClick={() => {
                                             const days = generatorConfig.daysOfWeek.includes(i) ? generatorConfig.daysOfWeek.filter(x => x !== i) : [...generatorConfig.daysOfWeek, i];
                                             setGeneratorConfig({ ...generatorConfig, daysOfWeek: days });
-                                        }} className={`flex-1 h-10 rounded-xl flex items-center justify-center text-[10px] font-black uppercase transition-all ${generatorConfig.daysOfWeek.includes(i) ? 'bg-[#28D160] text-black' : 'bg-black/60 text-gray-700 hover:text-white'}`}>
+                                        }} className={`flex-1 h-10 rounded-xl flex items-center justify-center text-[10px] font-black uppercase transition-all ${generatorConfig.daysOfWeek.includes(i) ? 'bg-east-light text-black' : 'bg-black/60 text-gray-700 hover:text-white'}`}>
                                             {d}
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-                            <button onClick={handleGenerate} disabled={generating} className="w-full bg-[#28D160] text-black font-black italic uppercase py-5 rounded-2xl hover:bg-white transition-all shadow-2xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-4 tracking-wider">
+                            <button onClick={handleGenerate} disabled={generating} className="w-full bg-east-light text-black font-black italic uppercase py-5 rounded-2xl hover:bg-white transition-all shadow-2xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 mt-4 tracking-wider">
                                 {generating ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
                                 {generating ? 'PROCESSING BLUEPRINT...' : 'INITIALIZE GENERATION'}
                             </button>

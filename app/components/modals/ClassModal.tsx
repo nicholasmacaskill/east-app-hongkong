@@ -829,13 +829,13 @@ export default function ClassModal({
                                             <div className="flex flex-col mb-4">
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className="font-montserrat font-bold text-[10px] uppercase text-gray-400 tracking-wider">Session Capacity</span>
-                                                    <span className={`font-black text-xs ${currentRegistrations >= maxCapacity ? 'text-red-500' : 'text-[#28D160]'}`}>
+                                                    <span className={`font-black text-xs ${currentRegistrations >= maxCapacity ? 'text-red-500' : 'text-east-light'}`}>
                                                         {currentRegistrations} / {maxCapacity} Spots Taken
                                                     </span>
                                                 </div>
                                                 <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
                                                     <div 
-                                                        className={`h-full transition-all duration-500 ${currentRegistrations >= maxCapacity ? 'bg-red-500' : 'bg-[#28D160]'}`}
+                                                        className={`h-full transition-all duration-500 ${currentRegistrations >= maxCapacity ? 'bg-red-500' : 'bg-east-light'}`}
                                                         style={{ width: `${Math.min(100, (currentRegistrations / maxCapacity) * 100)}%` }}
                                                     />
                                                 </div>
@@ -878,7 +878,7 @@ export default function ClassModal({
                                                                         e.dataTransfer.effectAllowed = 'move';
                                                                     }
                                                                 }}
-                                                                className={`flex items-center justify-between p-4 rounded bg-white border-2 border-dashed group relative touch-none ${isMyBooking ? 'border-[#28D160] cursor-grab active:cursor-grabbing' : 'border-gray-600'}`}
+                                                                className={`flex items-center justify-between p-4 rounded bg-white border-2 border-dashed group relative touch-none ${isMyBooking ? 'border-east-light cursor-grab active:cursor-grabbing' : 'border-gray-600'}`}
                                                             >
                                                                 <span className="text-sm font-medium text-gray-800">{timeString} - {formattedName}</span>
                                                                 <div className="flex items-center gap-3">
@@ -909,15 +909,15 @@ export default function ClassModal({
                                                         return (
                                                             <div 
                                                                 key={`pending-${idx}`}
-                                                                className="flex items-center justify-between p-4 rounded bg-[#28D160]/10 border-2 border-dashed border-[#28D160] group relative animate-fadeIn"
+                                                                className="flex items-center justify-between p-4 rounded bg-east-light/10 border-2 border-dashed border-east-light group relative animate-fadeIn"
                                                             >
-                                                                <span className="text-sm font-black italic text-[#28D160]">{timeString} - {formattedName} (Pending)</span>
+                                                                <span className="text-sm font-black italic text-east-light">{timeString} - {formattedName} (Pending)</span>
                                                                 <div className="flex items-center gap-3">
-                                                                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center border border-[#28D160] shrink-0">
+                                                                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center border border-east-light shrink-0">
                                                                         {person.avatar_url ? (
                                                                             <img draggable={false} src={person.avatar_url} alt={formattedName} className="w-full h-full object-cover" />
                                                                         ) : (
-                                                                            <span className="text-xs font-black text-[#28D160]">{initials}</span>
+                                                                            <span className="text-xs font-black text-east-light">{initials}</span>
                                                                         )}
                                                                     </div>
                                                                     <button 
@@ -959,10 +959,10 @@ export default function ClassModal({
                                                                 }}
                                                                 className={`flex items-center justify-between p-4 rounded border-2 border-dashed transition-all ${
                                                                     isDragOver
-                                                                        ? 'border-[#28D160] bg-[#28D160]/10 text-[#28D160] scale-[1.02]'
+                                                                        ? 'border-east-light bg-east-light/10 text-east-light scale-[1.02]'
                                                                         : selectedAthleteToDrop
-                                                                            ? 'border-[#28D160]/70 bg-[#28D160]/5 text-[#28D160] hover:border-[#28D160] cursor-pointer shadow-[0_0_15px_rgba(40,209,96,0.2)]'
-                                                                            : 'border-[#28D160] text-gray-500 hover:border-[#28D160]/70 hover:bg-[#28D160]/5'
+                                                                            ? 'border-east-light/70 bg-east-light/5 text-east-light hover:border-east-light cursor-pointer shadow-[0_0_15px_rgba(40,209,96,0.2)]'
+                                                                            : 'border-east-light text-gray-500 hover:border-east-light/70 hover:bg-east-light/5'
                                                                 }`}
                                                             >
                                                                 <span className="text-sm font-medium">{timeString} - {selectedAthleteToDrop ? 'Tap to Drop Athlete' : 'Drop Athlete Here'}</span>
@@ -1029,7 +1029,7 @@ export default function ClassModal({
                                                     onClick={() => setInitialsOnly(false)}
                                                 >
                                                     <span className={`text-[9px] font-bold tracking-wider ${!initialsOnly ? 'text-white' : 'text-gray-500'}`}>Full Name</span>
-                                                    <div className={`w-7 h-4 rounded-full flex items-center px-0.5 transition-colors ${!initialsOnly ? 'bg-[#28D160]' : 'bg-gray-300'}`}>
+                                                    <div className={`w-7 h-4 rounded-full flex items-center px-0.5 transition-colors ${!initialsOnly ? 'bg-east-light' : 'bg-gray-300'}`}>
                                                         <div className={`w-3 h-3 bg-white rounded-full shadow-sm transition-transform ${!initialsOnly ? 'translate-x-3' : 'translate-x-0'}`} />
                                                     </div>
                                                 </div>
@@ -1038,7 +1038,7 @@ export default function ClassModal({
                                                     onClick={() => setInitialsOnly(true)}
                                                 >
                                                     <span className={`text-[9px] font-bold tracking-wider ${initialsOnly ? 'text-white' : 'text-gray-500'}`}>Initials</span>
-                                                    <div className={`w-7 h-4 rounded-full flex items-center px-0.5 transition-colors ${initialsOnly ? 'bg-[#28D160]' : 'bg-gray-300'}`}>
+                                                    <div className={`w-7 h-4 rounded-full flex items-center px-0.5 transition-colors ${initialsOnly ? 'bg-east-light' : 'bg-gray-300'}`}>
                                                         <div className={`w-3 h-3 bg-white rounded-full shadow-sm transition-transform ${initialsOnly ? 'translate-x-3' : 'translate-x-0'}`} />
                                                     </div>
                                                 </div>

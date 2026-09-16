@@ -5,6 +5,7 @@ import { Edit2, CheckCircle2, ChevronRight, Users, Calendar, Heart, Award, Lock,
 import { supabase } from '@/app/lib/supabase';
 import { useToast } from '../ui/Toast';
 import { compressImage } from '@/app/lib/image-utils';
+import { useTenant } from '@/app/providers/TenantProvider';
 
 interface ParentProfileProps {
    onOpenSettings: () => void;
@@ -254,13 +255,14 @@ export default function ParentProfile({
    const isUnlocked = isSubscriber || isManuallyActive;
    const isLocked = !isUnlocked;
    const displayStatus = isSubscriber ? 'ACTIVE' : (isManuallyActive ? 'ACTIVE' : (profileData.subscription_status?.toUpperCase() || 'ACTIVE'));
+   const { tenant } = useTenant();
 
    return (
       <div className="animate-fadeIn bg-black min-h-screen pb-24 relative overflow-hidden font-montserrat">
          {/* Background Image Layer - Premium Blur Overlay */}
          <div className="fixed inset-0 z-0 overflow-hidden">
             <Image
-               src="/EAST-BLACK-BACKGROUND.png"
+               src={tenant.assets.bannerUrl || tenant.assets.logoUrl}
                className="object-cover opacity-20 grayscale scale-110"
                fill
                alt="Premium background"
@@ -330,13 +332,13 @@ export default function ParentProfile({
 
                         {/* Inline Metadata Pills */}
                         <div className="flex flex-wrap gap-1 mt-2">
-                           <span className="text-[7px] font-black text-[#28D160] bg-[#28D160]/10 border border-[#28D160]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                           <span className="text-[7px] font-black text-east-light bg-east-light/10 border border-east-light/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
                               PARENT ACCT
                            </span>
-                           <span className="text-[7px] font-black text-[#28D160] bg-[#28D160]/10 border border-[#28D160]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                           <span className="text-[7px] font-black text-east-light bg-east-light/10 border border-east-light/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
                               ATHLETES: {myChildren.length}
                            </span>
-                           <span className="text-[7px] font-black text-[#28D160] bg-[#28D160]/10 border border-[#28D160]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                           <span className="text-[7px] font-black text-east-light bg-east-light/10 border border-east-light/20 px-2 py-0.5 rounded-full uppercase tracking-wider">
                               STATUS: {displayStatus}
                            </span>
                         </div>
@@ -345,7 +347,7 @@ export default function ParentProfile({
 
                   {/* Bio Block */}
                   {profileData.bio && (
-                     <div className="mt-3 px-2 border-l-2 border-[#28D160]/40 pl-3">
+                     <div className="mt-3 px-2 border-l-2 border-east-light/40 pl-3">
                         <p className="text-white/70 text-[11px] font-medium italic leading-relaxed">
                            "{profileData.bio}"
                         </p>
@@ -382,8 +384,8 @@ export default function ParentProfile({
                               badge.action ? 'cursor-pointer hover:scale-105 group' : ''
                            }`}
                         >
-                           <div className="w-10 h-10 rounded-full border border-east-light/20 bg-white/5 flex items-center justify-center mb-1.5 shadow-md group-hover:border-[#28D160]/40 transition-colors">
-                              <badge.icon size={18} className="text-[#28D160] drop-shadow-md" />
+                           <div className="w-10 h-10 rounded-full border border-east-light/20 bg-white/5 flex items-center justify-center mb-1.5 shadow-md group-hover:border-east-light/40 transition-colors">
+                              <badge.icon size={18} className="text-east-light drop-shadow-md" />
                            </div>
                            <span className="font-black text-sm text-white italic leading-none truncate max-w-[80px] uppercase">
                               {badge.v}
@@ -452,7 +454,7 @@ export default function ParentProfile({
                                              {athlete.first_name} {athlete.last_name || ''}
                                           </h4>
                                           {isSelected && (
-                                             <span className="text-[#28D160] bg-[#28D160]/10 border border-[#28D160]/20 text-[6.5px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">
+                                             <span className="text-east-light bg-east-light/10 border border-east-light/20 text-[6.5px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">
                                                 Selected
                                              </span>
                                           )}
@@ -462,14 +464,14 @@ export default function ParentProfile({
                                        </p>
                                        <div className="flex items-center gap-2 mt-2">
                                           <div className="flex items-center gap-1 bg-black/40 px-2 py-1 rounded-md border border-white/5">
-                                             <Coins size={8} className="text-[#28D160]" />
+                                             <Coins size={8} className="text-east-light" />
                                              <span className="text-[8px] font-black text-white">
                                                 {athlete.credits || 0} <span className="text-gray-500">CR</span>
                                              </span>
                                           </div>
                                           <button
                                              onClick={(e) => handleOpenTransfer(e, athlete)}
-                                             className="bg-[#28D160]/10 hover:bg-[#28D160]/20 border border-[#28D160]/20 text-[#28D160] text-[7px] font-black uppercase px-2 py-1 rounded-md transition-colors"
+                                             className="bg-east-light/10 hover:bg-east-light/20 border border-east-light/20 text-east-light text-[7px] font-black uppercase px-2 py-1 rounded-md transition-colors"
                                           >
                                              + Transfer
                                           </button>

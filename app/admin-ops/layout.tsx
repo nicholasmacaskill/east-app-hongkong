@@ -46,8 +46,8 @@ export default function AdminOpsLayout({
         return (
             <div className="min-h-screen bg-black flex items-center justify-center text-white">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-8 h-8 border-2 border-[#28D160] border-t-transparent rounded-full animate-spin" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-[#28D160]">Verifying Access...</span>
+                    <div className="w-8 h-8 border-2 border-east-light border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-east-light">Verifying Access...</span>
                 </div>
             </div>
         );
@@ -59,7 +59,7 @@ export default function AdminOpsLayout({
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <img src="/alternative-logo.png" alt="Empire Admin Logo" className="h-14 w-auto object-contain" />
-                        <div className="bg-[#28D160] text-black text-[10px] font-bold px-2 py-1 rounded uppercase">
+                        <div className="bg-east-light text-black text-[10px] font-bold px-2 py-1 rounded uppercase">
                             Ops Panel
                         </div>
                     </div>

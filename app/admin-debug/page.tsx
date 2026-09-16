@@ -38,7 +38,7 @@ export default function AdminDebugPage() {
 
     return (
         <div className="min-h-screen bg-black text-white p-8 font-mono text-sm">
-            <h1 className="text-2xl font-bold mb-4 text-[#28D160]">Admin Debugger</h1>
+            <h1 className="text-2xl font-bold mb-4 text-east-light">Admin Debugger</h1>
             <pre className="bg-[#111] p-4 rounded border border-white/10 overflow-auto">
                 {JSON.stringify(status, null, 2)}
             </pre>

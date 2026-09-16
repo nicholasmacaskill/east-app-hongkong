@@ -218,7 +218,7 @@ export default function DirectoryPage() {
     };
 
     const handleNuclearPurge = async () => {
-        const confirmed = window.confirm("☢️ NUCLEAR PURGE\n\nThis will permanently delete ALL accounts containing 'test', 'audit', 'QA', or 'Verify'.\n\nAccounts using '@east.com' domains and other legitimate emails (Gmail, Yahoo, etc.) will be ignored.\n\nAre you sure?");
+        const confirmed = window.confirm("☢️ NUCLEAR PURGE\n\nThis will permanently delete ALL test accounts containing 'test', 'audit', 'QA', 'verify', or 'assess'.\n\nLegitimate system accounts (admin@east.com, etc.) will be preserved.\n\nAre you sure?");
         if (!confirmed) return;
 
         setLoading(true);
@@ -380,7 +380,7 @@ export default function DirectoryPage() {
             {/* Header Area */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4 w-full md:w-auto">
-                    <Link href="/sys-admin" className="p-2 bg-[#1e1e1e] rounded-lg hover:bg-[#28D160] hover:text-black transition-colors">
+                    <Link href="/sys-admin" className="p-2 bg-[#1e1e1e] rounded-lg hover:bg-east-light hover:text-black transition-colors">
                         <ChevronLeft size={20} />
                     </Link>
                     <div>
@@ -420,7 +420,7 @@ export default function DirectoryPage() {
                             setNewUser({ ...newUser, role: 'player' });
                             setShowAddForm(true);
                         }}
-                        className="bg-[#28D160] text-black font-bold text-xs px-4 py-2 rounded-lg hover:bg-white transition-colors flex items-center gap-2 uppercase tracking-wide"
+                        className="bg-east-light text-black font-bold text-xs px-4 py-2 rounded-lg hover:bg-white transition-colors flex items-center gap-2 uppercase tracking-wide"
                     >
                         <Plus size={16} /> Add Athlete
                     </button>
@@ -435,7 +435,7 @@ export default function DirectoryPage() {
                     placeholder="Search by name, team, or email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-[#1e1e1e] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-gray-600 outline-none focus:border-[#28D160] transition-colors"
+                    className="w-full bg-[#1e1e1e] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-gray-600 outline-none focus:border-east-light transition-colors"
                 />
             </div>
 
@@ -491,7 +491,7 @@ export default function DirectoryPage() {
             {
                 createdUser && (
                     <div className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
-                        <div className="bg-[#1e1e1e] p-8 rounded-[2.5rem] w-full max-w-md border border-[#28D160]/30 flex flex-col items-center text-center relative shadow-2xl shadow-[#28D160]/10">
+                        <div className="bg-[#1e1e1e] p-8 rounded-[2.5rem] w-full max-w-md border border-east-light/30 flex flex-col items-center text-center relative shadow-2xl shadow-[#28D160]/10">
                             <button
                                 onClick={() => setCreatedUser(null)}
                                 className="absolute top-6 right-6 text-gray-500 hover:text-white"
@@ -499,7 +499,7 @@ export default function DirectoryPage() {
                                 <X size={24} />
                             </button>
 
-                            <div className="w-16 h-16 bg-[#28D160] rounded-full flex items-center justify-center mb-6 text-black">
+                            <div className="w-16 h-16 bg-east-light rounded-full flex items-center justify-center mb-6 text-black">
                                 <Check size={32} />
                             </div>
 
@@ -515,8 +515,8 @@ export default function DirectoryPage() {
                                     <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Email (Login)</p>
                                     <p className="font-bold text-white text-lg">{createdUser.email}</p>
                                 </div>
-                                <div className="bg-[#28D160]/10 p-3 rounded-xl border border-[#28D160]/30">
-                                    <p className="text-[10px] text-[#28D160] font-bold uppercase tracking-widest mb-1">Password</p>
+                                <div className="bg-east-light/10 p-3 rounded-xl border border-east-light/30">
+                                    <p className="text-[10px] text-east-light font-bold uppercase tracking-widest mb-1">Password</p>
                                     <p className="font-mono font-bold text-white text-xl tracking-wider select-all">{createdUser.password}</p>
                                     <p className="text-[9px] text-gray-500 mt-1 italic">* Share this with the user securely</p>
                                 </div>
@@ -524,7 +524,7 @@ export default function DirectoryPage() {
 
                             <button
                                 onClick={() => setCreatedUser(null)}
-                                className="w-full bg-[#28D160] text-black font-black italic py-4 rounded-xl uppercase hover:bg-white transition-all tracking-widest shadow-lg active:scale-95"
+                                className="w-full bg-east-light text-black font-black italic py-4 rounded-xl uppercase hover:bg-white transition-all tracking-widest shadow-lg active:scale-95"
                             >
                                 Done
                             </button>
@@ -538,7 +538,7 @@ export default function DirectoryPage() {
                 showAddForm && (
                     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
                         <div className="bg-[#1e1e1e] p-6 rounded-2xl w-full max-w-md border border-white/10 max-h-[90vh] overflow-y-auto">
-                            <h2 className="font-black italic text-xl uppercase mb-4 text-[#28D160]">
+                            <h2 className="font-black italic text-xl uppercase mb-4 text-east-light">
                                 {newUser.role === 'coach' ? 'Add New Coach' : newUser.role === 'parent' ? 'Add New Household' : 'Add New Athlete'}
                             </h2>
                             <div className="flex flex-col gap-4">
@@ -548,7 +548,7 @@ export default function DirectoryPage() {
                                         <input
                                             value={newUser.first_name}
                                             onChange={e => setNewUser({ ...newUser, first_name: e.target.value })}
-                                            className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                            className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                         />
                                     </div>
                                     <div>
@@ -556,7 +556,7 @@ export default function DirectoryPage() {
                                         <input
                                             value={newUser.last_name}
                                             onChange={e => setNewUser({ ...newUser, last_name: e.target.value })}
-                                            className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                            className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                         />
                                     </div>
                                 </div>
@@ -566,7 +566,7 @@ export default function DirectoryPage() {
                                     <input
                                         value={newUser.email}
                                         onChange={e => setNewUser({ ...newUser, email: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                         placeholder="user@example.com"
                                     />
                                 </div>
@@ -577,7 +577,7 @@ export default function DirectoryPage() {
                                         type="password"
                                         value={newUser.password}
                                         onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                         placeholder="User can login immediately"
                                     />
                                 </div>
@@ -589,7 +589,7 @@ export default function DirectoryPage() {
                                             <input
                                                 value={newUser.mobile}
                                                 onChange={e => setNewUser({ ...newUser, mobile: e.target.value })}
-                                                className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                                 placeholder="+852 ..."
                                             />
                                         </div>
@@ -599,7 +599,7 @@ export default function DirectoryPage() {
                                                 value={newUser.bio}
                                                 onChange={e => setNewUser({ ...newUser, bio: e.target.value })}
                                                 rows={2}
-                                                className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                                 placeholder="Coach biography..."
                                             />
                                         </div>
@@ -614,7 +614,7 @@ export default function DirectoryPage() {
                                                 <input
                                                     value={newUser.team}
                                                     onChange={e => setNewUser({ ...newUser, team: e.target.value })}
-                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                                     placeholder="U12 Elite"
                                                 />
                                             </div>
@@ -623,7 +623,7 @@ export default function DirectoryPage() {
                                                 <input
                                                     value={newUser.position}
                                                     onChange={e => setNewUser({ ...newUser, position: e.target.value })}
-                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                                     placeholder="Forward"
                                                 />
                                             </div>
@@ -633,7 +633,7 @@ export default function DirectoryPage() {
                                             <select
                                                 value={newUser.parentId}
                                                 onChange={e => setNewUser({ ...newUser, parentId: e.target.value })}
-                                                className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                             >
                                                 <option value="">No Parent (Freelance)</option>
                                                 {profiles.filter(p => p.role === 'parent').map(p => (
@@ -645,7 +645,7 @@ export default function DirectoryPage() {
                                 )}
 
                                 <div className="flex gap-2 mt-4">
-                                    <button onClick={handleAddUser} className="flex-1 bg-[#28D160] text-black font-black italic py-3 rounded-xl uppercase text-xs hover:bg-white transition-all shadow-lg active:scale-95">Create User</button>
+                                    <button onClick={handleAddUser} className="flex-1 bg-east-light text-black font-black italic py-3 rounded-xl uppercase text-xs hover:bg-white transition-all shadow-lg active:scale-95">Create User</button>
                                     <button onClick={() => setShowAddForm(false)} className="flex-1 bg-white/10 text-white font-bold py-3 rounded-xl uppercase text-xs hover:bg-white/20 transition-all">Cancel</button>
                                 </div>
                             </div>
@@ -659,7 +659,7 @@ export default function DirectoryPage() {
                 showEditForm && editingUser && (
                     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
                         <div className="bg-[#1e1e1e] p-6 rounded-2xl w-full max-w-md border border-white/10 max-h-[90vh] overflow-y-auto">
-                            <h2 className="font-black italic text-xl uppercase mb-4 text-[#28D160]">Edit Profile</h2>
+                            <h2 className="font-black italic text-xl uppercase mb-4 text-east-light">Edit Profile</h2>
                             <div className="flex flex-col gap-4">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
@@ -667,7 +667,7 @@ export default function DirectoryPage() {
                                         <input
                                             value={editingUser.first_name}
                                             onChange={e => setEditingUser({ ...editingUser, first_name: e.target.value })}
-                                            className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                            className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                         />
                                     </div>
                                     <div>
@@ -675,7 +675,7 @@ export default function DirectoryPage() {
                                         <input
                                             value={editingUser.last_name}
                                             onChange={e => setEditingUser({ ...editingUser, last_name: e.target.value })}
-                                            className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                            className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                         />
                                     </div>
                                 </div>
@@ -687,7 +687,7 @@ export default function DirectoryPage() {
                                             type="number"
                                             value={editingUser.credits}
                                             onChange={e => setEditingUser({ ...editingUser, credits: e.target.value })}
-                                            className="w-full bg-black/50 border border-[#28D160]/30 p-2 rounded-lg text-white font-bold text-sm outline-none focus:border-[#28D160]"
+                                            className="w-full bg-black/50 border border-east-light/30 p-2 rounded-lg text-white font-bold text-sm outline-none focus:border-east-light"
                                         />
                                     </div>
                                     <div>
@@ -706,7 +706,7 @@ export default function DirectoryPage() {
                                         <input
                                             value={editingUser.username}
                                             onChange={e => setEditingUser({ ...editingUser, username: e.target.value })}
-                                            className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                            className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                         />
                                     </div>
                                 </div>
@@ -716,7 +716,7 @@ export default function DirectoryPage() {
                                     <input
                                         value={editingUser.email}
                                         onChange={e => setEditingUser({ ...editingUser, email: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                     />
                                 </div>
 
@@ -726,7 +726,7 @@ export default function DirectoryPage() {
                                         type="password"
                                         value={editingUser.password || ''}
                                         onChange={e => setEditingUser({ ...editingUser, password: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                        className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                         placeholder="Leave blank to keep current"
                                     />
 
@@ -777,7 +777,7 @@ export default function DirectoryPage() {
                                                     type="date"
                                                     value={editingUser.membershipStart}
                                                     onChange={e => setEditingUser({ ...editingUser, membershipStart: e.target.value })}
-                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                                 />
                                             </div>
                                             <div>
@@ -786,7 +786,7 @@ export default function DirectoryPage() {
                                                     type="date"
                                                     value={editingUser.membershipExpires}
                                                     onChange={e => setEditingUser({ ...editingUser, membershipExpires: e.target.value })}
-                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                                 />
                                             </div>
                                         </div>
@@ -798,8 +798,8 @@ export default function DirectoryPage() {
                                                 <div className="flex items-center gap-2 mt-0.5">
                                                     {editingUser.membershipExpires && (safeDate(editingUser.membershipExpires)?.getTime() || 0) > Date.now() ? (
                                                         <>
-                                                            <div className="w-2 h-2 rounded-full bg-[#28D160] shadow-[0_0_8px_rgba(40,209,96,0.5)]"></div>
-                                                            <span className="text-xs font-black italic uppercase text-[#28D160]">Active Member</span>
+                                                            <div className="w-2 h-2 rounded-full bg-east-light shadow-[0_0_8px_rgba(40,209,96,0.5)]"></div>
+                                                            <span className="text-xs font-black italic uppercase text-east-light">Active Member</span>
                                                         </>
                                                     ) : (
                                                         <>
@@ -828,7 +828,7 @@ export default function DirectoryPage() {
                                                         membershipExpires: nextYear.toISOString().split('T')[0]
                                                     });
                                                 }}
-                                                className="flex-1 text-[10px] bg-[#28D160]/10 text-[#28D160] px-2 py-2 rounded uppercase font-black italic hover:bg-[#28D160] hover:text-black transition-colors"
+                                                className="flex-1 text-[10px] bg-east-light/10 text-east-light px-2 py-2 rounded uppercase font-black italic hover:bg-east-light hover:text-black transition-colors"
                                             >
                                                 +1 Year
                                             </button>
@@ -888,7 +888,7 @@ export default function DirectoryPage() {
                                         <select
                                             value={editingUser.role}
                                             onChange={e => setEditingUser({ ...editingUser, role: e.target.value })}
-                                            className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                            className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                         >
                                             <option value="player">Athlete</option>
                                             <option value="parent">Parent</option>
@@ -903,7 +903,7 @@ export default function DirectoryPage() {
                                             <select
                                                 value={editingUser.parentId}
                                                 onChange={e => setEditingUser({ ...editingUser, parentId: e.target.value })}
-                                                className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                             >
                                                 <option value="">No Parent (Solo Athlete)</option>
                                                 {profiles.filter(p => p.role === 'parent' || p.role === 'admin' || p.role === 'sys-admin').map(p => (
@@ -921,7 +921,7 @@ export default function DirectoryPage() {
                                             <input
                                                 value={editingUser.role === 'coach' ? editingUser.mobile : editingUser.team}
                                                 onChange={e => setEditingUser({ ...editingUser, [editingUser.role === 'coach' ? 'mobile' : 'team']: e.target.value })}
-                                                className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                             />
                                         </div>
                                         <div>
@@ -931,13 +931,13 @@ export default function DirectoryPage() {
                                                     value={editingUser.bio}
                                                     onChange={e => setEditingUser({ ...editingUser, bio: e.target.value })}
                                                     rows={1}
-                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                                 />
                                             ) : (
                                                 <input
                                                     value={editingUser.position}
                                                     onChange={e => setEditingUser({ ...editingUser, position: e.target.value })}
-                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                    className="w-full bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                                 />
                                             )}
                                         </div>
@@ -951,7 +951,7 @@ export default function DirectoryPage() {
                                             <input
                                                 value={editingUser.avatar_url || ''}
                                                 onChange={e => setEditingUser({ ...editingUser, avatar_url: e.target.value })}
-                                                className="flex-1 bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-[#28D160]"
+                                                className="flex-1 bg-black/50 border border-white/10 p-2 rounded-lg text-white text-sm outline-none focus:border-east-light"
                                                 placeholder="https://..."
                                             />
                                             <div className="w-10 h-10 rounded-full border border-white/10 overflow-hidden bg-black/50 shrink-0">
@@ -976,9 +976,9 @@ export default function DirectoryPage() {
                                                 <div
                                                     key={svc.id}
                                                     onClick={() => toggleService(svc.id)}
-                                                    className={`p-2 rounded border cursor-pointer text-[10px] font-bold transition-colors flex items-center gap-2 ${coachServices.has(svc.id) ? 'bg-[#28D160]/20 border-[#28D160] text-[#28D160]' : 'bg-black/30 border-white/10 text-gray-500 hover:border-white/30'}`}
+                                                    className={`p-2 rounded border cursor-pointer text-[10px] font-bold transition-colors flex items-center gap-2 ${coachServices.has(svc.id) ? 'bg-east-light/20 border-east-light text-east-light' : 'bg-black/30 border-white/10 text-gray-500 hover:border-white/30'}`}
                                                 >
-                                                    <div className={`w-2 h-2 rounded-full border ${coachServices.has(svc.id) ? 'bg-[#28D160] border-[#28D160]' : 'border-gray-600'}`}></div>
+                                                    <div className={`w-2 h-2 rounded-full border ${coachServices.has(svc.id) ? 'bg-east-light border-east-light' : 'border-gray-600'}`}></div>
                                                     {svc.title}
                                                 </div>
                                             ))}
@@ -987,7 +987,7 @@ export default function DirectoryPage() {
                                 )}
 
                                 <div className="flex gap-2 mt-4">
-                                    <button onClick={handleUpdateProfile} className="flex-1 bg-[#28D160] text-black font-black italic py-3 rounded-xl uppercase text-xs hover:bg-white transition-all shadow-lg active:scale-95">Save Changes</button>
+                                    <button onClick={handleUpdateProfile} className="flex-1 bg-east-light text-black font-black italic py-3 rounded-xl uppercase text-xs hover:bg-white transition-all shadow-lg active:scale-95">Save Changes</button>
                                     <button onClick={() => setShowEditForm(false)} className="flex-1 bg-white/10 text-white font-bold py-3 rounded-xl uppercase text-xs hover:bg-white/20 transition-all">Cancel</button>
                                 </div>
                             </div>
@@ -1001,7 +1001,7 @@ export default function DirectoryPage() {
             <div className="flex flex-col gap-8">
                 {loading ? (
                     <div className="text-center py-20 text-gray-500 flex flex-col items-center gap-4">
-                        <Plus className="animate-spin text-[#28D160]" size={32} />
+                        <Plus className="animate-spin text-east-light" size={32} />
                         <span className="font-bold uppercase tracking-widest text-[10px]">Syncing Database...</span>
                     </div>
                 ) : (
@@ -1035,7 +1035,7 @@ export default function DirectoryPage() {
                                                     <button onClick={() => {
                                                         setNewUser({ ...newUser, role: 'player', parentId: parent.id });
                                                         setShowAddForm(true);
-                                                    }} className="text-[10px] font-black italic text-[#28D160] uppercase bg-[#28D160]/10 px-3 py-1.5 rounded-lg hover:bg-[#28D160] hover:text-black transition-all whitespace-nowrap">
+                                                    }} className="text-[10px] font-black italic text-east-light uppercase bg-east-light/10 px-3 py-1.5 rounded-lg hover:bg-east-light hover:text-black transition-all whitespace-nowrap">
                                                         + Add Child
                                                     </button>
                                                     <button onClick={() => handleEditClick(parent)} className="p-2 text-gray-500 hover:text-white transition-colors">
@@ -1060,7 +1060,7 @@ export default function DirectoryPage() {
                                                             <div
                                                                 key={child.id}
                                                                 onClick={() => handleEditClick(child)}
-                                                                className="bg-[#252525]/50 rounded-2xl p-4 border border-white/5 flex items-center justify-between group cursor-pointer hover:border-[#28D160]/30 hover:bg-[#252525] transition-all"
+                                                                className="bg-[#252525]/50 rounded-2xl p-4 border border-white/5 flex items-center justify-between group cursor-pointer hover:border-east-light/30 hover:bg-[#252525] transition-all"
                                                             >
                                                                 <div className="flex items-center gap-3">
                                                                     <div className="w-10 h-10 rounded-xl bg-white p-1">
@@ -1073,7 +1073,7 @@ export default function DirectoryPage() {
                                                                         <div className="flex items-center gap-2">
                                                                             <button
                                                                                 onClick={() => handleEditClick(child)}
-                                                                                className="text-[8px] bg-[#28D160]/10 text-[#28D160] px-1.5 py-0.5 rounded uppercase font-black italic hover:bg-[#28D160] hover:text-black transition-colors"
+                                                                                className="text-[8px] bg-east-light/10 text-east-light px-1.5 py-0.5 rounded uppercase font-black italic hover:bg-east-light hover:text-black transition-colors"
                                                                             >
                                                                                 {child.team || 'ASSIGN TEAM'}
                                                                             </button>
@@ -1094,7 +1094,7 @@ export default function DirectoryPage() {
                                                                     </div>
                                                                 </div>
                                                                 <div className="flex gap-1 transition-opacity">
-                                                                    <button onClick={() => handleEditClick(child)} className="p-1.5 text-gray-400 hover:text-[#28D160]">
+                                                                    <button onClick={() => handleEditClick(child)} className="p-1.5 text-gray-400 hover:text-east-light">
                                                                         <Edit2 size={14} />
                                                                     </button>
                                                                     <button onClick={(e) => {
@@ -1148,7 +1148,7 @@ export default function DirectoryPage() {
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-1 transition-opacity">
-                                                        <button onClick={() => handleEditClick(player)} className="p-1.5 text-gray-400 hover:text-[#28D160]">
+                                                        <button onClick={() => handleEditClick(player)} className="p-1.5 text-gray-400 hover:text-east-light">
                                                             <Edit2 size={14} />
                                                         </button>
                                                         <button onClick={() => handleDeleteProfile(player.id, `${player.first_name} ${player.last_name}`)} className="p-1.5 text-gray-400 hover:text-red-500">
@@ -1182,10 +1182,10 @@ export default function DirectoryPage() {
                                                 <button onClick={() => { setSelectedCoach(coach); setShowAvailability(true); }} className="p-1.5 text-gray-400 hover:text-blue-400" title="Manage Availability">
                                                     <Calendar size={14} />
                                                 </button>
-                                                <Link href={`/sys-admin/schedule?instructor=${encodeURIComponent(coach.first_name + ' ' + coach.last_name)}`} className="p-1.5 text-gray-400 hover:text-[#28D160]" title="Add Session">
+                                                <Link href={`/sys-admin/schedule?instructor=${encodeURIComponent(coach.first_name + ' ' + coach.last_name)}`} className="p-1.5 text-gray-400 hover:text-east-light" title="Add Session">
                                                     <Plus size={14} />
                                                 </Link>
-                                                <button onClick={() => handleEditClick(coach)} className="p-1.5 text-gray-400 hover:text-[#28D160]">
+                                                <button onClick={() => handleEditClick(coach)} className="p-1.5 text-gray-400 hover:text-east-light">
                                                     <Edit2 size={14} />
                                                 </button>
                                                 <button onClick={(e) => {
@@ -1217,7 +1217,7 @@ export default function DirectoryPage() {
                                                 </div>
                                             </div>
                                             <div className="flex gap-1 transition-opacity">
-                                                <button onClick={() => handleEditClick(admin)} className="p-1.5 text-gray-400 hover:text-[#28D160]">
+                                                <button onClick={() => handleEditClick(admin)} className="p-1.5 text-gray-400 hover:text-east-light">
                                                     <Edit2 size={14} />
                                                 </button>
                                                 <button onClick={(e) => {
@@ -1272,7 +1272,7 @@ export default function DirectoryPage() {
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-1 transition-opacity">
-                                                    <button onClick={(e) => { e.stopPropagation(); handleEditClick(player); }} className="p-1.5 text-gray-400 hover:text-[#28D160]">
+                                                    <button onClick={(e) => { e.stopPropagation(); handleEditClick(player); }} className="p-1.5 text-gray-400 hover:text-east-light">
                                                         <Edit2 size={14} />
                                                     </button>
                                                     <button onClick={(e) => { e.stopPropagation(); handleDeleteProfile(player.id, `${player.first_name} ${player.last_name}`); }} className="p-1.5 text-gray-400 hover:text-red-500">

@@ -12,7 +12,7 @@ const QrScanner = dynamic(
     ssr: false,
     loading: () => (
       <div className="w-full h-full flex items-center justify-center">
-        <p className="text-[#28D160] text-xs font-black animate-pulse uppercase tracking-widest">
+        <p className="text-east-light text-xs font-black animate-pulse uppercase tracking-widest">
           Loading Camera...
         </p>
       </div>
@@ -237,11 +237,11 @@ export default function CheckIn() {
       {/* Header */}
       <header className="flex-none pt-10 pb-4 text-center">
         <h1 className="font-montserrat font-black italic text-5xl uppercase tracking-tighter text-white">EAST</h1>
-        <div className="h-[2px] w-12 bg-[#28D160] mx-auto mt-2 rounded-full" />
+        <div className="h-[2px] w-12 bg-east-light mx-auto mt-2 rounded-full" />
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-start px-5 pt-6 pb-32">
-        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#28D160] mb-6">
+        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-east-light mb-6">
           {isAdmin ? 'Admin Scanner' : 'Check-In / Pay'}
         </p>
 
@@ -264,9 +264,9 @@ export default function CheckIn() {
                     ['bottom-2 left-2','border-b-2 border-l-2 rounded-bl-lg'],
                     ['bottom-2 right-2','border-b-2 border-r-2 rounded-br-lg']
                   ].map(([pos, borders], i) => (
-                    <div key={i} className={`absolute ${pos} w-6 h-6 ${borders} border-[#28D160]`} />
+                    <div key={i} className={`absolute ${pos} w-6 h-6 ${borders} border-east-light`} />
                   ))}
-                  <div className="absolute left-4 right-4 h-[1px] bg-[#28D160]/60 animate-scanline top-1/2" />
+                  <div className="absolute left-4 right-4 h-[1px] bg-east-light/60 animate-scanline top-1/2" />
                 </div>
               )}
 
@@ -291,7 +291,7 @@ export default function CheckIn() {
                       Cancel
                     </button>
                     <button id="confirm-payment-btn" onClick={confirmPayment}
-                      className="flex-1 py-3.5 rounded-2xl bg-[#28D160] text-black font-montserrat font-black italic text-sm uppercase tracking-wide hover:bg-[#32e86e] active:scale-95 transition-all">
+                      className="flex-1 py-3.5 rounded-2xl bg-east-light text-black font-montserrat font-black italic text-sm uppercase tracking-wide hover:bg-[#32e86e] active:scale-95 transition-all">
                       Pay Now
                     </button>
                   </div>
@@ -305,10 +305,10 @@ export default function CheckIn() {
                   <div className="w-full bg-black rounded-2xl p-3 flex items-center gap-3 mb-6 border border-white/5">
                     {chargeRequest.member.avatar_url ? (
                       <img src={chargeRequest.member.avatar_url} alt="member"
-                        className="w-12 h-12 rounded-full object-cover border-2 border-[#28D160] flex-shrink-0" />
+                        className="w-12 h-12 rounded-full object-cover border-2 border-east-light flex-shrink-0" />
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-[#28D160]/10 border border-[#28D160]/30 flex items-center justify-center flex-shrink-0">
-                        <span className="text-[#28D160] font-black text-lg">
+                      <div className="w-12 h-12 rounded-full bg-east-light/10 border border-east-light/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-east-light font-black text-lg">
                           {(chargeRequest.member.first_name?.[0] || '?').toUpperCase()}
                         </span>
                       </div>
@@ -344,11 +344,11 @@ export default function CheckIn() {
                   <div className="flex p-1 bg-black rounded-xl mb-4 border border-white/10">
                     <button
                       onClick={() => setCustomMode(false)}
-                      className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!customMode ? 'bg-[#28D160] text-black' : 'text-gray-500 hover:text-white'}`}
+                      className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!customMode ? 'bg-east-light text-black' : 'text-gray-500 hover:text-white'}`}
                     >Shop Items</button>
                     <button
                       onClick={() => { setCustomMode(true); setSelectedItem(null); }}
-                      className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1 ${customMode ? 'bg-[#28D160] text-black' : 'text-gray-500 hover:text-white'}`}
+                      className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1 ${customMode ? 'bg-east-light text-black' : 'text-gray-500 hover:text-white'}`}
                     >
                       <Pencil size={10} /> Custom
                     </button>
@@ -366,7 +366,7 @@ export default function CheckIn() {
                           onClick={() => setSelectedItem(item)}
                           className={`text-left p-3 rounded-xl border transition-all ${
                             selectedItem?.id === item.id
-                              ? 'border-[#28D160] bg-[#28D160]/10'
+                              ? 'border-east-light bg-east-light/10'
                               : 'border-white/10 bg-black hover:border-white/20'
                           }`}
                         >
@@ -374,7 +374,7 @@ export default function CheckIn() {
                             {item.category}
                           </span>
                           <p className="text-white text-[11px] font-bold mt-1.5 leading-snug truncate">{item.name}</p>
-                          <p className="font-montserrat font-black italic text-[#28D160] text-base mt-1">
+                          <p className="font-montserrat font-black italic text-east-light text-base mt-1">
                             {item.price_credits}<span className="text-gray-600 text-[8px] ml-0.5 not-italic font-bold">cr</span>
                           </p>
                         </button>
@@ -391,7 +391,7 @@ export default function CheckIn() {
                           id="charge-amount-input"
                           type="number" min={1} value={customAmount}
                           onChange={e => setCustomAmount(Number(e.target.value))}
-                          className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white font-montserrat font-black italic text-3xl text-center focus:outline-none focus:border-[#28D160] transition-colors"
+                          className="w-full bg-black border border-white/10 rounded-xl px-4 py-3 text-white font-montserrat font-black italic text-3xl text-center focus:outline-none focus:border-east-light transition-colors"
                         />
                       </div>
                       <div>
@@ -400,7 +400,7 @@ export default function CheckIn() {
                           type="text" value={customReason}
                           onChange={e => setCustomReason(e.target.value)}
                           placeholder="Reason (optional)"
-                          className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-[#28D160] transition-colors placeholder:text-gray-700"
+                          className="w-full bg-black border border-white/10 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-east-light transition-colors placeholder:text-gray-700"
                         />
                       </div>
                     </div>
@@ -410,7 +410,7 @@ export default function CheckIn() {
                   {(selectedItem || customMode) && (
                     <div className="bg-black border border-white/5 rounded-xl px-4 py-2.5 mb-4 text-xs text-center">
                       <span className="text-gray-500">Charging </span>
-                      <span className="font-montserrat font-black italic text-[#28D160]">
+                      <span className="font-montserrat font-black italic text-east-light">
                         {customMode ? customAmount : selectedItem?.price_credits} cr
                       </span>
                       <span className="text-gray-500"> for </span>
@@ -429,7 +429,7 @@ export default function CheckIn() {
                       <button
                         id="confirm-charge-btn"
                         onClick={confirmCharge}
-                        className="flex-1 py-3.5 rounded-2xl bg-[#28D160] text-black font-montserrat font-black italic text-sm uppercase tracking-wide hover:bg-[#32e86e] active:scale-95 transition-all"
+                        className="flex-1 py-3.5 rounded-2xl bg-east-light text-black font-montserrat font-black italic text-sm uppercase tracking-wide hover:bg-[#32e86e] active:scale-95 transition-all"
                       >
                         Charge
                       </button>
@@ -441,11 +441,11 @@ export default function CheckIn() {
               {/* Success */}
               {scanned && !paymentRequest && !chargeRequest && !processing && (
                 <div className="flex flex-col items-center justify-center py-10 animate-fadeIn text-center">
-                  <CheckCircle2 size={56} className="text-[#28D160] mb-4" strokeWidth={1.5} />
+                  <CheckCircle2 size={56} className="text-east-light mb-4" strokeWidth={1.5} />
                   <p className="font-montserrat font-black italic text-2xl uppercase tracking-tighter text-white mb-2">Done!</p>
                   <p className="text-xs text-gray-500 mb-8 max-w-[200px] leading-relaxed">{lastScanMessage}</p>
                   <button onClick={reset}
-                    className="px-8 py-3 rounded-full bg-[#28D160] text-black font-montserrat font-black italic text-sm uppercase tracking-wider hover:bg-[#32e86e] active:scale-95 transition-all">
+                    className="px-8 py-3 rounded-full bg-east-light text-black font-montserrat font-black italic text-sm uppercase tracking-wider hover:bg-[#32e86e] active:scale-95 transition-all">
                     Scan Again
                   </button>
                 </div>
@@ -487,7 +487,7 @@ export default function CheckIn() {
         </div>
         <div className="flex max-w-sm mx-auto px-4 pb-2">
           {['', 'active', ''].map((s, i) => (
-            <div key={i} className={`flex-1 h-0.5 mx-1 rounded-full ${s ? 'bg-[#28D160]' : 'bg-transparent'}`} />
+            <div key={i} className={`flex-1 h-0.5 mx-1 rounded-full ${s ? 'bg-east-light' : 'bg-transparent'}`} />
           ))}
         </div>
       </nav>

@@ -62,7 +62,7 @@ export default function KeyMetricsDashboard() {
                 </div>
                 <button
                     onClick={fetchMetrics}
-                    className="bg-[#28D160] hover:bg-[#20A84D] text-black font-black italic uppercase px-8 py-3 rounded-full transition-all active:scale-95"
+                    className="bg-east-light hover:bg-[#20A84D] text-black font-black italic uppercase px-8 py-3 rounded-full transition-all active:scale-95"
                 >
                     Retry Connection
                 </button>
@@ -83,7 +83,7 @@ export default function KeyMetricsDashboard() {
                 {/* Row 1: Revenue & Growth KPIs */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
-                        <div className="absolute top-4 right-4 text-[#28D160]/20"><DollarSign size={80} /></div>
+                        <div className="absolute top-4 right-4 text-east-light/20"><DollarSign size={80} /></div>
                         <div className="relative z-10">
                             <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Estimated MRR</h3>
                             <div className="text-4xl font-black italic text-white">${subscribers.estimatedMRR.toLocaleString()}</div>
@@ -105,7 +105,7 @@ export default function KeyMetricsDashboard() {
                     </div>
 
                     <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
-                        <div className="absolute top-4 right-4 text-[#28D160]/20"><Users size={80} /></div>
+                        <div className="absolute top-4 right-4 text-east-light/20"><Users size={80} /></div>
                         <div className="relative z-10">
                             <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Active Subscribers</h3>
                             <div className="text-4xl font-black italic">{subscribers.total}</div>
@@ -120,7 +120,7 @@ export default function KeyMetricsDashboard() {
                         onClick={() => setShowChurnModal(true)}
                         className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden group text-left cursor-pointer hover:border-red-500/40 hover:bg-red-500/5 transition-all"
                     >
-                        <div className="absolute top-4 right-4 text-[#28D160]/20 group-hover:text-red-500/20 transition-colors"><Activity size={80} /></div>
+                        <div className="absolute top-4 right-4 text-east-light/20 group-hover:text-red-500/20 transition-colors"><Activity size={80} /></div>
                         <div className="relative z-10">
                             <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Retention & Churn</h3>
                             <div className="text-4xl font-black italic">{subscribers.retentionRate.toFixed(1)}%</div>
@@ -128,7 +128,7 @@ export default function KeyMetricsDashboard() {
                                 <span className="text-gray-500">{subscribers.churned} Total Churned</span>
                                 <span className="text-red-500">{(100 - subscribers.retentionRate).toFixed(1)}% Churn Rate</span>
                             </div>
-                            <p className="text-[10px] text-[#28D160]/60 font-bold uppercase tracking-wider mt-2 group-hover:text-red-400 transition-colors">Click to view →</p>
+                            <p className="text-[10px] text-east-light/60 font-bold uppercase tracking-wider mt-2 group-hover:text-red-400 transition-colors">Click to view →</p>
                         </div>
                     </button>
                 </div>
@@ -156,7 +156,7 @@ export default function KeyMetricsDashboard() {
                     </button>
 
                     <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 flex items-center gap-4">
-                        <div className="p-3 bg-[#28D160]/10 rounded-xl text-[#28D160]"><Zap size={24} /></div>
+                        <div className="p-3 bg-east-light/10 rounded-xl text-east-light"><Zap size={24} /></div>
                         <div>
                             <p className="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Credit Velocity</p>
                             <p className="text-xl font-black italic">{health.creditVelocity.toLocaleString()} <span className="text-[10px] text-gray-600 ml-1">CR/WK</span></p>
@@ -175,7 +175,7 @@ export default function KeyMetricsDashboard() {
                 {/* Row 3: Booking Summaries */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                     <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
-                        <div className="absolute top-4 right-4 text-[#28D160]/20"><CalendarDays size={80} /></div>
+                        <div className="absolute top-4 right-4 text-east-light/20"><CalendarDays size={80} /></div>
                         <div className="relative z-10">
                             <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Total Bookings</h3>
                             <div className="text-4xl font-black italic">{bookings.total}</div>
@@ -186,11 +186,11 @@ export default function KeyMetricsDashboard() {
                     </div>
 
                     <div className="bg-[#1a1a1a] border border-white/5 rounded-2xl p-6 relative overflow-hidden">
-                        <div className="absolute top-4 right-4 text-[#28D160]/20"><Coins size={80} /></div>
+                        <div className="absolute top-4 right-4 text-east-light/20"><Coins size={80} /></div>
                         <div className="relative z-10">
                             <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Credits Spent</h3>
-                            <div className="text-4xl font-black italic text-[#28D160]">{bookings.totalCreditsSpent.toLocaleString()}</div>
-                            <div className="mt-4 text-xs font-bold text-[#28D160]/70">
+                            <div className="text-4xl font-black italic text-east-light">{bookings.totalCreditsSpent.toLocaleString()}</div>
+                            <div className="mt-4 text-xs font-bold text-east-light/70">
                                 Lifetime booking revenue
                             </div>
                         </div>
@@ -215,11 +215,11 @@ export default function KeyMetricsDashboard() {
                                             <span className="uppercase">{facility}</span>
                                             <div className="flex gap-2">
                                                 <span>{count} Bookings</span>
-                                                <span className="text-[#28D160]">{rev.toLocaleString()} CR</span>
+                                                <span className="text-east-light">{rev.toLocaleString()} CR</span>
                                             </div>
                                         </div>
                                         <div className="w-full bg-black h-1.5 rounded-full overflow-hidden">
-                                            <div className="bg-[#28D160] h-full rounded-full" style={{ width: `${width}%` }}></div>
+                                            <div className="bg-east-light h-full rounded-full" style={{ width: `${width}%` }}></div>
                                         </div>
                                     </div>
                                 );
@@ -263,8 +263,8 @@ export default function KeyMetricsDashboard() {
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-lg font-black italic uppercase">Activity Timeline</h3>
                             <div className="flex bg-black border border-white/10 rounded-lg p-1">
-                                <button onClick={() => setTimelineRange('monthly')} className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-colors ${timelineRange === 'monthly' ? 'bg-[#28D160] text-black' : 'text-gray-500 hover:text-white'}`}>Monthly</button>
-                                <button onClick={() => setTimelineRange('weekly')} className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-colors ${timelineRange === 'weekly' ? 'bg-[#28D160] text-black' : 'text-gray-500 hover:text-white'}`}>Weekly</button>
+                                <button onClick={() => setTimelineRange('monthly')} className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-colors ${timelineRange === 'monthly' ? 'bg-east-light text-black' : 'text-gray-500 hover:text-white'}`}>Monthly</button>
+                                <button onClick={() => setTimelineRange('weekly')} className={`px-3 py-1 rounded-md text-[10px] font-bold uppercase transition-colors ${timelineRange === 'weekly' ? 'bg-east-light text-black' : 'text-gray-500 hover:text-white'}`}>Weekly</button>
                             </div>
                         </div>
                         <div className="overflow-x-auto">
@@ -285,7 +285,7 @@ export default function KeyMetricsDashboard() {
                                             <tr key={t.period} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                                                 <td className="py-3 px-2 font-mono text-sm">{t.period}</td>
                                                 <td className="py-3 px-2 font-bold">{t.bookings}</td>
-                                                <td className="py-3 px-2 text-[#28D160]">{t.spentCredits}</td>
+                                                <td className="py-3 px-2 text-east-light">{t.spentCredits}</td>
                                                 <td className="py-3 px-2 text-red-400">{timelineRange === 'monthly' ? cancelCount : '-'}</td>
                                             </tr>
                                         );
@@ -335,7 +335,7 @@ export default function KeyMetricsDashboard() {
                                         <div className="absolute -top-8 bg-black border border-white/10 px-2 py-1 rounded text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
                                             {count} bookings
                                         </div>
-                                        <div className="w-full bg-[#28D160] rounded-t-sm transition-all duration-300 group-hover:bg-white" style={{ height: `${height}%`, minHeight: count > 0 ? '4px' : '0' }}></div>
+                                        <div className="w-full bg-east-light rounded-t-sm transition-all duration-300 group-hover:bg-white" style={{ height: `${height}%`, minHeight: count > 0 ? '4px' : '0' }}></div>
                                         <div className="text-[8px] text-gray-600 mt-2 font-mono">{hour}:00</div>
                                     </div>
                                 );

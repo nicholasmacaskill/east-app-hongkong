@@ -165,7 +165,7 @@ export default function TrainingPlanModal({ planData, onClose }: { planData: Tra
 
                 <div className="flex-1 overflow-y-auto flex flex-col hide-scrollbar relative">
                     {loading ? (
-                        <div className="py-20 text-center animate-pulse text-[#28D160] font-black uppercase text-sm tracking-widest">
+                        <div className="py-20 text-center animate-pulse text-east-light font-black uppercase text-sm tracking-widest">
                             Loading Library...
                         </div>
                     ) : (
@@ -184,7 +184,7 @@ export default function TrainingPlanModal({ planData, onClose }: { planData: Tra
                                             value={title}
                                             onChange={(e) => setTitle(e.target.value)}
                                             placeholder="e.g. Stickhandling Mastery"
-                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-[#28D160] focus:outline-none transition-colors"
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-east-light focus:outline-none transition-colors"
                                         />
                                     </div>
                                     <div>
@@ -194,7 +194,7 @@ export default function TrainingPlanModal({ planData, onClose }: { planData: Tra
                                             onChange={(e) => setDescription(e.target.value)}
                                             placeholder="e.g. Focus on quick hands and edge control transitions..."
                                             rows={2}
-                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-[#28D160] focus:outline-none transition-colors resize-none"
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm font-bold text-white focus:border-east-light focus:outline-none transition-colors resize-none"
                                         />
                                     </div>
                                 </div>
@@ -213,9 +213,9 @@ export default function TrainingPlanModal({ planData, onClose }: { planData: Tra
                                 ) : (
                                     <div className="space-y-2">
                                         {selectedDrills.map((drill, index) => (
-                                            <div key={drill.id} className="bg-white/5 border border-[#28D160]/30 rounded-xl p-3 flex items-center justify-between group">
+                                            <div key={drill.id} className="bg-white/5 border border-east-light/30 rounded-xl p-3 flex items-center justify-between group">
                                                 <div className="flex items-center gap-3 animate-fadeIn">
-                                                    <div className="w-6 h-6 rounded-full bg-[#28D160]/20 text-[#28D160] flex items-center justify-center text-[10px] font-black">{index + 1}</div>
+                                                    <div className="w-6 h-6 rounded-full bg-east-light/20 text-east-light flex items-center justify-center text-[10px] font-black">{index + 1}</div>
                                                     <span className="font-bold text-sm uppercase text-white truncate max-w-[180px] sm:max-w-none">{drill.title}</span>
                                                 </div>
                                                 <div className="flex items-center gap-1">
@@ -257,7 +257,7 @@ export default function TrainingPlanModal({ planData, onClose }: { planData: Tra
                                             placeholder="Search Library..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full bg-black/40 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs font-bold text-white focus:border-[#28D160] focus:outline-none placeholder:text-gray-600 transition-colors"
+                                            className="w-full bg-black/40 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs font-bold text-white focus:border-east-light focus:outline-none placeholder:text-gray-600 transition-colors"
                                         />
                                         <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                                     </div>
@@ -265,16 +265,16 @@ export default function TrainingPlanModal({ planData, onClose }: { planData: Tra
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {unselectedDrills.map(drill => (
-                                        <div key={drill.id} onClick={() => toggleDrill(drill.id)} className="bg-black border border-white/5 hover:border-[#28D160]/50 rounded-xl p-4 flex items-start justify-between cursor-pointer transition-colors group">
+                                        <div key={drill.id} onClick={() => toggleDrill(drill.id)} className="bg-black border border-white/5 hover:border-east-light/50 rounded-xl p-4 flex items-start justify-between cursor-pointer transition-colors group">
                                             <div>
-                                                <h4 className="font-bold text-xs uppercase text-white mb-1 group-hover:text-[#28D160] transition-colors">{drill.title}</h4>
+                                                <h4 className="font-bold text-xs uppercase text-white mb-1 group-hover:text-east-light transition-colors">{drill.title}</h4>
                                                 <div className="flex flex-wrap gap-1">
                                                     {(drill.skill_tags || []).slice(0, 2).map((tag: string) => (
                                                         <span key={tag} className="text-[8px] font-black uppercase text-gray-500 bg-white/5 px-1.5 py-0.5 rounded">{tag}</span>
                                                     ))}
                                                 </div>
                                             </div>
-                                            <button className="text-gray-500 group-hover:text-[#28D160] transition-colors p-1">
+                                            <button className="text-gray-500 group-hover:text-east-light transition-colors p-1">
                                                 <Plus size={16} />
                                             </button>
                                         </div>
@@ -303,7 +303,7 @@ export default function TrainingPlanModal({ planData, onClose }: { planData: Tra
                     <button 
                         onClick={handleSavePlan}
                         disabled={saving || deleting}
-                        className="flex-1 bg-white text-black hover:bg-[#28D160] font-black italic uppercase text-xs py-4 rounded-xl tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="flex-1 bg-white text-black hover:bg-east-light font-black italic uppercase text-xs py-4 rounded-xl tracking-widest transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {saving ? 'Compiling Plan...' : <><Save size={14} /> Save Training Plan</>}
                     </button>

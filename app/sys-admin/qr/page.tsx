@@ -37,12 +37,12 @@ export default function QRGenerator() {
             </Link>
 
             <header className="mb-12">
-                <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter mb-4 text-[#28D160]">QR Generator</h1>
+                <h1 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter mb-4 text-east-light">QR Generator</h1>
                 <p className="text-gray-400 max-w-xl">
                     Generate active QR codes for gym operations. Print these or display them on a tablet at the front desk.
                 </p>
                 <div className="mt-6 flex flex-wrap gap-4">
-                     <Link href="/check-in" className="inline-flex items-center gap-2 bg-[#28D160] text-black px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-[#32e86e] transition-colors shadow-[0_0_15px_rgba(40,209,96,0.3)]">
+                     <Link href="/check-in" className="inline-flex items-center gap-2 bg-east-light text-black px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-[#32e86e] transition-colors shadow-[0_0_15px_rgba(40,209,96,0.3)]">
                          <QrCode size={16} /> Launch Admin Scanner
                      </Link>
                 </div>
@@ -57,13 +57,13 @@ export default function QRGenerator() {
                     <div className="flex p-1 bg-black rounded-xl mb-8 border border-white/10">
                         <button
                             onClick={() => setActiveTab('checkin')}
-                            className={`flex-1 py-3 px-4 rounded-lg font-bold uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'checkin' ? 'bg-[#28D160] text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                            className={`flex-1 py-3 px-4 rounded-lg font-bold uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'checkin' ? 'bg-east-light text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
                         >
                             <Building size={16} /> Gym Check-In
                         </button>
                         <button
                             onClick={() => setActiveTab('payment')}
-                            className={`flex-1 py-3 px-4 rounded-lg font-bold uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'payment' ? 'bg-[#28D160] text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
+                            className={`flex-1 py-3 px-4 rounded-lg font-bold uppercase text-xs tracking-wider transition-all flex items-center justify-center gap-2 ${activeTab === 'payment' ? 'bg-east-light text-black shadow-lg' : 'text-gray-500 hover:text-white'}`}
                         >
                             <CreditCard size={16} /> Quick Pay
                         </button>
@@ -77,7 +77,7 @@ export default function QRGenerator() {
                                 <select
                                     value={location}
                                     onChange={(e) => setLocation(e.target.value)}
-                                    className="w-full bg-black border border-white/20 rounded-xl p-4 text-white focus:outline-none focus:border-[#28D160] transition-colors"
+                                    className="w-full bg-black border border-white/20 rounded-xl p-4 text-white focus:outline-none focus:border-east-light transition-colors"
                                 >
                                     <option value="EAST_HK_MAIN">EAST Hong Kong (Main)</option>
                                     <option value="EAST_KOWLOON">EAST Kowloon</option>
@@ -85,9 +85,9 @@ export default function QRGenerator() {
                                 </select>
                             </div>
 
-                            <div className="p-4 bg-[#28D160]/10 rounded-xl border border-[#28D160]/20 flex gap-3">
-                                <CheckCircle className="text-[#28D160] shrink-0" size={20} />
-                                <p className="text-xs text-[#28D160] leading-relaxed">
+                            <div className="p-4 bg-east-light/10 rounded-xl border border-east-light/20 flex gap-3">
+                                <CheckCircle className="text-east-light shrink-0" size={20} />
+                                <p className="text-xs text-east-light leading-relaxed">
                                     Users scanning this code will be instantly checked in to <strong>{location}</strong>. A record will be created in the database.
                                 </p>
                             </div>
@@ -103,7 +103,7 @@ export default function QRGenerator() {
                                     type="number"
                                     value={amount}
                                     onChange={(e) => setAmount(Number(e.target.value))}
-                                    className="w-full bg-black border border-white/20 rounded-xl p-4 text-white focus:outline-none focus:border-[#28D160] transition-colors font-mono text-xl"
+                                    className="w-full bg-black border border-white/20 rounded-xl p-4 text-white focus:outline-none focus:border-east-light transition-colors font-mono text-xl"
                                 />
                             </div>
 
@@ -113,7 +113,7 @@ export default function QRGenerator() {
                                     type="text"
                                     value={reason}
                                     onChange={(e) => setReason(e.target.value)}
-                                    className="w-full bg-black border border-white/20 rounded-xl p-4 text-white focus:outline-none focus:border-[#28D160] transition-colors"
+                                    className="w-full bg-black border border-white/20 rounded-xl p-4 text-white focus:outline-none focus:border-east-light transition-colors"
                                 />
                             </div>
 
@@ -130,7 +130,7 @@ export default function QRGenerator() {
 
                 {/* Preview Area */}
                 <div className="flex flex-col items-center justify-center">
-                    <div className="bg-white p-8 rounded-3xl shadow-2xl transform hover:scale-105 transition-transform duration-500 border-4 border-[#28D160]">
+                    <div className="bg-white p-8 rounded-3xl shadow-2xl transform hover:scale-105 transition-transform duration-500 border-4 border-east-light">
                         <ClientOnly>
                             <QRCodeSVG
                                 value={activeTab === 'checkin' ? checkInPayload : paymentPayload}

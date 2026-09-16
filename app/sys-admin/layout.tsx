@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/app/lib/supabase';
 import { fetchProfileResilient } from '@/app/lib/authProfile'; // Added resilient fetch
 import AdminLogoutButton from '../components/AdminLogoutButton';
+import { useTenant } from '@/app/providers/TenantProvider';
 
 // Helper Component for Sidebar Links
 const AdminNavLink = ({ href, icon: Icon, label }: { href: string, icon: any, label: string }) => {
@@ -23,6 +24,7 @@ export default function AdminLayout({
     children: React.ReactNode;
 }) {
     const router = useRouter();
+    const { tenant } = useTenant();
     const [authorized, setAuthorized] = useState(false);
     const [statusText, setStatusText] = useState('Initializing...');
 
@@ -88,8 +90,8 @@ export default function AdminLayout({
         return (
             <div className="min-h-screen bg-black flex items-center justify-center text-white">
                 <div className="flex flex-col items-center gap-4">
-                    <div className="w-8 h-8 border-2 border-[#28D160] border-t-transparent rounded-full animate-spin" />
-                    <span className="text-xs font-bold uppercase tracking-widest text-[#28D160]">Verifying Access...</span>
+                    <div className="w-8 h-8 border-2 border-east-light border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-bold uppercase tracking-widest text-east-light">Verifying Access...</span>
                     <span className="text-[10px] text-gray-500 font-mono">{statusText}</span>
                 </div>
             </div>
@@ -101,8 +103,8 @@ export default function AdminLayout({
             <header className="bg-[#1e1e1e] border-b border-white/10 py-5 px-6 sticky top-0 z-50">
                 <div className="max-w-none mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <img src="/east-logo-transparent.png" alt="EAST Logo" className="h-14 w-auto object-contain" />
-                        <div className="bg-[#28D160] text-black text-[10px] font-bold px-2 py-1 rounded uppercase">
+                        <img src={tenant.assets.logoUrl} alt={tenant.assets.logoAlt} className="h-14 w-auto object-contain" />
+                        <div className="bg-east-light text-black text-[10px] font-bold px-2 py-1 rounded uppercase">
                             Admin
                         </div>
                     </div>
@@ -186,7 +188,7 @@ function MobileMenu() {
                         <Link
                             href="/check-in"
                             onClick={() => setIsOpen(false)}
-                            className="px-6 py-4 hover:bg-[#28D160]/10 flex items-center gap-4 text-xs font-black uppercase tracking-wider text-[#28D160] hover:text-[#32e86e] transition-colors"
+                            className="px-6 py-4 hover:bg-east-light/10 flex items-center gap-4 text-xs font-black uppercase tracking-wider text-east-light hover:text-[#32e86e] transition-colors"
                         >
                             <QrCode size={16} /> Scanner
                         </Link>

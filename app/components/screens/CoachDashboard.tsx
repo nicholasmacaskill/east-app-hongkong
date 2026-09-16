@@ -280,7 +280,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                     {/* Availability Metric - Always Visible Now */}
                     <div className="flex flex-row justify-between w-full md:w-auto md:flex-col md:items-end mr-4 bg-[#121212] md:bg-transparent p-3 md:p-0 rounded-lg md:rounded-none border border-white/5 md:border-none">
                         <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Available Hours</span>
-                        <span className="text-xl font-black italic text-[#28D160] leading-none">
+                        <span className="text-xl font-black italic text-east-light leading-none">
                             {allSessions
                                 .filter(s => s.type === 'slot' && s.coach_id === currentUserId)
                                 .reduce((acc, curr) => {
@@ -505,7 +505,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                                                 {allTags.length > 0 && (
                                                                     <div className="flex flex-wrap gap-1.5">
                                                                         {allTags.map((tag, i) => {
-                                                                            let colorClass = 'text-[#28D160] border-[#28D160]/40 bg-[#28D160]/10 shadow-[0_0_8px_rgba(40,209,96,0.15)]';
+                                                                            let colorClass = 'text-east-light border-east-light/40 bg-east-light/10 shadow-[0_0_8px_rgba(40,209,96,0.15)]';
                                                                             if (drill.skill_tags?.includes(tag)) colorClass = 'text-[#0A84FF] border-[#0A84FF]/40 bg-[#0A84FF]/10 shadow-[0_0_8px_rgba(10,132,255,0.15)]';
                                                                             else if (drill.age_tags?.includes(tag)) colorClass = 'text-[#BF5AF2] border-[#BF5AF2]/40 bg-[#BF5AF2]/10 shadow-[0_0_8px_rgba(191,90,242,0.15)]';
                                                                             return (
@@ -576,7 +576,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                                                 {session.type !== 'slot' && (
                                                                     <button 
                                                                         onClick={(e) => { e.stopPropagation(); setSelectedSessionForPlan(session); }} 
-                                                                        className="text-[9px] font-black uppercase text-[#28D160] hover:text-white transition-colors flex items-center gap-1 bg-[#28D160]/10 hover:bg-[#28D160]/20 px-2 py-1 rounded whitespace-nowrap"
+                                                                        className="text-[9px] font-black uppercase text-east-light hover:text-white transition-colors flex items-center gap-1 bg-east-light/10 hover:bg-east-light/20 px-2 py-1 rounded whitespace-nowrap"
                                                                     >
                                                                         <Layers size={10} /> Build Plan
                                                                     </button>

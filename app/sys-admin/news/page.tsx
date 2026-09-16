@@ -203,7 +203,7 @@ export default function NewsManagementPage() {
                             });
                             setShowModal(true);
                         }}
-                        className="flex items-center gap-2 bg-[#28D160] text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg"
+                        className="flex items-center gap-2 bg-east-light text-black px-4 py-2 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white transition-all shadow-lg"
                     >
                         <Plus size={14} /> Add Announcement
                     </button>
@@ -217,7 +217,7 @@ export default function NewsManagementPage() {
                         key={tab}
                         onClick={() => setFilter(tab)}
                         className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${filter === tab
-                                ? 'bg-[#28D160] text-black'
+                                ? 'bg-east-light text-black'
                                 : 'bg-[#1e1e1e] text-gray-400 hover:text-white'
                             }`}
                     >
@@ -238,12 +238,12 @@ export default function NewsManagementPage() {
                             <div className="flex items-start justify-between">
                                 <div className="flex items-center gap-2">
                                     {item.type === 'news' ? (
-                                        <Newspaper size={16} className="text-[#28D160]" />
+                                        <Newspaper size={16} className="text-east-light" />
                                     ) : (
                                         <Calendar size={16} className="text-blue-400" />
                                     )}
                                     <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded ${item.type === 'news'
-                                            ? 'bg-[#28D160]/20 text-[#28D160]'
+                                            ? 'bg-east-light/20 text-east-light'
                                             : 'bg-blue-500/20 text-blue-400'
                                         }`}>
                                         {item.type}
@@ -251,7 +251,7 @@ export default function NewsManagementPage() {
                                 </div>
                                 <button
                                     onClick={() => togglePublished(item)}
-                                    className={`p-1 rounded ${item.published ? 'text-[#28D160]' : 'text-gray-500'}`}
+                                    className={`p-1 rounded ${item.published ? 'text-east-light' : 'text-gray-500'}`}
                                     title={item.published ? 'Published' : 'Draft'}
                                 >
                                     {item.published ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -322,7 +322,7 @@ export default function NewsManagementPage() {
                                 <select
                                     value={formData.type}
                                     onChange={(e) => setFormData({ ...formData, type: e.target.value as 'news' | 'event' })}
-                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-east-light outline-none transition-all"
                                     required
                                 >
                                     <option value="news">News</option>
@@ -337,7 +337,7 @@ export default function NewsManagementPage() {
                                     value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                                     placeholder="Enter headline..."
-                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-east-light outline-none transition-all"
                                     required
                                 />
                             </div>
@@ -349,7 +349,7 @@ export default function NewsManagementPage() {
                                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                                     placeholder="Write your story..."
                                     rows={6}
-                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all resize-none"
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-east-light outline-none transition-all resize-none"
                                     required
                                 />
                             </div>
@@ -361,7 +361,7 @@ export default function NewsManagementPage() {
                                         type="date"
                                         value={formData.event_date}
                                         onChange={(e) => setFormData({ ...formData, event_date: e.target.value })}
-                                        className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                                        className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-east-light outline-none transition-all"
                                     />
                                 </div>
                             )}
@@ -373,7 +373,7 @@ export default function NewsManagementPage() {
                                     value={formData.image_url}
                                     onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
                                     placeholder="https://..."
-                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-east-light outline-none transition-all"
                                 />
                             </div>
 
@@ -384,7 +384,7 @@ export default function NewsManagementPage() {
                                     value={formData.external_url}
                                     onChange={(e) => setFormData({ ...formData, external_url: e.target.value })}
                                     placeholder="https://... (e.g. schedule PDF, registration page)"
-                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all"
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-east-light outline-none transition-all"
                                 />
                             </div>
 
@@ -395,7 +395,7 @@ export default function NewsManagementPage() {
                                     onChange={(e) => setFormData({ ...formData, additional_images: e.target.value })}
                                     placeholder="Paste image URLs separated by commas..."
                                     rows={3}
-                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-[#28D160] outline-none transition-all resize-none"
+                                    className="w-full bg-black border border-white/10 rounded-xl py-3 px-4 text-sm focus:border-east-light outline-none transition-all resize-none"
                                 />
                                 <p className="text-[10px] text-gray-600 mt-1">Separate multiple URLs with a comma. These images will appear inside the article.</p>
                             </div>
@@ -421,7 +421,7 @@ export default function NewsManagementPage() {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 bg-[#28D160] hover:bg-white text-black px-4 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all"
+                                    className="flex-1 bg-east-light hover:bg-white text-black px-4 py-3 rounded-xl font-bold uppercase text-xs tracking-widest transition-all"
                                 >
                                     {editingItem ? 'Update' : 'Save Story'}
                                 </button>

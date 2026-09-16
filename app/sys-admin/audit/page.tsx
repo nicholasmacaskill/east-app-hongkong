@@ -127,7 +127,7 @@ export default function AuditLogsPage() {
                     onClick={fetchLogs}
                     className="p-3 bg-[#1e1e1e] border border-white/5 rounded-full hover:bg-white/5 transition-all"
                 >
-                    <RefreshCw size={18} className={loading ? 'animate-spin text-[#28D160]' : 'text-gray-400'} />
+                    <RefreshCw size={18} className={loading ? 'animate-spin text-east-light' : 'text-gray-400'} />
                 </button>
             </div>
 
@@ -138,7 +138,7 @@ export default function AuditLogsPage() {
                     <input
                         type="text"
                         placeholder="Search logs..."
-                        className="w-full bg-black/40 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-[#28D160]/50 transition-all font-mono"
+                        className="w-full bg-black/40 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-sm text-white focus:outline-none focus:border-east-light/50 transition-all font-mono"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -217,7 +217,7 @@ export default function AuditLogsPage() {
                                         </td>
                                         <td className="p-4 text-xs text-gray-400">
                                             <details className="cursor-pointer group/details">
-                                                <summary className="list-none hover:text-[#28D160] transition-colors flex items-center gap-1 font-mono text-[10px] uppercase tracking-wide">
+                                                <summary className="list-none hover:text-east-light transition-colors flex items-center gap-1 font-mono text-[10px] uppercase tracking-wide">
                                                     <span className="group-open/details:rotate-90 transition-transform">▸</span>
                                                     {renderDetailsSummary(log)}
                                                 </summary>
@@ -239,7 +239,7 @@ export default function AuditLogsPage() {
 
 function getActionStyle(action: string) {
     if (action.includes('DELETE')) return 'bg-red-500/10 text-red-500 border-red-500/20';
-    if (action.includes('CREATE')) return 'bg-[#28D160]/10 text-[#28D160] border-[#28D160]/20';
+    if (action.includes('CREATE')) return 'bg-east-light/10 text-east-light border-east-light/20';
     if (action.includes('UPDATE')) return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
     if (action.includes('LOGIN')) return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
     return 'bg-gray-500/10 text-gray-500 border-gray-500/20';

@@ -248,7 +248,7 @@ export default function LeaderboardPage() {
                     <h1 className="text-4xl sm:text-5xl font-black italic uppercase relative z-10 text-white tracking-tight drop-shadow-2xl">Leaderboard</h1>
 
                     <div className="mt-8 px-2">
-                        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#28D160] mb-3 text-center">
+                        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-east-light mb-3 text-center">
                             Search Players
                         </p>
                         <PlayerSearch />
@@ -356,7 +356,7 @@ export default function LeaderboardPage() {
                     {/* CHECK-IN LEADERBOARD */}
                     <div className="animate-slideUp w-full max-w-2xl mx-auto">
                         <div className="flex items-center gap-2 mb-4 justify-center">
-                            <Activity size={16} className="text-[#28D160]" />
+                            <Activity size={16} className="text-east-light" />
                             <h2 className="font-black italic text-lg uppercase tracking-widest text-white">Most Visits</h2>
                         </div>
                         {loadingCheckIns ? (
@@ -385,12 +385,12 @@ export default function LeaderboardPage() {
                                             className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden cursor-pointer ${entry.id === currentUserId
                                                 ? 'bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]'
                                                 : i === 0
-                                                    ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
+                                                    ? 'bg-gray-900/40 border-east-light/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
                                                     : 'bg-[#050505] border-white/5 hover:border-white/20'
                                                 }`}
                                         >
                                             {/* Rank */}
-                                            <div className={`w-8 font-black italic text-2xl ${entry.id === currentUserId || i === 0 ? 'text-[#28D160]' : 'text-white/20'} group-hover:text-[#28D160] transition-colors`}>
+                                            <div className={`w-8 font-black italic text-2xl ${entry.id === currentUserId || i === 0 ? 'text-east-light' : 'text-white/20'} group-hover:text-east-light transition-colors`}>
                                                 {i + 1}
                                             </div>
 
@@ -431,7 +431,7 @@ export default function LeaderboardPage() {
                 {/* LEADERBOARD TABLE (SPORTS) */}
                     <div className="animate-slideUp w-full max-w-2xl mx-auto">
                         <div className="flex items-center gap-2 mb-4 justify-center">
-                            <Trophy size={16} className="text-[#28D160]" />
+                            <Trophy size={16} className="text-east-light" />
                             <h2 className="font-black italic text-lg uppercase tracking-widest text-white">Performance</h2>
                         </div>
                         {loading ? (
@@ -460,12 +460,12 @@ export default function LeaderboardPage() {
                                             className={`group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden cursor-pointer ${entry.id === currentUserId
                                                 ? 'bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)]'
                                                 : i === 0
-                                                    ? 'bg-gray-900/40 border-[#28D160]/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
+                                                    ? 'bg-gray-900/40 border-east-light/50 shadow-[0_0_30px_rgba(40,209,96,0.05)]'
                                                     : 'bg-[#050505] border-white/5 hover:border-white/20'
                                                 }`}
                                         >
                                             {/* Rank */}
-                                            <div className={`w-8 font-black italic text-2xl ${entry.id === currentUserId || i === 0 ? 'text-[#28D160]' : 'text-white/20'} group-hover:text-[#28D160] transition-colors`}>
+                                            <div className={`w-8 font-black italic text-2xl ${entry.id === currentUserId || i === 0 ? 'text-east-light' : 'text-white/20'} group-hover:text-east-light transition-colors`}>
                                                 {i + 1}
                                             </div>
 
@@ -514,7 +514,7 @@ export default function LeaderboardPage() {
                                                 className="group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-500 overflow-hidden bg-east-light/10 border-east-light shadow-[0_0_30px_rgba(40,209,96,0.15)] cursor-pointer"
                                             >
                                                 {/* Rank */}
-                                                <div className={`w-8 font-black italic text-2xl text-[#28D160] group-hover:text-[#28D160] transition-colors`}>
+                                                <div className={`w-8 font-black italic text-2xl text-east-light group-hover:text-east-light transition-colors`}>
                                                     {currentUserStats.rank}
                                                 </div>
 

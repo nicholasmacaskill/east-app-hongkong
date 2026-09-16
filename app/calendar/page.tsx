@@ -9,8 +9,10 @@ import { useRouter } from 'next/navigation';
 import Footer from '../components/Footer';
 import { useToast } from '../components/ui/Toast';
 import { formatHK } from '@/app/lib/dateUtils';
+import { useTenant } from '@/app/providers/TenantProvider';
 
 export default function CalendarPage() {
+  const { tenant } = useTenant();
   const { addToast } = useToast();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [googleEvents, setGoogleEvents] = useState<CalendarEvent[]>([]);
@@ -176,7 +178,13 @@ export default function CalendarPage() {
 
   return (
     <div className="app min-h-screen bg-black text-white flex flex-col">
-      <div className="east-logo text-4xl md:text-6xl text-center py-6 w-full font-montserrat font-black italic">EAST</div>
+      <div className="flex justify-center items-center py-6 w-full">
+        {tenant.assets.logoUrl ? (
+          <img src={tenant.assets.logoUrl} alt={tenant.assets.logoAlt} className="h-14 md:h-20 w-auto object-contain" />
+        ) : (
+          <div className="text-4xl md:text-6xl text-center font-montserrat font-black italic">{tenant.shortName}</div>
+        )}
+      </div>
 
       <main className="flex-grow w-full max-w-7xl mx-auto px-4 py-8 relative">
         {isLocked && <LockedOverlay />}
