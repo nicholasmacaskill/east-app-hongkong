@@ -6,7 +6,7 @@ const PROTECTED_EMAILS = [
     'nicholasmacaskill@proton.me'
 ];
 
-const TEST_KEYWORDS = ['test', 'qa', 'pw.test', 'east.internal'];
+const TEST_KEYWORDS = ['test', 'qa', 'pw.test', 'east.internal', 'audit', 'verify', 'assess'];
 
 /**
  * Hardened Cascading Database & Auth Purge Utility.
@@ -18,6 +18,7 @@ export async function purgeUserData(supabase: SupabaseClient, userIds: string[])
     try {
         // 1. Relational Junctions & Dependent Child Tables
         await Promise.allSettled([
+            supabase.from('engineering_tickets').delete().in('reporter_id', userIds),
             supabase.from('player_relationships').delete().or(`parent_id.in.(${userIds.join(',')}),child_id.in.(${userIds.join(',')})`),
             supabase.from('registrations').delete().in('user_id', userIds),
             supabase.from('transactions').delete().in('user_id', userIds),
@@ -27,6 +28,9 @@ export async function purgeUserData(supabase: SupabaseClient, userIds: string[])
             supabase.from('admin_audit_logs').delete().in('admin_id', userIds),
             supabase.from('players_stats').update({ verified_by: null }).in('verified_by', userIds),
             supabase.from('players_stats').delete().in('player_id', userIds),
+            supabase.from('player_assessments').delete().or(`coach_id.in.(${userIds.join(',')}),player_id.in.(${userIds.join(',')})`),
+            supabase.from('messages').delete().or(`sender_id.in.(${userIds.join(',')}),receiver_id.in.(${userIds.join(',')})`),
+            supabase.from('coach_services').delete().in('coach_id', userIds),
             supabase.from('notifications').delete().in('user_id', userIds)
         ]);
 

@@ -75,13 +75,13 @@ test.describe('AppHeader — All Buttons Clickable', () => {
         if (error || !data.user) throw error ?? new Error('Failed to create test user');
         parentId = data.user.id;
 
-        // Ensure profile row exists with active subscription so credits pill shows
+        // Ensure profile row exists with active subscription so credits pill shows with high balance
         await supabase.from('profiles').upsert({
             id: parentId,
             role: 'parent',
             first_name: 'Header',
             last_name: 'Tester',
-            credits: 50,
+            credits: 3350,
             subscription_status: 'active',
             account_status: 'active'
         });
@@ -107,7 +107,7 @@ test.describe('AppHeader — All Buttons Clickable', () => {
 
             // Click and verify the Community/Messenger screen appears
             await messengerBtn.click();
-            await expect(page.locator('h1').filter({ hasText: /MESSENGER/i }).first())
+            await expect(page.locator('h2, h1').filter({ hasText: /Messages/i }).first())
                 .toBeVisible({ timeout: 10000 });
         });
 
@@ -169,7 +169,7 @@ test.describe('AppHeader — All Buttons Clickable', () => {
 
             // Click and verify messenger opens
             await messengerBtn.click();
-            await expect(page.locator('h1').filter({ hasText: /MESSENGER/i }).first())
+            await expect(page.locator('h2, h1').filter({ hasText: /Messages/i }).first())
                 .toBeVisible({ timeout: 10000 });
         });
 

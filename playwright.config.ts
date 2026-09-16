@@ -114,7 +114,12 @@ export default defineConfig({
         'tests/player-profile-search.spec.ts',
         'tests/player-profile-search-player-role.spec.ts',
         'tests/fitness-test-stats.spec.ts',
-        'tests/player-assessment.spec.ts'
+        'tests/player-assessment.spec.ts',
+        'tests/admin-purge-assess.spec.ts',
+        'tests/chat-role-restrictions.spec.ts',
+        'tests/security-audit.spec.ts',
+        'tests/responsive-viewports.spec.ts',
+        'tests/whitelabel-harness.spec.ts'
       ],
     },
 
