@@ -32,6 +32,36 @@ export async function POST(request: Request) {
 
     let allDeleted = new Set<string>();
 
+    const PROTECTED_EMAILS = [
+      'admin@east.com',
+      'rick@dynevents.com',
+      'nicholasmacaskill@proton.me'
+    ];
+
+    const keywords = ['test', 'audit', 'qa', 'verify', 'event watcher', 'assess'];
+
+    const cleanupUserDependencies = async (userId: string) => {
+      await Promise.allSettled([
+        supabaseAdmin.from('engineering_tickets').delete().eq('reporter_id', userId),
+        supabaseAdmin.from('registrations').delete().or(`user_id.eq.${userId},payer_id.eq.${userId}`),
+        supabaseAdmin.from('player_relationships').delete().or(`parent_id.eq.${userId},child_id.eq.${userId}`),
+        supabaseAdmin.from('players_stats').update({ verified_by: null }).eq('verified_by', userId),
+        supabaseAdmin.from('players_stats').delete().eq('player_id', userId),
+        supabaseAdmin.from('player_assessments').delete().or(`coach_id.eq.${userId},player_id.eq.${userId}`),
+        supabaseAdmin.from('messages').delete().or(`sender_id.eq.${userId},receiver_id.eq.${userId}`),
+        supabaseAdmin.from('coach_services').delete().eq('coach_id', userId),
+        supabaseAdmin.from('voice_commands').delete().eq('coach_id', userId),
+        supabaseAdmin.from('availability').delete().eq('coach_id', userId),
+        supabaseAdmin.from('notifications').delete().eq('user_id', userId),
+        supabaseAdmin.from('transactions').delete().eq('user_id', userId),
+        supabaseAdmin.from('likes').delete().eq('user_id', userId),
+        supabaseAdmin.from('posts').delete().eq('user_id', userId),
+        supabaseAdmin.from('announcements').delete().eq('created_by', userId),
+        supabaseAdmin.from('admin_audit_logs').delete().eq('admin_id', userId)
+      ]);
+      await supabaseAdmin.from('profiles').delete().eq('id', userId);
+    };
+
     // 1. Scan AUTH users
     let page = 1;
     let hasMore = true;
@@ -49,19 +79,26 @@ export async function POST(request: Request) {
 
       const toDeleteFromAuth = users.filter(u => {
         const email = u.email?.toLowerCase() || '';
-        if (email.endsWith('@east.com')) return false;
-        const keywords = ['test', 'audit', 'qa', 'verify', 'event watcher'];
-        return keywords.some(k => email.includes(k) || email.includes(k.replace(' ', '')));
+        if (PROTECTED_EMAILS.includes(email)) return false;
+
+        const meta = u.user_metadata || {};
+        const first = (meta.first_name || '').toLowerCase();
+        const last = (meta.last_name || '').toLowerCase();
+        const fullName = `${first} ${last}`.trim();
+
+        return keywords.some(k => {
+          const kClean = k.replace(/\s+/g, '');
+          return email.includes(k) ||
+                 email.includes(kClean) ||
+                 first.includes(k) ||
+                 last.includes(k) ||
+                 fullName.includes(k);
+        });
       });
 
       for (const u of toDeleteFromAuth) {
         try {
-          // Explicit cleanup of all possible FK tables
-          await supabaseAdmin.from('engineering_tickets').delete().eq('reporter_id', u.id);
-          await supabaseAdmin.from('registrations').delete().or(`user_id.eq.${u.id},payer_id.eq.${u.id}`);
-          await supabaseAdmin.from('player_relationships').delete().or(`parent_id.eq.${u.id},child_id.eq.${u.id}`);
-          await supabaseAdmin.from('players_stats').delete().eq('player_id', u.id);
-          await supabaseAdmin.from('profiles').delete().eq('id', u.id);
+          await cleanupUserDependencies(u.id);
           await supabaseAdmin.auth.admin.deleteUser(u.id);
           allDeleted.add(u.email || u.id);
         } catch (err: any) {
@@ -80,28 +117,27 @@ export async function POST(request: Request) {
 
     if (profError) throw profError;
 
-    const keywords = ['test', 'audit', 'qa', 'verify', 'event watcher'];
     const toDeleteFromProfiles = (profiles || []).filter(p => {
       const email = (p.contact_email || '').toLowerCase();
       const user = (p.username || '').toLowerCase();
       const first = (p.first_name || '').toLowerCase();
       const last = (p.last_name || '').toLowerCase();
-      const fullName = `${first} ${last}`;
+      const fullName = `${first} ${last}`.trim();
       
-      if (email.endsWith('@east.com') || user.endsWith('@east.com')) {
-         // CRITICAL: Still protect corporate @east.com unless it's a known test email
-         // and doesn't exactly match the admin account
-         if (email === 'admin@east.com') return false;
+      if (PROTECTED_EMAILS.includes(email) || PROTECTED_EMAILS.includes(user)) {
+        return false;
       }
 
-      const match = keywords.some(k => 
-        email.includes(k) || 
-        email.includes(k.replace(' ', '')) ||
-        user.includes(k) || 
-        first.includes(k) || 
-        last.includes(k) ||
-        fullName.includes(k)
-      );
+      const match = keywords.some(k => {
+        const kClean = k.replace(/\s+/g, '');
+        return email.includes(k) || 
+               email.includes(kClean) ||
+               user.includes(k) || 
+               user.includes(kClean) ||
+               first.includes(k) || 
+               last.includes(k) ||
+               fullName.includes(k);
+      });
 
       return match;
     });
@@ -112,18 +148,11 @@ export async function POST(request: Request) {
       try {
         console.log(`Purging Profile: ${p.id} | Email: ${p.contact_email} | Name: ${p.first_name} ${p.last_name}`);
         
-        // Scrub dependents
-        await supabaseAdmin.from('engineering_tickets').delete().eq('reporter_id', p.id);
-        await supabaseAdmin.from('registrations').delete().or(`user_id.eq.${p.id},payer_id.eq.${p.id}`);
-        await supabaseAdmin.from('players_stats').delete().eq('player_id', p.id);
-        
-        // Remove Profile
-        const { error: pErr } = await supabaseAdmin.from('profiles').delete().eq('id', p.id);
-        if (pErr) console.error(`Failed to delete profile record for ${p.id}:`, pErr.message);
+        await cleanupUserDependencies(p.id);
 
         // Remove Auth
         const { error: aErr } = await supabaseAdmin.auth.admin.deleteUser(p.id);
-        if (aErr && aErr.status !== 404) console.error(`Failed to delete auth user for ${p.id}:`, aErr.message);
+        if (aErr && (aErr as any).status !== 404) console.error(`Failed to delete auth user for ${p.id}:`, aErr.message);
 
         allDeleted.add(p.contact_email || p.username || p.id);
       } catch (err: any) {

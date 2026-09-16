@@ -56,7 +56,10 @@ async function deleteTestAccounts() {
             /@pw\.test$/,
             /-test-/,
             /immediate-login-/,
-            /^test-refund@eastsportsgroup\.com$/
+            /^test-refund@eastsportsgroup\.com$/,
+            /assessment-coach-/,
+            /assessment-player-/,
+            /assess/
         ];
 
         const usersToDelete = allUsers.filter((user: any) => {
@@ -68,7 +71,7 @@ async function deleteTestAccounts() {
             // Check @east.com exclusion
             const isEastCom = email.endsWith('@east.com');
             const isSeedEmail = SEED_EMAILS.includes(email);
-            const isTestEastCom = isEastCom && !isSeedEmail && (email.includes('test') || email.includes('login'));
+            const isTestEastCom = isEastCom && !isSeedEmail && (email.includes('test') || email.includes('login') || email.includes('assess'));
 
             return matchesPattern || isTestEastCom;
         });
