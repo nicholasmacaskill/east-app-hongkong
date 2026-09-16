@@ -5,6 +5,19 @@
 :root {
   --background: #000000;
   --foreground: #ffffff;
+
+  /* White-label brand tokens (Defaults to EAST Sports Group) */
+  --brand-primary: #28D160;
+  --brand-primary-rgb: 40 209 96;
+  --brand-primary-dark: #146B31;
+  --brand-primary-dark-rgb: 20 107 49;
+  --brand-accent: #28D160;
+  --brand-accent-rgb: 40 209 96;
+  --brand-black: #121212;
+  --brand-black-rgb: 18 18 18;
+  --brand-card: #1E1E1E;
+  --brand-card-rgb: 30 30 30;
+  --brand-glow: rgba(40, 209, 96, 0.4);
 }
 
 /* ✅ NEW: Disables the "rubber band" bounce effect globally */

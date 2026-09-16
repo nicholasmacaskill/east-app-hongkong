@@ -10,11 +10,18 @@ export default {
     extend: {
       colors: {
         east: {
-          light: '#28D160',
-          dark: '#146B31',
-          black: '#121212',
-          card: '#1E1E1E'
-        }
+          light: 'rgb(var(--brand-primary-rgb, 40 209 96) / <alpha-value>)',
+          dark: 'rgb(var(--brand-primary-dark-rgb, 20 107 49) / <alpha-value>)',
+          black: 'rgb(var(--brand-black-rgb, 18 18 18) / <alpha-value>)',
+          card: 'rgb(var(--brand-card-rgb, 30 30 30) / <alpha-value>)',
+        },
+        brand: {
+          primary: 'rgb(var(--brand-primary-rgb, 40 209 96) / <alpha-value>)',
+          dark: 'rgb(var(--brand-primary-dark-rgb, 20 107 49) / <alpha-value>)',
+          accent: 'rgb(var(--brand-accent-rgb, 40 209 96) / <alpha-value>)',
+          black: 'rgb(var(--brand-black-rgb, 18 18 18) / <alpha-value>)',
+          card: 'rgb(var(--brand-card-rgb, 30 30 30) / <alpha-value>)',
+        },
       },
       fontFamily: {
         montserrat: ['Montserrat', 'sans-serif'],

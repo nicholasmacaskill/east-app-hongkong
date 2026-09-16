@@ -8,40 +8,46 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Suspense } from 'react';
 import { ToastProvider } from '@/app/components/ui/Toast';
 import PaymentSuccessHandler from '@/app/components/PaymentSuccessHandler';
+import { TenantProvider } from '@/app/providers/TenantProvider';
+import TenantSwitcher from '@/app/components/whitelabel/TenantSwitcher';
 
 const montserrat = Montserrat({ subsets: ["latin"], variable: "--font-montserrat" });
 const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-opensans" });
 
-export const metadata: Metadata = {
-  title: "EAST Sports Group",
-  description: "Official application for EAST Sports Group",
-  icons: {
-    icon: [
-      {
-        url: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⚡</text></svg>',
-        type: 'image/svg+xml',
-      },
-    ],
-  },
-  openGraph: {
-    title: "EAST Sports Group",
-    description: "Official application for EAST Sports Group",
-    images: [
-      {
-        url: "/EAST-BLACK-BACKGROUND.png",
-        width: 1200,
-        height: 630,
-        alt: "EAST Sports Group Logo",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "EAST Sports Group",
-    description: "Official application for EAST Sports Group",
-    images: ["/EAST-BLACK-BACKGROUND.png"],
-  },
-};
+import { getTenantConfig, DEFAULT_TENANT_SLUG } from '@/app/config/tenant.config';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const tenantSlug = process.env.NEXT_PUBLIC_TENANT || DEFAULT_TENANT_SLUG;
+  const tenant = getTenantConfig(tenantSlug);
+
+  return {
+    title: tenant.name,
+    description: tenant.tagline || `Official application for ${tenant.name}`,
+    icons: {
+      icon: [
+        {
+          url: tenant.assets.faviconUrl || tenant.assets.logoUrl || '/favicon.ico',
+        },
+      ],
+    },
+    openGraph: {
+      title: tenant.name,
+      description: tenant.tagline || `Official application for ${tenant.name}`,
+      images: [
+        {
+          url: tenant.assets.logoUrl,
+          alt: `${tenant.name} Logo`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: tenant.name,
+      description: tenant.tagline || `Official application for ${tenant.name}`,
+      images: [tenant.assets.logoUrl],
+    },
+  };
+}
 
 export default function RootLayout({
   children,
@@ -51,19 +57,22 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${montserrat.variable} ${openSans.variable} font-sans bg-black text-white`}>
-        <PHProvider>
-          <Suspense fallback={null}>
-            <PostHogPageView />
-          </Suspense>
-          <ToastProvider>
+        <TenantProvider>
+          <PHProvider>
             <Suspense fallback={null}>
-              <PaymentSuccessHandler />
+              <PostHogPageView />
             </Suspense>
-            {children}
-            <Analytics />
-            <SpeedInsights />
-          </ToastProvider>
-        </PHProvider>
+            <ToastProvider>
+              <Suspense fallback={null}>
+                <PaymentSuccessHandler />
+              </Suspense>
+              {children}
+              <TenantSwitcher />
+              <Analytics />
+              <SpeedInsights />
+            </ToastProvider>
+          </PHProvider>
+        </TenantProvider>
       </body>
     </html>
   );

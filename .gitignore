@@ -31,3 +31,9 @@ playwright-report/
 .env.production
 .env.preview
 .env*.local
+
+# Scratch and temporary scripts
+scratch/
+scratch_*
+repomix-output.md
+test_db.js
