@@ -23,6 +23,7 @@ const ENV_VARS: Record<string, string> = {
   NEXT_PUBLIC_TENANT: 'jrducks',
   NEXT_PUBLIC_DISABLE_TENANT_SWITCHER: 'true',
   NEXT_PUBLIC_APP_NAME: 'Anaheim Jr. Ducks Portal',
+  NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL || 'https://jrducks-app.vercel.app',
   NEXT_PUBLIC_TIMEZONE: 'America/Los_Angeles',
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://hzltndrltyseifwbmjeg.supabase.co',
   SUPABASE_URL: process.env.SUPABASE_URL || 'https://hzltndrltyseifwbmjeg.supabase.co',

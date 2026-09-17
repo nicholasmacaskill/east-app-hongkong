@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     const referer = request.headers.get('referer');
     const origin = request.headers.get('origin');
     const detectedBaseUrl = origin || (referer ? new URL(referer).origin : null);
-    const baseUrl = BASE_URL || detectedBaseUrl || 'http://localhost:3000';
+    const baseUrl = detectedBaseUrl || process.env.NEXT_PUBLIC_BASE_URL || BASE_URL || 'http://localhost:3000';
 
     let defaultSuccessPath = '/?success=true';
     if (mode === 'subscription') {
