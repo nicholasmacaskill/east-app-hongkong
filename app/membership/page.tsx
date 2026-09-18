@@ -11,6 +11,7 @@ import { supabase } from '@/app/lib/supabase';
 import { useToast } from '@/app/components/ui/Toast';
 import { formatHK } from '@/app/lib/dateUtils';
 import { getStripePriceId } from '@/app/lib/stripe-config';
+import { useTenant } from '@/app/providers/TenantProvider';
 
 
 const BENEFITS = [
@@ -47,6 +48,8 @@ function MembershipContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { addToast } = useToast();
+    const { tenant } = useTenant();
+    const isDucks = tenant.slug === 'jrducks';
 
     // --- DYNAMIC PRICE RESOLUTION ---
     const plans = React.useMemo(() => {
@@ -61,6 +64,45 @@ function MembershipContent() {
         
         const FAMILY_3_PRICE_MONTHLY = getStripePriceId('FAMILY_3_MONTHLY');
         const FAMILY_3_PRICE_YEARLY = getStripePriceId('FAMILY_3_YEARLY');
+
+        if (isDucks) {
+            return {
+                individual: {
+                    id: 'pro',
+                    name: 'PRO',
+                    prices: {
+                        monthly: { id: INDIVIDUAL_PRICE_MONTHLY, display: '99', credits: '1,000' },
+                        yearly: { id: INDIVIDUAL_PRICE_YEARLY, display: '990', credits: '15,000', savings: 'SAVE $198' }
+                    }
+                },
+                family: {
+                    '1': {
+                        id: 'family-1',
+                        name: 'PRO FAMILY (1)',
+                        prices: {
+                            monthly: { id: FAMILY_1_PRICE_MONTHLY, display: '99', credits: '1,000' },
+                            yearly: { id: FAMILY_1_PRICE_YEARLY, display: '990', credits: '15,000', savings: 'SAVE $198' }
+                        }
+                    },
+                    '2': {
+                        id: 'family-2',
+                        name: 'PRO FAMILY (2)',
+                        prices: {
+                            monthly: { id: FAMILY_2_PRICE_MONTHLY, display: '179', credits: '2,500' },
+                            yearly: { id: FAMILY_2_PRICE_YEARLY, display: '1,790', credits: '33,000', savings: 'SAVE $358' }
+                        }
+                    },
+                    '3+': {
+                        id: 'family-3+',
+                        name: 'PRO FAMILY (3+)',
+                        prices: {
+                            monthly: { id: FAMILY_3_PRICE_MONTHLY, display: '249', credits: '3,500' },
+                            yearly: { id: FAMILY_3_PRICE_YEARLY, display: '2,490', credits: '45,000', savings: 'SAVE $498' }
+                        }
+                    }
+                }
+            };
+        }
 
         return {
             individual: {
@@ -98,7 +140,7 @@ function MembershipContent() {
                 }
             }
         };
-    }, []);
+    }, [isDucks]);
 
     // Selection States
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -303,7 +345,7 @@ function MembershipContent() {
                         <div className="text-right">
                             <div className="flex items-baseline justify-end gap-1">
                                 <span className="font-montserrat font-black italic text-4xl tracking-tight leading-none">{activeDetails.display}</span>
-                                <span className="font-montserrat font-black italic text-[10px] text-gray-400 uppercase tracking-tighter">HKD</span>
+                                <span className="font-montserrat font-black italic text-[10px] text-gray-400 uppercase tracking-tighter">{tenant.currency}</span>
                             </div>
                             <p className="text-[9px] font-bold text-gray-400 uppercase mt-0.5">PER {billingCycle === 'monthly' ? 'MONTH' : 'YEAR'}</p>
 

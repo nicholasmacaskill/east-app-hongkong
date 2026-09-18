@@ -9,13 +9,60 @@ import { getStripePriceId } from '@/app/lib/stripe-config';
 import { useTracking } from '@/app/hooks/useTracking';
 
 
+import { useTenant } from '@/app/providers/TenantProvider';
+
 export default function TopUpPage() {
     const router = useRouter();
     const { addToast } = useToast();
     const { track } = useTracking();
+    const { tenant } = useTenant();
+    const isDucks = tenant.slug === 'jrducks';
 
     // --- DYNAMIC PRICE RESOLUTION ---
-    const TOPUP_OPTIONS = React.useMemo(() => [
+    const TOPUP_OPTIONS = React.useMemo(() => isDucks ? [
+        {
+            id: getStripePriceId('TOPUP_STARTER'),
+            credits: 50,
+            bonus: 0,
+            price: '$50',
+            label: 'Starter',
+            color: 'bg-gray-800'
+        },
+        {
+            id: getStripePriceId('TOPUP_STANDARD'),
+            credits: 100,
+            bonus: 5,
+            price: '$95',
+            label: 'Standard',
+            color: 'bg-gray-800'
+        },
+        {
+            id: getStripePriceId('TOPUP_PRO'),
+            credits: 250,
+            bonus: 25,
+            price: '$225',
+            label: 'Pro',
+            color: 'bg-east-blue/20 border-east-blue'
+        },
+        {
+            id: getStripePriceId('TOPUP_ELITE'),
+            credits: 500,
+            bonus: 75,
+            price: '$425',
+            label: 'Elite',
+            color: 'bg-gray-800'
+        },
+        {
+            id: getStripePriceId('TOPUP_ULTIMATE'),
+            credits: 1000,
+            bonus: 200,
+            price: '$800',
+            label: 'Ultimate',
+            color: 'bg-east-light text-black',
+            textColor: 'text-black',
+            highlight: true
+        }
+    ] : [
         {
             id: getStripePriceId('TOPUP_STARTER'),
             credits: 500,
@@ -58,7 +105,7 @@ export default function TopUpPage() {
             textColor: 'text-black',
             highlight: true
         }
-    ], []);
+    ], [isDucks]);
 
     const handleCheckout = async (priceId: string) => {
         try {
@@ -107,7 +154,7 @@ export default function TopUpPage() {
                 </button>
                 <div>
                     <h1 className="font-montserrat font-black text-2xl uppercase italic tracking-wider">Top Up Credits</h1>
-                    <p className="text-gray-400 text-sm font-medium">1 Credit = 1 HKD</p>
+                    <p className="text-gray-400 text-sm font-medium">1 Credit = 1 {tenant.currency}</p>
                 </div>
             </div>
 
