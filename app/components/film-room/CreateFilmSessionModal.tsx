@@ -310,7 +310,7 @@ export default function CreateFilmSessionModal({
                                     <button
                                         type="button"
                                         onClick={handleGrabCurrentTime}
-                                        className="px-3 py-1.5 rounded-xl bg-east-light text-black hover:bg-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition active:scale-95 shadow-[0_0_15px_rgba(40,209,96,0.3)]"
+                                        className="px-3 py-1.5 rounded-xl bg-east-light text-black hover:bg-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition active:scale-95 shadow-[0_0_15px_var(--brand-glow)]"
                                     >
                                         <BookmarkPlus size={14} /> Grab Current Time
                                     </button>
@@ -529,7 +529,7 @@ export default function CreateFilmSessionModal({
                         type="button"
                         onClick={handleSubmit}
                         disabled={saving}
-                        className="px-8 py-3 rounded-2xl bg-east-light hover:bg-white text-black font-black italic uppercase text-xs tracking-wider transition shadow-[0_0_20px_rgba(40,209,96,0.3)] hover:scale-105 active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                        className="px-8 py-3 rounded-2xl bg-east-light hover:bg-white text-black font-black italic uppercase text-xs tracking-wider transition shadow-[0_0_20px_var(--brand-glow)] hover:scale-105 active:scale-95 flex items-center gap-2 disabled:opacity-50"
                     >
                         {saving ? (
                             <>

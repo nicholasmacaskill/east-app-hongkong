@@ -25,6 +25,7 @@ import { getYouTubeThumbnail, getYouTubeDirectUrl } from '@/app/lib/youtubeUtils
 import { formatHK } from '@/app/lib/dateUtils';
 import CreateFilmSessionModal from './CreateFilmSessionModal';
 import FilmRoomSessionViewModal from './FilmRoomSessionViewModal';
+import { useTenant } from '@/app/providers/TenantProvider';
 
 interface FilmRoomTabProps {
     currentUserId: string;
@@ -32,6 +33,7 @@ interface FilmRoomTabProps {
 }
 
 export default function FilmRoomTab({ currentUserId, onShareToChat }: FilmRoomTabProps) {
+    const { tenant } = useTenant();
     const { addToast } = useToast();
     const [sessions, setSessions] = useState<FilmRoomSession[]>([]);
     const [loading, setLoading] = useState(true);
@@ -133,7 +135,7 @@ export default function FilmRoomTab({ currentUserId, onShareToChat }: FilmRoomTa
                                 Film Room
                             </h2>
                             <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-0.5">
-                                Breakdown YouTube Game Film • Synchronize Coaching Notes • Present to Squad
+                                {tenant.shortName} Video Playbook • Synchronize Coaching Notes • Present to Squad
                             </p>
                         </div>
                     </div>
@@ -145,7 +147,7 @@ export default function FilmRoomTab({ currentUserId, onShareToChat }: FilmRoomTa
                             setEditingSession(null);
                             setShowCreateModal(true);
                         }}
-                        className="px-6 py-3 bg-east-light text-black rounded-2xl text-xs font-black uppercase italic hover:bg-white transition-all shadow-[0_0_20px_rgba(40,209,96,0.3)] active:scale-95 flex items-center gap-2"
+                        className="px-6 py-3 bg-east-light text-black rounded-2xl text-xs font-black uppercase italic hover:bg-white transition-all shadow-[0_0_20px_var(--brand-glow)] active:scale-95 flex items-center gap-2"
                     >
                         <Plus size={16} /> New Film Session
                     </button>
@@ -230,7 +232,7 @@ export default function FilmRoomTab({ currentUserId, onShareToChat }: FilmRoomTa
 
                                     {/* PLAY BUTTON OVERLAY */}
                                     <div className="absolute inset-0 flex items-center justify-center">
-                                        <div className="w-12 h-12 rounded-full bg-east-light/90 text-black flex items-center justify-center shadow-[0_0_25px_rgba(40,209,96,0.6)] transform group-hover:scale-110 transition duration-300">
+                                        <div className="w-12 h-12 rounded-full bg-east-light/90 text-black flex items-center justify-center shadow-[0_0_25px_var(--brand-glow)] transform group-hover:scale-110 transition duration-300">
                                             <Play size={20} className="fill-current ml-0.5" />
                                         </div>
                                     </div>
@@ -330,7 +332,7 @@ export default function FilmRoomTab({ currentUserId, onShareToChat }: FilmRoomTa
                             setEditingSession(null);
                             setShowCreateModal(true);
                         }}
-                        className="px-8 py-3 bg-east-light text-black rounded-2xl text-xs font-black uppercase italic hover:bg-white transition-all shadow-[0_0_25px_rgba(40,209,96,0.3)] active:scale-95 flex items-center gap-2 mt-2"
+                        className="px-8 py-3 bg-east-light text-black rounded-2xl text-xs font-black uppercase italic hover:bg-white transition-all shadow-[0_0_25px_var(--brand-glow)] active:scale-95 flex items-center gap-2 mt-2"
                     >
                         <Plus size={16} /> Create First Film Session
                     </button>

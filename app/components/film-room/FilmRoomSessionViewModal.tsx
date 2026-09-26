@@ -209,7 +209,7 @@ export default function FilmRoomSessionViewModal({
                                     disabled={activeTimestampIndex >= timestamps.length - 1}
                                     className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition ${
                                         activeTimestampIndex < timestamps.length - 1
-                                            ? 'bg-east-light text-black hover:bg-white active:scale-95 shadow-[0_0_15px_rgba(40,209,96,0.3)]'
+                                            ? 'bg-east-light text-black hover:bg-white active:scale-95 shadow-[0_0_15px_var(--brand-glow)]'
                                             : 'bg-white/5 text-gray-600 cursor-not-allowed'
                                     }`}
                                 >
@@ -277,7 +277,7 @@ export default function FilmRoomSessionViewModal({
                                         onClick={() => handleSeekToTimestamp(idx)}
                                         className={`group relative p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer ${
                                             isActive
-                                                ? 'bg-east-light/10 border-east-light shadow-[0_0_20px_rgba(40,209,96,0.2)]'
+                                                ? 'bg-east-light/10 border-east-light shadow-[0_0_20px_var(--brand-glow)]'
                                                 : 'bg-white/[0.02] hover:bg-white/[0.06] border-white/5 hover:border-white/15'
                                         }`}
                                     >
