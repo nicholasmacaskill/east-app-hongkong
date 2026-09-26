@@ -1,13 +1,27 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/app/lib/supabase';
-import { Search, Users, MessageSquare, Plus, Video, Layers, Send, X, ChevronLeft, ClipboardCheck } from 'lucide-react';
+import { Search, Users, MessageSquare, Plus, Video, Layers, Send, X, ChevronLeft, ClipboardCheck, Film, Play, Clock } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
 import CreateTeamModal from '@/app/components/modals/CreateTeamModal';
 import AssessmentViewModal from '@/app/components/modals/AssessmentViewModal';
 import CreateAssessmentModal from '@/app/components/modals/CreateAssessmentModal';
+import FilmRoomSessionViewModal from '@/app/components/film-room/FilmRoomSessionViewModal';
+import { FilmRoomSession } from '@/app/types';
 
-export default function PrivateMessenger({ currentUserId, chatWithUserId, shareDrillId, sharePlanId }: { currentUserId: string, chatWithUserId?: string | null, shareDrillId?: string | null, sharePlanId?: string | null }) {
+export default function PrivateMessenger({ 
+    currentUserId, 
+    chatWithUserId, 
+    shareDrillId, 
+    sharePlanId,
+    shareFilmSessionId 
+}: { 
+    currentUserId: string, 
+    chatWithUserId?: string | null, 
+    shareDrillId?: string | null, 
+    sharePlanId?: string | null,
+    shareFilmSessionId?: string | null 
+}) {
     const { addToast } = useToast();
     const [view, setView] = useState<'list' | 'chat'>(chatWithUserId ? 'chat' : 'list');
     const [searchQuery, setSearchQuery] = useState('');
@@ -35,12 +49,18 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
     const videoFileRef = useRef<HTMLInputElement>(null);
 
     const [showContentPicker, setShowContentPicker] = useState(false);
-    const [pickerTab, setPickerTab] = useState<'drills' | 'plans'>('drills');
+    const [pickerTab, setPickerTab] = useState<'drills' | 'plans' | 'film'>('drills');
     const [coachDrills, setCoachDrills] = useState<any[]>([]);
     const [selectedDrill, setSelectedDrill] = useState<any | null>(null);
 
     const [trainingPlans, setTrainingPlans] = useState<any[]>([]);
     const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
+
+    // Film Room Attachments
+    const [filmSessions, setFilmSessions] = useState<FilmRoomSession[]>([]);
+    const [selectedFilmSession, setSelectedFilmSession] = useState<FilmRoomSession | null>(null);
+    const [viewingFilmSession, setViewingFilmSession] = useState<FilmRoomSession | null>(null);
+
     const [viewingAssessmentId, setViewingAssessmentId] = useState<string | null>(null);
     const [showCreateAssessment, setShowCreateAssessment] = useState(false);
 
@@ -80,6 +100,44 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                 const matchedPlan = plans.find(p => p.id === sharePlanId);
                 if (matchedPlan) setSelectedPlan(matchedPlan);
             }
+        }
+
+        // Fetch Film Sessions
+        const { data: films } = await supabase.from('film_room_sessions')
+            .select(`
+                *,
+                coach:profiles!film_room_sessions_coach_id_fkey(first_name, last_name, avatar_url),
+                target_team:teams(id, name),
+                timestamps:film_room_timestamps(*)
+            `)
+            .order('created_at', { ascending: false });
+        if (films) {
+            setFilmSessions(films as FilmRoomSession[]);
+            if (shareFilmSessionId) {
+                const matchedFilm = (films as FilmRoomSession[]).find(f => f.id === shareFilmSessionId);
+                if (matchedFilm) setSelectedFilmSession(matchedFilm);
+            }
+        }
+    };
+
+    const handleOpenAttachedFilmSession = async (filmSessionId: string) => {
+        let matched = filmSessions.find(f => f.id === filmSessionId);
+        if (!matched) {
+            const { data } = await supabase.from('film_room_sessions')
+                .select(`
+                    *,
+                    coach:profiles!film_room_sessions_coach_id_fkey(first_name, last_name, avatar_url),
+                    target_team:teams(id, name),
+                    timestamps:film_room_timestamps(*)
+                `)
+                .eq('id', filmSessionId)
+                .single();
+            if (data) matched = data as FilmRoomSession;
+        }
+        if (matched) {
+            setViewingFilmSession(matched);
+        } else {
+            addToast('Could not load film session', 'error');
         }
     };
 
@@ -248,7 +306,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
     };
 
     const handleSendMessage = async () => {
-        if ((!messageInput.trim() && !selectedVideo && !selectedDrill && !selectedPlan) || !activeChatId) return;
+        if ((!messageInput.trim() && !selectedVideo && !selectedDrill && !selectedPlan && !selectedFilmSession) || !activeChatId) return;
 
         // Prevent regular users (parents and players) from sending DMs to other parents or players
         const isRegularUser = currentUserProfile?.role === 'parent' || currentUserProfile?.role === 'player';
@@ -284,6 +342,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
             video_url: uploadedVideoUrl,
             shared_drill_id: selectedDrill ? selectedDrill.id : null,
             shared_plan_id: selectedPlan ? selectedPlan.id : null,
+            shared_film_session_id: selectedFilmSession ? selectedFilmSession.id : null,
             ...(isTeamChat ? { team_id: activeChatId } : { receiver_id: activeChatId })
         };
 
@@ -291,6 +350,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
         setSelectedVideo(null);
         setSelectedDrill(null);
         setSelectedPlan(null);
+        setSelectedFilmSession(null);
         const { error } = await supabase.from('messages').insert(newMsg);
         if (error) {
             console.error("Message Insert Error:", error);
@@ -403,6 +463,37 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                             </div>
                                         </div>
                                     )}
+                                    {msg.shared_film_session_id && (
+                                        <div
+                                            onClick={() => handleOpenAttachedFilmSession(msg.shared_film_session_id)}
+                                            className="mt-2 p-3 bg-black/70 rounded-2xl flex items-center gap-3 border border-east-light/40 cursor-pointer hover:bg-east-light/10 transition group shadow-lg"
+                                        >
+                                            <div className="w-12 h-12 rounded-xl bg-black flex items-center justify-center border border-white/10 group-hover:border-east-light/50 transition overflow-hidden shrink-0 relative">
+                                                {filmSessions.find(f => f.id === msg.shared_film_session_id)?.video_id ? (
+                                                    <img
+                                                        src={`https://img.youtube.com/vi/${filmSessions.find(f => f.id === msg.shared_film_session_id)?.video_id}/hqdefault.jpg`}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <Film size={20} className="text-east-light" />
+                                                )}
+                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                                    <Play size={14} className="text-white fill-current ml-0.5" />
+                                                </div>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <span className="text-[10px] font-black uppercase text-east-light block leading-none mb-1 flex items-center gap-1">
+                                                    <Film size={10} /> Film Room Session
+                                                </span>
+                                                <span className="text-xs font-bold text-white block truncate">
+                                                    {filmSessions.find(f => f.id === msg.shared_film_session_id)?.title || 'Watch Film Breakdown'}
+                                                </span>
+                                                <span className="text-[9px] text-gray-400 block mt-0.5">
+                                                    Tap to watch with timestamped coaching notes
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         );
@@ -421,6 +512,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                 <div className="flex gap-2 p-1 bg-white/5 rounded-xl">
                                     <button onClick={() => setPickerTab('drills')} className={`flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg transition ${pickerTab === 'drills' ? 'bg-east-light/20 text-east-light' : 'text-gray-500 hover:text-white'}`}>Drills</button>
                                     <button onClick={() => setPickerTab('plans')} className={`flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg transition ${pickerTab === 'plans' ? 'bg-east-light/20 text-east-light' : 'text-gray-500 hover:text-white'}`}>Plans</button>
+                                    <button onClick={() => setPickerTab('film')} className={`flex-1 py-1.5 text-[10px] font-black uppercase rounded-lg transition ${pickerTab === 'film' ? 'bg-east-light/20 text-east-light' : 'text-gray-500 hover:text-white'}`}>Film Room</button>
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto space-y-2 p-3 no-scrollbar">
@@ -449,7 +541,7 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                         {trainingPlans.map(plan => (
                                             <button
                                                 key={plan.id}
-                                                onClick={() => { setSelectedPlan(plan); setShowContentPicker(false); setSelectedDrill(null); }}
+                                                onClick={() => { setSelectedPlan(plan); setShowContentPicker(false); setSelectedDrill(null); setSelectedFilmSession(null); }}
                                                 className="w-full text-left flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition"
                                             >
                                                 <div className="w-10 h-10 rounded-lg bg-east-light/10 flex items-center justify-center border border-east-light/30 shrink-0">
@@ -462,6 +554,32 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                             </button>
                                         ))}
                                         {trainingPlans.length === 0 && <span className="text-[10px] text-gray-500 text-center block py-4">No plans found.</span>}
+                                    </>
+                                )}
+                                {pickerTab === 'film' && (
+                                    <>
+                                        {filmSessions.map(film => (
+                                            <button
+                                                key={film.id}
+                                                onClick={() => { setSelectedFilmSession(film); setShowContentPicker(false); setSelectedDrill(null); setSelectedPlan(null); }}
+                                                className="w-full text-left flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition"
+                                            >
+                                                <div className="w-10 h-10 rounded-lg bg-black overflow-hidden flex items-center justify-center border border-white/10 shrink-0">
+                                                    {film.video_id ? (
+                                                        <img src={`https://img.youtube.com/vi/${film.video_id}/hqdefault.jpg`} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <Film size={16} className="text-east-light" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <span className="text-xs font-bold text-white block truncate">{film.title}</span>
+                                                    <span className="text-[9px] font-black text-east-light uppercase">
+                                                        {film.timestamps?.length || 0} Markers
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        ))}
+                                        {filmSessions.length === 0 && <span className="text-[10px] text-gray-500 text-center block py-4">No film sessions found.</span>}
                                     </>
                                 )}
                             </div>
@@ -499,6 +617,17 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                                         <span className="text-xs font-medium text-white truncate max-w-[200px]">{selectedPlan.title}</span>
                                     </div>
                                     <button onClick={() => setSelectedPlan(null)} className="p-1 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-red-400">
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            )}
+                            {selectedFilmSession && (
+                                <div className="p-3 bg-white/5 rounded-xl border border-east-light/30 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Film size={16} className="text-east-light" />
+                                        <span className="text-xs font-medium text-white truncate max-w-[200px]">{selectedFilmSession.title}</span>
+                                    </div>
+                                    <button onClick={() => setSelectedFilmSession(null)} className="p-1 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-red-400">
                                         <X size={14} />
                                     </button>
                                 </div>
@@ -660,6 +789,13 @@ export default function PrivateMessenger({ currentUserId, chatWithUserId, shareD
                     assessmentId={viewingAssessmentId}
                     isCoach={isCoachUser}
                     onClose={() => setViewingAssessmentId(null)}
+                />
+            )}
+
+            {viewingFilmSession && (
+                <FilmRoomSessionViewModal
+                    session={viewingFilmSession}
+                    onClose={() => setViewingFilmSession(null)}
                 />
             )}
         </div>

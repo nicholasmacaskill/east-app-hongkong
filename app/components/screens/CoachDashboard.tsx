@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { supabase } from '@/app/lib/supabase';
 import posthog from 'posthog-js';
 import { useRouter } from 'next/navigation';
-import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send, Play, MessageSquare, ClipboardList, Plus, ArrowRight, ClipboardCheck } from 'lucide-react';
+import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send, Play, MessageSquare, ClipboardList, Plus, ArrowRight, ClipboardCheck, Film } from 'lucide-react';
 import { TrainingPlan } from '@/app/types';
 import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 import { safeFetch } from '@/app/lib/apiUtils';
@@ -15,6 +15,7 @@ import DrillDetailsModal from '@/app/components/modals/DrillDetailsModal';
 import CommunityScreen from '@/app/components/CommunityScreen';
 import PrivateMessenger from '@/app/components/PrivateMessenger';
 import CreateAssessmentModal, { AssessmentPlayerOption } from '@/app/components/modals/CreateAssessmentModal';
+import FilmRoomTab from '@/app/components/film-room/FilmRoomTab';
 
 interface Attendee {
     id: string;
@@ -39,7 +40,8 @@ interface MasterSession {
 export default function CoachDashboard({ currentUserId, userName, userLastName }: { currentUserId: string, userName: string, userLastName?: string }) {
     const [allSessions, setAllSessions] = useState<MasterSession[]>([]);
     const [filteredSessions, setFilteredSessions] = useState<MasterSession[]>([]);
-    const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view' | 'drill_hub' | 'plans' | 'community'>('master_view');
+    const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view' | 'drill_hub' | 'plans' | 'film_room' | 'community'>('master_view');
+    const [sharedFilmSessionId, setSharedFilmSessionId] = useState<string | null>(null);
     const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
     const [plansLoading, setPlansLoading] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -323,6 +325,12 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                 <ClipboardList size={12} /> Plans
                             </button>
                             <button
+                                onClick={() => setViewMode('film_room')}
+                                className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 rounded-md text-[10px] font-bold uppercase whitespace-nowrap transition-all flex items-center justify-center gap-1.5 ${viewMode === 'film_room' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                <Film size={12} /> Film Room
+                            </button>
+                            <button
                                 onClick={() => setViewMode('community')}
                                 className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 rounded-md text-[10px] font-bold uppercase whitespace-nowrap transition-all flex items-center justify-center gap-1.5 ${viewMode === 'community' ? 'bg-east-light text-black shadow-lg' : 'text-gray-400 hover:text-white'}`}
                             >
@@ -345,10 +353,15 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
             </div>
 
             {/* QUICK ACTIONS BAR */}
-            <div className="bg-[#121212] px-6 py-2 border-b border-white/5 flex justify-between items-center overflow-x-auto no-scrollbar">
-                <button onClick={() => setViewMode('drill_hub')} data-testid="manage-drill-hub-btn" className="text-[9px] font-black uppercase text-black hover:text-black transition-colors flex items-center gap-1 bg-east-light hover:bg-white px-3 py-1.5 rounded-full border border-east-light/50 shadow-[0_0_10px_rgba(40,209,96,0.2)] whitespace-nowrap">
-                    <Layers size={12} /> Manage Drill Hub
-                </button>
+            <div className="bg-[#121212] px-6 py-2 border-b border-white/5 flex justify-between items-center overflow-x-auto no-scrollbar gap-2">
+                <div className="flex items-center gap-2">
+                    <button onClick={() => setViewMode('drill_hub')} data-testid="manage-drill-hub-btn" className="text-[9px] font-black uppercase text-black hover:text-black transition-colors flex items-center gap-1 bg-east-light hover:bg-white px-3 py-1.5 rounded-full border border-east-light/50 shadow-[0_0_10px_rgba(40,209,96,0.2)] whitespace-nowrap">
+                        <Layers size={12} /> Manage Drill Hub
+                    </button>
+                    <button onClick={() => setViewMode('film_room')} className="text-[9px] font-black uppercase text-white hover:text-black transition-colors flex items-center gap-1 bg-white/10 hover:bg-east-light px-3 py-1.5 rounded-full border border-white/10 hover:border-east-light whitespace-nowrap">
+                        <Film size={12} /> Film Room
+                    </button>
+                </div>
                 <div className="flex items-center gap-2 ml-auto">
                     <button onClick={expandAll} className="text-[9px] font-black uppercase text-gray-500 hover:text-east-light transition-colors flex items-center gap-1">
                         <ChevronDown size={12} /> Expand All
@@ -365,7 +378,17 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
 
                 {viewMode === 'community' ? (
                     <div className="h-[80vh] -mx-6 -mt-6 rounded-3xl overflow-hidden border border-white/10 bg-black">
-                        <PrivateMessenger currentUserId={currentUserId} />
+                        <PrivateMessenger currentUserId={currentUserId} shareFilmSessionId={sharedFilmSessionId} />
+                    </div>
+                ) : viewMode === 'film_room' ? (
+                    <div className="animate-fadeIn">
+                        <FilmRoomTab 
+                            currentUserId={currentUserId}
+                            onShareToChat={(session) => {
+                                setSharedFilmSessionId(session.id);
+                                setViewMode('community');
+                            }}
+                        />
                     </div>
                 ) : viewMode === 'plans' ? (
                     <div className="animate-fadeIn space-y-6">

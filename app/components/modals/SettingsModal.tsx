@@ -5,9 +5,10 @@ import { supabase } from '@/app/lib/supabase';
 import {
     X, ChevronLeft, ChevronRight, Edit2, ToggleLeft, ToggleRight,
     User as UserIcon, Bell, CreditCard, FileText, HelpCircle, Shield, LogOut, UserCog,
-    ChevronDown, Save, Camera, Target, ClipboardCheck
+    ChevronDown, Save, Camera, Target, ClipboardCheck, Film
 } from 'lucide-react';
 import PlayerAssessmentsScreen from '@/app/components/modals/PlayerAssessmentsScreen';
+import PlayerFilmRoomScreen from '@/app/components/modals/PlayerFilmRoomScreen';
 import { useToast } from '@/app/components/ui/Toast';
 import { compressImage } from '@/app/lib/image-utils';
 
@@ -277,7 +278,7 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
     onShowHistory: () => void
 }) {
     const router = useRouter();
-    const [view, setView] = useState<'menu' | 'edit' | 'assessments'>('menu');
+    const [view, setView] = useState<'menu' | 'edit' | 'assessments' | 'film_room'>('menu');
     const { addToast } = useToast();
     const isPlayer = profileData.role === 'player';
 
@@ -287,6 +288,14 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
         return (
             <SettingsContainer>
                 <PlayerAssessmentsScreen onBack={() => setView('menu')} />
+            </SettingsContainer>
+        );
+    }
+
+    if (view === 'film_room') {
+        return (
+            <SettingsContainer>
+                <PlayerFilmRoomScreen onBack={() => setView('menu')} />
             </SettingsContainer>
         );
     }
@@ -323,6 +332,12 @@ export default function SettingsModal({ onClose, onLogout, profileData, setProfi
                         testId="menu-item-assessments"
                     />
                 )}
+                <SettingsMenuItem
+                    icon={Film}
+                    label="Film Room"
+                    onClick={() => setView('film_room')}
+                    testId="menu-item-film-room"
+                />
                 <SettingsMenuItem icon={Target} label="Drill Hub" onClick={() => { onClose(); router.push('/drill-hub'); }} />
                 <div className="mt-12 px-2">
                     <button onClick={onLogout} className="flex items-center gap-4 w-full py-4 text-red-500 hover:bg-red-500/10 transition-colors rounded-lg px-4">

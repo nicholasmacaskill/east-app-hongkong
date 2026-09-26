@@ -146,3 +146,65 @@ export interface TrainingPlanDrill {
 }
 
 export type ScheduleItem = Session | Availability;
+
+// --- Film Room (Video Sessions) ---
+export interface FilmRoomTimestamp {
+    id: string;
+    session_id: string;
+    timestamp_seconds: number;
+    timestamp_label: string;
+    title: string;
+    notes?: string;
+    sort_order: number;
+    created_at?: string;
+}
+
+export interface FilmRoomSession {
+    id: string;
+    coach_id: string;
+    title: string;
+    description?: string;
+    youtube_url: string;
+    video_id: string;
+    target_type: 'all' | 'team' | 'player';
+    target_team_id?: string | null;
+    target_player_id?: string | null;
+    tags?: string[];
+    created_at?: string;
+    updated_at?: string;
+    coach?: {
+        first_name: string;
+        last_name: string;
+        avatar_url?: string;
+    };
+    target_team?: {
+        id: string;
+        name: string;
+    };
+    target_player?: {
+        id: string;
+        first_name: string;
+        last_name: string;
+        avatar_url?: string;
+    };
+    timestamps?: FilmRoomTimestamp[];
+}
+
+export interface CreateFilmRoomSessionInput {
+    id?: string;
+    title: string;
+    description?: string;
+    youtube_url: string;
+    target_type: 'all' | 'team' | 'player';
+    target_team_id?: string | null;
+    target_player_id?: string | null;
+    tags?: string[];
+    timestamps: {
+        id?: string;
+        timestamp_seconds: number;
+        timestamp_label: string;
+        title: string;
+        notes?: string;
+        sort_order?: number;
+    }[];
+}
