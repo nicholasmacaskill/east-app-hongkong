@@ -194,6 +194,62 @@ async function runDemoRecording() {
     await smoothScroll(page, -350, 8);
     await page.waitForTimeout(1000);
 
+    // -------------------------------------------------------------
+    // SCENE 1.1: COACH TACTICAL FILM ROOM & INTERACTIVE THEATER
+    // -------------------------------------------------------------
+    console.log('Navigating to Film Room Tab...');
+    const filmRoomTab = page.locator('button:has-text("Film Room")').first();
+    await filmRoomTab.waitFor({ state: 'visible', timeout: 15000 });
+    await filmRoomTab.click();
+    await page.waitForTimeout(2000);
+
+    await setCaption(page, {
+      badge: 'FILM ROOM',
+      title: 'TACTICAL VIDEO PLAYBOOK & CUES',
+      text: 'Replaces scattered video links with an integrated hockey video theater. Coaches curate game clips with synchronized tactical cues for the entire Jr. Ducks roster.'
+    }, 5500);
+
+    // Open signature Anaheim Jr. Ducks breakdown session
+    console.log('Opening Anaheim Jr. Ducks tactical film session...');
+    const sessionCard = page.locator('text=Anaheim Jr. Ducks').first();
+    await sessionCard.waitFor({ state: 'visible', timeout: 10000 });
+    await sessionCard.click();
+    await page.waitForTimeout(2500);
+
+    await setCaption(page, {
+      badge: 'SYNCHRONIZED THEATER',
+      title: 'INSTANT CUE SEEK & ON-ICE NOTES',
+      text: 'Clicking any marker jumps the embedded YouTube player directly to the exact play second with zero scrubbing—reinforcing defensive gap control and forechecking assignments.'
+    }, 5500);
+
+    // Tap cue 1: 00:15
+    const cue1 = page.locator('text=F1 Angling & Neutral Zone Lock').first();
+    if (await cue1.isVisible()) {
+      await cue1.click();
+      await page.waitForTimeout(2500);
+    }
+
+    // Tap Next Marker button
+    const nextMarkerBtn = page.locator('button:has-text("Next Marker")').first();
+    if (await nextMarkerBtn.isVisible()) {
+      await nextMarkerBtn.click();
+      await page.waitForTimeout(2500);
+    }
+
+    // Hover Direct YouTube Link
+    const ytLink = page.locator('a:has-text("Watch in YouTube")').first();
+    if (await ytLink.isVisible()) {
+      await ytLink.hover();
+      await page.waitForTimeout(1500);
+    }
+
+    // Close theater modal
+    const closeBtn = page.locator('button[title="Close"]').first();
+    if (await closeBtn.isVisible()) {
+      await closeBtn.click();
+      await page.waitForTimeout(1500);
+    }
+
     // Navigate to Drill Hub
     console.log('Navigating to Drill Hub...');
     await page.goto(`${BASE_URL}/drill-hub`, { waitUntil: 'networkidle', timeout: 30000 });
@@ -338,6 +394,34 @@ async function runDemoRecording() {
 
     await smoothScroll(page, 200, 5);
     await page.waitForTimeout(1500);
+
+    // Open Athlete Film Room from Settings
+    console.log('Opening Athlete Film Room review...');
+    try {
+      const settingsBtn = page.locator('[data-testid="settings-button"]').first();
+      if (await settingsBtn.isVisible()) {
+        await settingsBtn.click();
+        await page.waitForTimeout(1500);
+
+        const athleteFilmItem = page.locator('[data-testid="menu-item-film-room"], button:has-text("Film Room")').first();
+        if (await athleteFilmItem.isVisible()) {
+          await athleteFilmItem.click();
+          await page.waitForTimeout(2000);
+
+          await setCaption(page, {
+            badge: 'ATHLETE FILM ACCESS',
+            title: 'ON-DEMAND TACTICAL REVIEWS',
+            text: 'Athletes study assigned game footage and tactical notes from any mobile device, arriving at practice fully prepared.'
+          }, 5000);
+
+          // Close modal
+          await page.keyboard.press('Escape');
+          await page.waitForTimeout(1200);
+        }
+      }
+    } catch (e) {
+      console.log('Athlete film room step skipped/handled:', e);
+    }
 
     await clearAuth(page);
 
