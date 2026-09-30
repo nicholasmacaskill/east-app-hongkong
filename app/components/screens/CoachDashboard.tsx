@@ -16,6 +16,7 @@ import CommunityScreen from '@/app/components/CommunityScreen';
 import PrivateMessenger from '@/app/components/PrivateMessenger';
 import CreateAssessmentModal, { AssessmentPlayerOption } from '@/app/components/modals/CreateAssessmentModal';
 import FilmRoomTab from '@/app/components/film-room/FilmRoomTab';
+import { useTenant } from '@/app/providers/TenantProvider';
 
 interface Attendee {
     id: string;
@@ -38,6 +39,7 @@ interface MasterSession {
 }
 
 export default function CoachDashboard({ currentUserId, userName, userLastName }: { currentUserId: string, userName: string, userLastName?: string }) {
+    const { tenant } = useTenant();
     const [allSessions, setAllSessions] = useState<MasterSession[]>([]);
     const [filteredSessions, setFilteredSessions] = useState<MasterSession[]>([]);
     const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view' | 'drill_hub' | 'plans' | 'film_room' | 'community'>('master_view');
@@ -269,7 +271,9 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
             <div className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/10 px-6 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div className="flex justify-between items-center w-full md:w-auto">
                     <div>
-                        <h1 className="text-xl font-black italic uppercase tracking-tighter text-white">EAST <span className="text-east-light">COACH</span></h1>
+                        <h1 className="text-xl font-black italic uppercase tracking-tighter text-white">
+                            {tenant.slug === 'jrducks' ? 'JRDUCKS' : tenant.shortName.toUpperCase()} <span className="text-east-light">COACH</span>
+                        </h1>
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Dashboard • {userName}</p>
                     </div>
                     {/* Mobile Only Logout - accessible without menu */}

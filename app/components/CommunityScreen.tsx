@@ -101,7 +101,8 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
     const chatWithParam = searchParams.get('chatWith');
     const shareDrillIdParam = searchParams.get('shareDrillId');
     const sharePlanIdParam = searchParams.get('sharePlanId');
-    const [viewMode, setViewMode] = useState<'feed' | 'messenger-list' | 'chat-detail'>(chatWithParam || shareDrillIdParam || sharePlanIdParam ? 'chat-detail' : 'messenger-list');
+    const shareFilmSessionIdParam = searchParams.get('shareFilmSessionId');
+    const [viewMode, setViewMode] = useState<'feed' | 'messenger-list' | 'chat-detail'>(chatWithParam || shareDrillIdParam || sharePlanIdParam || shareFilmSessionIdParam ? 'chat-detail' : 'messenger-list');
 
     const [posts, setPosts] = useState<Post[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -625,7 +626,13 @@ export default function CommunityScreen({ currentUserId }: { currentUserId: stri
 
     return (
         <div className="h-[100dvh] pb-24 bg-black flex flex-col relative">
-            <PrivateMessenger currentUserId={currentUserId} chatWithUserId={chatWithParam} shareDrillId={shareDrillIdParam} sharePlanId={sharePlanIdParam} />
+            <PrivateMessenger 
+                currentUserId={currentUserId} 
+                chatWithUserId={chatWithParam} 
+                shareDrillId={shareDrillIdParam} 
+                sharePlanId={sharePlanIdParam} 
+                shareFilmSessionId={shareFilmSessionIdParam}
+            />
         </div>
     );
 }

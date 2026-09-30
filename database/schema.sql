@@ -942,3 +942,88 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 
+
+-- =========================================================================
+-- FILM ROOM SESSIONS & TIMESTAMPS
+-- =========================================================================
+
+CREATE TABLE IF NOT EXISTS public.film_room_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    coach_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    description TEXT,
+    youtube_url TEXT NOT NULL,
+    video_id TEXT NOT NULL,
+    target_type TEXT NOT NULL DEFAULT 'all' CHECK (target_type IN ('all', 'team', 'player')),
+    target_team_id UUID REFERENCES public.teams(id) ON DELETE SET NULL,
+    target_player_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.film_room_timestamps (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID NOT NULL REFERENCES public.film_room_sessions(id) ON DELETE CASCADE,
+    timestamp_seconds INTEGER NOT NULL DEFAULT 0,
+    timestamp_label TEXT NOT NULL DEFAULT '00:00',
+    title TEXT NOT NULL,
+    notes TEXT DEFAULT '',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_film_room_sessions_coach ON public.film_room_sessions(coach_id);
+CREATE INDEX IF NOT EXISTS idx_film_room_sessions_target_team ON public.film_room_sessions(target_team_id);
+CREATE INDEX IF NOT EXISTS idx_film_room_sessions_target_player ON public.film_room_sessions(target_player_id);
+CREATE INDEX IF NOT EXISTS idx_film_room_timestamps_session ON public.film_room_timestamps(session_id);
+
+ALTER TABLE public.film_room_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.film_room_timestamps ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Film sessions readable by target audience" ON public.film_room_sessions
+    FOR SELECT TO authenticated
+    USING (
+        auth.uid() = coach_id
+        OR target_type = 'all'
+        OR target_player_id = auth.uid()
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'sys-admin')
+        )
+        OR EXISTS (
+            SELECT 1 FROM public.team_members tm
+            WHERE tm.team_id = film_room_sessions.target_team_id AND tm.user_id = auth.uid()
+        )
+        OR EXISTS (
+            SELECT 1 FROM public.profiles player
+            WHERE player.id = film_room_sessions.target_player_id AND player.parent_id = auth.uid()
+        )
+        OR EXISTS (
+            SELECT 1 FROM public.messages m
+            WHERE m.shared_film_session_id = film_room_sessions.id
+              AND (
+                  m.receiver_id = auth.uid()
+                  OR m.sender_id = auth.uid()
+                  OR (m.team_id IS NOT NULL AND EXISTS (
+                      SELECT 1 FROM public.team_members tm WHERE tm.team_id = m.team_id AND tm.user_id = auth.uid()
+                  ))
+              )
+        )
+    );
+
+CREATE POLICY "Coaches and admins can manage film sessions" ON public.film_room_sessions
+    FOR ALL TO authenticated
+    USING (
+        auth.uid() = coach_id
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'sys-admin')
+        )
+    )
+    WITH CHECK (
+        auth.uid() = coach_id
+        OR EXISTS (
+            SELECT 1 FROM public.profiles p
+            WHERE p.id = auth.uid() AND p.role IN ('admin', 'sys-admin')
+        )
+    );

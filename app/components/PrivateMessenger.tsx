@@ -1,9 +1,9 @@
-'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/app/lib/supabase';
-import { Search, Users, MessageSquare, Plus, Video, Layers, Send, X, ChevronLeft, ClipboardCheck, Film, Play, Clock } from 'lucide-react';
+import { safeFetch } from '@/app/lib/apiUtils';
+import { Search, Users, MessageSquare, Plus, Video, Layers, Send, X, ChevronLeft, ClipboardCheck, Film, Play, Clock, Edit2, Trash2 } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
-import CreateTeamModal from '@/app/components/modals/CreateTeamModal';
+import CreateTeamModal, { TeamToEdit } from '@/app/components/modals/CreateTeamModal';
 import AssessmentViewModal from '@/app/components/modals/AssessmentViewModal';
 import CreateAssessmentModal from '@/app/components/modals/CreateAssessmentModal';
 import FilmRoomSessionViewModal from '@/app/components/film-room/FilmRoomSessionViewModal';
@@ -26,6 +26,7 @@ export default function PrivateMessenger({
     const [view, setView] = useState<'list' | 'chat'>(chatWithUserId ? 'chat' : 'list');
     const [searchQuery, setSearchQuery] = useState('');
     const [showCreateTeam, setShowCreateTeam] = useState(false);
+    const [teamToEdit, setTeamToEdit] = useState<TeamToEdit | null>(null);
 
     // Data states
     const [teams, setTeams] = useState<any[]>([]);
@@ -115,24 +116,65 @@ export default function PrivateMessenger({
             setFilmSessions(films as FilmRoomSession[]);
             if (shareFilmSessionId) {
                 const matchedFilm = (films as FilmRoomSession[]).find(f => f.id === shareFilmSessionId);
-                if (matchedFilm) setSelectedFilmSession(matchedFilm);
+                if (matchedFilm) {
+                    setSelectedFilmSession(matchedFilm);
+                    // Automatically open the targeted chat if assigned
+                    if (matchedFilm.target_type === 'team' && matchedFilm.target_team_id) {
+                        setActiveChatId(matchedFilm.target_team_id);
+                        setIsTeamChat(true);
+                        setView('chat');
+                        fetchMessages(matchedFilm.target_team_id, true);
+                        addToast(`Film session ready in "${matchedFilm.target_team?.name || 'team'}" chat`, 'info');
+                    } else if (matchedFilm.target_type === 'player' && matchedFilm.target_player_id) {
+                        setActiveChatId(matchedFilm.target_player_id);
+                        setIsTeamChat(false);
+                        setView('chat');
+                        fetchMessages(matchedFilm.target_player_id, false);
+                        addToast(`Film session ready in athlete chat`, 'info');
+                    } else {
+                        setView('list');
+                        addToast(`"${matchedFilm.title}" ready to share. Choose an athlete or team below.`, 'info');
+                    }
+                }
             }
         }
     };
 
+    useEffect(() => {
+        if (shareFilmSessionId && filmSessions.length > 0) {
+            const matchedFilm = filmSessions.find(f => f.id === shareFilmSessionId);
+            if (matchedFilm) {
+                setSelectedFilmSession(matchedFilm);
+                if (matchedFilm.target_type === 'team' && matchedFilm.target_team_id) {
+                    setActiveChatId(matchedFilm.target_team_id);
+                    setIsTeamChat(true);
+                    setView('chat');
+                    fetchMessages(matchedFilm.target_team_id, true);
+                } else if (matchedFilm.target_type === 'player' && matchedFilm.target_player_id) {
+                    setActiveChatId(matchedFilm.target_player_id);
+                    setIsTeamChat(false);
+                    setView('chat');
+                    fetchMessages(matchedFilm.target_player_id, false);
+                }
+            }
+        }
+    }, [shareFilmSessionId, filmSessions]);
+
     const handleOpenAttachedFilmSession = async (filmSessionId: string) => {
         let matched = filmSessions.find(f => f.id === filmSessionId);
         if (!matched) {
-            const { data } = await supabase.from('film_room_sessions')
-                .select(`
-                    *,
-                    coach:profiles!film_room_sessions_coach_id_fkey(first_name, last_name, avatar_url),
-                    target_team:teams(id, name),
-                    timestamps:film_room_timestamps(*)
-                `)
-                .eq('id', filmSessionId)
-                .single();
-            if (data) matched = data as FilmRoomSession;
+            try {
+                const { data: { session: authSession } } = await supabase.auth.getSession();
+                const token = authSession?.access_token;
+                const res = await safeFetch(`/api/film-room?id=${filmSessionId}`, {
+                    headers: { Authorization: token ? `Bearer ${token}` : '' }
+                });
+                if (res.success && res.data) {
+                    matched = res.data as FilmRoomSession;
+                }
+            } catch (e) {
+                console.error('Error fetching film session via API:', e);
+            }
         }
         if (matched) {
             setViewingFilmSession(matched);
@@ -176,11 +218,14 @@ export default function PrivateMessenger({
             let allowedProfiles = allProfiles;
             console.log(`✅ Loaded ${allProfiles.length} profiles for DM list`);
 
-            // Regular people (parents and players/athletes) can only message coaches (and admins/staff for support),
-            // and cannot directly message other parents or players/athletes.
+            // Regular users (parents and players/athletes) can ONLY message coaches.
+            // System administrators and regular users are excluded so only coaches appear.
             const isRegularUser = myProfile?.role === 'parent' || myProfile?.role === 'player';
             if (isRegularUser) {
-                allowedProfiles = allProfiles.filter(p => p.role === 'coach' || p.role === 'admin' || p.role === 'sys-admin');
+                allowedProfiles = allProfiles.filter(p => p.role === 'coach');
+            } else if (myProfile?.role !== 'sys-admin') {
+                // Non-sysadmins do not see sys-admin in messaging list
+                allowedProfiles = allProfiles.filter(p => p.role !== 'sys-admin');
             }
 
             setProfiles(allowedProfiles);
@@ -189,8 +234,9 @@ export default function PrivateMessenger({
                 // Check if the target user exists AND is allowed
                 const targetUser = allProfiles.find(p => p.id === chatWithUserId);
                 if (targetUser) {
-                    if (isRegularUser && targetUser.role !== 'coach' && targetUser.role !== 'admin' && targetUser.role !== 'sys-admin') {
-                        console.warn('❌ Regular users can only message coaches or teams');
+                    if (isRegularUser && targetUser.role !== 'coach') {
+                        console.warn('❌ Regular users can only message coaches');
+                        addToast('You can only message coaches', 'error');
                         setView('list');
                     } else {
                         setActiveChatId(chatWithUserId);
@@ -281,13 +327,13 @@ export default function PrivateMessenger({
     };
 
     const handleOpenChat = (id: string, isTeam: boolean) => {
-        // Prevent regular users (parents and players) from opening DMs with other parents or players
+        // Prevent regular users (parents and players) from opening DMs with anyone other than coaches
         const isRegularUser = currentUserProfile?.role === 'parent' || currentUserProfile?.role === 'player';
         if (!isTeam && isRegularUser) {
             const targetProfile = profiles.find(p => p.id === id);
-            if (targetProfile && targetProfile.role !== 'coach' && targetProfile.role !== 'admin' && targetProfile.role !== 'sys-admin') {
-                console.warn('❌ Blocked: Regular users can only message coaches or teams');
-                addToast('You can only message coaches or teams', 'error');
+            if (targetProfile && targetProfile.role !== 'coach') {
+                console.warn('❌ Blocked: Regular users can only message coaches');
+                addToast('You can only message coaches', 'error');
                 return;
             }
         }
@@ -308,13 +354,13 @@ export default function PrivateMessenger({
     const handleSendMessage = async () => {
         if ((!messageInput.trim() && !selectedVideo && !selectedDrill && !selectedPlan && !selectedFilmSession) || !activeChatId) return;
 
-        // Prevent regular users (parents and players) from sending DMs to other parents or players
+        // Prevent regular users (parents and players) from sending DMs to anyone other than coaches
         const isRegularUser = currentUserProfile?.role === 'parent' || currentUserProfile?.role === 'player';
         if (!isTeamChat && isRegularUser) {
             const targetProfile = profiles.find(p => p.id === activeChatId);
-            if (targetProfile && targetProfile.role !== 'coach' && targetProfile.role !== 'admin' && targetProfile.role !== 'sys-admin') {
-                console.warn('❌ Blocked: Regular users can only message coaches or teams');
-                addToast('You can only message coaches or teams', 'error');
+            if (targetProfile && targetProfile.role !== 'coach') {
+                console.warn('❌ Blocked: Regular users can only message coaches');
+                addToast('You can only message coaches', 'error');
                 setIsUploading(false);
                 return;
             }
@@ -361,6 +407,28 @@ export default function PrivateMessenger({
         setIsUploading(false);
     };
 
+    const handleDeleteTeam = async (teamId: string, teamName: string) => {
+        if (!window.confirm(`Are you sure you want to delete team "${teamName}"? This will permanently delete the team, its members, and its messages.`)) {
+            return;
+        }
+
+        try {
+            const { error } = await supabase.from('teams').delete().eq('id', teamId);
+            if (error) throw error;
+
+            addToast(`Team "${teamName}" deleted`, 'success');
+            if (activeChatId === teamId) {
+                setActiveChatId(null);
+                setIsTeamChat(false);
+                setView('list');
+            }
+            fetchTeamsAndProfiles();
+        } catch (err: any) {
+            console.error('Error deleting team:', err);
+            addToast(err.message || 'Failed to delete team', 'error');
+        }
+    };
+
     const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setSelectedVideo(e.target.files[0]);
@@ -399,6 +467,39 @@ export default function PrivateMessenger({
                             <span className="text-[10px] font-bold text-gray-500 uppercase">{isTeamChat ? 'Team Chat' : 'Direct Message'}</span>
                         </div>
                     </div>
+                    {isTeamChat && isCoachUser && (
+                        <div className="flex items-center gap-2">
+                            {(() => {
+                                const currentTeam = teams.find(t => t.id === activeChatId);
+                                if (!currentTeam) return null;
+                                return (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setTeamToEdit(currentTeam);
+                                                setShowCreateTeam(true);
+                                            }}
+                                            className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition flex items-center gap-1.5 text-xs font-bold border border-white/5"
+                                            title="Edit Team"
+                                        >
+                                            <Edit2 size={13} />
+                                            <span className="text-[10px] uppercase font-black">Edit</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteTeam(currentTeam.id, currentTeam.name)}
+                                            className="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition flex items-center gap-1.5 text-xs font-bold border border-red-500/20"
+                                            title="Delete Team"
+                                        >
+                                            <Trash2 size={13} />
+                                            <span className="text-[10px] uppercase font-black">Delete</span>
+                                        </button>
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
@@ -586,7 +687,7 @@ export default function PrivateMessenger({
                         </div>
                     )}
 
-                    {(selectedVideo || selectedDrill || selectedPlan) && (
+                    {(selectedVideo || selectedDrill || selectedPlan || selectedFilmSession) && (
                         <div className="mb-3 space-y-2">
                             {selectedVideo && (
                                 <div className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
@@ -635,7 +736,7 @@ export default function PrivateMessenger({
                         </div>
                     )}
                     <div className="flex gap-2 items-center">
-                        <button onClick={() => setShowContentPicker(!showContentPicker)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl transition shrink-0 ${selectedDrill || selectedPlan ? 'bg-east-light/20 text-east-light border border-east-light/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`} title="Attach Content">
+                        <button onClick={() => setShowContentPicker(!showContentPicker)} className={`p-3 md:p-4 rounded-xl md:rounded-2xl transition shrink-0 ${selectedDrill || selectedPlan || selectedFilmSession ? 'bg-east-light/20 text-east-light border border-east-light/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`} title="Attach Content">
                             <Plus size={18} className="md:w-5 md:h-5" />
                         </button>
                         {canCreateAssessment && (
@@ -659,7 +760,7 @@ export default function PrivateMessenger({
                             placeholder="Type a message..."
                             className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl md:rounded-2xl px-4 md:px-6 py-3 outline-none focus:border-east-light/50 transition text-sm"
                         />
-                        <button disabled={isUploading || (!messageInput.trim() && !selectedVideo && !selectedDrill && !selectedPlan)} onClick={handleSendMessage} className="p-3 md:p-4 bg-east-light text-black rounded-xl md:rounded-2xl shrink-0 hover:bg-white transition hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button disabled={isUploading || (!messageInput.trim() && !selectedVideo && !selectedDrill && !selectedPlan && !selectedFilmSession)} onClick={handleSendMessage} className="p-3 md:p-4 bg-east-light text-black rounded-xl md:rounded-2xl shrink-0 hover:bg-white transition hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                             {isUploading ? <span className="text-[10px] font-black uppercase">Wait</span> : <Send size={18} className="md:w-5 md:h-5" />}
                         </button>
                     </div>
@@ -724,17 +825,51 @@ export default function PrivateMessenger({
                             {filteredTeams.map(team => {
                                 const latestMsg = lastMessages[team.id];
                                 const isUnread = latestMsg && latestMsg.sender_id !== currentUserId && readReceipts[team.id] !== latestMsg.id.toString();
+                                const canManageThisTeam = isCoachUser && (team.coach_id === currentUserId || currentUserProfile?.role === 'sys-admin' || currentUserProfile?.role === 'admin' || currentUserProfile?.role === 'coach');
+
                                 return (
-                                    <button key={team.id} onClick={() => handleOpenChat(team.id, true)} className="w-full p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-4 hover:border-white/20 transition group text-left relative">
-                                        <div className="w-12 h-12 rounded-xl bg-east-light/20 flex items-center justify-center border border-east-light/30 group-hover:scale-110 transition-transform">
-                                            <Users size={20} className="text-east-light" />
+                                    <div key={team.id} className="group relative w-full p-4 bg-white/5 border border-white/5 hover:border-white/20 rounded-2xl flex items-center justify-between gap-4 transition">
+                                        <button onClick={() => handleOpenChat(team.id, true)} className="flex-1 flex items-center gap-4 text-left min-w-0">
+                                            <div className="w-12 h-12 rounded-xl bg-east-light/20 flex items-center justify-center border border-east-light/30 group-hover:scale-105 transition-transform shrink-0">
+                                                <Users size={20} className="text-east-light" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-black italic uppercase truncate text-white">{team.name}</h4>
+                                                <p className="text-[10px] text-gray-500 font-bold uppercase truncate">{latestMsg ? latestMsg.content || 'Attachment' : 'Team Chat'}</p>
+                                            </div>
+                                        </button>
+                                        
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            {canManageThisTeam && (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setTeamToEdit(team);
+                                                            setShowCreateTeam(true);
+                                                        }}
+                                                        className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-gray-400 hover:text-white transition"
+                                                        title="Edit Team"
+                                                    >
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteTeam(team.id, team.name);
+                                                        }}
+                                                        className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition"
+                                                        title="Delete Team"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </>
+                                            )}
+                                            {isUnread && <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)] ml-1" />}
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-black italic uppercase truncate">{team.name}</h4>
-                                            <p className="text-[10px] text-gray-500 font-bold uppercase truncate">{latestMsg ? latestMsg.content || 'Attachment' : 'Team Chat'}</p>
-                                        </div>
-                                        {isUnread && <div className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]" />}
-                                    </button>
+                                    </div>
                                 );
                             })}
                         </div>
@@ -776,9 +911,14 @@ export default function PrivateMessenger({
             {showCreateTeam && (
                 <CreateTeamModal
                     coachId={currentUserId}
-                    onClose={() => setShowCreateTeam(false)}
+                    teamToEdit={teamToEdit}
+                    onClose={() => {
+                        setShowCreateTeam(false);
+                        setTeamToEdit(null);
+                    }}
                     onSuccess={() => {
                         setShowCreateTeam(false);
+                        setTeamToEdit(null);
                         fetchTeamsAndProfiles();
                     }}
                 />

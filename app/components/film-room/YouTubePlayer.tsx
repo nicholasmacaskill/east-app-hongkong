@@ -122,6 +122,17 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
                         if (event.data === 1) {
                             startTimeTracking();
                         } else {
+                            if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+                                try {
+                                    const t = playerRef.current.getCurrentTime();
+                                    if (typeof t === 'number' && !isNaN(t)) {
+                                        setCurrentTime(t);
+                                        if (onTimeUpdate) onTimeUpdate(t);
+                                    }
+                                } catch (e) {
+                                    // ignore
+                                }
+                            }
                             stopTimeTracking();
                         }
                     },
@@ -156,11 +167,17 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
         stopTimeTracking();
         timeTrackerInterval.current = setInterval(() => {
             if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-                const time = playerRef.current.getCurrentTime();
-                setCurrentTime(time);
-                if (onTimeUpdate) onTimeUpdate(time);
+                try {
+                    const time = playerRef.current.getCurrentTime();
+                    if (typeof time === 'number' && !isNaN(time)) {
+                        setCurrentTime(time);
+                        if (onTimeUpdate) onTimeUpdate(time);
+                    }
+                } catch (e) {
+                    // ignore interval error
+                }
             }
-        }, 500);
+        }, 300);
     };
 
     const stopTimeTracking = () => {
@@ -175,8 +192,8 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
         seekTo: (seconds: number) => {
             setCurrentTime(seconds);
             if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
-                playerRef.current.seekTo(seconds, true);
                 try {
+                    playerRef.current.seekTo(seconds, true);
                     playerRef.current.playVideo();
                 } catch (e) {
                     // ignore
@@ -190,19 +207,34 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
             }
         },
         getCurrentTime: () => {
-            if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-                return playerRef.current.getCurrentTime();
+            try {
+                if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+                    const t = playerRef.current.getCurrentTime();
+                    if (typeof t === 'number' && !isNaN(t)) {
+                        return t;
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to get current time from YT player:', e);
             }
-            return currentTime;
+            return currentTime || 0;
         },
         playVideo: () => {
             if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
-                playerRef.current.playVideo();
+                try {
+                    playerRef.current.playVideo();
+                } catch (e) {
+                    // ignore
+                }
             }
         },
         pauseVideo: () => {
             if (playerRef.current && typeof playerRef.current.pauseVideo === 'function') {
-                playerRef.current.pauseVideo();
+                try {
+                    playerRef.current.pauseVideo();
+                } catch (e) {
+                    // ignore
+                }
             }
         }
     }), [embedFallback, videoId, currentTime]);

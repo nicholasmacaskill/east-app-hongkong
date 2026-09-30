@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Client Chat Feedback & Asset Slider</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #09090b;
+      --card: #141417;
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #28d160;
+      --accent-glow: rgba(40, 209, 96, 0.35);
+      --text: #f4f4f5;
+      --text-muted: #71717a;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Montserrat', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+    header {
+      background: rgba(18, 18, 22, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand-title {
+      font-size: 1.1rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .brand-title span {
+      color: var(--accent);
+    }
+    .counter-badge {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .slider-container {
+      position: relative;
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 1.5rem;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+    }
+    .slide-viewer {
+      position: relative;
+      width: 100%;
+      height: 68vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      overflow: hidden;
+    }
+    .slide-media {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
+      cursor: zoom-in;
+    }
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3.5rem;
+      height: 3.5rem;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+    .nav-btn:hover {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+      transform: translateY(-50%) scale(1.1);
+      box-shadow: 0 0 25px var(--accent-glow);
+    }
+    .nav-btn:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+    .nav-prev { left: 1.25rem; }
+    .nav-next { right: 1.25rem; }
+    .nav-btn svg { width: 1.5rem; height: 1.5rem; stroke-width: 2.5; }
+
+    .slide-caption-bar {
+      padding: 1.25rem 1.75rem;
+      border-top: 1px solid var(--border);
+      background: #111114;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+    .caption-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .caption-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: -0.2px;
+      color: #fff;
+    }
+    .caption-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .caption-tag {
+      background: rgba(40, 209, 96, 0.12);
+      border: 1px solid rgba(40, 209, 96, 0.3);
+      color: var(--accent);
+      padding: 0.25rem 0.65rem;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    /* Thumbnail Ribbon */
+    .thumbnails-strip {
+      display: flex;
+      gap: 0.75rem;
+      padding: 1.25rem 0;
+      overflow-x: auto;
+      width: 100%;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
+    .thumb-item {
+      position: relative;
+      flex-shrink: 0;
+      width: 120px;
+      height: 75px;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      opacity: 0.6;
+      transition: all 0.2s ease;
+      background: #000;
+    }
+    .thumb-item:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+    .thumb-item.active {
+      opacity: 1;
+      border-color: var(--accent);
+      box-shadow: 0 0 15px var(--accent-glow);
+      transform: translateY(-3px);
+    }
+    .thumb-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .thumb-badge {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      background: rgba(0, 0, 0, 0.8);
+      font-size: 0.65rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: #fff;
+    }
+
+    /* Keyboard Hints */
+    .shortcuts-bar {
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .kbd {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      padding: 0.15rem 0.45rem;
+      border-radius: 0.35rem;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Fullscreen Modal View */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-out;
+    }
+    .lightbox img {
+      max-width: 96vw;
+      max-height: 96vh;
+      object-fit: contain;
+      border-radius: 0.5rem;
+    }
+    .lightbox.active {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand-title">
+      Client Feedback <span>Slider</span>
+    </div>
+    <div class="counter-badge" id="slideCounter">1 / 5</div>
+  </header>
+
+  <main>
+    <div class="slider-container">
+      <div class="slide-viewer" id="slideViewer">
+        <button class="nav-btn nav-prev" id="prevBtn" title="Previous Slide (Left Arrow)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+
+        <img id="mainImage" class="slide-media" src="" alt="Client Feedback Slide">
+
+        <button class="nav-btn nav-next" id="nextBtn" title="Next Slide (Right Arrow)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+
+      <div class="slide-caption-bar">
+        <div class="caption-meta">
+          <div class="caption-title" id="captionTitle">Slide Title</div>
+          <div class="caption-desc" id="captionDesc">Detailed slide description</div>
+        </div>
+        <div class="caption-tag" id="captionTag">Category</div>
+      </div>
+    </div>
+
+    <!-- Thumbnail Strip -->
+    <div class="thumbnails-strip" id="thumbStrip"></div>
+
+    <div class="shortcuts-bar">
+      <span><span class="kbd">←</span> / <span class="kbd">→</span> Navigate</span>
+      <span><span class="kbd">Space</span> Next</span>
+      <span>Click image to zoom full screen</span>
+    </div>
+  </main>
+
+  <div class="lightbox" id="lightbox">
+    <img id="lightboxImg" src="" alt="Zoomed Slide">
+  </div>
+
+  <script>
+    const slides = [
+      {
+        src: "./Screenshot 2026-09-28 at 3.18.20 AM.png",
+        title: "1. Team Roster Search & Role Messaging Filter",
+        desc: "Ben requested: (1) Search bar to filter roster members in CREATE NEW TEAM modal; (2) Restrict parent/player messaging to coaches only (remove system admin from messaging).",
+        tag: "Team Roster • Messaging"
+      },
+      {
+        src: "./Screenshot 2026-09-28 at 3.18.27 AM.png",
+        title: "2. Team Management & Jr Ducks Whitelabel Branding",
+        desc: "Ben requested: (1) Edit and Delete buttons for coach-created teams; (2) Change 'EAST Coach' header to 'JrDucks Coach' when viewing Jr Ducks whitelabel.",
+        tag: "Whitelabel • Teams"
+      },
+      {
+        src: "./Screenshot 2026-09-28 at 3.18.39 AM.png",
+        title: "3. Mobile Walkthrough & System Admin Isolation",
+        desc: "Mobile view walkthrough demonstrating user role isolation. Reiterated that system admin should not be messageable by regular users.",
+        tag: "Role Security"
+      },
+      {
+        src: "./Screenshot 2026-09-28 at 3.18.45 AM.png",
+        title: "4. Film Room Markers & Chat Sharing",
+        desc: "Ben noted: (1) 'Grab current time' button vs 'Add marker' button synchronization in edit modal; (2) Film sessions couldn't be sent directly to athletes or teams in chat.",
+        tag: "Film Room • Timestamps"
+      },
+      {
+        src: "./JrDucks_FilmRoom_Verified.png",
+        title: "5. Anaheim Jr. Ducks Verified Film Room Layout",
+        desc: "Reference visual layout and branding verification for Anaheim Jr. Ducks white label Film Room interface with orange/gold theme.",
+        tag: "Verified UI Design"
+      }
+    ];
+
+    let currentIndex = 0;
+
+    const mainImage = document.getElementById('mainImage');
+    const captionTitle = document.getElementById('captionTitle');
+    const captionDesc = document.getElementById('captionDesc');
+    const captionTag = document.getElementById('captionTag');
+    const slideCounter = document.getElementById('slideCounter');
+    const thumbStrip = document.getElementById('thumbStrip');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+
+    function renderThumbs() {
+      thumbStrip.innerHTML = '';
+      slides.forEach((slide, index) => {
+        const thumb = document.createElement('div');
+        thumb.className = `thumb-item ${index === currentIndex ? 'active' : ''}`;
+        thumb.innerHTML = `
+          <img src="${slide.src}" alt="${slide.title}">
+          <span class="thumb-badge">${index + 1}</span>
+        `;
+        thumb.addEventListener('click', () => goToSlide(index));
+        thumbStrip.appendChild(thumb);
+      });
+    }
+
+    function updateSlide() {
+      const slide = slides[currentIndex];
+      mainImage.style.opacity = 0;
+      setTimeout(() => {
+        mainImage.src = slide.src;
+        captionTitle.textContent = slide.title;
+        captionDesc.textContent = slide.desc;
+        captionTag.textContent = slide.tag;
+        slideCounter.textContent = `${currentIndex + 1} / ${slides.length}`;
+        mainImage.style.opacity = 1;
+
+        // Update active thumb
+        document.querySelectorAll('.thumb-item').forEach((el, idx) => {
+          el.classList.toggle('active', idx === currentIndex);
+          if (idx === currentIndex) {
+            el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }
+        });
+      }, 150);
+    }
+
+    function nextSlide() {
+      currentIndex = (currentIndex + 1) % slides.length;
+      updateSlide();
+    }
+
+    function prevSlide() {
+      currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+      updateSlide();
+    }
+
+    function goToSlide(index) {
+      if (index === currentIndex) return;
+      currentIndex = index;
+      updateSlide();
+    }
+
+    nextBtn.addEventListener('click', nextSlide);
+    prevBtn.addEventListener('click', prevSlide);
+
+    // Zoom Lightbox
+    mainImage.addEventListener('click', () => {
+      lightboxImg.src = slides[currentIndex].src;
+      lightbox.classList.add('active');
+    });
+
+    lightbox.addEventListener('click', () => {
+      lightbox.classList.remove('active');
+    });
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === 'Escape') {
+        lightbox.classList.remove('active');
+      }
+    });
+
+    // Init
+    renderThumbs();
+    updateSlide();
+  </script>
+</body>
+</html>

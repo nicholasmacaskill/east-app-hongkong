@@ -364,6 +364,10 @@ export default function FilmRoomTab({ currentUserId, onShareToChat }: FilmRoomTa
                         handleOpenEdit(s);
                     }}
                     canEdit={true}
+                    onShareToChat={(s) => {
+                        setViewingSession(null);
+                        onShareToChat?.(s);
+                    }}
                 />
             )}
         </div>

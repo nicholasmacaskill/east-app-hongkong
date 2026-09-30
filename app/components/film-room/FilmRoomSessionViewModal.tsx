@@ -26,6 +26,7 @@ interface FilmRoomSessionViewModalProps {
     session: FilmRoomSession;
     onClose: () => void;
     onEdit?: (session: FilmRoomSession) => void;
+    onShareToChat?: (session: FilmRoomSession) => void;
     canEdit?: boolean;
 }
 
@@ -33,6 +34,7 @@ export default function FilmRoomSessionViewModal({
     session,
     onClose,
     onEdit,
+    onShareToChat,
     canEdit = false
 }: FilmRoomSessionViewModalProps) {
     const { addToast } = useToast();
@@ -150,6 +152,16 @@ export default function FilmRoomSessionViewModal({
                                 className="hidden sm:flex px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white text-[10px] font-black uppercase tracking-wider border border-white/10 transition"
                             >
                                 Edit Session
+                            </button>
+                        )}
+                        {onShareToChat && (
+                            <button
+                                type="button"
+                                onClick={() => onShareToChat(session)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-east-light hover:bg-white text-black text-[10px] font-black uppercase tracking-wider transition shadow-[0_0_10px_var(--brand-glow)] active:scale-95"
+                                title="Send Film Breakdown to Chat"
+                            >
+                                <Share2 size={12} /> Send to Chat
                             </button>
                         )}
                         <a

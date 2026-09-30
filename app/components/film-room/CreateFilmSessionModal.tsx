@@ -128,8 +128,15 @@ export default function CreateFilmSessionModal({
     // Grab current time from the preview player
     const handleGrabCurrentTime = () => {
         let currentSeconds = 0;
-        if (playerRef.current) {
-            currentSeconds = Math.floor(playerRef.current.getCurrentTime());
+        try {
+            if (playerRef.current) {
+                const t = playerRef.current.getCurrentTime();
+                if (typeof t === 'number' && !isNaN(t)) {
+                    currentSeconds = Math.max(0, Math.floor(t));
+                }
+            }
+        } catch (e) {
+            console.warn('Could not read player current time:', e);
         }
 
         const newMarker: TimestampFormItem = {
@@ -141,19 +148,36 @@ export default function CreateFilmSessionModal({
 
         const updated = [...timestamps, newMarker].sort((a, b) => a.timestamp_seconds - b.timestamp_seconds);
         setTimestamps(updated);
-        addToast(`Grabbed marker at ${newMarker.timestamp_label}`, 'info');
+        addToast(`Captured marker at ${newMarker.timestamp_label}`, 'info');
     };
 
-    // Add manual timestamp
+    // Add manual timestamp (uses current video time if playing/paused, otherwise increments by 30s)
     const handleAddManualTimestamp = () => {
-        const lastTs = timestamps.length > 0 ? timestamps[timestamps.length - 1].timestamp_seconds + 30 : 0;
+        let currentSeconds = 0;
+        try {
+            if (playerRef.current) {
+                const t = playerRef.current.getCurrentTime();
+                if (typeof t === 'number' && !isNaN(t) && t > 0) {
+                    currentSeconds = Math.floor(t);
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        if (currentSeconds === 0) {
+            currentSeconds = timestamps.length > 0 ? timestamps[timestamps.length - 1].timestamp_seconds + 30 : 0;
+        }
+
         const newMarker: TimestampFormItem = {
-            timestamp_seconds: lastTs,
-            timestamp_label: formatSecondsToLabel(lastTs),
-            title: '',
+            timestamp_seconds: currentSeconds,
+            timestamp_label: formatSecondsToLabel(currentSeconds),
+            title: `Marker at ${formatSecondsToLabel(currentSeconds)}`,
             notes: ''
         };
-        setTimestamps([...timestamps, newMarker]);
+        const updated = [...timestamps, newMarker].sort((a, b) => a.timestamp_seconds - b.timestamp_seconds);
+        setTimestamps(updated);
+        addToast(`Added marker at ${newMarker.timestamp_label}`, 'info');
     };
 
     const handleUpdateTimestamp = (index: number, updates: Partial<TimestampFormItem>) => {
@@ -439,6 +463,13 @@ export default function CreateFilmSessionModal({
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleGrabCurrentTime}
+                                    className="px-3 py-1.5 rounded-xl bg-east-light text-black hover:bg-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition active:scale-95 shadow-[0_0_15px_var(--brand-glow)]"
+                                >
+                                    <BookmarkPlus size={13} /> Grab Current Time
+                                </button>
                                 <button
                                     type="button"
                                     onClick={handleAddManualTimestamp}
