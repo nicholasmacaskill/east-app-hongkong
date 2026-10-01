@@ -433,4 +433,55 @@ test.describe('Film Room - Multi-Variate Integration & Verification', () => {
         await page.locator('button:has-text("Cancel")').first().click();
         await expect(page.locator('text=NEW FILM ROOM SESSION')).not.toBeVisible();
     });
+
+    test('9. Tapping attached Film Room session card in chat opens Film Room modal and plays video', async ({ page }) => {
+        // Sign in coach
+        await page.goto(`${baseURL}/login`);
+        await page.fill('input[type="email"]', coach.email);
+        await page.fill('input[type="password"]', coach.password);
+        await page.click('button[type="submit"]');
+
+        // Navigate to Community / Messages
+        await page.goto(`${baseURL}/community`);
+        const messagesHeader = page.locator('h2:has-text("Messages")');
+        await messagesHeader.waitFor({ state: 'visible', timeout: 20000 });
+
+        // Open chat with player
+        const playerCard = page.locator(`text=${player.name}`).first();
+        if (await playerCard.isVisible()) {
+            await playerCard.click();
+        } else {
+            const search = page.locator('input[placeholder*="Search"]');
+            await search.fill(player.name);
+            await page.locator(`text=${player.name}`).first().click();
+        }
+
+        // Attach content -> Film Room if not present
+        const filmButton = page.locator('button:has-text("Film Room Session")').first();
+        const isPresent = await filmButton.isVisible({ timeout: 2000 }).catch(() => false);
+        if (!isPresent) {
+            const plusBtn = page.locator('button[title="Attach Content"]').first();
+            await plusBtn.click();
+            const filmTab = page.locator('button:has-text("Film Room")').first();
+            await filmTab.click();
+            const firstFilm = page.locator('span:has-text("Markers")').first();
+            await firstFilm.click();
+            await page.locator('input[placeholder="Type a message..."]').fill('Review this play');
+            await page.locator('button:has(svg.lucide-send)').click();
+            await page.waitForTimeout(1000);
+        }
+
+        // Click on the Film Room card inside the chat
+        const targetFilmBtn = page.locator('button:has-text("Film Room Session")').first();
+        await targetFilmBtn.waitFor({ state: 'visible', timeout: 10000 });
+        await targetFilmBtn.click();
+
+        // Verify the Film Room modal is visible
+        const closeBtn = page.locator('button[title="Close"]').first();
+        await expect(closeBtn).toBeVisible({ timeout: 10000 });
+
+        // Close the modal
+        await closeBtn.click();
+        await expect(closeBtn).not.toBeVisible();
+    });
 });

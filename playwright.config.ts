@@ -48,7 +48,10 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
-    { name: 'setup', testMatch: /.*\.setup\.ts/ },
+    { name: 'setup', testMatch: 'tests/auth.setup.ts' },
+    { name: 'admin.setup', testMatch: 'tests/admin.auth.setup.ts' },
+    { name: 'coach.setup', testMatch: 'tests/coach.auth.setup.ts' },
+    { name: 'player.setup', testMatch: 'tests/player.auth.setup.ts' },
 
     {
       name: 'chromium',
@@ -57,10 +60,8 @@ export default defineConfig({
         storageState: 'playwright/.auth/user.json',
       },
       dependencies: ['setup'],
-      testIgnore: 'admin-*.spec.ts',
+      testIgnore: ['admin-*.spec.ts', 'coach-*.spec.ts'],
     },
-
-    { name: 'admin.setup', testMatch: /.*admin\.auth\.setup\.ts/ },
 
     {
       name: 'admin-chromium',
@@ -70,6 +71,26 @@ export default defineConfig({
       },
       dependencies: ['admin.setup'],
       testMatch: 'admin-*.spec.ts',
+    },
+
+    {
+      name: 'coach-chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/coach.json',
+      },
+      dependencies: ['coach.setup'],
+      testMatch: ['coach-*.spec.ts'],
+    },
+
+    {
+      name: 'player-chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/player.json',
+      },
+      dependencies: ['player.setup'],
+      testMatch: ['player-*.spec.ts'],
     },
 
     {
@@ -149,17 +170,13 @@ export default defineConfig({
       },
       dependencies: ['setup'],
     },
-
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
   ],
 
-  // No webServer — tests always run against https://test-branch-east.vercel.app
+  // Auto-launch local dev server if testing against localhost
+  webServer: (baseURL.includes('localhost') || baseURL.includes('127.0.0.1')) ? {
+    command: 'npm run dev',
+    url: 'http://localhost:3000',
+    reuseExistingServer: true,
+    timeout: 120000,
+  } : undefined,
 });

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { extractYouTubeVideoId, formatSecondsToLabel } from '@/app/lib/youtubeUtils';
 import { CreateFilmRoomSessionInput } from '@/app/types';
@@ -8,21 +10,56 @@ async function getAuthenticatedUser(request: Request) {
     const authHeader = request.headers.get('Authorization');
     const token = authHeader?.replace('Bearer ', '');
 
-    if (!token) {
-        return null;
-    }
-
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) {
-        return null;
-    }
-
+    let user: any = null;
     const supabaseAdmin = getSupabaseAdmin();
+
+    if (token) {
+        const supabase = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+        const { data, error } = await supabase.auth.getUser(token);
+        if (!error && data?.user) {
+            user = data.user;
+        }
+    }
+
+    if (!user) {
+        try {
+            const cookieStore = await cookies();
+            const supabaseAuth = createServerClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                {
+                    cookies: {
+                        getAll() {
+                            return cookieStore.getAll();
+                        },
+                        setAll(cookiesToSet) {
+                            try {
+                                cookiesToSet.forEach(({ name, value, options }) =>
+                                    cookieStore.set(name, value, options)
+                                );
+                            } catch {
+                                // Ignore in Route Handler
+                            }
+                        },
+                    },
+                }
+            );
+            const { data: cookieAuth, error: cookieErr } = await supabaseAuth.auth.getUser();
+            if (!cookieErr && cookieAuth?.user) {
+                user = cookieAuth.user;
+            }
+        } catch (e) {
+            // Ignore cookie error
+        }
+    }
+
+    if (!user) {
+        return null;
+    }
+
     const { data: profile } = await supabaseAdmin
         .from('profiles')
         .select('id, first_name, last_name, role, parent_id')

@@ -30,6 +30,9 @@ export async function purgeUserData(supabase: SupabaseClient, userIds: string[])
             supabase.from('players_stats').delete().in('player_id', userIds),
             supabase.from('player_assessments').delete().or(`coach_id.in.(${userIds.join(',')}),player_id.in.(${userIds.join(',')})`),
             supabase.from('messages').delete().or(`sender_id.in.(${userIds.join(',')}),receiver_id.in.(${userIds.join(',')})`),
+            supabase.from('film_room_sessions').delete().or(`coach_id.in.(${userIds.join(',')}),target_player_id.in.(${userIds.join(',')})`),
+            supabase.from('team_members').delete().in('user_id', userIds),
+            supabase.from('teams').delete().in('coach_id', userIds),
             supabase.from('coach_services').delete().in('coach_id', userIds),
             supabase.from('notifications').delete().in('user_id', userIds)
         ]);

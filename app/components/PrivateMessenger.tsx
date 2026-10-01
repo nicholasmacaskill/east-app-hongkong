@@ -889,6 +889,14 @@ export default function PrivateMessenger({
                         }}
                     />
                 )}
+
+                {viewingFilmSession && (
+                    <FilmRoomSessionViewModal
+                        session={viewingFilmSession}
+                        onClose={() => setViewingFilmSession(null)}
+                        canEdit={isCoachUser && viewingFilmSession.coach_id === currentUserId}
+                    />
+                )}
             </div>
         );
     }
