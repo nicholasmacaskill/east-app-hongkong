@@ -286,4 +286,20 @@ All agents must adhere to the [`project-docs/DEFINITION_OF_DONE.md`](project-doc
 
 ---
 
+## 🔬 Applied Engineering Dossiers & Architecture Shards (Flocano Labs Corpus)
+
+The technical architecture, security perimeter, and robotic QA harness for East High Performance Centre are documented across 4 canonical engineering shards published on the [Flocano Labs Sovereign Forge](https://www.flocanolabs.com/flocanolabs/case-studies?project=east-high-performance-centre):
+
+| Shard ID | Dossier Title | Discipline | Key Production Metric | Canonical Shard |
+|:---|:---|:---|:---|:---|
+| **`ehpc-rbac-rls`** | **Database-Level Zero-Trust Access Isolation** | `Distributed Systems & High-Throughput State` | `RLS latency <1.5ms; 0 policy failures` | [Read Shard](https://www.nicholasmacaskill.com/dossier/ehpc-rbac-rls) |
+| **`ehpc-stripe-billing`** | **Asynchronous Stripe Reconciliation Ledger** | `Distributed Systems & High-Throughput State` | `0.00 ledger drift; webhook <40ms` | [Read Shard](https://www.nicholasmacaskill.com/dossier/ehpc-stripe-billing) |
+| **`ehpc-activity-scheduling`** | **High-Concurrency Booking & Schedule Locks** | `Distributed Systems & High-Throughput State` | `Concurrent validation <12ms; 0 double-bookings` | [Read Shard](https://www.nicholasmacaskill.com/dossier/ehpc-activity-scheduling) |
+| **`ehpc-playwright-verification`** | **Robotic Verification & Multi-Variate E2E Testing** | `Autonomous SWE & Adversarial QA` | `100+ E2E specs; zero false-failure tolerance` | [Read Shard](https://www.nicholasmacaskill.com/dossier/ehpc-playwright-verification) |
+
+**Public Architecture Repository:** [https://github.com/nicholasmacaskill/east-highpeformance-hongkong](https://github.com/nicholasmacaskill/east-highpeformance-hongkong)  
+**Author & Systems Architect:** Nicholas Alexander MacAskill ([@nicholasmacaskill](https://nicholasmacaskill.com)) // [Flocano Labs](https://flocanolabs.com)
+
+---
+
 *This operational core is property of EAST Sports Group. © 2025–2026 EAST Sports Group HK.*
