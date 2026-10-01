@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/app/lib/supabase';
 import { safeFetch } from '@/app/lib/apiUtils';
-import { Search, Users, MessageSquare, Plus, Video, Layers, Send, X, ChevronLeft, ClipboardCheck, Film, Play, Clock, Edit2, Trash2 } from 'lucide-react';
+import { Search, Users, MessageSquare, Plus, Video, Layers, Send, X, ChevronLeft, ClipboardCheck, Film, Play, Clock, Edit2, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
 import CreateTeamModal, { TeamToEdit } from '@/app/components/modals/CreateTeamModal';
 import AssessmentViewModal from '@/app/components/modals/AssessmentViewModal';
 import CreateAssessmentModal from '@/app/components/modals/CreateAssessmentModal';
 import FilmRoomSessionViewModal from '@/app/components/film-room/FilmRoomSessionViewModal';
 import { FilmRoomSession } from '@/app/types';
+import { getYouTubeThumbnail } from '@/app/lib/youtubeUtils';
 
 export default function PrivateMessenger({ 
     currentUserId, 
@@ -61,6 +62,7 @@ export default function PrivateMessenger({
     const [filmSessions, setFilmSessions] = useState<FilmRoomSession[]>([]);
     const [selectedFilmSession, setSelectedFilmSession] = useState<FilmRoomSession | null>(null);
     const [viewingFilmSession, setViewingFilmSession] = useState<FilmRoomSession | null>(null);
+    const [openingFilmSessionId, setOpeningFilmSessionId] = useState<string | null>(null);
 
     const [viewingAssessmentId, setViewingAssessmentId] = useState<string | null>(null);
     const [showCreateAssessment, setShowCreateAssessment] = useState(false);
@@ -160,26 +162,86 @@ export default function PrivateMessenger({
         }
     }, [shareFilmSessionId, filmSessions]);
 
-    const handleOpenAttachedFilmSession = async (filmSessionId: string) => {
-        let matched = filmSessions.find(f => f.id === filmSessionId);
-        if (!matched) {
-            try {
-                const { data: { session: authSession } } = await supabase.auth.getSession();
-                const token = authSession?.access_token;
-                const res = await safeFetch(`/api/film-room?id=${filmSessionId}`, {
-                    headers: { Authorization: token ? `Bearer ${token}` : '' }
+    const prefetchFilmSessions = async (ids: string[]) => {
+        if (!ids || ids.length === 0) return;
+        const missingIds = ids.filter(id => !filmSessions.some(f => f.id === id));
+        if (missingIds.length === 0) return;
+
+        try {
+            const { data: loadedFilms } = await supabase
+                .from('film_room_sessions')
+                .select(`
+                    *,
+                    coach:profiles!film_room_sessions_coach_id_fkey(first_name, last_name, avatar_url),
+                    target_team:teams(id, name),
+                    timestamps:film_room_timestamps(*)
+                `)
+                .in('id', missingIds);
+            if (loadedFilms && loadedFilms.length > 0) {
+                setFilmSessions(prev => {
+                    const map = new Map<string, FilmRoomSession>();
+                    prev.forEach(f => map.set(f.id, f));
+                    (loadedFilms as FilmRoomSession[]).forEach(f => map.set(f.id, f));
+                    return Array.from(map.values());
                 });
-                if (res.success && res.data) {
-                    matched = res.data as FilmRoomSession;
-                }
-            } catch (e) {
-                console.error('Error fetching film session via API:', e);
             }
+        } catch (e) {
+            console.warn('Prefetch film sessions error:', e);
         }
-        if (matched) {
-            setViewingFilmSession(matched);
-        } else {
-            addToast('Could not load film session', 'error');
+    };
+
+    const handleOpenAttachedFilmSession = async (filmSessionId: string) => {
+        setOpeningFilmSessionId(filmSessionId);
+        try {
+            let matched = filmSessions.find(f => f.id === filmSessionId);
+            if (!matched) {
+                // 1. Direct Client Query (Fastest, zero-hop)
+                try {
+                    const { data: directData } = await supabase
+                        .from('film_room_sessions')
+                        .select(`
+                            *,
+                            coach:profiles!film_room_sessions_coach_id_fkey(first_name, last_name, avatar_url),
+                            target_team:teams(id, name),
+                            timestamps:film_room_timestamps(*)
+                        `)
+                        .eq('id', filmSessionId)
+                        .single();
+                    if (directData) {
+                        matched = directData as FilmRoomSession;
+                    }
+                } catch (err) {
+                    console.warn('Direct fetch film session error:', err);
+                }
+
+                // 2. Fallback to API with Bearer token
+                if (!matched) {
+                    try {
+                        const { data: { session: authSession } } = await supabase.auth.getSession();
+                        const token = authSession?.access_token;
+                        const res = await safeFetch(`/api/film-room?id=${filmSessionId}`, {
+                            headers: { Authorization: token ? `Bearer ${token}` : '' }
+                        });
+                        if (res.success && res.data) {
+                            matched = res.data as FilmRoomSession;
+                        }
+                    } catch (e) {
+                        console.error('Error fetching film session via API:', e);
+                    }
+                }
+            }
+
+            if (matched) {
+                setFilmSessions(prev => {
+                    if (prev.some(f => f.id === matched!.id)) return prev;
+                    return [matched!, ...prev];
+                });
+                setViewingFilmSession(matched);
+            } else {
+                addToast('Could not load film session', 'error');
+            }
+        } finally {
+            setOpeningFilmSessionId(null);
         }
     };
 
@@ -295,6 +357,9 @@ export default function PrivateMessenger({
                     // Only add if it belongs to this chat and we didn't just send it
                     const msg = payload.new;
                     if (msg.sender_id !== currentUserId) {
+                        if (msg.shared_film_session_id) {
+                            prefetchFilmSessions([msg.shared_film_session_id]);
+                        }
                         if (isTeamChat && msg.team_id === activeChatId) {
                             setMessages(prev => [...prev, msg]);
                             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -311,18 +376,28 @@ export default function PrivateMessenger({
     }, [activeChatId, isTeamChat, currentUserId]);
 
     const fetchMessages = async (chatId: string, isTeam: boolean) => {
+        let msgList: any[] = [];
         if (isTeam) {
             const { data } = await supabase.from('messages')
                 .select('*')
                 .eq('team_id', chatId)
                 .order('created_at', { ascending: true });
-            if (data) setMessages(data);
+            if (data) msgList = data;
         } else {
             const { data } = await supabase.from('messages')
                 .select('*')
                 .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${chatId}),and(sender_id.eq.${chatId},receiver_id.eq.${currentUserId})`)
                 .order('created_at', { ascending: true });
-            if (data) setMessages(data);
+            if (data) msgList = data;
+        }
+        setMessages(msgList);
+
+        // Instantly prefetch attached film sessions for all messages in this chat
+        const filmIds = msgList
+            .map(m => m.shared_film_session_id)
+            .filter((id): id is string => Boolean(id));
+        if (filmIds.length > 0) {
+            prefetchFilmSessions(filmIds);
         }
     };
 
@@ -564,37 +639,65 @@ export default function PrivateMessenger({
                                             </div>
                                         </div>
                                     )}
-                                    {msg.shared_film_session_id && (
-                                        <div
-                                            onClick={() => handleOpenAttachedFilmSession(msg.shared_film_session_id)}
-                                            className="mt-2 p-3 bg-black/70 rounded-2xl flex items-center gap-3 border border-east-light/40 cursor-pointer hover:bg-east-light/10 transition group shadow-lg"
-                                        >
-                                            <div className="w-12 h-12 rounded-xl bg-black flex items-center justify-center border border-white/10 group-hover:border-east-light/50 transition overflow-hidden shrink-0 relative">
-                                                {filmSessions.find(f => f.id === msg.shared_film_session_id)?.video_id ? (
-                                                    <img
-                                                        src={`https://img.youtube.com/vi/${filmSessions.find(f => f.id === msg.shared_film_session_id)?.video_id}/hqdefault.jpg`}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <Film size={20} className="text-east-light" />
-                                                )}
-                                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                                    <Play size={14} className="text-white fill-current ml-0.5" />
+                                    {msg.shared_film_session_id && (() => {
+                                        const matchedSession = filmSessions.find(f => f.id === msg.shared_film_session_id);
+                                        const isOpening = openingFilmSessionId === msg.shared_film_session_id;
+                                        const thumbnail = matchedSession?.video_id 
+                                            ? getYouTubeThumbnail(matchedSession.video_id)
+                                            : null;
+
+                                        return (
+                                            <button
+                                                type="button"
+                                                disabled={isOpening}
+                                                onClick={() => handleOpenAttachedFilmSession(msg.shared_film_session_id)}
+                                                className={`w-full text-left mt-2 p-3 bg-black/70 rounded-2xl flex items-center gap-3 border transition group shadow-lg ${
+                                                    isOpening
+                                                        ? 'border-east-light bg-east-light/10 ring-2 ring-east-light/30'
+                                                        : 'border-east-light/40 hover:bg-east-light/10 hover:border-east-light'
+                                                }`}
+                                            >
+                                                <div className="w-12 h-12 rounded-xl bg-black flex items-center justify-center border border-white/10 group-hover:border-east-light/50 transition overflow-hidden shrink-0 relative">
+                                                    {thumbnail ? (
+                                                        <img
+                                                            src={thumbnail}
+                                                            alt="Film Room Thumbnail"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <Film size={20} className="text-east-light" />
+                                                    )}
+                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                                        {isOpening ? (
+                                                            <Loader2 size={16} className="text-east-light animate-spin" />
+                                                        ) : (
+                                                            <Play size={14} className="text-white fill-current ml-0.5 group-hover:scale-110 transition" />
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <span className="text-[10px] font-black uppercase text-east-light block leading-none mb-1 flex items-center gap-1">
-                                                    <Film size={10} /> Film Room Session
-                                                </span>
-                                                <span className="text-xs font-bold text-white block truncate">
-                                                    {filmSessions.find(f => f.id === msg.shared_film_session_id)?.title || 'Watch Film Breakdown'}
-                                                </span>
-                                                <span className="text-[9px] text-gray-400 block mt-0.5">
-                                                    Tap to watch with timestamped coaching notes
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
+                                                <div className="flex-1 min-w-0">
+                                                    <span className="text-[10px] font-black uppercase text-east-light block leading-none mb-1 flex items-center gap-1">
+                                                        <Film size={10} /> Film Room Session
+                                                        {matchedSession?.timestamps?.length ? (
+                                                            <span className="ml-1 text-[9px] text-gray-400 font-bold lowercase">
+                                                                ({matchedSession.timestamps.length} cues)
+                                                            </span>
+                                                        ) : null}
+                                                    </span>
+                                                    <span className="text-xs font-bold text-white block truncate">
+                                                        {matchedSession?.title || 'Film Room Breakdown'}
+                                                    </span>
+                                                    <span className="text-[9px] text-gray-400 block mt-0.5 flex items-center gap-1">
+                                                        {isOpening ? (
+                                                            <span className="text-east-light font-bold">Opening breakdown theater...</span>
+                                                        ) : (
+                                                            'Tap to watch with timestamped coaching notes'
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        );
+                                    })()}
                                 </div>
                             </div>
                         );

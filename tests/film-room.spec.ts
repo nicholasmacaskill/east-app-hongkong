@@ -384,4 +384,53 @@ test.describe('Film Room - Multi-Variate Integration & Verification', () => {
         await page.locator('button:has-text("Cancel")').first().click();
         await expect(page.locator('text=NEW FILM ROOM SESSION')).not.toBeVisible();
     });
+
+    test('8. Snap to Grid: Clicking marker captures video time, scrolls into view, and auto-focuses coaching notes', async ({ page }) => {
+        await page.goto(`${baseURL}/login`);
+        await page.fill('input[type="email"]', coach.email);
+        await page.fill('input[type="password"]', coach.password);
+        await page.click('button[type="submit"]');
+
+        const filmRoomTab = page.locator('button:has-text("Film Room")').first();
+        await filmRoomTab.waitFor({ state: 'visible', timeout: 20000 });
+        await filmRoomTab.click();
+
+        // Open create modal
+        await page.locator('button:has-text("New Film Session")').first().click();
+        await expect(page.locator('text=NEW FILM ROOM SESSION')).toBeVisible();
+
+        // Paste video link
+        const urlInput = page.locator('input[placeholder*="Paste link e.g."]').first();
+        await urlInput.fill('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+        await expect(page.locator('text=DETECTED')).toBeVisible();
+
+        // Verify Quick Capture bar is visible
+        await expect(page.locator('text=INSTANT MARKER SNAP')).toBeVisible();
+
+        // Click "Add Marker"
+        const addMarkerBtn = page.getByRole('button', { name: 'Add Marker' }).first();
+        await addMarkerBtn.click();
+
+        // Verify marker card 0 is created and notes textarea is focused
+        const notesField = page.locator('#marker-notes-0');
+        await expect(notesField).toBeVisible();
+        await expect(notesField).toBeFocused();
+
+        // Type notes directly without needing to manually scroll down
+        await notesField.fill('Mid lane drive and late trail support');
+        await expect(notesField).toHaveValue('Mid lane drive and late trail support');
+
+        // Test Quick Snap bar input
+        const quickInput = page.locator('input[placeholder*="Type note at current play"]').first();
+        await quickInput.fill('Second man high in slot');
+        await page.locator('button:has-text("Snap Marker")').first().click();
+
+        // Verify second marker exists
+        const secondMarkerCard = page.locator('#marker-card-1');
+        await expect(secondMarkerCard).toBeVisible();
+
+        // Cancel modal
+        await page.locator('button:has-text("Cancel")').first().click();
+        await expect(page.locator('text=NEW FILM ROOM SESSION')).not.toBeVisible();
+    });
 });

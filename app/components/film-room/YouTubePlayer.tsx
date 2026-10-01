@@ -44,7 +44,7 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
     const [currentTime, setCurrentTime] = useState(initialStartSeconds);
     const [embedFallback, setEmbedFallback] = useState(false);
 
-    // Load YouTube IFrame Player API
+    // Load YouTube IFrame Player API with zero-delay detection
     useEffect(() => {
         if (typeof window === 'undefined') return;
 
@@ -52,6 +52,14 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
             setIsApiReady(true);
             return;
         }
+
+        // Active interval to detect API readiness instantly (within 50ms)
+        const checkInterval = setInterval(() => {
+            if (window.YT && window.YT.Player) {
+                setIsApiReady(true);
+                clearInterval(checkInterval);
+            }
+        }, 50);
 
         // Check if script already injected
         const existingScript = document.getElementById('youtube-iframe-api');
@@ -67,16 +75,21 @@ const YouTubePlayer = forwardRef<YouTubePlayerRef, YouTubePlayerProps>(({
         window.onYouTubeIframeAPIReady = () => {
             if (prevCallback) prevCallback();
             setIsApiReady(true);
+            clearInterval(checkInterval);
         };
 
-        // Fallback after 4 seconds if YouTube API is blocked/slow
+        // Fallback after 1.5 seconds if YouTube API is blocked/slow
         const timeout = setTimeout(() => {
+            clearInterval(checkInterval);
             if (!isPlayerLoaded) {
                 setEmbedFallback(true);
             }
-        }, 4000);
+        }, 1500);
 
-        return () => clearTimeout(timeout);
+        return () => {
+            clearInterval(checkInterval);
+            clearTimeout(timeout);
+        };
     }, []);
 
     // Initialize player when API is ready and videoId changes
