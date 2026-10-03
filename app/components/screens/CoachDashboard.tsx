@@ -2,10 +2,11 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
 import posthog from 'posthog-js';
 import { useRouter } from 'next/navigation';
-import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send, Play, MessageSquare, ClipboardList, Plus, ArrowRight, ClipboardCheck, Film } from 'lucide-react';
+import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send, Play, MessageSquare, ClipboardList, Plus, ArrowRight, ClipboardCheck, Film, Upload, Trophy } from 'lucide-react';
 import { TrainingPlan } from '@/app/types';
 import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 import { safeFetch } from '@/app/lib/apiUtils';
@@ -365,6 +366,12 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                     <button onClick={() => setViewMode('film_room')} className="text-[9px] font-black uppercase text-white hover:text-black transition-colors flex items-center gap-1 bg-white/10 hover:bg-east-light px-3 py-1.5 rounded-full border border-white/10 hover:border-east-light whitespace-nowrap">
                         <Film size={12} /> Film Room
                     </button>
+                    <Link href="/sys-admin/stats" className="text-[9px] font-black uppercase text-white hover:text-black transition-colors flex items-center gap-1 bg-white/10 hover:bg-east-light px-3 py-1.5 rounded-full border border-white/10 hover:border-east-light whitespace-nowrap">
+                        <Upload size={12} /> Import Tournament Stats
+                    </Link>
+                    <Link href="/stats" className="text-[9px] font-black uppercase text-white hover:text-black transition-colors flex items-center gap-1 bg-white/10 hover:bg-east-light px-3 py-1.5 rounded-full border border-white/10 hover:border-east-light whitespace-nowrap">
+                        <Trophy size={12} /> Team Stats & Cards
+                    </Link>
                 </div>
                 <div className="flex items-center gap-2 ml-auto">
                     <button onClick={expandAll} className="text-[9px] font-black uppercase text-gray-500 hover:text-east-light transition-colors flex items-center gap-1">
