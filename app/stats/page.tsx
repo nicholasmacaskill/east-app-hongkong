@@ -1,13 +1,19 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Trophy, Flame, Star, Shield, Users, ChevronLeft, Flag, Target, Activity, User, Dumbbell } from 'lucide-react';
+import { Trophy, Flame, Star, Shield, Users, ChevronLeft, Flag, Target, Activity, User, Dumbbell, ArrowRightLeft } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
 import { useTracking } from '@/app/hooks/useTracking';
 import { STAT_FIELDS, SportCategory, getLeaderboardFields, isLowerBetter } from '@/app/lib/statFields';
 import PlayerSearch from '@/app/components/PlayerSearch';
+import TeamRosterStats from '@/app/components/hockey/TeamRosterStats';
+import PlayerComparison from '@/app/components/hockey/PlayerComparison';
 
 export default function LeaderboardPage() {
+    const [viewMode, setViewMode] = useState<'TEAMS' | 'COMPARE' | 'COMBINES'>('TEAMS');
+    const [comparePlayer1Id, setComparePlayer1Id] = useState<string>('');
+    const [comparePlayer2Id, setComparePlayer2Id] = useState<string>('');
+
     const [sport, setSport] = useState<SportCategory>('GOLF');
     const [activeFilter, setActiveFilter] = useState<string>('handicap');
     const [activeDivision, setActiveDivision] = useState<string>('All');
@@ -20,6 +26,11 @@ export default function LeaderboardPage() {
     const [loadingCheckIns, setLoadingCheckIns] = useState(true);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const { track } = useTracking();
+
+    const handleSelectForComparison = (playerId: string) => {
+        setComparePlayer1Id(playerId);
+        setViewMode('COMPARE');
+    };
 
     useEffect(() => {
         // Set default filter when sport changes
@@ -254,105 +265,167 @@ export default function LeaderboardPage() {
                         <PlayerSearch />
                     </div>
 
-                    {/* SPORT SELECTOR */}
+                    {/* TOP LEVEL VIEW MODE TOGGLE */}
                     <div className="flex justify-center gap-2 sm:gap-3 mt-8 flex-wrap">
-                        {[
-                            { id: 'HOCKEY', icon: <Shield size={14} />, label: 'Hockey' },
-                            { id: 'GOLF', icon: <Flag size={14} />, label: 'Golf' },
-                            { id: 'HYROX', icon: <Activity size={14} />, label: 'Hyrox' },
-                            { id: 'EAGL', icon: <Trophy size={14} />, label: 'EAGL' },
-                            { id: 'FITNESS_TEST', icon: <Dumbbell size={14} />, label: 'Fitness Test' }
-                        ].map(item => (
-                            <button
-                                key={item.id}
-                                onClick={() => setSport(item.id as any)}
-                                className={`px-4 sm:px-8 py-2.5 sm:py-3 rounded-full border uppercase font-black italic text-[10px] sm:text-[11px] tracking-widest sm:tracking-[0.2em] transition-all duration-300 ${sport === item.id ? 'bg-east-light text-black border-east-light shadow-[0_0_20px_rgba(40,209,96,0.4)]' : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'}`}
-                            >
-                                <div className="flex items-center gap-2">
-                                    {item.icon}
-                                    {item.label}
-                                </div>
-                            </button>
-                        ))}
+                        <button
+                            type="button"
+                            onClick={() => setViewMode('TEAMS')}
+                            className={`px-5 py-2.5 rounded-full border uppercase font-black italic text-xs tracking-wider transition-all duration-300 flex items-center gap-2 ${
+                                viewMode === 'TEAMS'
+                                    ? 'bg-east-light text-black border-east-light shadow-[0_0_20px_rgba(40,209,96,0.4)]'
+                                    : 'bg-[#18181b] border-white/10 text-gray-400 hover:text-white hover:border-white/30'
+                            }`}
+                        >
+                            <Shield size={14} />
+                            EAST Stars Teams (Elite Prospects)
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setViewMode('COMPARE')}
+                            className={`px-5 py-2.5 rounded-full border uppercase font-black italic text-xs tracking-wider transition-all duration-300 flex items-center gap-2 ${
+                                viewMode === 'COMPARE'
+                                    ? 'bg-cyan-400 text-black border-cyan-400 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
+                                    : 'bg-[#18181b] border-white/10 text-gray-400 hover:text-white hover:border-white/30'
+                            }`}
+                        >
+                            <ArrowRightLeft size={14} />
+                            Compare Players
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setViewMode('COMBINES')}
+                            className={`px-5 py-2.5 rounded-full border uppercase font-black italic text-xs tracking-wider transition-all duration-300 flex items-center gap-2 ${
+                                viewMode === 'COMBINES'
+                                    ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.4)]'
+                                    : 'bg-[#18181b] border-white/10 text-gray-400 hover:text-white hover:border-white/30'
+                            }`}
+                        >
+                            <Trophy size={14} />
+                            Facility Combines
+                        </button>
                     </div>
 
-                    {/* DIVISION / SEASON / WEEK SELECTORS */}
-                    {(sport === 'GOLF' || sport === 'EAGL') && (
-                        <div className="flex flex-col gap-3 items-center mt-6">
-                            <div className="flex flex-wrap justify-center gap-2">
-                                {/* Division Selector */}
-                                <div className="relative inline-block border border-white/20 rounded-full px-4 py-1.5 bg-black hover:border-east-light transition-all">
-                                    <select 
-                                        value={activeDivision}
-                                        onChange={(e) => setActiveDivision(e.target.value)}
-                                        className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none appearance-none pr-8 cursor-pointer text-center min-w-[150px]"
+                    {/* ONLY RENDER SPORT SELECTOR AND FILTERS WHEN IN COMBINES MODE */}
+                    {viewMode === 'COMBINES' && (
+                        <>
+                            {/* SPORT SELECTOR */}
+                            <div className="flex justify-center gap-2 sm:gap-3 mt-8 flex-wrap">
+                                {[
+                                    { id: 'HOCKEY', icon: <Shield size={14} />, label: 'Hockey' },
+                                    { id: 'GOLF', icon: <Flag size={14} />, label: 'Golf' },
+                                    { id: 'HYROX', icon: <Activity size={14} />, label: 'Hyrox' },
+                                    { id: 'EAGL', icon: <Trophy size={14} />, label: 'EAGL' },
+                                    { id: 'FITNESS_TEST', icon: <Dumbbell size={14} />, label: 'Fitness Test' }
+                                ].map(item => (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => setSport(item.id as any)}
+                                        className={`px-4 sm:px-8 py-2.5 sm:py-3 rounded-full border uppercase font-black italic text-[10px] sm:text-[11px] tracking-widest sm:tracking-[0.2em] transition-all duration-300 ${sport === item.id ? 'bg-east-light text-black border-east-light shadow-[0_0_20px_rgba(40,209,96,0.4)]' : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'}`}
                                     >
-                                        <option value="All">All Divisions Global</option>
-                                        <option value="Pro Men">Pro Men</option>
-                                        <option value="Rec Men">Rec Men</option>
-                                        <option value="Pro Women">Pro Women</option>
-                                        <option value="Rec Women">Rec Women</option>
-                                        <option value="Doubles Men">Doubles Men</option>
-                                        <option value="Doubles Women">Doubles Women</option>
-                                        <option value="Mixed Doubles">Mixed Doubles</option>
-                                        <option value="Parent - Child">Parent - Child</option>
-                                    </select>
-                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                        <svg className="w-3 h-3 text-east-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"></path></svg>
+                                        <div className="flex items-center gap-2">
+                                            {item.icon}
+                                            {item.label}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* DIVISION / SEASON / WEEK SELECTORS */}
+                            {(sport === 'GOLF' || sport === 'EAGL') && (
+                                <div className="flex flex-col gap-3 items-center mt-6">
+                                    <div className="flex flex-wrap justify-center gap-2">
+                                        {/* Division Selector */}
+                                        <div className="relative inline-block border border-white/20 rounded-full px-4 py-1.5 bg-black hover:border-east-light transition-all">
+                                            <select 
+                                                value={activeDivision}
+                                                onChange={(e) => setActiveDivision(e.target.value)}
+                                                className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none appearance-none pr-8 cursor-pointer text-center min-w-[150px]"
+                                            >
+                                                <option value="All">All Divisions Global</option>
+                                                <option value="Pro Men">Pro Men</option>
+                                                <option value="Rec Men">Rec Men</option>
+                                                <option value="Pro Women">Pro Women</option>
+                                                <option value="Rec Women">Rec Women</option>
+                                                <option value="Doubles Men">Doubles Men</option>
+                                                <option value="Doubles Women">Doubles Women</option>
+                                                <option value="Mixed Doubles">Mixed Doubles</option>
+                                                <option value="Parent - Child">Parent - Child</option>
+                                            </select>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                <svg className="w-3 h-3 text-east-light" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7"></path></svg>
+                                            </div>
+                                        </div>
+
+                                        {sport === 'EAGL' && (
+                                            <>
+                                                {/* Season Input */}
+                                                <div className="relative inline-block border border-white/20 rounded-full px-4 py-1.5 bg-black hover:border-east-light transition-all flex items-center gap-2">
+                                                    <span className="text-[9px] font-black text-gray-500 uppercase">S</span>
+                                                    <select 
+                                                        value={activeSeason}
+                                                        onChange={(e) => setActiveSeason(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
+                                                        className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none appearance-none pr-6 cursor-pointer text-center w-12"
+                                                    >
+                                                        <option value="All">All</option>
+                                                        {[1, 2, 3, 4, 5].map(v => <option key={v} value={v}>{v}</option>)}
+                                                    </select>
+                                                </div>
+
+                                                {/* Week Input */}
+                                                <div className="relative inline-block border border-white/20 rounded-full px-4 py-1.5 bg-black hover:border-east-light transition-all flex items-center gap-2">
+                                                    <span className="text-[9px] font-black text-gray-500 uppercase">W</span>
+                                                    <select 
+                                                        value={activeWeek}
+                                                        onChange={(e) => setActiveWeek(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
+                                                        className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none appearance-none pr-6 cursor-pointer text-center w-12"
+                                                    >
+                                                        <option value="All">All</option>
+                                                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(v => <option key={v} value={v}>{v}</option>)}
+                                                    </select>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
+                            )}
 
-                                {sport === 'EAGL' && (
-                                    <>
-                                        {/* Season Input */}
-                                        <div className="relative inline-block border border-white/20 rounded-full px-4 py-1.5 bg-black hover:border-east-light transition-all flex items-center gap-2">
-                                            <span className="text-[9px] font-black text-gray-500 uppercase">S</span>
-                                            <select 
-                                                value={activeSeason}
-                                                onChange={(e) => setActiveSeason(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
-                                                className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none appearance-none pr-6 cursor-pointer text-center w-12"
-                                            >
-                                                <option value="All">All</option>
-                                                {[1, 2, 3, 4, 5].map(v => <option key={v} value={v}>{v}</option>)}
-                                            </select>
-                                        </div>
-
-                                        {/* Week Input */}
-                                        <div className="relative inline-block border border-white/20 rounded-full px-4 py-1.5 bg-black hover:border-east-light transition-all flex items-center gap-2">
-                                            <span className="text-[9px] font-black text-gray-500 uppercase">W</span>
-                                            <select 
-                                                value={activeWeek}
-                                                onChange={(e) => setActiveWeek(e.target.value === 'All' ? 'All' : parseInt(e.target.value))}
-                                                className="bg-transparent text-white text-[10px] sm:text-[11px] font-black uppercase tracking-widest outline-none appearance-none pr-6 cursor-pointer text-center w-12"
-                                            >
-                                                <option value="All">All</option>
-                                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(v => <option key={v} value={v}>{v}</option>)}
-                                            </select>
-                                        </div>
-                                    </>
-                                )}
+                            {/* STAT CATEGORY FILTERS */}
+                            <div className="flex justify-start sm:justify-center gap-2 mt-8 mb-10 overflow-x-auto no-scrollbar pb-4 px-2 -mx-4 sm:mx-0 flex-nowrap sm:flex-wrap">
+                                {getLeaderboardFields(sport).map(field => (
+                                    <button
+                                        key={field.key}
+                                        onClick={() => setActiveFilter(field.key)}
+                                        className={`px-5 sm:px-6 py-2 sm:py-2.5 rounded-full border uppercase font-black italic text-[9px] sm:text-[10px] tracking-widest transition-all duration-300 whitespace-nowrap flex-shrink-0 ${activeFilter === field.key
+                                            ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]'
+                                            : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'
+                                            }`}
+                                    >
+                                        {field.label}
+                                    </button>
+                                ))}
                             </div>
-                        </div>
+                        </>
                     )}
-
-                    {/* STAT CATEGORY FILTERS */}
-                    <div className="flex justify-start sm:justify-center gap-2 mt-8 mb-10 overflow-x-auto no-scrollbar pb-4 px-2 -mx-4 sm:mx-0 flex-nowrap sm:flex-wrap">
-                        {getLeaderboardFields(sport).map(field => (
-                            <button
-                                key={field.key}
-                                onClick={() => setActiveFilter(field.key)}
-                                className={`px-5 sm:px-6 py-2 sm:py-2.5 rounded-full border uppercase font-black italic text-[9px] sm:text-[10px] tracking-widest transition-all duration-300 whitespace-nowrap flex-shrink-0 ${activeFilter === field.key
-                                    ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]'
-                                    : 'bg-transparent border-white/10 text-gray-600 hover:border-white/30'
-                                    }`}
-                            >
-                                {field.label}
-                            </button>
-                        ))}
-                    </div>
                 </div>
 
-                <div className="flex flex-col gap-12 pb-10">
+                {/* VIEW MODE CONTENT */}
+                {viewMode === 'TEAMS' && (
+                    <div className="pb-10">
+                        <TeamRosterStats onSelectForComparison={handleSelectForComparison} />
+                    </div>
+                )}
+
+                {viewMode === 'COMPARE' && (
+                    <div className="pb-10">
+                        <PlayerComparison
+                            initialPlayer1Id={comparePlayer1Id}
+                            initialPlayer2Id={comparePlayer2Id}
+                        />
+                    </div>
+                )}
+
+                {viewMode === 'COMBINES' && (
+                    <div className="flex flex-col gap-12 pb-10">
                     {/* CHECK-IN LEADERBOARD */}
                     <div className="animate-slideUp w-full max-w-2xl mx-auto">
                         <div className="flex items-center gap-2 mb-4 justify-center">
@@ -551,8 +624,8 @@ export default function LeaderboardPage() {
                             </>
                         )}
                     </div>
-
                     </div>
+                )}
             </div>
         </div>
     );

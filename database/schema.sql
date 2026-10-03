@@ -1027,3 +1027,42 @@ CREATE POLICY "Coaches and admins can manage film sessions" ON public.film_room_
             WHERE p.id = auth.uid() AND p.role IN ('admin', 'sys-admin')
         )
     );
+
+-- Table: public.player_hockey_stats
+CREATE TABLE IF NOT EXISTS public.player_hockey_stats (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    player_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    season TEXT NOT NULL,
+    team_name TEXT NOT NULL,
+    division TEXT NOT NULL DEFAULT 'U13',
+    competition_name TEXT NOT NULL,
+    competition_type TEXT NOT NULL DEFAULT 'TOURNAMENT' CHECK (competition_type IN ('TOURNAMENT', 'LEAGUE', 'EXHIBITION', 'CAMP')),
+    position_type TEXT NOT NULL DEFAULT 'SKATER' CHECK (position_type IN ('SKATER', 'GOALIE')),
+    jersey_number INTEGER,
+    position TEXT,
+    gp INTEGER DEFAULT 0,
+    goals INTEGER DEFAULT 0,
+    assists INTEGER DEFAULT 0,
+    points INTEGER DEFAULT 0,
+    pim INTEGER DEFAULT 0,
+    ppg INTEGER DEFAULT 0,
+    shg INTEGER DEFAULT 0,
+    gwg INTEGER DEFAULT 0,
+    minutes_played INTEGER DEFAULT 0,
+    wins INTEGER DEFAULT 0,
+    losses INTEGER DEFAULT 0,
+    otl INTEGER DEFAULT 0,
+    goals_against INTEGER DEFAULT 0,
+    gaa NUMERIC(4,2) DEFAULT 0.00,
+    shots_against INTEGER DEFAULT 0,
+    saves INTEGER DEFAULT 0,
+    save_pct NUMERIC(5,3) DEFAULT 0.000,
+    shutouts INTEGER DEFAULT 0,
+    accolades TEXT[] DEFAULT '{}'::TEXT[],
+    is_verified BOOLEAN DEFAULT true,
+    verified_by UUID REFERENCES public.profiles(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    CONSTRAINT unique_player_season_competition UNIQUE (player_id, season, competition_name, team_name)
+);
+

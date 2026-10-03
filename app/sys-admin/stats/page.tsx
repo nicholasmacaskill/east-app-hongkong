@@ -1,12 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabase';
-import { Search, Save, CheckCircle } from 'lucide-react';
+import { Search, Save, CheckCircle, Trophy, Dumbbell } from 'lucide-react';
 import { useToast } from '@/app/components/ui/Toast';
 import { formatHK } from '@/app/lib/dateUtils';
 import { STAT_FIELDS, SportCategory } from '@/app/lib/statFields';
+import TournamentStatsImporter from '@/app/components/admin/TournamentStatsImporter';
 
 export default function StatsManagementPage() {
+    const [activeMode, setActiveMode] = useState<'tournaments' | 'facility'>('tournaments');
     const [selectedSport, setSelectedSport] = useState<SportCategory>('GOLF');
     const [players, setPlayers] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -125,42 +127,70 @@ export default function StatsManagementPage() {
 
     return (
         <div className="min-h-screen bg-black text-white p-6 font-montserrat pb-24 w-full overflow-x-hidden">
-            <h1 className="text-3xl font-black italic uppercase mb-8 text-east-light">Stats Management</h1>
+            <h1 className="text-3xl font-black italic uppercase mb-6 text-east-light">Stats Management</h1>
 
-            {/* Sport Selector */}
-            <div className="flex gap-3 mb-8">
-                {[
-                    { id: 'GOLF', label: 'Golf', icon: '⛳' },
-                    { id: 'HYROX', label: 'HYROX', icon: '🏃' },
-                    { id: 'HOCKEY', label: 'Hockey', icon: '🏒' },
-                    { id: 'EAGL', label: 'EAGL', icon: '🦅' },
-                    { id: 'FITNESS_TEST', label: 'Fitness Test', icon: '💪' }
-                ].map(sport => (
-                    <button
-                        key={sport.id}
-                        onClick={() => setSelectedSport(sport.id as any)}
-                        className={`px-6 py-3 rounded-xl font-bold uppercase text-sm transition-all ${selectedSport === sport.id
-                            ? 'bg-east-light text-black'
-                            : 'bg-white/10 text-white hover:bg-white/20'
-                            }`}
-                    >
-                        {sport.icon} {sport.label}
-                    </button>
-                ))}
+            {/* Mode Switcher */}
+            <div className="flex flex-wrap gap-3 mb-8 border-b border-white/10 pb-6">
+                <button
+                    type="button"
+                    onClick={() => setActiveMode('tournaments')}
+                    className={`px-6 py-3.5 rounded-xl font-black italic uppercase text-xs md:text-sm tracking-wide transition-all flex items-center gap-2 ${activeMode === 'tournaments'
+                        ? 'bg-east-light text-black shadow-lg shadow-east-light/25 scale-[1.01]'
+                        : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                        }`}
+                >
+                    <Trophy size={18} /> EAST Stars Tournaments & Leagues (Auto-Ingestion)
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setActiveMode('facility')}
+                    className={`px-6 py-3.5 rounded-xl font-black italic uppercase text-xs md:text-sm tracking-wide transition-all flex items-center gap-2 ${activeMode === 'facility'
+                        ? 'bg-east-light text-black shadow-lg shadow-east-light/25 scale-[1.01]'
+                        : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                        }`}
+                >
+                    <Dumbbell size={18} /> Facility Combines & Training Drills
+                </button>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-                {/* Player Search */}
-                <div className="bg-[#1e1e1e] p-6 rounded-2xl border border-white/10">
-                    <h2 className="text-xl font-bold uppercase mb-4 flex items-center gap-2">
-                        <Search size={20} className="text-east-light" /> Search for Member
-                    </h2>
-                    <input
-                        className="w-full bg-black/50 border border-white/20 p-4 rounded-xl text-white outline-none focus:border-east-light transition-all mb-4"
-                        placeholder="Search by name..."
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                    />
+            {activeMode === 'tournaments' ? (
+                <TournamentStatsImporter />
+            ) : (
+                <>
+                    {/* Sport Selector */}
+                    <div className="flex gap-3 mb-8">
+                        {[
+                            { id: 'GOLF', label: 'Golf', icon: '⛳' },
+                            { id: 'HYROX', label: 'HYROX', icon: '🏃' },
+                            { id: 'HOCKEY', label: 'Hockey', icon: '🏒' },
+                            { id: 'EAGL', label: 'EAGL', icon: '🦅' },
+                            { id: 'FITNESS_TEST', label: 'Fitness Test', icon: '💪' }
+                        ].map(sport => (
+                            <button
+                                key={sport.id}
+                                onClick={() => setSelectedSport(sport.id as any)}
+                                className={`px-6 py-3 rounded-xl font-bold uppercase text-sm transition-all ${selectedSport === sport.id
+                                    ? 'bg-east-light text-black'
+                                    : 'bg-white/10 text-white hover:bg-white/20'
+                                    }`}
+                            >
+                                {sport.icon} {sport.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                        {/* Player Search */}
+                        <div className="bg-[#1e1e1e] p-6 rounded-2xl border border-white/10">
+                            <h2 className="text-xl font-bold uppercase mb-4 flex items-center gap-2">
+                                <Search size={20} className="text-east-light" /> Search for Member
+                            </h2>
+                            <input
+                                className="w-full bg-black/50 border border-white/20 p-4 rounded-xl text-white outline-none focus:border-east-light transition-all mb-4"
+                                placeholder="Search by name..."
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
                     <div className="max-h-[500px] overflow-y-auto space-y-2 pr-2">
                         {players.map(p => (
                             <button
@@ -263,6 +293,8 @@ export default function StatsManagementPage() {
                     )}
                 </div>
             </div>
+            </>
+            )}
         </div>
     );
 }
