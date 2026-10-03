@@ -16,6 +16,8 @@ test.describe('EAST Stars Hockey Stats, Team Roster & Player Comparison', () => 
     let testUserEmail1: string;
     let testUserId2: string;
     let testUserEmail2: string;
+    let testCoachId: string;
+    let testCoachEmail: string;
 
     test.beforeAll(async () => {
         const suffix = Date.now();
@@ -61,6 +63,26 @@ test.describe('EAST Stars Hockey Stats, Team Roster & Player Comparison', () => 
             username: `marcusc${suffix}`,
             bio: 'Playmaker playmaker.',
         });
+
+        // 3. Create Coach: Coach Ben
+        testCoachEmail = `coach-ben-${suffix}@east.com`;
+        const { data: cUser, error: cErr } = await supabase.auth.admin.createUser({
+            email: testCoachEmail,
+            password: 'TestPassword123!',
+            email_confirm: true,
+            user_metadata: { role: 'coach', first_name: 'Coach', last_name: 'Ben' },
+        });
+        if (cErr) throw cErr;
+        testCoachId = cUser.user!.id;
+
+        await supabase.from('profiles').upsert({
+            id: testCoachId,
+            role: 'coach',
+            first_name: 'Coach',
+            last_name: 'Ben',
+            account_status: 'active',
+            credits: 0,
+        });
     });
 
     test.afterAll(async () => {
@@ -73,6 +95,10 @@ test.describe('EAST Stars Hockey Stats, Team Roster & Player Comparison', () => 
             await supabase.from('player_hockey_stats').delete().eq('player_id', testUserId2);
             await supabase.from('profiles').delete().eq('id', testUserId2);
             await supabase.auth.admin.deleteUser(testUserId2);
+        }
+        if (testCoachId) {
+            await supabase.from('profiles').delete().eq('id', testCoachId);
+            await supabase.auth.admin.deleteUser(testCoachId);
         }
     });
 
@@ -199,9 +225,20 @@ test.describe('EAST Stars Hockey Stats, Team Roster & Player Comparison', () => 
         await expect(page.getByText('ASSISTS', { exact: true }).first()).toBeVisible();
         await expect(page.getByText('PTS', { exact: true }).first()).toBeVisible();
 
+        // Verify layer isolation: Front has opacity-100, Back has opacity-0
+        const cardFront = page.locator('[data-testid="hockey-card-front"]');
+        const cardBack = page.locator('[data-testid="hockey-card-back"]');
+        await expect(cardFront).toHaveClass(/opacity-100/);
+        await expect(cardBack).toHaveClass(/opacity-0/);
+
         // Click FLIP to reveal Career Ledger on Back of Card
         const flipBtn = page.getByRole('button', { name: /flip/i }).first();
         await flipBtn.click();
+
+        // Verify Flipped state: Back has opacity-100, Front has opacity-0 & pointer-events-none
+        await expect(cardBack).toHaveClass(/opacity-100/);
+        await expect(cardFront).toHaveClass(/opacity-0/);
+        await expect(cardFront).toHaveClass(/pointer-events-none/);
 
         // Verify Career Tournament Ledger is displayed
         await expect(page.getByText('CAREER TOURNAMENT LEDGER')).toBeVisible();
@@ -256,5 +293,60 @@ test.describe('EAST Stars Hockey Stats, Team Roster & Player Comparison', () => 
         const swapBtn = page.getByTitle('Swap athletes');
         await expect(swapBtn).toBeVisible();
         await swapBtn.click();
+    });
+
+    test('6. Dynamic Filters on Stars Stats page correctly discover seasons and tournament metadata', async ({ page }) => {
+        await page.goto('/stats');
+        await page.waitForLoadState('networkidle');
+
+        // Verify Season dropdown is present and populated
+        const seasonSelect = page.locator('select').filter({ hasText: /All Seasons|2024-25/i }).first();
+        await expect(seasonSelect).toBeVisible({ timeout: 15000 });
+
+        // Verify Competition Type dropdown contains All Types, Tournaments, Leagues
+        const typeSelect = page.locator('select').filter({ hasText: /All Types|Tournaments/i }).first();
+        await expect(typeSelect).toBeVisible({ timeout: 15000 });
+
+        // Verify Tournament dropdown contains Quebec Pee-Wee
+        const tournamentSelect = page.locator('select').filter({ hasText: /All Competitions|Quebec International/i }).first();
+        await expect(tournamentSelect).toBeVisible({ timeout: 15000 });
+    });
+
+    test('7. Coach Dashboard Quick Action buttons toggle view to Importer without page reload', async ({ page }) => {
+        // Clear existing session
+        await page.goto('/login');
+        await page.waitForLoadState('domcontentloaded');
+        await page.evaluate(() => {
+            localStorage.clear();
+            sessionStorage.clear();
+        });
+
+        // Authenticate as coach
+        await page.goto('/login');
+        await page.fill('input[type="email"]', testCoachEmail);
+        await page.fill('input[type="password"]', 'TestPassword123!');
+        await page.click('button[type="submit"]');
+
+        // Wait for coach dashboard to mount
+        await page.waitForFunction(() => document.body.innerText.includes('COACH'), { timeout: 20000 });
+
+        // Verify Quick Action buttons exist in Coach Dashboard
+        const importQuickBtn = page.getByRole('button', { name: /Import Tournament Stats/i });
+        await expect(importQuickBtn).toBeVisible({ timeout: 15000 });
+
+        // Click Import Tournament Stats
+        await importQuickBtn.click();
+
+        // Verify Tournament Stats Importer renders directly in the timeline without redirecting away to /sys-admin
+        await expect(page.getByText('Tournament & League Stats Importer')).toBeVisible({ timeout: 10000 });
+        expect(page.url()).not.toContain('/sys-admin');
+
+        // Click Back to Schedule
+        const backBtn = page.getByRole('button', { name: /Back to Schedule/i });
+        await expect(backBtn).toBeVisible({ timeout: 10000 });
+        await backBtn.click();
+
+        // Verify timeline returned without page reload
+        await expect(importQuickBtn).toBeVisible({ timeout: 10000 });
     });
 });

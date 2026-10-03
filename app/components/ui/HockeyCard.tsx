@@ -98,6 +98,7 @@ export default function HockeyCard({ player, hockeyStats = [], careerTotals, isL
           {/* ======================= FRONT OF CARD ======================= */}
           {/* ============================================================== */}
           <div
+            data-testid="hockey-card-front"
             className={`absolute inset-0 w-full h-full rounded-3xl overflow-hidden border-2 border-east-light/40 shadow-[0_0_35px_rgba(40,209,96,0.25)] bg-[#0d0d11] flex flex-col justify-between p-5 transition-opacity duration-300 ${
               isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100'
             }`}
@@ -253,6 +254,7 @@ export default function HockeyCard({ player, hockeyStats = [], careerTotals, isL
           {/* ======================= BACK OF CARD ======================== */}
           {/* ============================================================== */}
           <div
+            data-testid="hockey-card-back"
             className={`absolute inset-0 w-full h-full rounded-3xl overflow-hidden border-2 border-east-light/40 shadow-2xl bg-[#0d0d11] flex flex-col justify-between p-5 transition-opacity duration-300 ${
               isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'
             }`}
