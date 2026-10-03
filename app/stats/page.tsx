@@ -255,12 +255,15 @@ export default function LeaderboardPage() {
                 </Link>
 
                 <div className="text-center mb-10">
-                    <h1 className="text-[4rem] sm:text-[5.5rem] leading-none font-black italic text-stroke-thin text-transparent uppercase opacity-5 absolute top-4 left-1/2 -translate-x-1/2 select-none whitespace-nowrap tracking-tighter w-full">LEADERBOARD</h1>
-                    <h1 className="text-4xl sm:text-5xl font-black italic uppercase relative z-10 text-white tracking-tight drop-shadow-2xl">Leaderboard</h1>
+                    <h1 className="text-[4rem] sm:text-[5.5rem] leading-none font-black italic text-stroke-thin text-transparent uppercase opacity-5 absolute top-4 left-1/2 -translate-x-1/2 select-none whitespace-nowrap tracking-tighter w-full">STARS STATS</h1>
+                    <h1 className="text-4xl sm:text-5xl font-black italic uppercase relative z-10 text-white tracking-tight drop-shadow-2xl">Stars Stats</h1>
+                    <p className="text-xs text-gray-400 mt-2 max-w-xl mx-auto relative z-10">
+                        Official EAST Stars tournament rosters, scoring leaders, and collectible digital hockey cards
+                    </p>
 
                     <div className="mt-8 px-2">
                         <p className="text-[10px] font-black uppercase tracking-[0.25em] text-east-light mb-3 text-center">
-                            Search Players
+                            Search Athletes
                         </p>
                         <PlayerSearch />
                     </div>
@@ -277,7 +280,7 @@ export default function LeaderboardPage() {
                             }`}
                         >
                             <Shield size={14} />
-                            EAST Stars Teams (Elite Prospects)
+                            Stars Stats
                         </button>
                         <button
                             type="button"

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/app/lib/supabase';
+import { getSupabaseAdmin } from '@/app/lib/supabaseAdmin';
 import { HockeyCardCareerTotals, PlayerHockeyStat } from '@/app/types/stats';
 
 export async function GET(request: Request, { params }: { params: Promise<{ playerId: string }> }) {
@@ -10,7 +10,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ play
       return NextResponse.json({ error: 'Missing playerId' }, { status: 400 });
     }
 
-    const { data, error } = await supabase
+    const supabaseAdmin = getSupabaseAdmin();
+    const { data, error } = await supabaseAdmin
       .from('player_hockey_stats')
       .select('*')
       .eq('player_id', playerId)

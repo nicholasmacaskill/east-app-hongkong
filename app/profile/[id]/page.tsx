@@ -18,9 +18,31 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
       if (!playerId) return;
 
       try {
+        const res = await fetch(`/api/profile/${playerId}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.profile) {
+            const data = json.profile;
+            setProfileData({
+              id: data.id,
+              name: data.first_name,
+              surname: data.last_name,
+              username: data.username,
+              bio: data.bio,
+              avatar_url: data.avatar_url,
+              gallery_images: data.gallery_images || [],
+              credits: data.credits,
+              role: data.role,
+              team: data.team,
+            });
+            return;
+          }
+        }
+
+        // Fallback to Supabase client
         const { data, error: profileError } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, first_name, last_name, username, bio, avatar_url, gallery_images, credits, role, team')
           .eq('id', playerId)
           .single();
 
@@ -37,6 +59,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
           gallery_images: data.gallery_images || [],
           credits: data.credits,
           role: data.role,
+          team: data.team,
         });
       } catch (err: any) {
         console.error('Error fetching player profile:', err);

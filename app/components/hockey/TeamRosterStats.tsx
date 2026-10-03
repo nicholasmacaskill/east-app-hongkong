@@ -15,9 +15,20 @@ export default function TeamRosterStats({ onSelectForComparison }: TeamRosterSta
   const [division, setDivision] = useState<string>('U13');
   const [season, setSeason] = useState<string>('2024-25');
   const [competition, setCompetition] = useState<string>('ALL');
+  const [competitionType, setCompetitionType] = useState<string>('ALL');
   const [searchFilter, setSearchFilter] = useState('');
   const [sortField, setSortField] = useState<'points' | 'goals' | 'assists' | 'gp' | 'pts_per_game' | 'pim'>('points');
   const [sortAsc, setSortAsc] = useState(false);
+
+  // Dynamic filter options populated from database
+  const [availableSeasons, setAvailableSeasons] = useState<string[]>(['2025-26', '2024-25', '2023-24']);
+  const [availableCompetitions, setAvailableCompetitions] = useState<string[]>([
+    'Quebec International Pee-Wee Tournament',
+    'Hong Kong Youth League',
+    'Bangkok Youth Hockey Cup',
+    'Singapore Ice Hockey Invitational'
+  ]);
+  const [availableCompetitionTypes, setAvailableCompetitionTypes] = useState<string[]>(['ALL', 'TOURNAMENT', 'LEAGUE', 'EXHIBITION', 'CAMP']);
 
   const [loading, setLoading] = useState(true);
   const [skaters, setSkaters] = useState<any[]>([]);
@@ -31,7 +42,7 @@ export default function TeamRosterStats({ onSelectForComparison }: TeamRosterSta
 
   useEffect(() => {
     fetchTeamStats();
-  }, [division, season, competition]);
+  }, [division, season, competition, competitionType]);
 
   const fetchTeamStats = async () => {
     setLoading(true);
@@ -40,6 +51,7 @@ export default function TeamRosterStats({ onSelectForComparison }: TeamRosterSta
       if (division) params.set('division', division);
       if (season) params.set('season', season);
       if (competition) params.set('competition', competition);
+      if (competitionType && competitionType !== 'ALL') params.set('competition_type', competitionType);
 
       const res = await fetch(`/api/hockey-stats/team?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to load team stats');
@@ -48,6 +60,16 @@ export default function TeamRosterStats({ onSelectForComparison }: TeamRosterSta
       setSkaters(data.skaters || []);
       setGoalies(data.goalies || []);
       setTeamSummary(data.teamSummary || null);
+
+      if (data.availableSeasons && Array.isArray(data.availableSeasons) && data.availableSeasons.length > 0) {
+        setAvailableSeasons(data.availableSeasons);
+      }
+      if (data.availableCompetitions && Array.isArray(data.availableCompetitions) && data.availableCompetitions.length > 0) {
+        setAvailableCompetitions(data.availableCompetitions);
+      }
+      if (data.availableCompetitionTypes && Array.isArray(data.availableCompetitionTypes) && data.availableCompetitionTypes.length > 0) {
+        setAvailableCompetitionTypes(['ALL', ...data.availableCompetitionTypes.filter((t: string) => t !== 'ALL')]);
+      }
     } catch (err) {
       console.error('Error fetching team stats:', err);
     } finally {
@@ -101,7 +123,7 @@ export default function TeamRosterStats({ onSelectForComparison }: TeamRosterSta
 
   return (
     <div className="w-full space-y-6 font-montserrat">
-      {/* 1. ELITE PROSPECTS HEADER & CONTROLS */}
+      {/* 1. STARS STATS HEADER & CONTROLS */}
       <div className="bg-[#18181b] border border-white/10 rounded-2xl p-5 shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4 mb-4">
           <div className="flex items-center gap-3">
@@ -114,7 +136,7 @@ export default function TeamRosterStats({ onSelectForComparison }: TeamRosterSta
                   EAST Stars {division} Team Roster & Stats
                 </h2>
                 <span className="text-[9px] font-black px-2 py-0.5 rounded bg-east-light/20 text-east-light border border-east-light/30 uppercase tracking-widest">
-                  ELITE PROSPECTS
+                  STARS STATS
                 </span>
               </div>
               <p className="text-xs text-gray-400">
@@ -142,9 +164,9 @@ export default function TeamRosterStats({ onSelectForComparison }: TeamRosterSta
           </div>
         </div>
 
-        {/* SECONDARY FILTERS: Season, Tournament, Search */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Season dropdown */}
+        {/* SECONDARY FILTERS: Season, Type, Tournament, Search */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Season dropdown - dynamically populated */}
           <div>
             <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
               Season
@@ -154,13 +176,32 @@ export default function TeamRosterStats({ onSelectForComparison }: TeamRosterSta
               onChange={(e) => setSeason(e.target.value)}
               className="w-full bg-black/70 border border-white/20 px-3 py-2 rounded-xl text-xs font-bold text-white focus:border-east-light outline-none"
             >
-              <option value="2024-25">2024-25 Season</option>
-              <option value="2023-24">2023-24 Season</option>
               <option value="ALL">All Seasons</option>
+              {availableSeasons.map((s) => (
+                <option key={s} value={s}>{s} Season</option>
+              ))}
             </select>
           </div>
 
-          {/* Tournament dropdown */}
+          {/* Competition Type dropdown (Tournaments, Leagues, etc.) */}
+          <div>
+            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
+              Event Type
+            </label>
+            <select
+              value={competitionType}
+              onChange={(e) => setCompetitionType(e.target.value)}
+              className="w-full bg-black/70 border border-white/20 px-3 py-2 rounded-xl text-xs font-bold text-white focus:border-east-light outline-none"
+            >
+              <option value="ALL">All Event Types</option>
+              <option value="TOURNAMENT">Tournaments</option>
+              <option value="LEAGUE">Leagues</option>
+              <option value="EXHIBITION">Exhibitions</option>
+              <option value="CAMP">Camps & Showcases</option>
+            </select>
+          </div>
+
+          {/* Tournament / League dropdown - dynamically populated */}
           <div>
             <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest block mb-1">
               Competition / Tournament
@@ -171,9 +212,9 @@ export default function TeamRosterStats({ onSelectForComparison }: TeamRosterSta
               className="w-full bg-black/70 border border-white/20 px-3 py-2 rounded-xl text-xs font-bold text-white focus:border-east-light outline-none"
             >
               <option value="ALL">All Competitions (Quebec, Leagues, Cups)</option>
-              <option value="Quebec International Pee-Wee Tournament">Quebec International Pee-Wee</option>
-              <option value="Hong Kong Youth League">Hong Kong Youth League</option>
-              <option value="Bangkok Youth Hockey Cup">Bangkok Youth Hockey Cup</option>
+              {availableCompetitions.map((comp) => (
+                <option key={comp} value={comp}>{comp}</option>
+              ))}
             </select>
           </div>
 
@@ -193,6 +234,12 @@ export default function TeamRosterStats({ onSelectForComparison }: TeamRosterSta
               />
             </div>
           </div>
+        </div>
+
+        {/* Dynamic filters management hint */}
+        <div className="mt-3 pt-2.5 border-t border-white/5 flex items-center justify-between text-[8px] text-gray-400 font-semibold uppercase tracking-wider">
+          <span>⚡ Live Database Filters: Automatically updates as coaches sync new tournament box scores</span>
+          <span className="text-east-light font-bold">U11 ➔ U13 ➔ U15 ➔ U18 Career Pathways</span>
         </div>
       </div>
 
@@ -242,7 +289,7 @@ export default function TeamRosterStats({ onSelectForComparison }: TeamRosterSta
         </div>
       )}
 
-      {/* 3. SKATERS STATS TABLE (ELITE PROSPECTS FORMAT) */}
+      {/* 3. SKATERS STATS TABLE (STARS STATS FORMAT) */}
       <div className="bg-[#18181b] border border-white/10 rounded-2xl p-5 shadow-xl space-y-4">
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">

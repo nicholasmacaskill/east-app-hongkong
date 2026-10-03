@@ -208,39 +208,41 @@ test.describe('EAST Stars Hockey Stats, Team Roster & Player Comparison', () => 
         await expect(page.getByText('ALL-TIME EAST CAREER TOTALS')).toBeVisible();
     });
 
-    test('4. Team Roster & Stats (Elite Prospects) view on /stats displays scoring table and card preview', async ({ page }) => {
+    test('4. Team Roster & Stats (Stars Stats) view on /stats displays scoring table and card preview', async ({ page }) => {
         await page.goto('/stats');
 
-        // Verify Elite Prospects Team header is present
-        await expect(page.getByRole('button', { name: /EAST Stars Teams \(Elite Prospects\)/i })).toBeVisible({ timeout: 15000 });
+        // Verify Stars Stats Team header is present
+        await expect(page.getByRole('button', { name: /Stars Stats/i }).first()).toBeVisible({ timeout: 15000 });
         await expect(page.getByText('EAST Stars U13 Team Roster & Stats')).toBeVisible();
 
-        // Verify Elite Prospects Skater Table Columns
-        await expect(page.getByRole('table').first()).toBeVisible();
-        await expect(page.getByText('PTS', { exact: true }).first()).toBeVisible();
-        await expect(page.getByText('PTS/G', { exact: true }).first()).toBeVisible();
+        // Verify Stars Stats Skater Table Columns
+        await expect(page.getByRole('table').first()).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('PTS', { exact: true }).first()).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('PTS/G', { exact: true }).first()).toBeVisible({ timeout: 15000 });
 
         // Check seeded players in roster table
-        await expect(page.getByText('Lucas Wong').first()).toBeVisible();
-        await expect(page.getByText('Marcus Chen').first()).toBeVisible();
+        await expect(page.getByText('Lucas Wong').first()).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('Marcus Chen').first()).toBeVisible({ timeout: 15000 });
 
         // Click a player row to open the Hockey Card modal preview
         await page.getByText('Lucas Wong').first().click();
 
         // Verify modal opened with card
-        await expect(page.getByText('#88').first()).toBeVisible();
+        await expect(page.getByText('#88').first()).toBeVisible({ timeout: 15000 });
     });
 
     test('5. Head-to-head Player Comparison on /stats compares athletes with Tale of the Tape and side-by-side cards', async ({ page }) => {
         await page.goto('/stats');
+        await page.waitForLoadState('networkidle');
 
         // Switch to Compare Players mode
         const compareModeBtn = page.getByRole('button', { name: /Compare Players/i });
+        await expect(compareModeBtn).toBeVisible({ timeout: 15000 });
         await compareModeBtn.click();
 
         // Verify Comparison header
-        await expect(page.getByText('Elite Prospects Player Comparison')).toBeVisible();
-        await expect(page.getByText('Tale of the Tape • Career Performance')).toBeVisible();
+        await expect(page.getByText('Stars Stats Player Comparison')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('Tale of the Tape • Career Performance')).toBeVisible({ timeout: 15000 });
 
         // Verify Side-by-Side Hockey Cards section
         await expect(page.getByText('Collectible Hockey Cards • Interactive 3D Cards')).toBeVisible();

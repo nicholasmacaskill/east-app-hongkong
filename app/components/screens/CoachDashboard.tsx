@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/app/lib/supabase';
 import posthog from 'posthog-js';
 import { useRouter } from 'next/navigation';
-import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, Layers, FileText, X, Send, Play, MessageSquare, ClipboardList, Plus, ArrowRight, ClipboardCheck, Film, Upload, Trophy } from 'lucide-react';
+import { LogOut, RefreshCw, Calendar, Users, Clock, AlertCircle, ChevronDown, ChevronUp, ChevronLeft, Layers, FileText, X, Send, Play, MessageSquare, ClipboardList, Plus, ArrowRight, ClipboardCheck, Film, Upload, Trophy } from 'lucide-react';
 import { TrainingPlan } from '@/app/types';
 import { safeDate, safetoLocaleDateString, formatHK } from '@/app/lib/dateUtils';
 import { safeFetch } from '@/app/lib/apiUtils';
@@ -17,6 +17,8 @@ import CommunityScreen from '@/app/components/CommunityScreen';
 import PrivateMessenger from '@/app/components/PrivateMessenger';
 import CreateAssessmentModal, { AssessmentPlayerOption } from '@/app/components/modals/CreateAssessmentModal';
 import FilmRoomTab from '@/app/components/film-room/FilmRoomTab';
+import TournamentStatsImporter from '@/app/components/admin/TournamentStatsImporter';
+import TeamRosterStats from '@/app/components/hockey/TeamRosterStats';
 import { useTenant } from '@/app/providers/TenantProvider';
 
 interface Attendee {
@@ -43,7 +45,7 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
     const { tenant } = useTenant();
     const [allSessions, setAllSessions] = useState<MasterSession[]>([]);
     const [filteredSessions, setFilteredSessions] = useState<MasterSession[]>([]);
-    const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view' | 'drill_hub' | 'plans' | 'film_room' | 'community'>('master_view');
+    const [viewMode, setViewMode] = useState<'my_schedule' | 'master_view' | 'drill_hub' | 'plans' | 'film_room' | 'community' | 'stats_importer' | 'stars_stats'>('master_view');
     const [sharedFilmSessionId, setSharedFilmSessionId] = useState<string | null>(null);
     const [trainingPlans, setTrainingPlans] = useState<TrainingPlan[]>([]);
     const [plansLoading, setPlansLoading] = useState(false);
@@ -366,12 +368,26 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                     <button onClick={() => setViewMode('film_room')} className="text-[9px] font-black uppercase text-white hover:text-black transition-colors flex items-center gap-1 bg-white/10 hover:bg-east-light px-3 py-1.5 rounded-full border border-white/10 hover:border-east-light whitespace-nowrap">
                         <Film size={12} /> Film Room
                     </button>
-                    <Link href="/sys-admin/stats" className="text-[9px] font-black uppercase text-white hover:text-black transition-colors flex items-center gap-1 bg-white/10 hover:bg-east-light px-3 py-1.5 rounded-full border border-white/10 hover:border-east-light whitespace-nowrap">
+                    <button
+                        onClick={() => setViewMode('stats_importer')}
+                        className={`text-[9px] font-black uppercase transition-colors flex items-center gap-1 px-3 py-1.5 rounded-full border whitespace-nowrap ${
+                            viewMode === 'stats_importer'
+                                ? 'bg-east-light text-black border-east-light shadow-[0_0_10px_rgba(40,209,96,0.2)]'
+                                : 'bg-white/10 text-white hover:bg-east-light hover:text-black border-white/10 hover:border-east-light'
+                        }`}
+                    >
                         <Upload size={12} /> Import Tournament Stats
-                    </Link>
-                    <Link href="/stats" className="text-[9px] font-black uppercase text-white hover:text-black transition-colors flex items-center gap-1 bg-white/10 hover:bg-east-light px-3 py-1.5 rounded-full border border-white/10 hover:border-east-light whitespace-nowrap">
-                        <Trophy size={12} /> Team Stats & Cards
-                    </Link>
+                    </button>
+                    <button
+                        onClick={() => setViewMode('stars_stats')}
+                        className={`text-[9px] font-black uppercase transition-colors flex items-center gap-1 px-3 py-1.5 rounded-full border whitespace-nowrap ${
+                            viewMode === 'stars_stats'
+                                ? 'bg-east-light text-black border-east-light shadow-[0_0_10px_rgba(40,209,96,0.2)]'
+                                : 'bg-white/10 text-white hover:bg-east-light hover:text-black border-white/10 hover:border-east-light'
+                        }`}
+                    >
+                        <Trophy size={12} /> Stars Stats & Cards
+                    </button>
                 </div>
                 <div className="flex items-center gap-2 ml-auto">
                     <button onClick={expandAll} className="text-[9px] font-black uppercase text-gray-500 hover:text-east-light transition-colors flex items-center gap-1">
@@ -560,6 +576,46 @@ export default function CoachDashboard({ currentUserId, userName, userLastName }
                                 })}
                             </div>
                         )}
+                    </div>
+                ) : viewMode === 'stats_importer' ? (
+                    <div className="animate-fadeIn space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('master_view')}
+                                className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-colors flex items-center gap-1.5 border border-white/10"
+                            >
+                                <ChevronLeft size={16} /> Back to Schedule
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('stars_stats')}
+                                className="px-3.5 py-1.5 rounded-xl bg-east-light hover:bg-white text-black text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md shadow-east-light/20"
+                            >
+                                <Trophy size={14} /> View Stars Stats & Cards
+                            </button>
+                        </div>
+                        <TournamentStatsImporter />
+                    </div>
+                ) : viewMode === 'stars_stats' ? (
+                    <div className="animate-fadeIn space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('master_view')}
+                                className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-colors flex items-center gap-1.5 border border-white/10"
+                            >
+                                <ChevronLeft size={16} /> Back to Schedule
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setViewMode('stats_importer')}
+                                className="px-3.5 py-1.5 rounded-xl bg-east-light hover:bg-white text-black text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md shadow-east-light/20"
+                            >
+                                <Upload size={14} /> Import Tournament Stats
+                            </button>
+                        </div>
+                        <TeamRosterStats />
                     </div>
                 ) : (
                     <>

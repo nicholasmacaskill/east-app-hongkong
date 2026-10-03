@@ -89,11 +89,25 @@ export default function HockeyCard({ player, hockeyStats = [], careerTotals, isL
           className={`relative w-full h-full duration-700 transition-all [transform-style:preserve-3d] ${
             isFlipped ? '[transform:rotateY(180deg)]' : ''
           }`}
+          style={{
+            transformStyle: 'preserve-3d',
+            WebkitTransformStyle: 'preserve-3d',
+          }}
         >
           {/* ============================================================== */}
           {/* ======================= FRONT OF CARD ======================= */}
           {/* ============================================================== */}
-          <div className="absolute inset-0 w-full h-full rounded-3xl overflow-hidden [backface-visibility:hidden] border-2 border-east-light/40 shadow-[0_0_35px_rgba(255,215,0,0.15)] bg-gradient-to-b from-[#18181b] via-[#09090b] to-[#000000] flex flex-col justify-between p-5">
+          <div
+            className={`absolute inset-0 w-full h-full rounded-3xl overflow-hidden border-2 border-east-light/40 shadow-[0_0_35px_rgba(40,209,96,0.25)] bg-[#0d0d11] flex flex-col justify-between p-5 transition-opacity duration-300 ${
+              isFlipped ? 'opacity-0 pointer-events-none' : 'opacity-100'
+            }`}
+            style={{
+              WebkitBackfaceVisibility: 'hidden',
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(0deg)',
+              zIndex: isFlipped ? 0 : 10,
+            }}
+          >
             {/* Holographic metallic foil sheen */}
             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-east-light/10 pointer-events-none opacity-60" />
             <div className="absolute top-0 right-0 w-44 h-44 bg-east-light/10 rounded-full blur-3xl pointer-events-none" />
@@ -238,7 +252,17 @@ export default function HockeyCard({ player, hockeyStats = [], careerTotals, isL
           {/* ============================================================== */}
           {/* ======================= BACK OF CARD ======================== */}
           {/* ============================================================== */}
-          <div className="absolute inset-0 w-full h-full rounded-3xl overflow-hidden [backface-visibility:hidden] [transform:rotateY(180deg)] border-2 border-east-light/40 shadow-2xl bg-gradient-to-b from-[#18181b] via-[#09090b] to-[#000000] flex flex-col justify-between p-5">
+          <div
+            className={`absolute inset-0 w-full h-full rounded-3xl overflow-hidden border-2 border-east-light/40 shadow-2xl bg-[#0d0d11] flex flex-col justify-between p-5 transition-opacity duration-300 ${
+              isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+            style={{
+              WebkitBackfaceVisibility: 'hidden',
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+              zIndex: isFlipped ? 10 : 0,
+            }}
+          >
             {/* Holographic backdrop */}
             <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-east-light/5 pointer-events-none" />
 

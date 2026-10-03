@@ -172,7 +172,7 @@ export default function PlayerComparison({
             Head-to-Head Athlete Showcase
           </div>
           <h2 className="text-2xl sm:text-3xl font-black italic uppercase text-white tracking-wide">
-            Elite Prospects Player Comparison
+            Stars Stats Player Comparison
           </h2>
           <p className="text-xs text-gray-400 mt-1 max-w-xl mx-auto">
             Compare career tournament statistics, scoring rates, and collectible digital hockey cards side-by-side

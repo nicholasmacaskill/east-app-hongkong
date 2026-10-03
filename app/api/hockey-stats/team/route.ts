@@ -8,6 +8,36 @@ export async function GET(request: Request) {
     const division = searchParams.get('division') || 'U13';
     const season = searchParams.get('season');
     const competition = searchParams.get('competition');
+    const competitionType = searchParams.get('competition_type');
+
+    // 0. Query distinct filter metadata from all saved hockey stats
+    const { data: filterMeta } = await supabaseAdmin
+      .from('player_hockey_stats')
+      .select('season, competition_name, competition_type, division');
+
+    const discoveredSeasons = Array.from(
+      new Set((filterMeta || []).map((r: any) => r.season).filter(Boolean))
+    ).sort().reverse();
+
+    const discoveredCompetitions = Array.from(
+      new Set((filterMeta || []).map((r: any) => r.competition_name).filter(Boolean))
+    ).sort();
+
+    const discoveredTypes = Array.from(
+      new Set((filterMeta || []).map((r: any) => r.competition_type).filter(Boolean))
+    ).sort();
+
+    const defaultSeasons = ['2025-26', '2024-25', '2023-24'];
+    const defaultCompetitions = [
+      'Quebec International Pee-Wee Tournament',
+      'Hong Kong Youth League',
+      'Bangkok Youth Hockey Cup',
+      'Singapore Ice Hockey Invitational',
+    ];
+
+    const availableSeasons = discoveredSeasons.length > 0 ? discoveredSeasons : defaultSeasons;
+    const availableCompetitions = discoveredCompetitions.length > 0 ? discoveredCompetitions : defaultCompetitions;
+    const availableCompetitionTypes = discoveredTypes.length > 0 ? discoveredTypes : ['TOURNAMENT', 'LEAGUE', 'EXHIBITION', 'CAMP'];
 
     // 1. Fetch competition stats for this team/division
     let query = supabaseAdmin
@@ -24,6 +54,10 @@ export async function GET(request: Request) {
 
     if (competition && competition !== 'ALL') {
       query = query.eq('competition_name', competition);
+    }
+
+    if (competitionType && competitionType !== 'ALL') {
+      query = query.eq('competition_type', competitionType);
     }
 
     const { data: statsData, error: statsError } = await query;
@@ -169,6 +203,11 @@ export async function GET(request: Request) {
       success: true,
       division,
       season: season || '2024-25',
+      competition: competition || 'ALL',
+      competition_type: competitionType || 'ALL',
+      availableSeasons,
+      availableCompetitions,
+      availableCompetitionTypes,
       skaters,
       goalies,
       teamSummary,

@@ -58,7 +58,9 @@ export default function AdminLayout({
         const processUser = async (user: any) => {
             setStatusText(`Validating Role (${user.user_metadata?.role || 'fetch'})...`);
             const metaRole = user.user_metadata?.role;
-            if (metaRole === 'admin' || metaRole === 'sys-admin') {
+            const isStatsPath = typeof window !== 'undefined' && window.location.pathname.startsWith('/sys-admin/stats');
+
+            if (metaRole === 'admin' || metaRole === 'sys-admin' || (metaRole === 'coach' && isStatsPath)) {
                 setAuthorized(true);
                 return;
             }
@@ -66,7 +68,7 @@ export default function AdminLayout({
             setStatusText('Fetching Profile...');
             const profile = await fetchProfileResilient(user.id, { select: 'role' });
 
-            if (!profile || (profile.role !== 'admin' && profile.role !== 'sys-admin')) {
+            if (!profile || (profile.role !== 'admin' && profile.role !== 'sys-admin' && !(profile.role === 'coach' && isStatsPath))) {
                 setStatusText('Access Denied');
                 router.replace('/');
             } else {
